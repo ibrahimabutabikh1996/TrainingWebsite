@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { HeaderControls } from "@/components/HeaderControls";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
@@ -10,6 +9,9 @@ import { useEffect } from "react";
 import { ProfileStats } from "@/components/dashboard/ProfileStats";
 import { DietPlan } from "@/components/dashboard/DietPlan";
 import { WaterTracker } from "@/components/dashboard/WaterTracker";
+import { UserAnswers } from "@/components/dashboard/UserAnswers";
+import { WorkoutPlan } from "@/components/dashboard/WorkoutPlan";
+import { RestDays } from "@/components/dashboard/RestDays";
 import "./dashboard.css";
 import Link from "next/link";
 
@@ -56,6 +58,13 @@ export default function DashboardPage() {
         </Link>
         <div className="nav-actions">
           <HeaderControls />
+          <Link
+            href="/account/password"
+            className="logout-btn"
+            style={{ textDecoration: "none", display: "inline-flex", alignItems: "center" }}
+          >
+            {t("pw_title")}
+          </Link>
           <button className="logout-btn" onClick={logout}>
             {t("dash_logout")}
           </button>
@@ -70,22 +79,44 @@ export default function DashboardPage() {
           </div>
         </header>
 
-        <div className="dashboard-grid">
-          <ProfileStats profile={profile} />
-
-          <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
-            <div className="dashboard-card">
-              <div className="dashboard-card-title">
-                {t("dash_sec_diet")}
-                <span className="pill-badge" style={{ fontSize: "14px", padding: "6px 12px" }}>
-                  {profile.dietCalories} {t("dash_calories")}
-                </span>
-              </div>
-              <WaterTracker />
-              <DietPlan profile={profile} />
+        {profile.isExpired ? (
+          <div className="dashboard-grid" style={{ display: "flex", justifyContent: "center" }}>
+            <div className="dashboard-card" style={{ textAlign: "center", padding: "40px", maxWidth: "600px", margin: "0 auto", border: "1px solid var(--error)" }}>
+              <span className="material-symbols-outlined" style={{ fontSize: "48px", color: "var(--error)", marginBottom: "16px" }}>warning</span>
+              <h2 style={{ color: "var(--text)", marginBottom: "16px" }}>عذراً، انتهت صلاحية اشتراكك</h2>
+              <p style={{ color: "var(--muted)", marginBottom: "32px", fontSize: "1.1rem" }}>
+                لقد انتهت فترة الاشتراك الخاصة بك (30 يوماً). للحصول على خطة جديدة ومتابعة تدريبك، يرجى تجديد الاشتراك وتحديث بياناتك (مثل الوزن الحالي والصور الجديدة).
+              </p>
+              <Link href={`/form?renew=true&profileId=${profile.id}`} className="hero-btn primary-btn" style={{ textDecoration: "none", display: "inline-block" }}>
+                تجديد الاشتراك وتحديث البيانات
+              </Link>
             </div>
           </div>
-        </div>
+        ) : (
+          <div className="dashboard-grid">
+            <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+              <ProfileStats profile={profile} />
+              <UserAnswers profile={profile} />
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+              <WorkoutPlan profile={profile} />
+
+              <RestDays profile={profile} />
+
+              <div className="dashboard-card">
+                <div className="dashboard-card-title">
+                  {t("dash_sec_diet")}
+                  <span className="pill-badge" style={{ fontSize: "14px", padding: "6px 12px" }}>
+                    {profile.dietCalories} {t("dash_calories")}
+                  </span>
+                </div>
+                <WaterTracker />
+                <DietPlan profile={profile} />
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

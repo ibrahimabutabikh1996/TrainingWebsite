@@ -21,17 +21,27 @@
 }
 
 .cms-header-title {
-  margin: 0;
-  color: var(--primary);
-  font-size: 1.2rem;
+  margin: 0 0 6px;
+  color: var(--text);
+  font-size: clamp(1.5rem, 3vw, 2rem);
   font-weight: 700;
+  line-height: 1.3;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
-.cms-header-title span {
-  font-size: 1.4rem;
+.cms-header-title span.material-symbols-outlined {
+  font-size: 1.6rem;
+  color: var(--primary);
+}
+
+.cms-header-sub {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  max-width: 62ch;
 }
 
 /* Language Segmented Toggle */
@@ -61,7 +71,7 @@
 
 .cms-lang-btn.active {
   background: var(--primary);
-  color: #080808;
+  color: var(--text-inverse);
 }
 
 /* --- CMS Split Layout --- */
@@ -79,15 +89,15 @@
 
 /* Sidebar Tab List */
 .cms-sidebar {
-  width: 200px;
+  width: 220px;
   display: flex;
   flex-direction: column;
   gap: 4px;
   flex-shrink: 0;
   background: var(--bg2);
   border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 12px 8px;
+  border-radius: 16px;
+  padding: 10px;
   align-self: flex-start;
   position: sticky;
   top: 16px;
@@ -116,7 +126,7 @@
   cursor: pointer;
   font-weight: 600;
   font-size: 0.9rem;
-  border-radius: 4px;
+  border-radius: 10px;
   transition: all 0.25s ease;
   text-align: right;
   width: 100%;
@@ -202,8 +212,8 @@ body[dir="ltr"] .cms-tab-btn.active {
 .cms-section-card {
   background: var(--bg2);
   border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 16px 20px;
+  border-radius: 16px;
+  padding: 24px;
   margin-bottom: 16px;
 }
 
@@ -375,7 +385,13 @@ body[dir="ltr"] .cms-input-wrapper input {
 
 .cms-preview-img {
   width: 100%;
+  /* Capped so a portrait source (the coach and login art are 800x1000) cannot
+     grow to 500px+ and push the form fields off the screen. Click still opens
+     the full-size viewer. */
+  max-height: 320px;
   height: auto;
+  object-fit: contain;
+  background: var(--bg3);
   display: block;
   transition: transform 0.3s ease;
 }
@@ -545,7 +561,7 @@ body[dir="ltr"] .cms-input-wrapper input {
 
 .cms-media-btn.copy {
   background: var(--primary);
-  color: #080808;
+  color: var(--text-inverse);
 }
 
 .cms-media-btn.copy:hover {
@@ -582,13 +598,64 @@ body[dir="ltr"] .cms-input-wrapper input {
 }
 
 /* --- Sticky Bottom Footer Actions --- */
+/* Pinned to the bottom of the viewport. As a static block it sat at the end of
+   the document — on the membership tab that put "save" ~5000px down, so every
+   edit meant scrolling the full page to commit it. */
 .cms-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 60;
   margin-top: 32px;
-  padding-top: 24px;
-  border-top: 1px solid var(--border);
+  padding: 16px 20px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--bg2) 92%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 -6px 24px var(--shadow-color);
   display: flex;
+  align-items: center;
   justify-content: flex-end;
-  gap: 16px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Unsaved-changes indicator, pushed to the opposite end of the bar. */
+.cms-dirty {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-inline-end: auto;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--warning);
+}
+
+.cms-dirty::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--warning);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--warning) 25%, transparent);
+}
+
+.cms-saved {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-inline-end: auto;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.cms-saved .material-symbols-outlined { font-size: 17px; color: var(--success); }
+
+@media (max-width: 640px) {
+  .cms-footer { padding: 12px 14px; }
+  .cms-footer .cms-btn-primary,
+  .cms-footer .cms-btn-secondary { flex: 1; justify-content: center; }
 }
 
 .cms-btn-primary, .cms-btn-secondary {
@@ -606,7 +673,7 @@ body[dir="ltr"] .cms-input-wrapper input {
 
 .cms-btn-primary {
   background: var(--primary);
-  color: #080808;
+  color: var(--text-inverse);
   border: none;
 }
 
@@ -738,25 +805,31 @@ body[dir="ltr"] .cms-input-wrapper input {
   opacity: 1 !important;
 }
 
-/* Split Layout for section content */
+/* Split Layout for section content.
+   The side panel used to carry min-width:280px while the form column had no
+   floor of its own, so the form was squeezed to ~180px — narrower than the
+   phone field's own fixed segments, which then spilled outside the card.
+   Both columns now declare a basis and the row wraps instead of starving one. */
 .cms-section-split {
   display: flex;
-  gap: 16px;
+  flex-wrap: wrap;
+  gap: 20px;
 }
 
 .cms-split-main {
-  flex: 2;
+  flex: 2 1 340px;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
 .cms-split-side {
-  flex: 1;
+  flex: 1 1 260px;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 12px;
-  min-width: 280px;
 }
 
 @media (max-width: 768px) {

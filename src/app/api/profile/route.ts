@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { isSubscriptionExpired } from "@/lib/subscription";
 
 export async function GET(request: Request) {
   try {
@@ -39,6 +40,12 @@ export async function GET(request: Request) {
         : (profile.courses.days_data || null);
     }
 
+    /* Single stored end date, shared with the admin view. This used to measure
+       from accounts.created_at and ignore activation_date, while the coach's
+       panel measured from activation_date — so the two could disagree about
+       whether the very same subscription had expired. */
+    const isExpired = isSubscriptionExpired(profile.subscription_ends_at);
+
     // Prepare response data mapped to UI needs
     const responseData = {
       id: profile.id,
@@ -57,9 +64,11 @@ export async function GET(request: Request) {
         lunch: { time: "غير محدد", desc: "انتظر إضافة الجدول" },
         dinner: { time: "غير محدد", desc: "انتظر إضافة الجدول" },
       },
-      workouts: courseData?.workouts || [],
+      workouts: Array.isArray(courseData) ? courseData : (courseData?.workouts || []),
       measurements: data.measurements || null,
       photos: data.photos || null,
+      raw_answers: data, // Return all raw answers for the dashboard
+      isExpired: isExpired,
     };
 
     return NextResponse.json({

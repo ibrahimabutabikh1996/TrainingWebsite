@@ -1,14 +1,11 @@
 "use server";
 
+import type { JsonRecord } from "@/types";
 import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
-import { createClient } from "@supabase/supabase-js";
+import { supabaseAdmin, UPLOADS_BUCKET } from "@/lib/supabaseAdmin";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
-
-export async function saveLandingContent(contentEn: any, contentAr: any) {
+export async function saveLandingContent(contentEn: JsonRecord, contentAr: JsonRecord) {
   try {
     await prisma.site_settings.upsert({
       where: { id: "landing_content" },
@@ -45,6 +42,42 @@ export async function getLandingContent() {
   }
 }
 
+export async function uploadImageServer(formData: FormData): Promise<string | null> {
+  try {
+    const file = formData.get('file') as File;
+    if (!file) return null;
+
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+    const filePath = `images/${fileName}`;
+
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    const { error } = await supabaseAdmin.storage
+      .from('uploads')
+      .upload(filePath, buffer, {
+        cacheControl: '3600',
+        upsert: false,
+        contentType: file.type,
+      });
+
+    if (error) {
+      console.error('Error uploading image securely:', error);
+      return null;
+    }
+
+    const { data: publicUrlData } = supabaseAdmin.storage
+      .from('uploads')
+      .getPublicUrl(filePath);
+
+    return publicUrlData.publicUrl;
+  } catch (error) {
+    console.error('Exception during secure image upload:', error);
+    return null;
+  }
+}
+
 export async function listImagesServer() {
   try {
     const { data, error } = await supabaseAdmin.storage.from('uploads').list('images', {
@@ -60,7 +93,9 @@ export async function listImagesServer() {
 
     if (!data) return [];
 
-    const publicUrlBase = `${supabaseUrl}/storage/v1/object/public/uploads/images/`;
+    /* Ask the client for the address rather than assembling it from the project
+       URL by hand — the same call the upload path already uses. */
+    const publicUrlBase = supabaseAdmin.storage.from(UPLOADS_BUCKET).getPublicUrl("images/").data.publicUrl;
     
     return data
       .filter(file => file.name !== '.emptyFolderPlaceholder')
@@ -101,12 +136,12 @@ export async function deleteImageServer(publicUrl: string): Promise<boolean> {
       });
       
       if (settings) {
-        const contentEn = settings.content_en as any || {};
-        const contentAr = settings.content_ar as any || {};
+        const contentEn = settings.content_en as JsonRecord || {};
+        const contentAr = settings.content_ar as JsonRecord || {};
         let changed = false;
 
         // Recursive helper to clean up matching image URL from JSON content
-        const removeUrl = (obj: any): boolean => {
+        const removeUrl = (obj: JsonRecord): boolean => {
           if (typeof obj !== 'object' || obj === null) return false;
           let localChanged = false;
           for (const key in obj) {

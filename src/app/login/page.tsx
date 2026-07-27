@@ -1,4 +1,5 @@
 "use client";
+import type { JsonRecord } from "@/types";
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -11,7 +12,7 @@ import './login.css';
 export default function LoginPage() {
   const { lang, toggleLang, t } = useLanguage();
   const { toggleTheme } = useTheme();
-  const [cmsData, setCmsData] = useState<any>(null);
+  const [cmsData, setCmsData] = useState<JsonRecord | null>(null);
 
   useEffect(() => {
     async function loadCMS() {
@@ -24,12 +25,17 @@ export default function LoginPage() {
             setCmsData(parsed.payload);
             return;
           }
-        } catch (e) {}
+        } catch {}
       }
 
       const res = await getLandingContent();
       if (res) {
-        setCmsData(lang === "ar" ? res.content_ar : res.content_en);
+        /* The stored column is a free-form JSON value; only an object is usable
+           as content, so anything else is treated as absent. */
+        const content = lang === "ar" ? res.content_ar : res.content_en;
+        if (content && typeof content === "object" && !Array.isArray(content)) {
+          setCmsData(content as JsonRecord);
+        }
       }
     }
     loadCMS();

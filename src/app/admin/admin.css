@@ -159,7 +159,6 @@
 .admin-main-content {
   flex-grow: 1;
   position: relative;
-  z-index: 10;
   overflow-y: auto;
   padding: 40px;
 }

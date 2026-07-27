@@ -1,81 +1,123 @@
 "use client";
 
 import { useLanguage } from "@/contexts/LanguageContext";
+import { FormGrid, SelectField, TextInput } from "./Fields";
+import type { StepProps } from "./types";
 
-interface StepOneProps {
-  formData: any;
-  setFormData: (data: any) => void;
-}
+const ACTIVITY_OPTIONS = [
+  { value: "1", key: "opt_act_1" },
+  { value: "2", key: "opt_act_2" },
+  { value: "3", key: "opt_act_3" },
+  { value: "4", key: "opt_act_4" },
+] as const;
 
-export function StepOneBasicInfo({ formData, setFormData }: StepOneProps) {
+export function StepOneBasicInfo({ formData, update }: StepProps) {
   const { t } = useLanguage();
 
   return (
-    <div className="form-step active" style={{ animation: "fadeIn 0.4s ease" }}>
-      <h2 className="form-step-title section-title">
-        {t("step1_title")}
-      </h2>
-      
-      <div className="form-grid-2">
-        <div className="form-group">
-          <label className="field-label"><span>{t("lbl_fullname")}</span></label>
-          <div className="input-wrapper">
-            <input 
-              type="text" 
-              className="form-input" 
-              required 
-              value={formData.fullname} 
-              onChange={(e) => setFormData({...formData, fullname: e.target.value})} 
-            />
-          </div>
-        </div>
-        
-        <div className="form-group">
-          <label className="field-label"><span>{t("lbl_plan")}</span></label>
-          <div className="input-wrapper">
-            <select 
-              className="form-input" 
-              required 
-              value={formData.plan} 
-              onChange={(e) => setFormData({...formData, plan: e.target.value})}
-            >
-              <option value="">{t("opt_select")}</option>
-              <option value="bronze">{t("opt_plan_bronze")}</option>
-              <option value="silver">{t("opt_plan_silver")}</option>
-              <option value="primary">{t("opt_plan_gold")}</option>
-            </select>
-          </div>
-        </div>
-      </div>
+    <FormGrid>
+      <TextInput
+        label={t("lbl_fullname")}
+        value={formData.fullname}
+        onChange={(fullname) => update({ fullname })}
+        required
+      />
 
-      <div className="form-grid-2">
-        <div className="form-group">
-          <label className="field-label"><span>{t("lbl_gender")}</span></label>
-          <div className="input-wrapper">
-            <select 
-              className="form-input" 
-              required 
-              value={formData.gender} 
-              onChange={(e) => setFormData({...formData, gender: e.target.value})}
-            >
-              <option value="male">{t("opt_gender_male")}</option>
-              <option value="female">{t("opt_gender_female")}</option>
-            </select>
-          </div>
-        </div>
-        <div className="form-group">
-          <label className="field-label"><span>{t("lbl_age")}</span></label>
-          <div className="input-wrapper">
-            <input 
-              type="number" 
-              className="form-input" 
-              required 
-              value={formData.age} 
-              onChange={(e) => setFormData({...formData, age: e.target.value})} 
-            />
-          </div>
-        </div>
-      </div>
-    </div>
+      <TextInput
+        label={t("lbl_phone")}
+        type="tel"
+        inputMode="tel"
+        placeholder={t("ph_phone")}
+        value={formData.phone}
+        onChange={(phone) => update({ phone })}
+        required
+      />
+
+      {/* Locked: the plan comes from the ?plan= link the member arrived on. */}
+      <SelectField
+        label={t("lbl_plan")}
+        value={formData.plan}
+        onChange={(plan) => update({ plan })}
+        options={[
+          { value: "plan1", label: t("card1_badge") },
+          { value: "plan2", label: t("card2_badge") },
+          { value: "plan3", label: t("card3_badge") },
+        ]}
+        required
+        disabled
+        full
+      />
+
+      <SelectField
+        label={t("lbl_gender")}
+        value={formData.gender}
+        onChange={(gender) => update({ gender: gender as "male" | "female" })}
+        options={[
+          { value: "male", label: t("opt_gender_male") },
+          { value: "female", label: t("opt_gender_female") },
+        ]}
+        required
+        noPlaceholder
+      />
+
+      <TextInput
+        label={t("lbl_age")}
+        type="number"
+        inputMode="numeric"
+        min={10}
+        max={100}
+        unit={t("unit_year")}
+        value={formData.age}
+        onChange={(age) => update({ age })}
+        required
+      />
+
+      <TextInput
+        label={t("lbl_weight")}
+        type="number"
+        inputMode="decimal"
+        min={30}
+        max={300}
+        unit={t("unit_kg")}
+        value={formData.weight}
+        onChange={(weight) => update({ weight })}
+        required
+      />
+
+      <TextInput
+        label={t("lbl_height")}
+        type="number"
+        inputMode="numeric"
+        min={100}
+        max={250}
+        unit={t("unit_cm")}
+        value={formData.height}
+        onChange={(height) => update({ height })}
+        required
+      />
+
+      <SelectField
+        label={t("lbl_activity")}
+        value={formData.activity}
+        onChange={(activity) => update({ activity })}
+        options={ACTIVITY_OPTIONS.map((o) => ({ value: o.value, label: t(o.key) }))}
+        required
+        full
+      />
+
+      <TextInput
+        label={t("lbl_residence")}
+        value={formData.residence}
+        onChange={(residence) => update({ residence })}
+        required
+      />
+
+      <TextInput
+        label={t("lbl_employment")}
+        value={formData.employment}
+        onChange={(employment) => update({ employment })}
+        required
+      />
+    </FormGrid>
   );
 }

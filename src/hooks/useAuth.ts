@@ -34,7 +34,7 @@ export function useAuth() {
         router.push("/dashboard");
       }
       return true;
-    } catch (err) {
+    } catch {
       setError(fallbackErrorMessage);
       return false;
     } finally {

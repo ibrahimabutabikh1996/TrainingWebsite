@@ -1,30 +1,126 @@
 "use client";
 
+import type { JsonRecord } from "@/types";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { Profile } from "@/types/admin";
 import { Toaster, toast } from "react-hot-toast";
+import { planLabel } from "@/lib/formLabels";
 import "./crm.css";
 
+/* The intake blob, parsed. Older rows stored it as a string, newer ones as JSON.
+   Lives outside the component: it reads nothing but its argument, and an effect
+   near the top of the component used to call it before its declaration ran. */
+function getProfileData(p: Profile): JsonRecord {
+  if (typeof p.data === "string") {
+    try {
+      return JSON.parse(p.data);
+    } catch {
+      return {};
+    }
+  }
+  return p.data || {};
+}
+
 export default function AdminCRMClient({ initialProfiles }: { initialProfiles: Profile[] }) {
-  const router = useRouter();
   const [search, setSearch] = useState("");
   const [filterPlan, setFilterPlan] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
-  const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
 
-  const profiles = initialProfiles || [];
+  const [profiles, setProfiles] = useState<Profile[]>(initialProfiles || []);
 
-  const getProfileData = (p: Profile) => {
-    if (typeof p.data === "string") {
+  useEffect(() => {
+    // Show persistent toasts for unread profiles on mount
+    profiles.forEach(p => {
+      const data = getProfileData(p);
+      if (data.is_new) {
+        toast(() => (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--primary)', fontWeight: 'bold' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 20 }}>notifications_active</span>
+              {data.is_renewal ? 'طلب تجديد اشتراك!' : 'مشترك جديد!'}
+            </div>
+            <div>
+              قام <strong>{data.fullname || p.username}</strong> للتو بطلب {data.is_renewal ? 'تجديد الاشتراك' : 'التسجيل'} واختار: 
+              <br/> <span style={{ color: 'var(--primary)' }}>{planLabel(data.plan, "غير محدد")}</span>
+            </div>
+          </div>
+        ), {
+          id: p.id, // Use profile ID so we can dismiss it later
+          duration: Infinity, // Doesn't disappear
+        });
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleSelectProfile = async (profile: Profile) => {
+    // Open in a new tab immediately
+    window.open(`/admin/profile/${profile.id}`, '_blank');
+    
+    const data = getProfileData(profile);
+    if (data.is_new) {
+      // Dismiss the toast
+      toast.dismiss(profile.id);
+      
+      // Update local state to remove the badge
+      setProfiles(prev => prev.map(p => {
+        if (p.id === profile.id) {
+          const pData = getProfileData(p);
+          return { ...p, data: { ...pData, is_new: false } };
+        }
+        return p;
+      }));
+
+      // Call API to update database
       try {
-        return JSON.parse(p.data);
-      } catch (e) {
-        return {};
+        await fetch("/api/mark-read", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: profile.id })
+        });
+      } catch (err) {
+        console.error("Failed to mark profile as read", err);
       }
     }
-    return p.data || {};
+  };
+
+  const handleToggleSuspend = async (e: React.MouseEvent, profile: Profile) => {
+    e.stopPropagation(); // Prevent card click
+    
+    const data = getProfileData(profile);
+    const isSuspended = !!profile.is_suspended;
+
+    if (!confirm(`هل أنت متأكد من رغبتك في ${isSuspended ? "تفعيل" : "إيقاف"} حساب ${data.fullname || profile.username}؟`)) return;
+
+    try {
+      const res = await fetch("/api/admin/suspend-account", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ profileId: profile.id, isSuspended: !isSuspended }),
+      });
+      const result = await res.json();
+
+      if (!res.ok) {
+        toast.error(result.error || "حدث خطأ");
+        return;
+      }
+
+      toast.success(`تم ${isSuspended ? "تفعيل" : "إيقاف"} الحساب بنجاح`);
+      
+      // Update local state
+      setProfiles(prev => prev.map(p => {
+        if (p.id === profile.id) {
+          const pData = getProfileData(p);
+          const newIsSuspended = !isSuspended;
+          const newActivationDate = (!newIsSuspended && !pData.activation_date) ? new Date().toISOString() : pData.activation_date;
+          return { ...p, is_suspended: newIsSuspended, data: { ...pData, is_suspended: newIsSuspended, activation_date: newActivationDate } };
+        }
+        return p;
+      }));
+
+    } catch {
+      toast.error("حدث خطأ في الاتصال بالخادم");
+    }
   };
 
   const filteredProfiles = profiles
@@ -37,10 +133,13 @@ export default function AdminCRMClient({ initialProfiles }: { initialProfiles: P
       
       if (!matchesSearch) return false;
       if (filterPlan !== "all") {
-        const plan = data.plan?.toLowerCase() || "";
-        if (filterPlan === "bronze") return plan.includes("برونز") || plan.includes("bronze") || plan.includes("ذاتي");
-        if (filterPlan === "silver") return plan.includes("فض") || plan.includes("silver") || plan.includes("اسبوع") || plan.includes("أسبوع");
-        if (filterPlan === "primary") return plan.includes("ذهب") || plan.includes("primary") || plan.includes("يومي");
+        /* Stored as the plan key from the landing-page link ("plan1".."plan3"),
+           never as Arabic text — the old substring matching never matched, so
+           every filter returned an empty list. */
+        const plan = String(data.plan || "");
+        if (filterPlan === "bronze") return plan === "plan1";
+        if (filterPlan === "silver") return plan === "plan2";
+        if (filterPlan === "primary") return plan === "plan3";
       }
       return true;
     })
@@ -49,18 +148,6 @@ export default function AdminCRMClient({ initialProfiles }: { initialProfiles: P
       const dateB = new Date(b.created_at).getTime();
       return sortBy === "newest" ? dateB - dateA : dateA - dateB;
     });
-
-  const handleChatTrainee = () => {
-    if (!selectedProfile) return;
-    const data = getProfileData(selectedProfile);
-    const phone = data.phone || data.mobile;
-    if (!phone) {
-      toast.error("لا يوجد رقم هاتف مسجل لهذا المشترك.");
-      return;
-    }
-    const cleanPhone = phone.replace(/[^0-9]/g, "");
-    window.open(`https://wa.me/${cleanPhone}`, "_blank");
-  };
 
   // Calculate Stats
   const totalSubscribers = profiles.length;
@@ -92,10 +179,10 @@ export default function AdminCRMClient({ initialProfiles }: { initialProfiles: P
         }} 
       />
       
-      <div className={`crm-split-layout ${selectedProfile ? 'has-drawer' : ''}`}>
+      <div className="crm-split-layout">
         
         {/* Main List Area */}
-        <div className="crm-main-area">
+        <div className="crm-main-area" style={{ width: '100%', maxWidth: '1200px', margin: '0 auto' }}>
           
           <div className="crm-hero-header">
             <div className="crm-hero-title-group">
@@ -153,35 +240,58 @@ export default function AdminCRMClient({ initialProfiles }: { initialProfiles: P
             ) : (
               filteredProfiles.map((profile, i) => {
                 const data = getProfileData(profile);
-                const isSelected = selectedProfile?.id === profile.id;
                 const displayName = data.fullname || profile.username;
                 const initial = displayName ? displayName.charAt(0).toUpperCase() : "?";
 
                 return (
                   <div 
                     key={profile.id} 
-                    className={`crm-list-card ${isSelected ? 'selected' : ''}`}
-                    onClick={() => setSelectedProfile(profile)}
+                    className="crm-list-card"
+                    onClick={() => handleSelectProfile(profile)}
                     style={{ animationDelay: `${i * 0.03}s` }}
                   >
-                    <div className="crm-card-avatar">{initial}</div>
+                    <div className="crm-card-avatar" style={{ position: 'relative' }}>
+                      {initial}
+                      {data.is_new && (
+                        <div style={{ position: 'absolute', top: -2, right: -2, width: 12, height: 12, background: '#ef4444', borderRadius: '50%', border: '2px solid var(--bg-2)' }} title="مشترك جديد"></div>
+                      )}
+                    </div>
                     
                     <div className="crm-card-info">
-                      <h4 className="crm-card-name">{displayName}</h4>
-                      <span className="crm-card-handle">@{profile.username}</span>
+                      <h4 className="crm-card-name" style={{ margin: 0 }}>{displayName}</h4>
                     </div>
 
                     <div className="crm-card-meta">
                       <span className={`crm-tag ${data.plan ? 'primary-tag' : ''}`}>
-                        {data.plan || "غير محدد"}
+                        {planLabel(data.plan, "غير محدد")}
                       </span>
-                      <span className="crm-card-date">
+                      <span className="crm-card-date" title="تاريخ بداية الاشتراك">
                         <span className="material-symbols-outlined" style={{ fontSize: 14 }}>calendar_today</span>
-                        {new Date(profile.created_at).toLocaleDateString("ar-SA")}
+                        {new Date(data.activation_date || profile.created_at).toLocaleDateString("ar-SA")}
                       </span>
                     </div>
 
-                    <div className="crm-card-actions">
+                    <div className="crm-card-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <button 
+                        onClick={(e) => handleToggleSuspend(e, profile)}
+                        title={profile.is_suspended ? "تفعيل الحساب" : "إيقاف الحساب"}
+                        style={{ 
+                          background: 'transparent', 
+                          border: 'none', 
+                          color: profile.is_suspended ? 'var(--primary)' : 'var(--error, #ef4444)',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          padding: '4px',
+                          borderRadius: '4px',
+                          transition: '0.2s'
+                        }}
+                      >
+                        <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
+                          {profile.is_suspended ? 'play_circle' : 'block'}
+                        </span>
+                      </button>
                       <span className="material-symbols-outlined crm-chevron">chevron_left</span>
                     </div>
                   </div>
@@ -190,165 +300,6 @@ export default function AdminCRMClient({ initialProfiles }: { initialProfiles: P
             )}
           </div>
         </div>
-
-        {/* Side Drawer */}
-        {selectedProfile && (
-          <div className="crm-side-drawer">
-            <div className="crm-drawer-header">
-              <button className="crm-drawer-close" onClick={() => setSelectedProfile(null)}>
-                <span className="material-symbols-outlined">close</span>
-              </button>
-              <div className="crm-drawer-actions">
-                <button 
-                  onClick={handleChatTrainee}
-                  className="crm-btn-icon"
-                  title="مراسلة واتساب"
-                >
-                  <span className="material-symbols-outlined">chat</span>
-                </button>
-                <Link 
-                  href={`/admin/builder?traineeId=${selectedProfile.id}`}
-                  className="crm-btn-primary"
-                  style={{ padding: '8px 16px', fontSize: '0.85rem', textDecoration: 'none' }}
-                >
-                  <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>edit_document</span>
-                  تصميم كورس
-                </Link>
-              </div>
-            </div>
-
-            <div className="crm-drawer-scroll-area">
-              <div className="crm-modal-header" style={{ borderBottom: 'none', paddingBottom: 0 }}>
-                <div className="crm-modal-avatar">
-                  {selectedProfile.data?.fullname ? selectedProfile.data.fullname.charAt(0).toUpperCase() : selectedProfile.username.charAt(0).toUpperCase()}
-                </div>
-                <div className="crm-modal-header-info">
-                  <h3>{selectedProfile.data?.fullname || selectedProfile.username}</h3>
-                  <p>@{selectedProfile.username} • منذ {new Date(selectedProfile.created_at).toLocaleDateString("ar-SA")}</p>
-                  <div style={{ display: 'flex', gap: '8px', marginTop: '12px', flexWrap: 'wrap' }}>
-                    {selectedProfile.data?.plan && (
-                      <span className="crm-tag primary-tag">{selectedProfile.data.plan}</span>
-                    )}
-                    {selectedProfile.data?.activity && (
-                      <span className="crm-tag">{selectedProfile.data.activity}</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="crm-modal-grid-new" style={{ display: 'flex', flexDirection: 'column', marginTop: '32px' }}>
-                
-                <div className="crm-modal-section">
-                  <h4 className="crm-modal-section-title">
-                    <span className="material-symbols-outlined">person</span>
-                    المعلومات الأساسية
-                  </h4>
-                  <div className="crm-stats-grid-small" style={{ gridTemplateColumns: '1fr 1fr' }}>
-                    <div className="crm-stat-box-small">
-                      <span className="material-symbols-outlined">cake</span>
-                      <div className="crm-stat-box-info">
-                        <span className="label">العمر</span>
-                        <span className="value">{selectedProfile.data?.age ? `${selectedProfile.data.age} سنة` : "--"}</span>
-                      </div>
-                    </div>
-                    <div className="crm-stat-box-small">
-                      <span className="material-symbols-outlined">wc</span>
-                      <div className="crm-stat-box-info">
-                        <span className="label">الجنس</span>
-                        <span className="value">{selectedProfile.data?.gender === "female" ? "أنثى" : (selectedProfile.data?.gender === "male" ? "ذكر" : "--")}</span>
-                      </div>
-                    </div>
-                    <div className="crm-stat-box-small" style={{ gridColumn: '1 / -1' }}>
-                      <span className="material-symbols-outlined">call</span>
-                      <div className="crm-stat-box-info">
-                        <span className="label">رقم الهاتف</span>
-                        <span className="value" style={{ direction: "ltr", textAlign: "right" }}>{selectedProfile.data?.phone || selectedProfile.data?.mobile || "غير مسجل"}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="crm-modal-section">
-                  <h4 className="crm-modal-section-title">
-                    <span className="material-symbols-outlined">monitor_weight</span>
-                    المؤشرات البدنية
-                  </h4>
-                  <div className="crm-stats-grid-small" style={{ gridTemplateColumns: '1fr 1fr' }}>
-                    <div className="crm-stat-box-small">
-                      <span className="material-symbols-outlined">height</span>
-                      <div className="crm-stat-box-info">
-                        <span className="label">الطول</span>
-                        <span className="value">{selectedProfile.data?.height ? `${selectedProfile.data.height} سم` : "--"}</span>
-                      </div>
-                    </div>
-                    <div className="crm-stat-box-small">
-                      <span className="material-symbols-outlined">scale</span>
-                      <div className="crm-stat-box-info">
-                        <span className="label">الوزن</span>
-                        <span className="value">{selectedProfile.data?.weight ? `${selectedProfile.data.weight} كج` : "--"}</span>
-                      </div>
-                    </div>
-                    <div className="crm-stat-box-small primary-box" style={{ gridColumn: '1 / -1' }}>
-                      <span className="material-symbols-outlined">target</span>
-                      <div className="crm-stat-box-info">
-                        <span className="label">الوزن المستهدف</span>
-                        <span className="value primary-text">{selectedProfile.data?.targetWeight ? `${selectedProfile.data.targetWeight} كج` : "--"}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="crm-modal-section">
-                  <h4 className="crm-modal-section-title">
-                    <span className="material-symbols-outlined">flag</span>
-                    الهدف الصحي
-                  </h4>
-                  <div className="crm-stat-box-small highlight-box">
-                    <div className="crm-stat-box-info">
-                      <span className="value" style={{ lineHeight: '1.6' }}>{selectedProfile.data?.goal || "لم يقم المتدرب بتحديد هدف تفصيلي بعد."}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {selectedProfile.data?.allergies && (
-                  <div className="crm-modal-section">
-                    <h4 className="crm-modal-section-title">
-                      <span className="material-symbols-outlined">warning</span>
-                      ملاحظات صحية (حساسية)
-                    </h4>
-                    <div className="crm-stat-box-small" style={{ borderLeft: '4px solid var(--error, #ef4444)' }}>
-                      <div className="crm-stat-box-info">
-                        <span className="value" style={{ lineHeight: '1.6' }}>{selectedProfile.data.allergies}</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-              </div>
-
-              {selectedProfile.data?.photos && Object.keys(selectedProfile.data.photos).length > 0 && (
-                <div className="crm-modal-gallery" style={{ marginTop: '32px' }}>
-                  <h4 style={{ marginBottom: '16px', fontSize: '1rem', color: 'var(--admin-on-surface)' }}>التطور الجسدي (الصور)</h4>
-                  <div className="crm-gallery-scroll">
-                    {Object.entries(selectedProfile.data.photos).map(([key, url]: [string, any]) => (
-                      url && (
-                        <div key={key} className="crm-gallery-item">
-                          <div className="crm-gallery-img">
-                            <img src={url} alt={key} loading="lazy" />
-                          </div>
-                          <span>
-                            {key === "front" ? "أمامية" : key === "back" ? "خلفية" : key === "side" ? "جانبية" : key}
-                          </span>
-                        </div>
-                      )
-                    ))}
-                  </div>
-                </div>
-              )}
-
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -68,7 +68,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
 
         <div style={{ padding: "0 16px", display: "flex", flexDirection: "column", gap: 8 }}>
-          <button 
+          <Link href="/account/password" className="admin-logout-btn" style={{ color: "var(--admin-on-surface)", textDecoration: "none" }}>
+            <div className="admin-nav-link-inner">
+              <span className="material-symbols-outlined" style={{ fontSize: 20 }}>lock_reset</span>
+              <span className="admin-nav-text">تغيير كلمة المرور</span>
+            </div>
+          </Link>
+
+          <button
             onClick={toggleTheme}
             className="admin-logout-btn"
             style={{ color: "var(--admin-on-surface)" }}

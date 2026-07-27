@@ -4,7 +4,7 @@ import AdminCRMClient from "./AdminCRMClient";
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboardPage() {
-  let profiles: any[] = [];
+  let profiles: Awaited<ReturnType<typeof prisma.profiles.findMany>> = [];
   
   try {
     profiles = await prisma.profiles.findMany({
@@ -20,6 +20,8 @@ export default async function AdminDashboardPage() {
     username: p.username,
     created_at: p.created_at.toISOString(),
     data: p.data || {},
+    // Authoritative flag, from the column rather than the JSON blob.
+    is_suspended: p.is_suspended,
   }));
 
   return <AdminCRMClient initialProfiles={serializedProfiles} />;

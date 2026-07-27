@@ -1,30 +1,30 @@
 'use client';
+import type { JsonRecord } from "@/types";
 import './landing.css';
 import Link from 'next/link';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { getLandingContent } from './admin/cms/actions';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 
-const translations: any = {
+const translations: Record<string, JsonRecord> = {
         en: {
           site_title: "GYM – Train Hard. Train Smart.",
-          nav_logo: `<div class="nav-logo-mark">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-          </svg>
-        </div>
-        Training Tracking Website`,
+          nav_logo_text: "Training Tracking Website",
           nav_home: "Home",
           nav_coach: "Meet the Coach",
           nav_membership: "Membership",
           nav_contact: "Contact",
           nav_cta: "Sign In",
+          skip_link: "Skip to content",
+          hero_eyebrow: "Personal Training & Nutrition",
           hero_title: "Train Hard<br /><em>Train Smart</em>",
           hero_quote: "My diet rule is to never let it last for more than 3 months",
           hero_sub: "Elite fitness programs built for serious achievers",
           hero_btn: "Sign In",
+          hero_btn2: "View Plans",
+          hero_scroll: "Scroll",
           coach_eyebrow: "Complete Profile",
           coach_title: "MEET THE COACH",
           coach_img_alt: "Coach Profile",
@@ -68,7 +68,7 @@ const translations: any = {
           card2_f3: "Organize your lifestyle",
           card3_alt: "Daily Check-ins",
           card3_badge: "Monthly Plan (Daily Check-ins)",
-          card3_desc: "This is the surest way to reach your goal. Daily check-ins will help you stick to the plan. Good for people who tried everything but couldn't stay committed.",
+          card3_desc: "This is the surest way to reach your goal. Daily check-ins will help you stick to the plan. Good for people who tried everything but couldn&apos;t stay committed.",
           card3_p1_label: "Full 3-Month Diet Plan",
           card3_p1_val: "300,000 IQD",
           card3_p2_label: "Monthly Payment (1 Month)",
@@ -79,41 +79,34 @@ const translations: any = {
           card3_f3: "Sure way to reach your goal",
           contact_eyebrow: "Get In Touch",
           contact_title: "CONTACT INFO",
-          contact_phone: "Phone Number",
-          contact_email: "Email",
-          contact_ig: "Instagram",
+          contact_phone_label: "Phone Number",
+          contact_phone: "+964 787 751 1605",
+          contact_email_label: "Email",
+          contact_email: "ibrahim1996.im@gmail.com",
+          contact_ig_label: "Instagram",
+          contact_ig: "@ibrahim-abutabikh",
           contact_img_alt: "Male Trainer Image",
           footer_tagline: "My diet rule is to never let it last for more than 3 months",
-          footer_brand: `<div class="footer-brand-mark">
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                >
-                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-                </svg>
-              </div>
-              Training Tracking Website`,
+          footer_brand_text: "Training Tracking Website",
+          footer_links_title: "Quick Links",
           footer_copy: "© 2026 All rights reserved"
         },
         ar: {
           site_title: "موقع تتبع التدريب – تدرب بقوة، تدرب بذكاء",
-          nav_logo: `<div class="nav-logo-mark">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-          </svg>
-        </div>
-        موقع تتبع التدريب`,
+          nav_logo_text: "موقع تتبع التدريب",
           nav_home: "الرئيسية",
           nav_coach: "المدرب",
           nav_membership: "الاشتراكات",
           nav_contact: "تواصل معنا",
           nav_cta: "تسجيل الدخول",
+          skip_link: "تخطي إلى المحتوى",
+          hero_eyebrow: "تدريب شخصي وتغذية",
           hero_title: "تدرب بقوة<br /><em>تدرب بذكاء</em>",
           hero_quote: "شعاري بالدايت بأن ما اخلي يستمر لأكثر من 3 اشهر",
           hero_sub: "برامج لياقة بدنية مصممة للملتزمين الجادين",
           hero_btn: "تسجيل الدخول",
+          hero_btn2: "تصفح الاشتراكات",
+          hero_scroll: "انزل",
           coach_eyebrow: "الملف الشخصي الكامل",
           coach_title: "تعرف على المدرب",
           coach_img_alt: "صورة المدرب",
@@ -168,22 +161,16 @@ const translations: any = {
           card3_f3: "أضمن طريق للوصول لهدفك",
           contact_eyebrow: "تواصل معنا",
           contact_title: "معلومات التواصل",
-          contact_phone: "رقم الهاتف",
-          contact_email: "البريد الإلكتروني",
-          contact_ig: "إنستغرام",
+          contact_phone_label: "رقم الهاتف",
+          contact_phone: "+964 787 751 1605",
+          contact_email_label: "البريد الإلكتروني",
+          contact_email: "ibrahim1996.im@gmail.com",
+          contact_ig_label: "إنستغرام",
+          contact_ig: "@ibrahim-abutabikh",
           contact_img_alt: "صورة المدرب",
           footer_tagline: "شعاري بالدايت بأن ما اخلي يستمر لأكثر من 3 اشهر",
-          footer_brand: `<div class="footer-brand-mark">
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                >
-                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-                </svg>
-              </div>
-              موقع تتبع التدريب`,
+          footer_brand_text: "موقع تتبع التدريب",
+          footer_links_title: "روابط سريعة",
           footer_copy: "© جميع الحقوق محفوظة 2026"
         }
       };
@@ -191,32 +178,24 @@ const translations: any = {
 export default function LandingPage() {
   const { lang, toggleLang } = useLanguage();
   const { toggleTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  // Lock the page behind the mobile drawer, and let Escape close it
   useEffect(() => {
-    setMounted(true);
+    document.body.classList.toggle("nav-open", menuOpen);
+    if (!menuOpen) return;
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMenuOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [menuOpen]);
+
+  useEffect(() => {
+    return () => document.body.classList.remove("nav-open");
   }, []);
 
   useEffect(() => {
-    const burgerMenu = document.getElementById("burgerMenu");
-    const navLinksContainer = document.querySelector(".nav-links");
-
-    if (burgerMenu && navLinksContainer) {
-      const newBurger = burgerMenu.cloneNode(true) as HTMLElement;
-      if (burgerMenu.parentNode) burgerMenu.parentNode.replaceChild(newBurger, burgerMenu);
-      
-      newBurger.addEventListener("click", () => {
-        newBurger.classList.toggle("active");
-        navLinksContainer.classList.toggle("active");
-      });
-
-      document.querySelectorAll(".nav-links a").forEach((link) => {
-        link.addEventListener("click", () => {
-          newBurger.classList.remove("active");
-          navLinksContainer.classList.remove("active");
-        });
-      });
-    }
-
     // Nav scroll effect
     const navbar = document.getElementById("navbar");
     const handleScroll = () => {
@@ -226,12 +205,23 @@ export default function LandingPage() {
 
     // Hero parallax & load
     const heroBg = document.getElementById("heroBg");
+    let parallax: (() => void) | null = null;
+    let loadTimer: ReturnType<typeof setTimeout> | undefined;
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (heroBg) {
-      setTimeout(() => heroBg.classList.add("loaded"), 100);
-      const parallax = () => {
-        heroBg.style.transform = `scale(${1.06 + window.scrollY * 0.0005})`;
-      };
-      window.addEventListener("scroll", parallax, { passive: true });
+      loadTimer = setTimeout(() => heroBg.classList.add("loaded"), 100);
+      if (!reduceMotion) {
+        let ticking = false;
+        parallax = () => {
+          if (ticking) return;
+          ticking = true;
+          requestAnimationFrame(() => {
+            heroBg.style.transform = `scale(${1.06 + window.scrollY * 0.0005})`;
+            ticking = false;
+          });
+        };
+        window.addEventListener("scroll", parallax, { passive: true });
+      }
     }
 
     // Nav active links
@@ -263,27 +253,43 @@ export default function LandingPage() {
     );
     reveals.forEach((r) => obs.observe(r));
     
-    // Smooth scroll
-    document.querySelectorAll('a[href^="#"]').forEach((a) => {
-      a.addEventListener("click", (e) => {
+    // Smooth scroll — delegated so it survives re-renders and CMS DOM swaps
+    const handleAnchorClick = (e: MouseEvent) => {
+      const anchor = (e.target as HTMLElement | null)?.closest?.('a[href^="#"]');
+      if (!anchor) return;
+      const href = anchor.getAttribute("href");
+      // A bare "#" is not a valid selector — treat it as "back to top"
+      if (!href || href === "#") {
         e.preventDefault();
-        const t = document.querySelector(a.getAttribute("href") || "");
-        if (t) t.scrollIntoView({ behavior: "smooth" });
-      });
-    });
+        window.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" });
+        return;
+      }
+      const target = document.querySelector(href);
+      if (!target) return;
+      e.preventDefault();
+      target.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth" });
+    };
+    document.addEventListener("click", handleAnchorClick);
 
     return () => {
       window.removeEventListener("scroll", handleScroll);
       window.removeEventListener("scroll", scrollSpy);
+      if (parallax) window.removeEventListener("scroll", parallax);
+      if (loadTimer) clearTimeout(loadTimer);
+      document.removeEventListener("click", handleAnchorClick);
+      obs.disconnect();
     };
   }, []);
 
-  const [cmsData, setCmsData] = useState<{en: any, ar: any} | null>(null);
+  const [cmsData, setCmsData] = useState<{ en: JsonRecord; ar: JsonRecord } | null>(null);
 
   useEffect(() => {
     getLandingContent().then(res => {
+      /* Both columns hold free-form JSON; only objects are usable as content. */
+      const asRecord = (v: unknown): JsonRecord =>
+        v && typeof v === "object" && !Array.isArray(v) ? (v as JsonRecord) : {};
       if (res) {
-        setCmsData({ en: res.content_en, ar: res.content_ar });
+        setCmsData({ en: asRecord(res.content_en), ar: asRecord(res.content_ar) });
       }
     });
 
@@ -303,9 +309,9 @@ export default function LandingPage() {
     const tr = {
       en: { ...translations.en, ...(cmsData?.en || {}) },
       ar: { ...translations.ar, ...(cmsData?.ar || {}) }
-    } as any;
+    } as JsonRecord;
     
-    const applyDOMUpdates = (activeData: any, currentLang: string, allTr: any) => {
+    const applyDOMUpdates = (activeData: JsonRecord, currentLang: string, allTr: JsonRecord) => {
       document.querySelectorAll("[data-i18n]").forEach(el => {
         const key = el.getAttribute("data-i18n") as string;
         // Use activeData if available, otherwise fallback to translations
@@ -340,6 +346,18 @@ export default function LandingPage() {
 
         const card3ImgEl = document.getElementById("card3-img-el") as HTMLImageElement;
         if (card3ImgEl && activeData.card3_img_url) { card3ImgEl.src = activeData.card3_img_url; }
+
+        const contactImgEl = document.getElementById("contact-img-el") as HTMLImageElement;
+        if (contactImgEl && activeData.contact_img_url) { contactImgEl.src = activeData.contact_img_url; }
+
+        const phoneLink = document.getElementById("contact-phone-link") as HTMLAnchorElement;
+        if (phoneLink && activeData.contact_phone) { phoneLink.href = `tel:${activeData.contact_phone.replace(/\\s+/g, '')}`; }
+
+        const emailLink = document.getElementById("contact-email-link") as HTMLAnchorElement;
+        if (emailLink && activeData.contact_email) { emailLink.href = `mailto:${activeData.contact_email}`; }
+
+        const igLink = document.getElementById("contact-ig-link") as HTMLAnchorElement;
+        if (igLink && activeData.contact_ig) { igLink.href = `https://instagram.com/${activeData.contact_ig.replace('@', '')}`; }
 
         // Handle card active/deactivated states
         const handleCardActivation = (cardIndex: number, isActive: boolean) => {
@@ -399,7 +417,7 @@ export default function LandingPage() {
         try {
           const { lang: previewLang, payload } = JSON.parse(savedData);
           applyDOMUpdates(payload, previewLang, tr);
-        } catch (e) {}
+        } catch {}
       }
 
       // 2. Listen to storage changes (across tabs)
@@ -408,7 +426,7 @@ export default function LandingPage() {
           try {
             const { lang: previewLang, payload } = JSON.parse(e.newValue);
             applyDOMUpdates(payload, previewLang, tr);
-          } catch (err) {}
+          } catch {}
         }
       };
 
@@ -432,21 +450,35 @@ export default function LandingPage() {
 
   return (
     <div className="landing-wrapper">
+      <a href="#main" className="skip-link" data-i18n="skip_link">Skip to content</a>
+
       {/* NAV */}
     <nav id="navbar">
-      <a href="#" className="nav-logo" data-i18n="nav_logo">
-        <div className="nav-logo-mark">
+      {/* The mark is structure, not copy — only the wordmark is translatable.
+          Feeding the whole logo through data-i18n let a malformed CMS string
+          wipe out the icon and the brand name. */}
+      <a href="#home" className="nav-logo">
+        <span className="nav-logo-mark" aria-hidden="true">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
             <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
           </svg>
-        </div>
-        Training Tracking Website
+        </span>
+        <span className="nav-logo-text" data-i18n="nav_logo_text">
+          Training Tracking Website
+        </span>
       </a>
-      <ul className="nav-links">
+      <ul
+        id="primaryNav"
+        className={`nav-links${menuOpen ? " active" : ""}`}
+        onClick={() => setMenuOpen(false)}
+      >
         <li><a href="#home" className="active" data-i18n="nav_home">Home</a></li>
         <li><a href="#coach" data-i18n="nav_coach">Meet the Coach</a></li>
         <li><a href="#membership" data-i18n="nav_membership">Membership</a></li>
         <li><a href="#contact" data-i18n="nav_contact">Contact</a></li>
+        <li className="nav-drawer-cta">
+          <Link href="/login" className="nav-cta" data-i18n="nav_cta">Sign In</Link>
+        </li>
       </ul>
       <div className="nav-actions">
         <button className="theme-toggle" id="themeToggle" onClick={toggleTheme} aria-label="Toggle theme">
@@ -489,20 +521,38 @@ export default function LandingPage() {
           </svg>
         </button>
         <div id="headerControlsContainer"></div>
-        <Link href="/login" className="nav-cta" dangerouslySetInnerHTML={{ __html: translations[lang]?.[ "nav_cta" ] || "" }}></Link>
-        <div className="burger-menu" id="burgerMenu">
+        <Link href="/login" className="nav-cta" data-i18n="nav_cta">Sign In</Link>
+        <button
+          type="button"
+          className={`burger-menu${menuOpen ? " active" : ""}`}
+          id="burgerMenu"
+          aria-label={lang === "ar" ? "القائمة" : "Menu"}
+          aria-expanded={menuOpen}
+          aria-controls="primaryNav"
+          onClick={() => setMenuOpen((v) => !v)}
+        >
           <span></span>
           <span></span>
           <span></span>
-        </div>
+        </button>
       </div>
     </nav>
+    <div
+      className={`nav-overlay${menuOpen ? " active" : ""}`}
+      onClick={() => setMenuOpen(false)}
+      aria-hidden="true"
+    />
 
     {/* HERO */}
+    <main id="main">
     <section className="hero" id="home">
       <div className="hero-bg" id="heroBg"></div>
+      <div className="hero-scrim"></div>
       <div className="hero-accent-line"></div>
       <div className="hero-content">
+        <div className="hero-eyebrow" data-i18n="hero_eyebrow">
+          Personal Training &amp; Nutrition
+        </div>
         <h1 data-i18n="hero_title">Train Hard<br /><em>Train Smart</em></h1>
         <p className="hero-quote" data-i18n="hero_quote">
           My diet rule is to never let it last for more than 3 months
@@ -511,9 +561,14 @@ export default function LandingPage() {
           Elite fitness programs built for serious achievers
         </p>
         <div className="hero-btns">
-          <Link href="/login" className="btn-primary" data-i18n="hero_btn">Join Now</Link>
+          <Link href="/login" className="btn-primary" data-i18n="hero_btn">Sign In</Link>
+          <a href="#membership" className="btn-secondary" data-i18n="hero_btn2">View Plans</a>
         </div>
       </div>
+      <a href="#coach" className="hero-scroll-cue" aria-label={lang === "ar" ? "انزل للأسفل" : "Scroll down"}>
+        <span data-i18n="hero_scroll">Scroll</span>
+        <span className="cue-track" aria-hidden="true"></span>
+      </a>
     </section>
 
     {/* MEET THE COACH */}
@@ -571,15 +626,18 @@ export default function LandingPage() {
           <div className="section-title" data-i18n="mem_title">MEMBERSHIP</div>
           <div className="primary-divider"></div>
         </div>
-        <div className="membership-grid reveal">
+        <div className="membership-grid">
           {/* Card 1 */}
-          <div className="membership-card">
-            <img
-              id="card1-img-el"
-              className="membership-card-img"
-              src="https://images.unsplash.com/photo-1540497077202-7c8a3999166f?w=600&q=80&fit=crop"
-              alt="Self-Guided Plans" data-i18n-alt="card1_alt"
-            />
+          <div className="membership-card reveal">
+            <div className="membership-card-media">
+              <img
+                id="card1-img-el"
+                className="membership-card-img"
+                loading="lazy"
+                src="https://images.unsplash.com/photo-1540497077202-7c8a3999166f?w=600&q=80&fit=crop"
+                alt="Self-Guided Plans" data-i18n-alt="card1_alt"
+              />
+            </div>
             <div className="membership-card-body">
               <div className="membership-badge" data-i18n="card1_badge">Self-Guided Plans</div>
               <p className="membership-desc" data-i18n="card1_desc">
@@ -603,18 +661,21 @@ export default function LandingPage() {
                 <li data-i18n="card1_f2">Good diet guide</li>
                 <li data-i18n="card1_f3">Do it yourself</li>
               </ul>
-              <button className="btn-card" data-i18n="card_btn">Choose Plan</button>
+              <Link href="/form?plan=plan1" className="btn-card" data-i18n="card_btn">Choose Plan</Link>
             </div>
           </div>
 
           {/* Card 2 */}
-          <div className="membership-card">
-            <img
-              id="card2-img-el"
-              className="membership-card-img"
-              src="https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=600&q=80&fit=crop"
-              alt="Weekly Check-ins" data-i18n-alt="card2_alt"
-            />
+          <div className="membership-card featured reveal">
+            <div className="membership-card-media">
+              <img
+                id="card2-img-el"
+                className="membership-card-img"
+                loading="lazy"
+                src="https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=600&q=80&fit=crop"
+                alt="Weekly Check-ins" data-i18n-alt="card2_alt"
+              />
+            </div>
             <div className="membership-card-body">
               <div className="membership-badge" data-i18n="card2_badge">
                 Monthly Plan (Weekly Check-ins)
@@ -645,24 +706,27 @@ export default function LandingPage() {
                 <li data-i18n="card2_f2">Weekly check-ins</li>
                 <li data-i18n="card2_f3">Organize your lifestyle</li>
               </ul>
-              <button className="btn-card" data-i18n="card_btn">Choose Plan</button>
+              <Link href="/form?plan=plan2" className="btn-card" data-i18n="card_btn">Choose Plan</Link>
             </div>
           </div>
 
           {/* Card 3 */}
-          <div className="membership-card">
-            <img
-              id="card3-img-el"
-              className="membership-card-img"
-              src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=600&q=80&fit=crop"
-              alt="Daily Check-ins" data-i18n-alt="card3_alt"
-            />
+          <div className="membership-card reveal">
+            <div className="membership-card-media">
+              <img
+                id="card3-img-el"
+                className="membership-card-img"
+                loading="lazy"
+                src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=600&q=80&fit=crop"
+                alt="Daily Check-ins" data-i18n-alt="card3_alt"
+              />
+            </div>
             <div className="membership-card-body">
               <div className="membership-badge" data-i18n="card3_badge">Monthly Plan (Daily Check-ins)</div>
               <p className="membership-desc" data-i18n="card3_desc">
                 This is the surest way to reach your goal. Daily check-ins will
                 help you stick to the plan. Good for people who tried everything
-                but couldn't stay committed.
+                but couldn&apos;t stay committed.
               </p>
               <div className="price-row">
                 <span className="price-label" data-i18n="card3_p1_label">Full 3-Month Diet Plan</span>
@@ -681,7 +745,7 @@ export default function LandingPage() {
                 <li data-i18n="card3_f2">Guaranteed commitment</li>
                 <li data-i18n="card3_f3">Sure way to reach your goal</li>
               </ul>
-              <button className="btn-card" data-i18n="card_btn">Choose Plan</button>
+              <Link href="/form?plan=plan3" className="btn-card" data-i18n="card_btn">Choose Plan</Link>
             </div>
           </div>
         </div>
@@ -698,78 +762,49 @@ export default function LandingPage() {
         </div>
         <div className="contact-layout reveal">
           <div className="contact-info">
-            <div className="contact-item">
+            <a id="contact-phone-link" className="contact-item" href="tel:+9647877511605">
               <div className="contact-icon">
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path
-                    d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"
-                  />
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
                 </svg>
               </div>
               <div>
-                <h4 data-i18n="contact_phone">Phone Number</h4>
-                <p>07877511605</p>
+                <h4 data-i18n="contact_phone_label">Phone Number</h4>
+                <p dir="ltr" data-i18n="contact_phone">07877511605</p>
               </div>
-            </div>
-            <div className="contact-item">
+            </a>
+            <a id="contact-email-link" className="contact-item" href="mailto:ibrahim1996.im@gmail.com">
               <div className="contact-icon">
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path
-                    d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"
-                  />
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
                   <polyline points="22,6 12,13 2,6" />
                 </svg>
               </div>
               <div>
-                <h4 data-i18n="contact_email">Email</h4>
-                <p>ibrahim1996.im@gmail.com</p>
+                <h4 data-i18n="contact_email_label">Email</h4>
+                <p dir="ltr" data-i18n="contact_email">ibrahim1996.im@gmail.com</p>
               </div>
-            </div>
-            <div className="contact-item">
+            </a>
+            <a id="contact-ig-link" className="contact-item" href="https://instagram.com/ibrahim-abutabikh" target="_blank" rel="noopener noreferrer">
               <div className="contact-icon">
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
                   <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
                   <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
                 </svg>
               </div>
               <div>
-                <h4 data-i18n="contact_ig">Instagram</h4>
-                <p>@ibrahim-abutabikh</p>
+                <h4 data-i18n="contact_ig_label">Instagram</h4>
+                <p dir="ltr" data-i18n="contact_ig">@ibrahim-abutabikh</p>
               </div>
-            </div>
+            </a>
           </div>
           <div className="contact-image-wrapper">
             <img
+              id="contact-img-el"
               src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=600&q=80&fit=crop"
               alt="Male Trainer Image" data-i18n-alt="contact_img_alt"
+              loading="lazy"
               className="trainer-image"
             />
           </div>
@@ -777,13 +812,15 @@ export default function LandingPage() {
       </div>
     </section>
 
+    </main>
+
     {/* FOOTER */}
     <footer>
       <div className="footer-inner">
         <div className="footer-top reveal">
           <div>
-            <div className="footer-brand" data-i18n="footer_brand">
-              <div className="footer-brand-mark">
+            <div className="footer-brand">
+              <span className="footer-brand-mark" aria-hidden="true">
                 <svg
                   width="16"
                   height="16"
@@ -792,16 +829,52 @@ export default function LandingPage() {
                 >
                   <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
                 </svg>
-              </div>
-              Training Tracking Website
+              </span>
+              <span data-i18n="footer_brand_text">Training Tracking Website</span>
             </div>
             <p className="footer-tagline" data-i18n="footer_tagline">
               My diet rule is to never let it last for more than 3 months
             </p>
           </div>
+          <div className="footer-grid">
+            <div className="footer-col">
+              <h4 data-i18n="footer_links_title">Quick Links</h4>
+              <ul>
+                <li><a href="#home" data-i18n="nav_home">Home</a></li>
+                <li><a href="#coach" data-i18n="nav_coach">Meet the Coach</a></li>
+                <li><a href="#membership" data-i18n="nav_membership">Membership</a></li>
+                <li><a href="#contact" data-i18n="nav_contact">Contact</a></li>
+              </ul>
+            </div>
+          </div>
         </div>
         <div className="footer-bottom">
           <p data-i18n="footer_copy">© 2026 All rights reserved</p>
+          <div className="footer-socials">
+            <a
+              href="https://instagram.com/ibrahim-abutabikh"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Instagram"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+              </svg>
+            </a>
+            <a href="tel:+9647877511605" aria-label="Phone">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+              </svg>
+            </a>
+            <a href="mailto:ibrahim1996.im@gmail.com" aria-label="Email">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                <polyline points="22,6 12,13 2,6" />
+              </svg>
+            </a>
+          </div>
         </div>
       </div>
     </footer>

@@ -33,6 +33,10 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# machine-local tool settings. .claude/launch.json is shared on purpose — it is
+# how the dev server is started — but the permission list is per-machine noise.
+.claude/settings.local.json
+
 # vercel
 .vercel
 

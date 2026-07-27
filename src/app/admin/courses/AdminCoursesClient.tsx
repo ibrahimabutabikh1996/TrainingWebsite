@@ -1,43 +1,93 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Course } from "@/types/admin";
+import {
+  Course,
+  CourseAssignments,
+  TraineeOption,
+  asDays,
+  countDays,
+  countExercises,
+} from "@/types/admin";
 import AdminModal from "../components/AdminModal";
 import { deleteCourseAction, assignCourseAction } from "../builder/actions";
+import { arabicCount, DAY, EXERCISE, TRAINEE } from "@/lib/arabicCount";
 import { toast, Toaster } from "react-hot-toast";
 import "../crm.css";
+import "./courses.css";
 
-export default function AdminCoursesClient({ 
+const SORTS: [string, string][] = [
+  ["newest", "الأحدث"],
+  ["oldest", "الأقدم"],
+  ["name", "الاسم"],
+];
+
+const ASSIGN_FILTERS: [string, string][] = [
+  ["all", "الكل"],
+  ["assigned", "مُعيَّنة"],
+  ["unassigned", "غير مُعيَّنة"],
+];
+
+export default function AdminCoursesClient({
   initialCourses,
-  initialProfiles = []
-}: { 
+  initialTrainees = [],
+  initialAssignments = {},
+  recentCourses = 0
+}: {
   initialCourses: Course[],
-  initialProfiles?: { id: string, username: string, fullname: string }[]
+  initialTrainees?: TraineeOption[],
+  initialAssignments?: CourseAssignments,
+  /** Courses created in the last 30 days, counted server-side. */
+  recentCourses?: number
 }) {
   const router = useRouter();
-  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+  /* Only the id is held in state. Keeping the whole course object meant the
+     drawer kept rendering a stale snapshot after router.refresh() — an edit or
+     a new assignment wouldn't show until the drawer was reopened. */
+  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [showAssignModal, setShowAssignModal] = useState<string | null>(null);
   const [selectedTraineeId, setSelectedTraineeId] = useState<string>("");
   const [isActionLoading, setIsActionLoading] = useState(false);
 
   const courses = initialCourses || [];
-  const profiles = initialProfiles || [];
+  const trainees = initialTrainees || [];
+  const assignments = initialAssignments || {};
   const [searchTerm, setSearchTerm] = useState("");
-  const [activeFilter, setActiveFilter] = useState("all");
+  const [activeFilter, setActiveFilter] = useState("newest");
+  /* "Which courses are actually in use?" was only answerable by reading every
+     card, so assignment state is now a filter of its own. */
+  const [assignFilter, setAssignFilter] = useState("all");
 
-  useEffect(() => {
-    router.refresh();
-  }, [router]);
+  /* Derived from the latest props, so it can never go stale. Also self-heals if
+     the course is deleted from under the drawer. */
+  const selectedCourse = courses.find((c) => c.id === selectedCourseId) ?? null;
 
-  // Filter and sort courses
+  const assignedTo = (courseId: string) => assignments[courseId] ?? [];
+
+  const query = searchTerm.trim().toLowerCase();
   const filteredCourses = courses
-    .filter((c) => c.name.toLowerCase().includes(searchTerm.toLowerCase()))
+    .filter((c) => {
+      const matchesQuery =
+        !query ||
+        c.name.toLowerCase().includes(query) ||
+        (c.description ?? "").toLowerCase().includes(query) ||
+        assignedTo(c.id).some((n) => n.toLowerCase().includes(query));
+      if (!matchesQuery) return false;
+
+      const isAssigned = assignedTo(c.id).length > 0;
+      if (assignFilter === "assigned") return isAssigned;
+      if (assignFilter === "unassigned") return !isAssigned;
+      return true;
+    })
     .sort((a, b) => {
-      if (activeFilter === "oldest") return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime(); // default 'newest' / 'all'
+      const at = new Date(a.created_at).getTime();
+      const bt = new Date(b.created_at).getTime();
+      if (activeFilter === "oldest") return at - bt;
+      if (activeFilter === "name") return a.name.localeCompare(b.name, "ar");
+      return bt - at; // newest first
     });
 
   const handleDeleteCourse = async () => {
@@ -50,7 +100,7 @@ export default function AdminCoursesClient({
       if (result.success) {
         toast.success("تم حذف الكورس بنجاح!", { id: toastId });
         setShowDeleteConfirm(null);
-        if (selectedCourse?.id === showDeleteConfirm) setSelectedCourse(null);
+        if (selectedCourseId === showDeleteConfirm) setSelectedCourseId(null);
         router.refresh();
       } else {
         toast.error(result.error || "فشل حذف الكورس.", { id: toastId });
@@ -88,11 +138,11 @@ export default function AdminCoursesClient({
 
   // Stats
   const totalCourses = courses.length;
-  const recentCourses = courses.filter(c => {
-    const diffTime = Math.abs(new Date().getTime() - new Date(c.created_at).getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-    return diffDays <= 30;
-  }).length;
+  /* recentCourses arrives from the server: deriving it here meant reading the
+     clock during render, which is impure and can shift between re-renders. */
+  /* How many courses are actually in a trainee's hands right now — more useful
+     than repeating the total under a different label. */
+  const assignedCourses = courses.filter((c) => assignedTo(c.id).length > 0).length;
 
   return (
     <div className="crm-dashboard">
@@ -115,126 +165,178 @@ export default function AdminCoursesClient({
       <div className={`crm-split-layout ${selectedCourse ? 'has-drawer' : ''}`}>
         
         {/* Main List Area */}
-        <div className="crm-main-area">
-          
-          <div className="crm-hero-header">
-            <div className="crm-hero-title-group">
-              <h1 className="crm-hero-title">مكتبة الكورسات</h1>
-              <p className="crm-hero-subtitle">إدارة الخطط التدريبية وتطوير البرامج</p>
+        <div className="crm-main-area co-page">
+
+          <header className="co-header">
+            <div className="co-header-text">
+              <h1>مكتبة الكورسات</h1>
+              <p>إدارة الخطط التدريبية وتعيينها للمشتركين.</p>
+              <div className="co-stats">
+                <span className="co-stat"><b>{totalCourses}</b> كورس</span>
+                <span className="co-stat"><b>{assignedCourses}</b> مُعيَّن</span>
+                <span className="co-stat"><b>{recentCourses}</b> خلال ٣٠ يوماً</span>
+              </div>
             </div>
-            
-            <div className="crm-hero-stats-group">
-              <div className="crm-hero-stat">
-                <span className="stat-val">{totalCourses}</span>
-                <span className="stat-lbl">إجمالي الكورسات</span>
+
+            <Link href="/admin/builder" className="co-add-btn">
+              <span className="material-symbols-outlined" style={{ fontSize: 20 }}>add</span>
+              <span>إنشاء كورس جديد</span>
+            </Link>
+          </header>
+
+          <div className="co-toolbar">
+            <div className="co-toolbar-row">
+              <div className="co-search">
+                <span className="material-symbols-outlined">search</span>
+                <input
+                  type="text"
+                  placeholder="ابحث بالاسم أو الهدف أو اسم المشترك..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+                {searchTerm && (
+                  <button className="co-search-clear" onClick={() => setSearchTerm("")} aria-label="مسح البحث">
+                    <span className="material-symbols-outlined" style={{ fontSize: 16 }}>close</span>
+                  </button>
+                )}
               </div>
-              <div className="crm-hero-stat highlight">
-                <span className="stat-val">+{recentCourses}</span>
-                <span className="stat-lbl">انشئ حديثاً</span>
+
+              {/* Was a plain dropdown; a segmented control shows the active sort
+                  without having to open it. */}
+              <div className="co-segment" role="group" aria-label="الترتيب">
+                {SORTS.map(([v, label]) => (
+                  <button key={v} onClick={() => setActiveFilter(v)} aria-pressed={activeFilter === v}>
+                    {label}
+                  </button>
+                ))}
               </div>
-              <div className="crm-hero-stat" style={{ justifyContent: 'flex-end', marginLeft: '16px' }}>
-                <Link 
-                  href="/admin/builder" 
-                  className="crm-btn-primary"
-                  style={{ padding: '12px 24px', fontSize: '1rem', textDecoration: 'none' }}
-                >
-                  <span className="material-symbols-outlined">add</span>
-                  إنشاء كورس جديد
-                </Link>
+            </div>
+
+            <div className="co-toolbar-row">
+              <span className="co-filter-label">حالة التعيين</span>
+              <div className="co-segment" role="group" aria-label="حالة التعيين">
+                {ASSIGN_FILTERS.map(([v, label]) => (
+                  <button key={v} onClick={() => setAssignFilter(v)} aria-pressed={assignFilter === v}>
+                    {label}
+                  </button>
+                ))}
               </div>
             </div>
           </div>
 
-          <div className="crm-toolbar">
-            <div className="crm-search-box">
-              <span className="material-symbols-outlined crm-search-icon">search</span>
-              <input 
-                type="text" 
-                placeholder="ابحث عن كورس تدريبي..." 
-                className="crm-search-input"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <div className="crm-toolbar-filters">
-              <select className="crm-filter-select" value={activeFilter} onChange={(e) => setActiveFilter(e.target.value)}>
-                <option value="all">الأحدث أولاً</option>
-                <option value="oldest">الأقدم أولاً</option>
-              </select>
-            </div>
-          </div>
+          <p className="co-count">
+            عرض <b>{filteredCourses.length}</b> من {totalCourses} كورس
+          </p>
 
-          <div className="crm-list-cards">
+          <div className="co-grid">
             {filteredCourses.length === 0 ? (
-              <div className="crm-empty-state">
-                <span className="material-symbols-outlined">library_books</span>
-                <p>لا توجد كورسات متاحة حالياً</p>
+              /* A fruitless search is not the same as an empty library. */
+              <div className="co-empty">
+                <span className="material-symbols-outlined">
+                  {courses.length === 0 ? "library_books" : "search_off"}
+                </span>
+                <p>
+                  {courses.length === 0
+                    ? "لا توجد كورسات بعد — ابدأ بإنشاء كورس جديد"
+                    : "لا توجد كورسات تطابق البحث أو التصفية الحالية"}
+                </p>
+                {courses.length === 0 ? (
+                  <Link href="/admin/builder" className="co-add-btn">
+                    <span className="material-symbols-outlined" style={{ fontSize: 20 }}>add</span>
+                    <span>إنشاء كورس جديد</span>
+                  </Link>
+                ) : (
+                  <button
+                    className="co-add-btn"
+                    onClick={() => { setSearchTerm(""); setAssignFilter("all"); }}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: 20 }}>filter_alt_off</span>
+                    <span>إزالة التصفية</span>
+                  </button>
+                )}
               </div>
             ) : (
-              filteredCourses.map((course, i) => {
-                let daysCount = 0;
-                if (Array.isArray(course.days_data)) {
-                  course.days_data.forEach((week: any) => {
-                    if (week && Array.isArray(week.days)) {
-                      daysCount += week.days.length;
-                    }
-                  });
-                }
-                const isSelected = selectedCourse?.id === course.id;
+              filteredCourses.map((course) => {
+                const daysCount = countDays(course.days_data);
+                const exCount = countExercises(course.days_data);
+                const assigned = assignedTo(course.id);
+                const isSelected = selectedCourseId === course.id;
 
                 return (
-                  <div 
-                    key={course.id} 
-                    className={`crm-list-card ${isSelected ? 'selected' : ''}`}
-                    onClick={() => setSelectedCourse(course)}
-                    style={{ animationDelay: `${i * 0.03}s` }}
+                  <article
+                    key={course.id}
+                    className={`co-card ${isSelected ? "selected" : ""}`}
+                    onClick={() => setSelectedCourseId(course.id)}
                   >
-                    <div className="crm-card-avatar">
-                      <span className="material-symbols-outlined">fitness_center</span>
-                    </div>
-                    
-                    <div className="crm-card-info">
-                      <h4 className="crm-card-name">{course.name}</h4>
-                      <span className="crm-card-handle">تطوير البرنامج التدريبي</span>
+                    <div className="co-card-head">
+                      <span className="co-card-icon">
+                        <span className="material-symbols-outlined">fitness_center</span>
+                      </span>
+                      <div className="co-card-title">
+                        <h3>{course.name}</h3>
+                        <p>
+                          {course.description?.trim()
+                            ? course.description
+                            : "لا يوجد وصف لهذا الكورس"}
+                        </p>
+                      </div>
                     </div>
 
-                    <div className="crm-card-meta">
-                      <span className="crm-tag primary-tag">{course.days_data?.length || 0} أسابيع</span>
-                      <span className="crm-tag">{daysCount} يوم</span>
-                      <span className="crm-card-date">
-                        <span className="material-symbols-outlined" style={{ fontSize: 14 }}>calendar_today</span>
+                    <div className="co-chips">
+                      {daysCount === 0 ? (
+                        <span className="co-chip co-chip--empty">
+                          <span className="material-symbols-outlined">warning</span>
+                          برنامج فارغ
+                        </span>
+                      ) : (
+                        <>
+                          <span className="co-chip co-chip--primary">{arabicCount(daysCount, DAY)}</span>
+                          <span className="co-chip">{arabicCount(exCount, EXERCISE)}</span>
+                        </>
+                      )}
+                      {assigned.length > 0 && (
+                        <span className="co-chip co-chip--assigned" title={assigned.join("، ")}>
+                          <span className="material-symbols-outlined">person</span>
+                          {arabicCount(assigned.length, TRAINEE)}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="co-card-foot">
+                      <span className="co-card-date">
+                        <span className="material-symbols-outlined">calendar_today</span>
                         {new Date(course.created_at).toLocaleDateString("ar-SA")}
                       </span>
-                    </div>
 
-                    <div className="crm-card-actions">
-                      <button 
-                        className="crm-btn-icon" 
-                        onClick={(e) => { e.stopPropagation(); setShowAssignModal(course.id); }}
-                        title="تعيين لمشترك"
-                        style={{ marginLeft: '8px', border: 'none', background: 'transparent' }}
-                      >
-                        <span className="material-symbols-outlined">person_add</span>
-                      </button>
-                      <Link 
-                        className="crm-btn-icon" 
-                        href={`/admin/builder?courseId=${course.id}`}
-                        onClick={(e) => { e.stopPropagation(); }}
-                        title="تعديل"
-                        style={{ border: 'none', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', color: 'inherit' }}
-                      >
-                        <span className="material-symbols-outlined">edit</span>
-                      </Link>
-                      <button 
-                        className="crm-btn-icon" 
-                        onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(course.id); }}
-                        title="حذف"
-                        style={{ border: 'none', background: 'transparent', color: 'var(--error, #ef4444)' }}
-                      >
-                        <span className="material-symbols-outlined">delete</span>
-                      </button>
+                      <div className="co-actions">
+                        <button
+                          className="co-icon-btn"
+                          onClick={(e) => { e.stopPropagation(); setShowAssignModal(course.id); }}
+                          title="تعيين لمشترك"
+                          aria-label={`تعيين ${course.name} لمشترك`}
+                        >
+                          <span className="material-symbols-outlined">person_add</span>
+                        </button>
+                        <Link
+                          className="co-icon-btn"
+                          href={`/admin/builder?courseId=${course.id}`}
+                          onClick={(e) => e.stopPropagation()}
+                          title="تعديل"
+                          aria-label={`تعديل ${course.name}`}
+                        >
+                          <span className="material-symbols-outlined">edit</span>
+                        </Link>
+                        <button
+                          className="co-icon-btn danger"
+                          onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(course.id); }}
+                          title="حذف"
+                          aria-label={`حذف ${course.name}`}
+                        >
+                          <span className="material-symbols-outlined">delete</span>
+                        </button>
+                      </div>
                     </div>
-                  </div>
+                  </article>
                 );
               })
             )}
@@ -245,7 +347,7 @@ export default function AdminCoursesClient({
         {selectedCourse && (
           <div className="crm-side-drawer">
             <div className="crm-drawer-header">
-              <button className="crm-drawer-close" onClick={() => setSelectedCourse(null)}>
+              <button className="crm-drawer-close" onClick={() => setSelectedCourseId(null)}>
                 <span className="material-symbols-outlined">close</span>
               </button>
               <div className="crm-drawer-actions">
@@ -274,85 +376,85 @@ export default function AdminCoursesClient({
                 <h3 style={{ margin: "0 0 8px 0", color: "var(--admin-on-surface)", fontSize: "1.5rem", fontFamily: "var(--font-display)" }}>
                   {selectedCourse.name}
                 </h3>
-                <p style={{ margin: 0, color: "var(--admin-outline)", fontSize: "0.9rem" }}>
+                {selectedCourse.description && (
+                  <p style={{ margin: "0 0 8px 0", color: "var(--admin-on-surface)", fontSize: "0.95rem", lineHeight: 1.7 }}>
+                    {selectedCourse.description}
+                  </p>
+                )}
+                <p style={{ margin: "0 0 12px 0", color: "var(--admin-outline)", fontSize: "0.9rem" }}>
                   تم الإنشاء في: {new Date(selectedCourse.created_at).toLocaleDateString("ar-SA")}
                 </p>
+
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
+                  <span className="crm-tag primary-tag">{arabicCount(countDays(selectedCourse.days_data), DAY)}</span>
+                  <span className="crm-tag">{arabicCount(countExercises(selectedCourse.days_data), EXERCISE)}</span>
+                </div>
+
+                {/* Who is on this course. Previously invisible anywhere in the UI. */}
+                {assignedTo(selectedCourse.id).length > 0 ? (
+                  <div style={{ fontSize: "0.9rem", color: "var(--admin-on-surface)", display: "flex", gap: 8, alignItems: "flex-start" }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: 18, color: "var(--primary)" }}>group</span>
+                    <span>
+                      <strong>{arabicCount(assignedTo(selectedCourse.id).length, TRAINEE)}:</strong>{" "}
+                      {assignedTo(selectedCourse.id).join("، ")}
+                    </span>
+                  </div>
+                ) : (
+                  <p style={{ margin: 0, color: "var(--admin-outline)", fontSize: "0.85rem" }}>
+                    غير معيَّن لأي مشترك حالياً.
+                  </p>
+                )}
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-                {!Array.isArray(selectedCourse.days_data) || selectedCourse.days_data.length === 0 ? (
+                {asDays(selectedCourse.days_data).length === 0 ? (
                   <div className="crm-empty-state" style={{ padding: "32px 16px" }}>
                     <span className="material-symbols-outlined">inventory_2</span>
-                    <p style={{ margin: 0, fontSize: "0.95rem" }}>لا توجد تفاصيل أو تمارين مضافة لهذا الكورس.</p>
+                    <p style={{ margin: 0, fontSize: "0.95rem" }}>لا توجد أيام تدريبية مضافة لهذا الكورس.</p>
                   </div>
                 ) : (
-                  (selectedCourse.days_data as any[]).map((week: any, wIndex: number) => (
+                  asDays(selectedCourse.days_data).map((day, dIndex) => (
                     <div 
-                      key={week.id || wIndex} 
+                      key={day.id || dIndex} 
                       className="crm-modal-section"
                       style={{ background: "var(--admin-bg-3)", padding: "16px", borderRadius: "4px", border: "1px solid color-mix(in srgb, var(--admin-on-surface) 4%, transparent)" }}
                     >
                       <h4 className="crm-modal-section-title">
-                        <span className="material-symbols-outlined">calendar_view_week</span>
-                        الأسبوع {wIndex + 1}
+                        <span className="material-symbols-outlined">calendar_today</span>
+                        اليوم التدريبي {dIndex + 1}
                       </h4>
                       
-                      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                        {!week.days || week.days.length === 0 ? (
-                          <div style={{ color: "var(--admin-outline)", fontSize: "0.85rem", fontStyle: "italic", textAlign: "center", padding: "16px 0" }}>
-                            لا توجد أيام تدريبية في هذا الأسبوع.
+                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        {!day.exercises || day.exercises.length === 0 ? (
+                          <div style={{ color: "var(--admin-outline)", fontSize: "0.8rem", fontStyle: "italic" }}>
+                            لا توجد تمارين مضافة في هذا اليوم.
                           </div>
                         ) : (
-                          week.days.map((day: any, dIndex: number) => (
+                          day.exercises.map((ex, exIndex) => (
                             <div 
-                              key={day.id || dIndex} 
+                              key={ex.id || exIndex} 
                               style={{ 
-                                background: "var(--admin-bg-2)", 
+                                background: "color-mix(in srgb, var(--admin-on-surface) 2%, transparent)", 
                                 border: "1px solid color-mix(in srgb, var(--admin-on-surface) 4%, transparent)", 
                                 borderRadius: "4px", 
-                                padding: "12px 16px" 
+                                padding: "10px 12px",
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: 6
                               }}
                             >
-                              <h5 style={{ margin: "0 0 12px 0", color: "var(--admin-on-surface)", fontWeight: "600", display: "flex", alignItems: "center", gap: 8, fontSize: "0.95rem" }}>
-                                <span className="material-symbols-outlined" style={{ fontSize: 18, color: "var(--primary)" }}>calendar_today</span>
-                                اليوم {dIndex + 1}
-                              </h5>
-                              
-                              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                                {!day.exercises || day.exercises.length === 0 ? (
-                                  <div style={{ color: "var(--admin-outline)", fontSize: "0.8rem", fontStyle: "italic" }}>
-                                    لا توجد تمارين مضافة في هذا اليوم.
-                                  </div>
-                                ) : (
-                                  day.exercises.map((ex: any, exIndex: number) => (
-                                    <div 
-                                      key={ex.id || exIndex} 
-                                      style={{ 
-                                        background: "color-mix(in srgb, var(--admin-on-surface) 2%, transparent)", 
-                                        border: "1px solid color-mix(in srgb, var(--admin-on-surface) 4%, transparent)", 
-                                        borderRadius: "4px", 
-                                        padding: "10px 12px",
-                                        display: "flex",
-                                        flexDirection: "column",
-                                        gap: 6
-                                      }}
-                                    >
-                                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                        <span style={{ fontWeight: 600, fontSize: "0.85rem", color: "var(--admin-on-surface)" }}>
-                                          {exIndex + 1}. {ex.name_ar || ex.name || "تمرين غير مسمى"}
-                                        </span>
-                                        <span className="crm-tag primary-tag" style={{ padding: "2px 8px", fontSize: "0.7rem" }}>
-                                          {ex.target_muscle}
-                                        </span>
-                                      </div>
-                                      <div style={{ fontSize: "0.8rem", color: "var(--admin-outline)", display: "flex", gap: "12px" }}>
-                                        <span>الجولات: {ex.sets}</span>
-                                        <span>•</span>
-                                        <span>التكرار: {Array.isArray(ex.reps) ? ex.reps.join(" - ") : ex.reps || "10"}</span>
-                                      </div>
-                                    </div>
-                                  ))
-                                )}
+                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                <span style={{ fontWeight: 600, fontSize: "0.85rem", color: "var(--admin-on-surface)" }}>
+                                  {exIndex + 1}. {ex.name_ar || "تمرين غير مسمى"}
+                                </span>
+                                <span className="crm-tag primary-tag" style={{ padding: "2px 8px", fontSize: "0.7rem" }}>
+                                  {ex.target_muscle}
+                                </span>
+                              </div>
+                              <div style={{ fontSize: "0.8rem", color: "var(--admin-outline)", display: "flex", gap: "12px" }}>
+                                <span>الجولات: {ex.sets}</span>
+                                <span>•</span>
+                                <span>التكرار: {Array.isArray(ex.reps) ? ex.reps.join(" - ") : ex.reps || "10"}</span>
                               </div>
                             </div>
                           ))
@@ -376,8 +478,17 @@ export default function AdminCoursesClient({
           icon="person_add"
           maxWidth={500}
         >
-          <div style={{ padding: 24, direction: "rtl", textAlign: "right" }}>
-            <label style={{ display: "block", fontSize: "0.9rem", color: "var(--admin-outline)", marginBottom: 12, fontWeight: 500 }}>
+          <div style={{ padding: 24, direction: "rtl", textAlign: "start" }}>
+            <p style={{ margin: "0 0 16px 0", fontSize: "0.9rem", color: "var(--admin-outline)", lineHeight: 1.7 }}>
+              الكورس: <strong style={{ color: "var(--admin-on-surface)" }}>{courses.find((c) => c.id === showAssignModal)?.name}</strong>
+              {assignedTo(showAssignModal).length > 0 && (
+                <>
+                  <br />
+                  معيَّن حالياً إلى: {assignedTo(showAssignModal).join("، ")}
+                </>
+              )}
+            </p>
+            <label style={{ display: "block", fontSize: "0.95rem", color: "var(--admin-on-surface)", marginBottom: 12, fontWeight: 500 }}>
               اختر المشترك الذي ترغب في تعيين الكورس له:
             </label>
             <select 
@@ -387,9 +498,9 @@ export default function AdminCoursesClient({
               style={{ width: "100%", marginBottom: 24 }}
             >
               <option value="">-- اختر مشترك --</option>
-              {profiles.map(p => (
-                <option key={p.id} value={p.id}>
-                  {p.fullname} (@{p.username})
+              {trainees.map(t => (
+                <option key={t.id} value={t.id}>
+                  {t.name}{t.username && t.username !== t.name ? ` (@${t.username})` : ""}
                 </option>
               ))}
             </select>
@@ -424,9 +535,22 @@ export default function AdminCoursesClient({
           maxWidth={400}
         >
           <div style={{ padding: 24, textAlign: "center", direction: "rtl" }}>
-            <p style={{ margin: "0 0 24px 0", color: "var(--admin-on-surface)", fontSize: "1rem", lineHeight: 1.6 }}>
-              هل أنت متأكد من رغبتك في حذف هذا الكورس؟ <br/>
-              <span style={{ color: "var(--error, #ef4444)", fontSize: "0.85rem" }}>لا يمكن التراجع عن هذا الإجراء وسيتم إلغاء تعيينه من المتدربين.</span>
+            <p style={{ margin: "0 0 16px 0", color: "var(--admin-on-surface)", fontSize: "1rem", lineHeight: 1.6 }}>
+              هل أنت متأكد من رغبتك في حذف كورس{" "}
+              <strong>«{courses.find((c) => c.id === showDeleteConfirm)?.name}»</strong>؟
+            </p>
+            {/* Name the affected trainees — the old copy warned about unassigning
+                "المتدربين" without saying whether any actually existed. */}
+            {assignedTo(showDeleteConfirm).length > 0 && (
+              <p style={{ margin: "0 0 16px 0", padding: "12px", borderRadius: 4, background: "color-mix(in srgb, var(--error, #ef4444) 10%, transparent)", border: "1px solid color-mix(in srgb, var(--error, #ef4444) 30%, transparent)", color: "var(--admin-on-surface)", fontSize: "0.88rem", lineHeight: 1.7 }}>
+                هذا الكورس معيَّن حالياً إلى {arabicCount(assignedTo(showDeleteConfirm).length, TRAINEE)}:{" "}
+                <strong>{assignedTo(showDeleteConfirm).join("، ")}</strong>
+                <br />
+                سيفقد البرنامج التدريبي عند الحذف.
+              </p>
+            )}
+            <p style={{ margin: "0 0 24px 0", color: "var(--error, #ef4444)", fontSize: "0.85rem" }}>
+              لا يمكن التراجع عن هذا الإجراء.
             </p>
             <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
               <button 

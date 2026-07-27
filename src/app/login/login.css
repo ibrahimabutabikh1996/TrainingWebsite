@@ -305,8 +305,8 @@ body::before {
   content: '';
   width: 8px; height: 5px;
   /* checkmarks don't mirror naturally, they are always LTR. But just in case, we can keep it border-left. */
-  border-left: 1.5px solid #080808;
-  border-bottom: 1.5px solid #080808;
+  border-left: 1.5px solid var(--text-inverse);
+  border-bottom: 1.5px solid var(--text-inverse);
   transform: rotate(-45deg) translateY(-1px);
   display: block;
 }
@@ -332,7 +332,7 @@ body::before {
 .btn-submit {
   width: 100%;
   background: var(--primary);
-  color: #080808;
+  color: var(--text-inverse);
   border: none;
   padding: 15px 32px;
   border-radius: 8px;

@@ -7,7 +7,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 
 
 export function HeaderControls() {
-  const { toggleLang, t } = useLanguage();
+  const { toggleLang } = useLanguage();
   const { toggleTheme } = useTheme();
 
   return (

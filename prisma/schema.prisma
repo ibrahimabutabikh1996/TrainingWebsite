@@ -1,6 +1,6 @@
 generator client {
   provider        = "prisma-client-js"
-  previewFeatures = ["multiSchema", "partialIndexes", "driverAdapters"]
+  previewFeatures = ["driverAdapters", "multiSchema", "partialIndexes"]
   engineType      = "library"
 }
 
@@ -452,7 +452,6 @@ model users {
   sessions                    sessions[]
   webauthn_challenges         webauthn_challenges[]
   webauthn_credentials        webauthn_credentials[]
-  courses                     courses[]
 
   @@index([created_at(sort: Desc)], map: "idx_users_created_at_desc")
   @@index([email], map: "idx_users_email")
@@ -499,10 +498,12 @@ model webauthn_credentials {
 }
 
 model accounts {
-  id         String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  username   String    @unique
+  id         String     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  username   String     @unique
   password   String
-  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  created_at DateTime?  @default(now()) @db.Timestamptz(6)
+  courses    courses[]
+  profiles   profiles[]
 
   @@schema("public")
 }
@@ -516,6 +517,8 @@ model client_courses {
   profiles    profiles @relation(fields: [client_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   courses     courses  @relation(fields: [course_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
+  @@index([client_id], map: "idx_client_courses_client_id")
+  @@index([course_id], map: "idx_client_courses_course_id")
   @@schema("public")
 }
 
@@ -526,10 +529,14 @@ model courses {
   days_data      Json             @default("[]")
   created_at     DateTime         @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
   cover_image    String?
+  description    String?
   client_courses client_courses[]
-  users          users?           @relation(fields: [coach_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  profiles       profiles[]
+  users           accounts?         @relation(fields: [coach_id], references: [id], onUpdate: NoAction)
+  profiles        profiles[]
+  training_cycles training_cycles[]
+  workout_logs    workout_logs[]
 
+  @@index([coach_id], map: "idx_courses_coach_id")
   @@schema("public")
 }
 
@@ -547,16 +554,127 @@ model exercises {
 }
 
 model profiles {
-  id                String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  username          String
-  data              Json
-  created_at        DateTime         @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
-  user_id           String?          @db.Uuid
-  current_course_id String?          @db.Uuid
-  client_courses    client_courses[]
-  courses           courses?         @relation(fields: [current_course_id], references: [id], onUpdate: NoAction)
+  id                   String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  username             String
+  data                 Json
+  created_at           DateTime         @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
+  user_id              String?          @db.Uuid
+  current_course_id    String?          @db.Uuid
+  is_suspended         Boolean          @default(false)
+  subscription_ends_at DateTime?        @db.Timestamptz(6)
+  client_courses       client_courses[]
+  courses              courses?         @relation(fields: [current_course_id], references: [id], onUpdate: NoAction)
+  accounts             accounts?        @relation(fields: [user_id], references: [id], onUpdate: NoAction)
+  rest_days            rest_days[]
+  training_cycles      training_cycles[]
+  workout_logs         workout_logs[]
 
   @@index([username, created_at(sort: Desc)], map: "idx_profiles_username_created")
+  @@index([current_course_id], map: "idx_profiles_current_course_id")
+  @@index([user_id], map: "idx_profiles_user_id")
+  @@index([is_suspended], map: "idx_profiles_is_suspended", where: raw("is_suspended"))
+  @@index([subscription_ends_at], map: "idx_profiles_subscription_ends_at")
+  @@schema("public")
+}
+
+/// Stores site settings and dynamic content like the landing page CMS data
+model site_settings {
+  id         String   @id @default("landing_content")
+  content_en Json?    @default("{}")
+  content_ar Json?    @default("{}")
+  updated_at DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+  @@schema("public")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model workout_logs {
+  id                String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  profile_id        String             @db.Uuid
+  course_id         String?            @db.Uuid
+  day_id            String
+  exercise_id       String
+  exercise_name     String
+  set_index         Int
+  reps              String?
+  weight            Decimal?           @db.Decimal(6, 2)
+  session_date      DateTime           @default(dbgenerated("CURRENT_DATE")) @db.Date
+  logged_at         DateTime           @default(now()) @db.Timestamptz(6)
+  session_id        String?            @db.Uuid
+  courses           courses?           @relation(fields: [course_id], references: [id], onUpdate: NoAction)
+  profiles          profiles           @relation(fields: [profile_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  training_sessions training_sessions? @relation(fields: [session_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([profile_id, day_id, exercise_id, set_index, session_date], map: "uq_workout_logs_entry")
+  @@index([course_id], map: "idx_workout_logs_course")
+  @@index([profile_id, exercise_id], map: "idx_workout_logs_exercise")
+  @@index([profile_id, session_date(sort: Desc)], map: "idx_workout_logs_profile_date")
+  @@index([session_id], map: "idx_workout_logs_session")
+  @@schema("public")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model rest_days {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  profile_id String   @db.Uuid
+  /// The day the trainee took off. A rest day counts towards no cycle.
+  rest_on    DateTime @db.Date
+  note       String?
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  profiles   profiles @relation(fields: [profile_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([profile_id, rest_on], map: "uq_rest_days_profile_date")
+  @@index([profile_id, rest_on(sort: Desc)], map: "idx_rest_days_profile")
+  @@schema("public")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model training_sessions {
+  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cycle_id        String          @db.Uuid
+  day_number      Int
+  /// The date the trainee says this workout happened on. Non-null means done.
+  performed_on    DateTime?       @db.Date
+  notes           String?
+  created_at      DateTime        @default(now()) @db.Timestamptz(6)
+  training_cycles training_cycles @relation(fields: [cycle_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  workout_logs    workout_logs[]
+
+  @@unique([cycle_id, day_number], map: "uq_training_sessions_cycle_day")
+  @@index([cycle_id, day_number], map: "idx_training_sessions_cycle")
+  @@schema("public")
+}
+
+/// A cycle is a count of workouts, never a span of dates: as many workouts as the
+/// trainee committed to at registration, recorded in any order on any days. There
+/// is no week here — nothing starts or ends a cycle but that count.
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model training_cycles {
+  id                String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  profile_id        String              @db.Uuid
+  course_id         String?             @db.Uuid
+  /// 1-based, running per trainee and never reset.
+  cycle_number      Int
+  /// Workouts this cycle asks for, copied from the trainee's own answer.
+  days_count        Int
+  /// The plan as it stood when the cycle opened. A cycle is performed against
+  /// this copy, so reassigning or editing the course never re-labels weights
+  /// already recorded. Null on cycles that predate the column.
+  plan_data         Json?
+  /// Stamped when the last workout of the cycle is recorded; null while it is open.
+  completed_at      DateTime?           @db.Timestamptz(6)
+  created_at        DateTime            @default(now()) @db.Timestamptz(6)
+  training_sessions training_sessions[]
+  courses           courses?            @relation(fields: [course_id], references: [id], onUpdate: NoAction)
+  profiles          profiles            @relation(fields: [profile_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([profile_id, cycle_number], map: "uq_training_cycles_profile_number")
+  /// A trainee is inside exactly one cycle at a time — the open one is the current one.
+  @@unique([profile_id], map: "uq_training_cycles_open", where: { completed_at: null })
+  @@index([profile_id, cycle_number(sort: Desc)], map: "idx_training_cycles_profile")
   @@schema("public")
 }
 
@@ -628,14 +746,4 @@ enum one_time_token_type {
   phone_change_token
 
   @@schema("auth")
-}
-
-/// Stores site settings and dynamic content like the landing page CMS data
-model site_settings {
-  id         String   @id @default("landing_content")
-  content_en Json?    @default("{}")
-  content_ar Json?    @default("{}")
-  updated_at DateTime @default(now()) @updatedAt
-
-  @@schema("public")
 }

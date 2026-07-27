@@ -124,8 +124,27 @@
         background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
       }
 
+      /* ─── SKIP LINK ─── */
+      .skip-link {
+        position: absolute;
+        inset-inline-start: 16px;
+        top: -100px;
+        z-index: 400;
+        background: var(--primary);
+        color: var(--text-inverse);
+        padding: 10px 18px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: top 0.25s ease;
+      }
+      .skip-link:focus-visible {
+        top: 14px;
+      }
+
       /* ─── NAV ─── */
-      nav {
+      .landing-wrapper nav {
         position: fixed;
         top: 0;
         inset-inline: 0;
@@ -133,31 +152,44 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
+        gap: 24px;
         padding: 0 48px;
         height: 68px;
         background: var(--nav-bg-glass);
         backdrop-filter: blur(20px) saturate(1.4);
         -webkit-backdrop-filter: blur(20px) saturate(1.4);
         border-bottom: 1px solid var(--border);
-        transition: background 0.4s;
+        transition: background 0.4s, height 0.4s, box-shadow 0.4s;
       }
-      nav.scrolled {
+      .landing-wrapper nav.scrolled {
         background: var(--nav-bg-scrolled);
+        height: 60px;
+        box-shadow: 0 6px 30px rgba(2, 6, 23, 0.35);
       }
 
       .nav-logo {
         display: flex;
         align-items: center;
         gap: 10px;
+        flex-shrink: 0;
+        white-space: nowrap;
         font-family: var(--font-display);
         font-size: 20px;
         letter-spacing: 3px;
         color: var(--text);
         text-decoration: none;
+        transition: color 0.25s;
+      }
+      .nav-logo:hover {
+        color: var(--primary);
+      }
+      .nav-logo-text {
+        white-space: nowrap;
       }
       .nav-logo-mark {
         width: 32px;
         height: 32px;
+        flex-shrink: 0;
         border: 1.5px solid var(--primary);
         border-radius: 6px;
         display: flex;
@@ -165,16 +197,22 @@
         justify-content: center;
         color: var(--primary);
         font-size: 14px;
+        transition: background 0.25s, box-shadow 0.25s;
+      }
+      .nav-logo:hover .nav-logo-mark {
+        background: var(--primary-dim);
+        box-shadow: 0 0 18px rgba(var(--primary-rgb), 0.35);
       }
 
       .nav-links {
         display: flex;
-        gap: 40px;
+        gap: clamp(18px, 2.6vw, 40px);
         list-style: none;
       }
       .nav-links a {
         color: var(--muted2);
         text-decoration: none;
+        white-space: nowrap;
         font-size: 13px;
         font-weight: 500;
         letter-spacing: 0.8px;
@@ -194,9 +232,11 @@
         transform-origin: inline-start;
         transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       }
-      .nav-links a.active,
       .nav-links a:hover {
         color: var(--text);
+      }
+      .nav-links a.active {
+        color: var(--primary);
       }
       .nav-links a.active::after,
       .nav-links a:hover::after {
@@ -207,6 +247,7 @@
         display: flex;
         align-items: center;
         gap: 8px;
+        flex-shrink: 0;
       }
 
       .theme-toggle {
@@ -299,6 +340,11 @@
       }
 
       .nav-cta {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap;
+        text-decoration: none;
         background: transparent;
         color: var(--primary);
         border: 1px solid var(--border-primary);
@@ -313,31 +359,54 @@
         transition:
           background 0.25s,
           color 0.25s,
-          border-color 0.25s;
+          border-color 0.25s,
+          transform 0.2s,
+          box-shadow 0.25s;
       }
       .nav-cta:hover {
         background: var(--primary-hover);
-        color: #080808;
+        color: var(--text-inverse);
         border-color: var(--primary-hover);
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(var(--primary-rgb), 0.3);
+      }
+      .nav-cta:active {
+        transform: translateY(0);
       }
 
       .burger-menu {
         display: none;
         flex-direction: column;
+        justify-content: center;
+        align-items: center;
         gap: 5px;
         cursor: pointer;
-        z-index: 100;
-        padding: 10px;
-        margin-inline-end: -10px;
+        z-index: 210;
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        background: transparent;
+        border: none;
+        border-radius: 8px;
+        margin-inline-end: -8px;
+        transition: background 0.25s;
+      }
+      .burger-menu:hover {
+        background: var(--bg3);
       }
       .burger-menu span {
+        display: block;
         width: 22px;
         height: 2px;
         background: var(--text);
         transition:
           transform 0.3s ease,
-          opacity 0.3s ease;
+          opacity 0.3s ease,
+          background 0.25s;
         border-radius: 2px;
+      }
+      .burger-menu.active span {
+        background: var(--primary);
       }
       .burger-menu.active span:nth-child(1) {
         transform: translateY(7px) rotate(45deg);
@@ -349,18 +418,43 @@
         transform: translateY(-7px) rotate(-45deg);
       }
 
+      /* Mobile drawer backdrop */
+      .nav-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 98;
+        background: var(--overlay-scrim);
+        backdrop-filter: blur(2px);
+        -webkit-backdrop-filter: blur(2px);
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.35s ease, visibility 0.35s ease;
+      }
+      .nav-overlay.active {
+        opacity: 1;
+        visibility: visible;
+      }
+
+      /* CTA shown inside the mobile drawer only */
+      .nav-links .nav-drawer-cta {
+        display: none;
+      }
+
       /* ─── HERO ─── */
       .hero {
-        --primary: var(--primary);
+        /* NOTE: `--primary: var(--primary)` used to sit here. That is a
+           self-reference, so the whole variable resolved as invalid and every
+           gold accent inside the hero silently fell back to the inherited text
+           colour. `--primary` is inherited from :root — don't redeclare it. */
         --primary-light: var(--primary-hover);
         --primary-dim: rgba(var(--primary-rgb), 0.18);
-        --bg: #080808;
-        --bg2: #0f0f0f;
-        --bg3: #141414;
-        --bg4: #1a1a1a;
-        --text: #f0ede8;
-        --muted: #6b6560;
-        --muted2: #9a9490;
+        --bg: #0F172A;
+        --bg2: #1E293B;
+        --bg3: #334155;
+        --bg4: #475569;
+        --text: #F8FAFC;
+        --muted: #94A3B8;
+        --muted2: #CBD5E1;
         --border: rgba(255, 255, 255, 0.06);
         --border-primary: rgba(var(--primary-rgb), 0.3);
 
@@ -377,8 +471,8 @@
         background:
           linear-gradient(
             110deg,
-            rgba(8, 8, 8, 0.92) 30%,
-            rgba(8, 8, 8, 0.35) 100%
+            rgba(15, 23, 42, 0.92) 30%,
+            rgba(15, 23, 42, 0.35) 100%
           ),
           url("https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1800&q=85&fit=crop")
             center/cover no-repeat;
@@ -387,6 +481,26 @@
       }
       .hero-bg.loaded {
         transform: scale(1);
+      }
+
+      /* Vignette + bottom fade so text always keeps contrast over any image */
+      .hero-scrim {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        pointer-events: none;
+        background:
+          radial-gradient(
+            120% 80% at 50% 0%,
+            transparent 40%,
+            rgba(15, 23, 42, 0.55) 100%
+          ),
+          linear-gradient(
+            to top,
+            #0F172A 0%,
+            rgba(15, 23, 42, 0.65) 26%,
+            transparent 62%
+          );
       }
 
       .hero-accent-line {
@@ -408,9 +522,30 @@
       .hero-content {
         position: relative;
         z-index: 2;
-        padding: 0 80px 90px;
+        padding-block: 0 90px;
+        padding-inline: 80px;
         max-width: 780px;
       }
+      /* Staggered entrance for the hero stack */
+      .hero-content > * {
+        animation: heroRise 0.9s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+      }
+      .hero-content > *:nth-child(1) { animation-delay: 0.15s; }
+      .hero-content > *:nth-child(2) { animation-delay: 0.3s; }
+      .hero-content > *:nth-child(3) { animation-delay: 0.42s; }
+      .hero-content > *:nth-child(4) { animation-delay: 0.54s; }
+      .hero-content > *:nth-child(5) { animation-delay: 0.66s; }
+      @keyframes heroRise {
+        from {
+          opacity: 0;
+          transform: translateY(26px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
       .hero-eyebrow {
         display: inline-flex;
         align-items: center;
@@ -430,23 +565,29 @@
       }
       .hero-content h1 {
         font-family: var(--font-display);
-        font-size: clamp(72px, 10vw, 120px);
+        font-size: clamp(56px, 9vw, 120px);
         line-height: 0.92;
         letter-spacing: 2px;
         text-transform: uppercase;
         color: var(--text);
         margin-bottom: 20px;
+        text-wrap: balance;
       }
       .hero-content h1 em {
         font-style: normal;
         color: transparent;
-        -webkit-text-stroke: 1.5px rgba(240, 237, 232, 0.35);
+        -webkit-text-stroke: 1.5px rgba(248, 250, 252, 0.35);
+      }
+      /* The outline trick needs a real fill in Arabic — Amiri strokes read as noise */
+      :lang(ar) .hero-content h1 em {
+        color: rgba(248, 250, 252, 0.5);
+        -webkit-text-stroke: 0;
       }
       .hero-quote {
         font-family: var(--font-editorial);
         font-style: italic;
         font-size: clamp(16px, 2vw, 21px);
-        color: rgba(240, 237, 232, 0.65);
+        color: rgba(248, 250, 252, 0.65);
         max-width: 520px;
         line-height: 1.5;
         margin-bottom: 10px;
@@ -478,12 +619,61 @@
         display: flex;
         gap: 14px;
         flex-wrap: wrap;
+        align-items: center;
+      }
+
+      /* ─── SCROLL CUE ─── */
+      .hero-scroll-cue {
+        position: absolute;
+        bottom: 28px;
+        inset-inline-end: 56px;
+        z-index: 3;
+        display: inline-flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        color: rgba(248, 250, 252, 0.55);
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        text-decoration: none;
+        transition: color 0.25s;
+      }
+      .hero-scroll-cue:hover {
+        color: var(--primary);
+      }
+      .hero-scroll-cue .cue-track {
+        width: 1px;
+        height: 46px;
+        background: rgba(248, 250, 252, 0.2);
+        position: relative;
+        overflow: hidden;
+      }
+      .hero-scroll-cue .cue-track::after {
+        content: "";
+        position: absolute;
+        inset-inline: 0;
+        top: 0;
+        height: 18px;
+        background: var(--primary);
+        animation: cueDrop 2s cubic-bezier(0.6, 0, 0.4, 1) infinite;
+      }
+      @keyframes cueDrop {
+        0% { transform: translateY(-100%); }
+        60%, 100% { transform: translateY(300%); }
       }
 
       /* ─── BUTTONS ─── */
       .btn-primary {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        white-space: nowrap;
+        text-decoration: none;
         background: var(--primary);
-        color: #080808;
+        color: var(--text-inverse);
         border: none;
         padding: 14px 32px;
         border-radius: 6px;
@@ -508,6 +698,40 @@
         transform: translateY(0);
       }
 
+      .btn-secondary {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        white-space: nowrap;
+        text-decoration: none;
+        background: transparent;
+        color: var(--primary);
+        border: 1px solid var(--border-primary);
+        padding: 13px 30px;
+        border-radius: 6px;
+        font-family: var(--font-primary);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition:
+          background 0.25s,
+          color 0.25s,
+          border-color 0.25s,
+          transform 0.2s;
+      }
+      .btn-secondary:hover {
+        background: var(--primary-hover);
+        border-color: var(--primary-hover);
+        color: var(--text-inverse);
+        transform: translateY(-2px);
+      }
+      .btn-secondary:active {
+        transform: translateY(0);
+      }
+
       /* ─── SECTION TITLES ─── */
       .section-eyebrow {
         display: inline-flex;
@@ -526,12 +750,18 @@
         height: 1px;
         background: var(--primary);
       }
-      .section-title {
+      /* Scoped past the generic `.section-title` in globals.css, which would
+         otherwise shrink these headings and add a border. */
+      .landing-wrapper .section-title {
         font-family: var(--font-display);
         font-size: clamp(40px, 5vw, 64px);
+        font-weight: 400;
         line-height: 1;
         letter-spacing: 1px;
         color: var(--text);
+        border-bottom: none;
+        padding-bottom: 0;
+        margin-bottom: 0;
       }
 
       /* ─── DIVIDER ─── */
@@ -557,7 +787,7 @@
         transform: translateY(-50%);
         font-family: var(--font-display);
         font-size: clamp(120px, 18vw, 240px);
-        color: rgba(255, 255, 255, 0.015);
+        color: var(--watermark);
         letter-spacing: -4px;
         pointer-events: none;
         line-height: 1;
@@ -594,18 +824,28 @@
         width: 100%;
         height: 520px;
         object-fit: cover;
+        background: var(--bg3);
         border-radius: 14px;
         position: relative;
         z-index: 1;
         filter: grayscale(85%) contrast(1.05);
         transition:
           filter 0.5s ease,
-          transform 0.5s ease;
+          transform 0.5s ease,
+          box-shadow 0.5s ease;
         display: block;
       }
-      .coach-img:hover {
+      .coach-image-wrapper:hover .coach-img {
         filter: grayscale(20%) contrast(1.02);
         transform: scale(1.02);
+        box-shadow: 0 24px 60px rgba(var(--primary-rgb), 0.18);
+      }
+      .coach-image-frame {
+        transition: transform 0.5s ease, border-color 0.5s ease;
+      }
+      .coach-image-wrapper:hover .coach-image-frame {
+        transform: translateY(-6px);
+        border-color: var(--primary);
       }
       .coach-badge {
         position: absolute;
@@ -613,7 +853,7 @@
         inset-inline-end: -12px;
         z-index: 2;
         background: var(--primary);
-        color: #080808;
+        color: var(--text-inverse);
         font-family: var(--font-display);
         font-size: 13px;
         letter-spacing: 2px;
@@ -716,7 +956,9 @@
         overflow: hidden;
         box-shadow: 0 0 10px rgba(var(--primary-rgb), 0.05);
       }
-      .membership-card:hover {
+      /* Extra specificity so the lift wins over `.reveal.visible`'s transform */
+      .membership-grid .membership-card:hover,
+      .membership-grid .membership-card:focus-within {
         background: var(--bg3);
         transform: translateY(-6px);
         border-color: var(--primary);
@@ -725,16 +967,59 @@
           0 0 20px rgba(var(--primary-rgb), 0.35);
       }
 
+      /* Featured plan */
+      .membership-card.featured {
+        border-color: var(--border-primary);
+        box-shadow: 0 6px 30px rgba(var(--primary-rgb), 0.12);
+      }
+      .membership-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        inset-inline: 0;
+        height: 3px;
+        background: linear-gradient(
+          to right,
+          transparent,
+          var(--primary),
+          transparent
+        );
+        z-index: 3;
+      }
+
       .membership-card-img {
         width: 100%;
         height: 200px;
         object-fit: cover;
         display: block;
+        background: var(--bg3);
         filter: brightness(0.7) saturate(0.7);
-        transition: filter 0.4s;
+        transition: filter 0.4s, transform 0.6s ease;
       }
       .membership-card:hover .membership-card-img {
         filter: brightness(0.85) saturate(0.9);
+        transform: scale(1.04);
+      }
+      .membership-card-media {
+        position: relative;
+        overflow: hidden;
+      }
+      /* Keeps the badge legible where the photo is bright */
+      .membership-card-media::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background: linear-gradient(
+          to bottom,
+          rgba(15, 23, 42, 0.45),
+          transparent 60%
+        );
+        opacity: 0.9;
+        transition: opacity 0.4s;
+      }
+      .membership-card:hover .membership-card-media::after {
+        opacity: 0.75;
       }
 
       .membership-card-body {
@@ -762,8 +1047,17 @@
         display: flex;
         justify-content: space-between;
         align-items: baseline;
+        gap: 12px;
         padding: 10px 0;
         border-bottom: 1px solid var(--border);
+      }
+      .price-row .price-label {
+        flex: 1;
+        min-width: 0;
+      }
+      .price-row .price-amount {
+        flex-shrink: 0;
+        white-space: nowrap;
       }
       .price-row:last-of-type {
         margin-bottom: 24px;
@@ -791,6 +1085,11 @@
         margin-bottom: 24px;
         line-height: 1.55;
       }
+      /* Dark's light-blue primary is too close to its own tint here; the lighter
+         accent restores WCAG AA on this small note. Light already passes. */
+      :root[data-theme="dark"] .price-note {
+        color: var(--primary-light);
+      }
       .membership-features {
         list-style: none;
         display: flex;
@@ -813,28 +1112,34 @@
         flex-shrink: 0;
       }
       .btn-card {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
         width: 100%;
         padding: 14px;
         background: transparent;
-        color: var(--text);
-        border: 1px solid var(--border);
+        color: var(--primary);
+        border: 1px solid var(--border-primary);
         border-radius: 8px;
         font-family: var(--font-primary);
-        font-size: 12px;
+        font-size: 14px;
         font-weight: 600;
         letter-spacing: 1.5px;
         text-transform: uppercase;
+        text-decoration: none;
         cursor: pointer;
         transition:
           background 0.25s,
           border-color 0.25s,
-          color 0.25s;
+          color 0.25s,
+          transform 0.2s;
         margin-top: auto;
       }
       .btn-card:hover {
         background: var(--primary);
         border-color: var(--primary);
-        color: #080808;
+        color: var(--text-inverse);
+        transform: translateY(-2px);
       }
 
       /* ─── CONTACT ─── */
@@ -882,6 +1187,12 @@
         display: flex;
         align-items: flex-start;
         gap: 20px;
+        text-decoration: none;
+        color: inherit;
+        transition: padding-inline-start 0.3s ease;
+      }
+      a.contact-item:hover {
+        padding-inline-start: 8px;
       }
       .contact-item:first-child {
         padding-top: 0;
@@ -897,6 +1208,19 @@
         flex-shrink: 0;
         color: var(--primary);
         margin-top: 2px;
+        transition: background 0.25s, box-shadow 0.25s, transform 0.25s;
+      }
+      a.contact-item:hover .contact-icon {
+        background: var(--primary);
+        color: var(--text-inverse);
+        transform: scale(1.06);
+        box-shadow: 0 8px 24px rgba(var(--primary-rgb), 0.35);
+      }
+      a.contact-item:hover p {
+        color: var(--primary);
+      }
+      .contact-item p {
+        transition: color 0.25s;
       }
       .contact-item h4 {
         font-size: 10px;
@@ -928,7 +1252,7 @@
       }
 
       /* ─── FOOTER ─── */
-      footer {
+      .landing-wrapper footer {
         background: var(--bg);
         border-top: 1px solid var(--border);
         padding: 72px 0 36px;
@@ -1035,24 +1359,63 @@
       }
       .footer-socials a:hover {
         background: var(--primary);
-        color: #080808;
+        color: var(--text-inverse);
         border-color: var(--primary);
       }
 
       /* ─── SCROLL REVEAL ─── */
       .reveal {
         opacity: 0;
-        transform: scale(0.97);
+        transform: translateY(24px);
         transition:
-          opacity 0.7s ease,
-          transform 0.7s ease;
+          opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+          transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
       }
       .reveal.visible {
         opacity: 1;
-        transform: scale(1);
+        transform: translateY(0);
+      }
+      /* Never leave content hidden when animations are suppressed */
+      @media (prefers-reduced-motion: reduce) {
+        .reveal {
+          opacity: 1;
+          transform: none;
+        }
+        .hero-content > * {
+          animation: none;
+        }
+        .hero-scroll-cue .cue-track::after {
+          animation: none;
+        }
       }
 
       /* ─── RESPONSIVE ─── */
+      @media (max-width: 1180px) {
+        nav {
+          padding: 0 28px;
+        }
+        .hero-content {
+          padding-inline: 56px;
+        }
+      }
+
+      /* The English wordmark is roughly twice the width of the Arabic one, so
+         the nav row runs out of space here — before the drawer breakpoint takes
+         over. Drop to the mark only, but keep the name for screen readers so the
+         logo link still has an accessible name. */
+      @media (max-width: 1080px) {
+        .nav-logo-text {
+          position: absolute;
+          width: 1px;
+          height: 1px;
+          padding: 0;
+          margin: -1px;
+          overflow: hidden;
+          clip-path: inset(50%);
+          border: 0;
+        }
+      }
+
       @media (max-width: 1000px) {
         .coach-layout {
           grid-template-columns: 1fr;
@@ -1067,8 +1430,18 @@
         .membership-grid {
           grid-template-columns: 1fr 1fr;
         }
+        /* Don't leave the third card stranded in a half-empty row */
+        .membership-grid > .membership-card:last-child:nth-child(odd) {
+          grid-column: 1 / -1;
+          width: 100%;
+          max-width: 520px;
+          margin-inline: auto;
+        }
         .contact-layout {
           grid-template-columns: 1fr;
+        }
+        .contact-image-wrapper {
+          max-width: 320px;
         }
         .footer-top {
           grid-template-columns: 1fr;
@@ -1078,45 +1451,94 @@
           gap: 36px;
         }
       }
-      @media (max-width: 680px) {
-        nav {
-          padding: 0 20px;
-        }
+
+      /* Drawer takes over before the link row gets cramped */
+      @media (max-width: 900px) {
         .burger-menu {
           display: flex;
+        }
+        .nav-actions > .nav-cta {
+          display: none;
         }
         .nav-links {
           position: fixed;
           top: 0;
-          inset-inline-end: -100%;
-          width: 250px;
-          height: 100vh;
+          inset-inline-end: 0;
+          width: min(300px, 82vw);
+          height: 100dvh;
           background: var(--nav-bg);
-          backdrop-filter: blur(10px);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
           flex-direction: column;
-          align-items: center;
+          align-items: stretch;
           justify-content: center;
-          gap: 30px;
-          padding: 40px;
-          transition: inset-inline-end 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+          gap: 8px;
+          padding: 40px 32px;
+          transform: translateX(100%);
+          transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
           border-inline-start: 1px solid var(--border);
           z-index: 99;
-          box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
+          box-shadow: -10px 0 40px rgba(2, 6, 23, 0.45);
         }
-        .nav-links.active {
-          inset-inline-end: 0;
+        /* Softer drawer shadow in light mode. Scoped here so it never leaks
+           onto the desktop inline nav row. */
+        :root[data-theme="light"] .nav-links {
+          box-shadow: -10px 0 40px rgba(15, 23, 42, 0.15);
         }
-        .nav-cta {
-          display: none;
+        [dir="rtl"] .nav-links {
+          transform: translateX(-100%);
+        }
+        .nav-links.active,
+        [dir="rtl"] .nav-links.active {
+          transform: translateX(0);
+        }
+        .nav-links li {
+          border-bottom: 1px solid var(--border);
+        }
+        .nav-links li:last-child {
+          border-bottom: none;
+        }
+        .nav-links a {
+          display: block;
+          padding: 18px 4px;
+          font-size: 15px;
+          letter-spacing: 1.5px;
+        }
+        .nav-links a::after {
+          bottom: 10px;
+        }
+        .nav-links .nav-drawer-cta {
+          display: block;
+          margin-top: 24px;
+        }
+        .nav-links .nav-drawer-cta .nav-cta {
+          width: 100%;
+          padding: 14px 22px;
+          font-size: 13px;
+        }
+      }
+
+      @media (max-width: 680px) {
+        nav {
+          padding: 0 20px;
+        }
+        .hero {
+          min-height: 560px;
         }
         .hero-content {
-          padding-top: 0;
-          padding-bottom: 80px;
+          padding-block: 0 88px;
           padding-inline-start: 48px;
-          padding-inline-end: 28px;
+          padding-inline-end: 24px;
         }
         .hero-accent-line {
           inset-inline-start: 28px;
+        }
+        .hero-scroll-cue {
+          display: none;
+        }
+        .hero-btns .btn-primary,
+        .hero-btns .btn-secondary {
+          flex: 1 1 160px;
         }
         .coach-inner,
         .membership-inner,
@@ -1129,8 +1551,19 @@
         #contact {
           padding: 80px 0;
         }
+        .coach-header,
+        .membership-header,
+        .contact-header {
+          margin-bottom: 44px;
+        }
         .membership-grid {
           grid-template-columns: 1fr;
+        }
+        .membership-grid > .membership-card:last-child:nth-child(odd) {
+          max-width: none;
+        }
+        .membership-card-body {
+          padding: 28px 22px;
         }
         .coach-stats {
           flex-direction: column;
@@ -1148,6 +1581,19 @@
         .coach-stats li:not(:first-child) {
           padding-inline-start: 0;
         }
+        .footer-brand {
+          font-size: 26px;
+          letter-spacing: 2px;
+        }
+        .footer-bottom {
+          justify-content: center;
+          text-align: center;
+        }
+      }
+
+      /* Body scroll lock while the drawer is open */
+      body.nav-open {
+        overflow: hidden;
       }
 
       /* ─── DEACTIVATED MEMBERSHIP CARDS ─── */
@@ -1158,7 +1604,7 @@
       .cms-unavailable-overlay {
         position: absolute;
         inset: 0;
-        background: rgba(12, 12, 12, 0.95);
+        background: color-mix(in srgb, var(--bg2) 95%, transparent);
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -1166,7 +1612,7 @@
         z-index: 150;
         padding: 24px;
         text-align: center;
-        border: 2px solid #dc3545;
+        border: 2px solid var(--error);
         border-radius: 12px;
         animation: fadeInOverlay 0.25s ease-out;
       }
@@ -1175,7 +1621,7 @@
         to { opacity: 1; }
       }
       .cms-unavailable-title {
-        color: #dc3545;
+        color: var(--error);
         font-size: 1.4rem;
         font-weight: 800;
         margin-bottom: 12px;
@@ -1185,9 +1631,48 @@
         gap: 6px;
       }
       .cms-unavailable-desc {
-        color: #9A9490;
+        color: var(--muted2);
         font-size: 0.85rem;
         max-width: 240px;
         line-height: 1.6;
+      }
+
+      /* ─── LIGHT THEME REFINEMENTS ───
+         The landing art direction is built for a dark canvas; these soften the
+         heavy photo filters and shadows so it reads as premium on white too. */
+      :root[data-theme="light"] .membership-card-img {
+        filter: brightness(0.94) saturate(0.85);
+      }
+      :root[data-theme="light"] .membership-card:hover .membership-card-img {
+        filter: brightness(1) saturate(1);
+      }
+      :root[data-theme="light"] .membership-card-media::after {
+        background: linear-gradient(
+          to bottom,
+          rgba(15, 23, 42, 0.25),
+          transparent 60%
+        );
+      }
+      :root[data-theme="light"] .membership-card {
+        box-shadow: 0 2px 10px rgba(37, 99, 235, 0.06);
+      }
+      :root[data-theme="light"] .membership-card:hover,
+      :root[data-theme="light"] .membership-card:focus-within {
+        box-shadow:
+          0 12px 40px rgba(37, 99, 235, 0.10),
+          0 0 20px rgba(var(--primary-rgb), 0.18);
+      }
+      :root[data-theme="light"] .coach-img,
+      :root[data-theme="light"] .trainer-image {
+        filter: grayscale(55%) contrast(1.02);
+      }
+      :root[data-theme="light"] .burger-menu:hover {
+        background: var(--bg4);
+      }
+      :root[data-theme="light"] .landing-wrapper nav.scrolled {
+        box-shadow: 0 6px 24px rgba(37, 99, 235, 0.07);
+      }
+      :root[data-theme="light"] body::before {
+        opacity: 0.015;
       }
     

@@ -4,7 +4,7 @@ export default function Loading() {
   return (
     <div className="global-loading-container">
       <div className="loading-content">
-        <div className="gold-spinner"></div>
+        <div className="primary-spinner"></div>
         <h2 className="loading-text">جاري التحميل...</h2>
       </div>
 
@@ -15,7 +15,7 @@ export default function Loading() {
           justify-content: center;
           min-height: 100vh;
           width: 100%;
-          background-color: #080808;
+          background-color: #0F172A;
           font-family: 'Amiri', serif;
         }
 
@@ -26,18 +26,18 @@ export default function Loading() {
           gap: 24px;
         }
 
-        .gold-spinner {
+        .primary-spinner {
           width: 64px;
           height: 64px;
-          border: 4px solid rgba(201, 168, 76, 0.18);
-          border-top-color: #C9A84C;
+          border: 4px solid rgba(96, 165, 250, 0.18);
+          border-top-color: #60A5FA;
           border-radius: 50%;
           animation: spin 1s linear infinite;
-          box-shadow: 0 0 20px rgba(201, 168, 76, 0.2);
+          box-shadow: 0 0 20px rgba(96, 165, 250, 0.2);
         }
 
         .loading-text {
-          color: #C9A84C;
+          color: #60A5FA;
           font-size: 1.5rem;
           letter-spacing: 1px;
           animation: pulse-text 2s ease-in-out infinite;
@@ -53,11 +53,11 @@ export default function Loading() {
         @keyframes pulse-text {
           0%, 100% {
             opacity: 1;
-            text-shadow: 0 0 10px rgba(201, 168, 76, 0.5);
+            text-shadow: 0 0 10px rgba(96, 165, 250, 0.5);
           }
           50% {
             opacity: 0.5;
-            text-shadow: 0 0 0px rgba(201, 168, 76, 0);
+            text-shadow: 0 0 0px rgba(96, 165, 250, 0);
           }
         }
       `}</style>
