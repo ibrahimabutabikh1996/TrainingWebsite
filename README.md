@@ -1,36 +1,72 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# موقع متابعة التدريب — كابتن إبراهيم
 
-## Getting Started
+موقع يدير المشتركين وخططهم التدريبية: الكابتن يبني الكورسات ويسندها، والمتدرب
+يسجّل أوزانه وأيام تمرينه وراحته.
 
-First, run the development server:
+## التشغيل
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+يحتاج ملف `.env` بالمتغيّرات التالية (غير مرفوع مع المشروع):
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| المتغيّر | ما هو |
+| --- | --- |
+| `DATABASE_URL` | عنوان قاعدة البيانات عبر المجمّع |
+| `DIRECT_URL` | العنوان المباشر، ويستعمله الموقع وأدوات قاعدة البيانات |
+| `NEXT_PUBLIC_SUPABASE_URL` | عنوان مشروع التخزين |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | المفتاح العلني |
+| `SUPABASE_SERVICE_ROLE_KEY` | مفتاح الخدمة — للخادم وحده، لا يصل المتصفح أبداً |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## أول خطوة بعد التنصيب
 
-## Learn More
+لوحة الكابتن تُفتح لحساب اسمه `admin` تحديداً، وإنشاء الحسابات من داخل الموقع
+مخصّص للمشتركين، فحساب الكابتن يُنشأ من سطر الأوامر:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+node --env-file=.env scripts/create-admin.mjs "كلمة-المرور-التي-تختارها"
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+إعادة تشغيل الأمر نفسه تُحدّث كلمة المرور.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## كيف يُحتسب التقدّم
 
-## Deploy on Vercel
+**لا يوجد «أسبوع» في هذا النظام.** وحدة التقدّم هي *دورة تدريبية*: عدد التمارين
+الذي اختاره المتدرب عند التسجيل. تنتهي الدورة لحظة تسجيل ذلك العدد من التمارين
+— بأي ترتيب، في أي تواريخ، متتابعة أو متباعدة — ثم تبدأ التالية تلقائياً، وأي
+تمرين إضافي يُحتسب لها. لا شيء فيها طوله سبعة أيام.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+المتدرب هو من يحدّد يوم وتاريخ كل تمرين، وهو من يحدّد أيام راحته من أيام
+اشتراكه. يوم الراحة سجلّ لا يُحتسب ضمن تمارين الدورة.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+وكل دورة تحمل نسخة من الخطة التي أُدّيت عليها، فتبديل الكورس أو تعديله لا يعيد
+تسمية أوزان سُجّلت على تمارين أخرى.
+
+## قاعدة البيانات
+
+المخطط في `prisma/schema.prisma`. لا يستعمل المشروع سجلّ ترحيلات prisma؛ كل
+تعديل على البنية مكتوب بلغة SQL في `prisma/manual/` ومعه سبب كتابته، ويُطبَّق
+يدوياً ثم يُحدَّث المخطط ليطابقه. الملفات مرتّبة بالتاريخ ويمكن إعادة تشغيلها
+بلا ضرر.
+
+بعد أي تعديل على المخطط:
+
+```bash
+npx prisma generate
+```
+
+## الفحص قبل الرفع
+
+```bash
+npx tsc --noEmit
+npm run lint
+npm run build
+```
+
+## نظام التصميم
+
+الألوان والخطوط وقواعد الوضعين الفاتح والداكن والعربية موصوفة في `AGENTS.md`،
+وتُطبَّق عبر متغيّرات CSS في `src/app/globals.css`. الأنماط مكتوبة بـ CSS عادي
+لا بإطار جاهز.
