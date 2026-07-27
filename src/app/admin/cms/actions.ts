@@ -1,5 +1,6 @@
 "use server";
 
+import { PLACEHOLDER_IMAGE } from "@/lib/placeholderImage";
 import type { JsonRecord } from "@/types";
 import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
@@ -146,7 +147,7 @@ export async function deleteImageServer(publicUrl: string): Promise<boolean> {
           let localChanged = false;
           for (const key in obj) {
             if (obj[key] === publicUrl) {
-              obj[key] = "/photos/loading.jpg";
+              obj[key] = PLACEHOLDER_IMAGE;
               localChanged = true;
             } else if (typeof obj[key] === 'object' && obj[key] !== null) {
               if (removeUrl(obj[key])) {
@@ -180,7 +181,7 @@ export async function deleteImageServer(publicUrl: string): Promise<boolean> {
     try {
       await prisma.courses.updateMany({
         where: { cover_image: publicUrl },
-        data: { cover_image: "/photos/loading.jpg" },
+        data: { cover_image: PLACEHOLDER_IMAGE },
       });
     } catch (dbError) {
       console.error('Error cleaning up image from courses:', dbError);

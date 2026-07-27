@@ -1,5 +1,6 @@
 "use client";
 
+import { hasRealImage, PLACEHOLDER_IMAGE } from "@/lib/placeholderImage";
 import type { JsonRecord } from "@/types";
 import React, { useState, useEffect } from "react";
 import { saveLandingContent, listImagesServer, deleteImageServer, uploadImageServer } from "./actions";
@@ -232,7 +233,7 @@ const PhoneInputField = ({ label, fieldKey }: { label: string, fieldKey: string 
 const ImageUploadField = ({ label, fieldKey, recommendedSize }: { label: string, fieldKey: string, recommendedSize?: string }) => {
   const { currentContent, handleImageUpload, isUploading, openMediaSelector, handleDeleteImage, isSaving, setPreviewImageUrl } = React.useContext(CMSContext);
   const imageUrl = currentContent[fieldKey];
-  const hasImage = imageUrl && imageUrl !== "/photos/loading.jpg";
+  const hasImage = hasRealImage(imageUrl);
 
   return (
     <div style={{ marginTop: 24, marginBottom: 16 }}>
@@ -562,8 +563,8 @@ export default function AdminCMSClient({ initialEn, initialAr }: { initialEn: Js
 
       if (success) {
         if (fieldKey) {
-          setContentAr((prev: JsonRecord) => ({ ...prev, [fieldKey]: "/photos/loading.jpg" }));
-          setContentEn((prev: JsonRecord) => ({ ...prev, [fieldKey]: "/photos/loading.jpg" }));
+          setContentAr((prev: JsonRecord) => ({ ...prev, [fieldKey]: PLACEHOLDER_IMAGE }));
+          setContentEn((prev: JsonRecord) => ({ ...prev, [fieldKey]: PLACEHOLDER_IMAGE }));
         }
         if (activeTab === "media") {
           setMediaLibrary(mediaLibrary.filter(img => img.url !== urlToDelete));
@@ -571,8 +572,8 @@ export default function AdminCMSClient({ initialEn, initialAr }: { initialEn: Js
         toast.success("تم حذف الصورة بنجاح!", { id: toastId });
       } else {
         if (fieldKey) {
-          setContentAr((prev: JsonRecord) => ({ ...prev, [fieldKey]: "/photos/loading.jpg" }));
-          setContentEn((prev: JsonRecord) => ({ ...prev, [fieldKey]: "/photos/loading.jpg" }));
+          setContentAr((prev: JsonRecord) => ({ ...prev, [fieldKey]: PLACEHOLDER_IMAGE }));
+          setContentEn((prev: JsonRecord) => ({ ...prev, [fieldKey]: PLACEHOLDER_IMAGE }));
         }
         if (activeTab === "media") {
           setMediaLibrary(mediaLibrary.filter(img => img.url !== urlToDelete));
@@ -600,7 +601,7 @@ export default function AdminCMSClient({ initialEn, initialAr }: { initialEn: Js
           let changed = false;
           for (const key in updated) {
             if (updated[key] === url) {
-              updated[key] = "/photos/loading.jpg";
+              updated[key] = PLACEHOLDER_IMAGE;
               changed = true;
             }
           }
@@ -612,7 +613,7 @@ export default function AdminCMSClient({ initialEn, initialAr }: { initialEn: Js
           let changed = false;
           for (const key in updated) {
             if (updated[key] === url) {
-              updated[key] = "/photos/loading.jpg";
+              updated[key] = PLACEHOLDER_IMAGE;
               changed = true;
             }
           }
