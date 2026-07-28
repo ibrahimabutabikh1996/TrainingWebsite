@@ -1,0 +1,53 @@
+"use client";
+
+import React from "react";
+import "../crm.css";
+
+interface AdminModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  title: string;
+  icon?: string;
+  children: React.ReactNode;
+  footer?: React.ReactNode;
+  maxWidth?: number;
+}
+
+export default function AdminModal({ isOpen, onClose, title, icon = "info", children, footer, maxWidth = 600 }: AdminModalProps) {
+  if (!isOpen) return null;
+
+  return (
+    <div style={{ 
+      position: "fixed", inset: 0, zIndex: 9999, 
+      backgroundColor: "rgba(0,0,0,0.8)", backdropFilter: "blur(4px)", 
+      display: "flex", alignItems: "center", justifyContent: "center", padding: 24 
+    }}>
+      <div className="crm-glass-panel" style={{ width: "100%", maxWidth, maxHeight: "90vh", display: "flex", flexDirection: "column", overflow: "hidden", backgroundColor: "var(--admin-bg-2, var(--bg2))", borderRadius: 12, boxShadow: "0 20px 40px rgba(0,0,0,0.3)", border: "1px solid color-mix(in srgb, var(--admin-on-surface) 8%, transparent)" }}>
+        
+        {/* Header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 24px", borderBottom: "1px solid color-mix(in srgb, var(--admin-on-surface) 8%, transparent)", flexShrink: 0 }}>
+          <h3 style={{ fontSize: "1.25rem", fontWeight: 700, margin: 0, display: "flex", alignItems: "center", gap: 8, color: "var(--admin-on-surface)" }}>
+            <span className="material-symbols-outlined" style={{ color: "var(--primary)" }}>{icon}</span>
+            {title}
+          </h3>
+          <button onClick={onClose} style={{ background: "transparent", border: "none", color: "var(--admin-outline)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 4, borderRadius: 4 }}>
+            <span className="material-symbols-outlined">close</span>
+          </button>
+        </div>
+        
+        {/* Body */}
+        <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column" }} className="custom-scrollbar">
+          {children}
+        </div>
+        
+        {/* Footer */}
+        {footer && (
+          <div style={{ padding: "16px 24px", borderTop: "1px solid color-mix(in srgb, var(--admin-on-surface) 8%, transparent)", flexShrink: 0, display: "flex", justifyContent: "flex-end", gap: 12 }}>
+            {footer}
+          </div>
+        )}
+
+      </div>
+    </div>
+  );
+}

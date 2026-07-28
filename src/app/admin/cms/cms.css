@@ -1,0 +1,842 @@
+/* --- CMS Client Design System & Layout --- */
+
+.cms-container {
+  width: 100%;
+  padding-bottom: 40px;
+  animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; /* minimal: no transform */ }
+  to { opacity: 1; /* minimal: no transform */ }
+}
+
+/* --- Header Row --- */
+.cms-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+  gap: 16px;
+}
+
+.cms-header-title {
+  margin: 0 0 6px;
+  color: var(--text);
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 700;
+  line-height: 1.3;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cms-header-title span.material-symbols-outlined {
+  font-size: 1.6rem;
+  color: var(--primary);
+}
+
+.cms-header-sub {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  max-width: 62ch;
+}
+
+/* Language Segmented Toggle */
+.cms-lang-toggle {
+  display: flex;
+  background: var(--bg3);
+  padding: 4px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+
+.cms-lang-btn {
+  padding: 6px 16px;
+  background: transparent;
+  color: var(--muted2);
+  border: none;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.cms-lang-btn:hover {
+  color: var(--text);
+}
+
+.cms-lang-btn.active {
+  background: var(--primary);
+  color: var(--text-inverse);
+}
+
+/* --- CMS Split Layout --- */
+.cms-layout {
+  display: flex;
+  gap: 16px;
+  align-items: stretch;
+}
+
+@media (max-width: 991px) {
+  .cms-layout {
+    flex-direction: column;
+  }
+}
+
+/* Sidebar Tab List */
+.cms-sidebar {
+  width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-shrink: 0;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 10px;
+  align-self: flex-start;
+  position: sticky;
+  top: 16px;
+  z-index: 40;
+}
+
+@media (max-width: 991px) {
+  .cms-sidebar {
+    width: 100%;
+    flex-direction: row;
+    overflow-x: auto;
+    padding: 12px;
+    gap: 8px;
+  }
+}
+
+.cms-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: transparent;
+  color: var(--muted2);
+  border: none;
+  border-right: 3px solid transparent; /* RTL right indicator */
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  border-radius: 10px;
+  transition: all 0.25s ease;
+  text-align: right;
+  width: 100%;
+}
+
+body[dir="ltr"] .cms-tab-btn {
+  border-right: none;
+  border-left: 3px solid transparent;
+  text-align: left;
+}
+
+@media (max-width: 991px) {
+  .cms-tab-btn {
+    width: auto;
+    white-space: nowrap;
+    border-right: none !important;
+    border-left: none !important;
+    border-bottom: 3px solid transparent;
+  }
+}
+
+.cms-tab-btn:hover {
+  color: var(--text);
+  background: var(--bg3);
+}
+
+body[dir="ltr"] .cms-tab-btn:hover {
+}
+
+@media (max-width: 991px) {
+  .cms-tab-btn:hover {
+  }
+}
+
+.cms-tab-btn.active {
+  background: var(--primary-dim);
+  color: var(--primary);
+  border-right-color: var(--primary);
+}
+
+body[dir="ltr"] .cms-tab-btn.active {
+  border-left-color: var(--primary);
+}
+
+@media (max-width: 991px) {
+  .cms-tab-btn.active {
+    border-bottom-color: var(--primary);
+  }
+}
+
+.cms-tab-btn span.material-symbols-outlined {
+  font-size: 1.25rem;
+  transition: transform 0.25s ease;
+}
+
+.cms-tab-btn:hover span.material-symbols-outlined {
+  transform: scale(1.1);
+  color: var(--primary);
+}
+
+/* Content Container Pane */
+.cms-content-pane {
+  flex: 1;
+  padding-left: 8px; /* For scrollbar breathing room */
+}
+
+/* Custom Scrollbar for CMS Content Pane */
+.cms-content-pane::-webkit-scrollbar {
+  width: 5px;
+}
+.cms-content-pane::-webkit-scrollbar-track {
+  background: transparent;
+}
+.cms-content-pane::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 10px;
+}
+.cms-content-pane::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
+}
+
+/* --- Section Cards --- */
+.cms-section-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 16px;
+}
+
+.cms-card-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 20px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 12px;
+}
+
+.cms-card-title span.material-symbols-outlined {
+  color: var(--primary);
+  font-size: 1.25rem;
+}
+
+/* --- Form Input Fields --- */
+.cms-form-group {
+  margin-bottom: 20px;
+}
+
+.cms-label {
+  display: block;
+  font-size: 0.875rem;
+  color: var(--muted2);
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.cms-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.cms-input-wrapper span.material-symbols-outlined {
+  position: absolute;
+  right: 12px;
+  color: var(--muted);
+  font-size: 1.2rem;
+  pointer-events: none;
+  transition: color 0.25s ease;
+}
+
+body[dir="ltr"] .cms-input-wrapper span.material-symbols-outlined {
+  right: auto;
+  left: 12px;
+}
+
+.cms-input-wrapper input {
+  padding-right: 40px !important;
+}
+
+body[dir="ltr"] .cms-input-wrapper input {
+  padding-right: 12px !important;
+  padding-left: 40px !important;
+}
+
+.cms-input, .cms-textarea {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 10px 12px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.925rem;
+  outline: none;
+  transition: all 0.25s ease;
+}
+
+[data-theme="light"] .cms-input,
+[data-theme="light"] .cms-textarea {
+  background: rgba(0, 0, 0, 0.015);
+}
+
+.cms-input:hover, .cms-textarea:hover {
+  border-color: rgba(var(--primary-rgb), 0.2);
+}
+
+.cms-input:focus, .cms-textarea:focus {
+  background: var(--bg4);
+  border-color: var(--primary);
+}
+
+.cms-input-wrapper:focus-within span.material-symbols-outlined {
+  color: var(--primary);
+}
+
+.cms-textarea {
+  resize: vertical;
+  min-height: 100px;
+  line-height: 1.5;
+}
+
+/* --- Drag & Drop Upload Zone --- */
+.cms-upload-zone {
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.01);
+  border-radius: 4px;
+  padding: 18px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+[data-theme="light"] .cms-upload-zone {
+  background: rgba(0, 0, 0, 0.005);
+}
+
+.cms-upload-zone:hover {
+  border-color: var(--primary);
+  background: rgba(var(--primary-rgb), 0.02);
+}
+
+.cms-upload-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.cms-upload-icon {
+  font-size: 2.2rem;
+  color: var(--muted2);
+  transition: all 0.25s ease;
+}
+
+.cms-upload-zone:hover .cms-upload-icon {
+  color: var(--primary);
+}
+
+.cms-upload-text {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.cms-upload-hint {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.cms-file-input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 10;
+}
+
+/* Image Preview Block */
+.cms-image-preview-card {
+  position: relative;
+  display: inline-block;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  max-width: 320px;
+  width: 100%;
+}
+
+.cms-preview-img {
+  width: 100%;
+  /* Capped so a portrait source (the coach and login art are 800x1000) cannot
+     grow to 500px+ and push the form fields off the screen. Click still opens
+     the full-size viewer. */
+  max-height: 320px;
+  height: auto;
+  object-fit: contain;
+  background: var(--bg3);
+  display: block;
+  transition: transform 0.3s ease;
+}
+
+.cms-image-preview-card:hover .cms-preview-img {
+}
+
+.cms-preview-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.cms-image-preview-card:hover .cms-preview-overlay {
+  opacity: 1;
+}
+
+.cms-preview-btn-delete {
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+
+.cms-preview-btn-delete:hover {
+  background: #bd2130;
+}
+
+/* --- Pricing Cards Grid (Memberships) --- */
+.cms-pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.cms-pricing-card {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 16px;
+  transition: border-color 0.25s ease;
+}
+
+.cms-pricing-card:hover {
+  border-color: var(--primary);
+}
+
+.cms-pricing-header {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px dashed var(--border);
+  padding-bottom: 10px;
+}
+
+.cms-pricing-header span {
+  font-size: 1.15rem;
+}
+
+/* --- Media Library Gallery --- */
+.cms-media-info {
+  margin-bottom: 20px;
+  font-size: 0.85rem;
+  color: var(--muted2);
+  line-height: 1.6;
+}
+
+.cms-media-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 16px;
+}
+
+.cms-media-card {
+  position: relative;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+  aspect-ratio: 1 / 1;
+  background: var(--bg3);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.cms-media-card:hover {
+  border-color: var(--primary);
+}
+
+.cms-media-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.cms-media-card:hover .cms-media-img {
+}
+
+.cms-media-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(3px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.cms-media-card:hover .cms-media-overlay {
+  opacity: 1;
+}
+
+.cms-media-name {
+  font-size: 0.725rem;
+  color: var(--text);
+  text-align: center;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cms-media-actions {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+  justify-content: center;
+}
+
+.cms-media-btn {
+  flex: 1;
+  padding: 6px;
+  border-radius: 4px;
+  border: none;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: all 0.2s;
+  max-width: 65px;
+}
+
+.cms-media-btn.copy {
+  background: var(--primary);
+  color: var(--text-inverse);
+}
+
+.cms-media-btn.copy:hover {
+  background: var(--primary-hover);
+}
+
+.cms-media-btn.delete {
+  background: #dc3545;
+  color: white;
+}
+
+.cms-media-btn.delete:hover {
+  background: #bd2130;
+}
+
+/* Loading library */
+.cms-loading-media {
+  padding: 40px;
+  text-align: center;
+  color: var(--muted2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.cms-spinner {
+  width: 30px;
+  height: 30px;
+  border: 3px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* --- Sticky Bottom Footer Actions --- */
+/* Pinned to the bottom of the viewport. As a static block it sat at the end of
+   the document — on the membership tab that put "save" ~5000px down, so every
+   edit meant scrolling the full page to commit it. */
+.cms-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 60;
+  margin-top: 32px;
+  padding: 16px 20px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--bg2) 92%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 -6px 24px var(--shadow-color);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Unsaved-changes indicator, pushed to the opposite end of the bar. */
+.cms-dirty {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-inline-end: auto;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--warning);
+}
+
+.cms-dirty::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--warning);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--warning) 25%, transparent);
+}
+
+.cms-saved {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-inline-end: auto;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.cms-saved .material-symbols-outlined { font-size: 17px; color: var(--success); }
+
+@media (max-width: 640px) {
+  .cms-footer { padding: 12px 14px; }
+  .cms-footer .cms-btn-primary,
+  .cms-footer .cms-btn-secondary { flex: 1; justify-content: center; }
+}
+
+.cms-btn-primary, .cms-btn-secondary {
+  padding: 12px 28px;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: inherit;
+}
+
+.cms-btn-primary {
+  background: var(--primary);
+  color: var(--text-inverse);
+  border: none;
+}
+
+.cms-btn-primary:hover:not(:disabled) {
+  background: var(--primary-hover);
+}
+
+.cms-btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.cms-btn-secondary {
+  background: transparent;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+}
+
+.cms-btn-secondary:hover:not(:disabled) {
+  background: var(--primary-dim);
+}
+
+.cms-btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* --- Premium Dialog Modal --- */
+.cms-modal-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0,0,0,0.65);
+  z-index: 10000;
+}
+
+.cms-modal-card {
+  background: var(--bg2);
+  padding: 24px;
+  border-radius: 4px;
+  border: 1px solid var(--primary);
+  width: 90%;
+  max-width: 420px;
+  text-align: center;
+}
+
+.cms-modal-icon-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.cms-modal-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(220, 53, 69, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #dc3545;
+  border: 1px solid rgba(220, 53, 69, 0.2);
+}
+
+.cms-modal-icon span {
+  font-size: 1.8rem;
+}
+
+.cms-modal-title {
+  margin: 0 0 12px 0;
+  color: var(--text);
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.cms-modal-desc {
+  margin: 0 0 24px 0;
+  color: var(--muted2);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.cms-modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.cms-modal-btn-confirm,
+.cms-modal-btn-cancel {
+  flex: 1;
+  padding: 11px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.cms-modal-btn-confirm {
+  background: #dc3545;
+  color: white;
+}
+
+.cms-modal-btn-confirm:hover {
+  background: #bd2130;
+}
+
+.cms-modal-btn-cancel {
+  background: var(--bg3);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.cms-modal-btn-cancel:hover {
+  background: var(--bg4);
+}
+
+/* Selector Image Hover */
+.cms-selector-img-card:hover {
+  border-color: var(--primary) !important;
+}
+
+.cms-selector-img-card:hover .cms-selector-hover-overlay {
+  opacity: 1 !important;
+}
+
+/* Split Layout for section content.
+   The side panel used to carry min-width:280px while the form column had no
+   floor of its own, so the form was squeezed to ~180px — narrower than the
+   phone field's own fixed segments, which then spilled outside the card.
+   Both columns now declare a basis and the row wraps instead of starving one. */
+.cms-section-split {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.cms-split-main {
+  flex: 2 1 340px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cms-split-side {
+  flex: 1 1 260px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+@media (max-width: 768px) {
+  .cms-section-split {
+    flex-direction: column;
+  }
+  .cms-split-side {
+    min-width: 100%;
+  }
+}
