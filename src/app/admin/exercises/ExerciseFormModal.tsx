@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Exercise } from "@/types/admin";
 import AdminModal from "../components/AdminModal";
 import { CATEGORIES, type ExerciseFormValues } from "./useExercises";
+import { Icon } from "@/components/Icon";
 import "./exercises.css";
 
 type ExerciseFormModalProps = {
@@ -16,7 +17,6 @@ type ExerciseFormModalProps = {
 
 const EMPTY: ExerciseFormValues = {
   name_ar: "",
-  name_en: "",
   target_muscles: [],
   category: "مقاومة",
   video_url: "",
@@ -38,7 +38,6 @@ export default function ExerciseFormModal({
     editingEx
       ? {
           name_ar: editingEx.name_ar || "",
-          name_en: editingEx.name_en || "",
           target_muscles: editingEx.target_muscle
             ? editingEx.target_muscle.split(",").map((s) => s.trim()).filter(Boolean)
             : [],
@@ -108,7 +107,7 @@ export default function ExerciseFormModal({
             {isSaving ? (
               <span className="ex-spinner" aria-hidden="true" />
             ) : (
-              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>save</span>
+              <Icon name="save" style={{ fontSize: 18 }} />
             )}
             {isSaving ? "جاري الحفظ..." : editingEx ? "تحديث" : "حفظ"}
           </button>
@@ -119,7 +118,7 @@ export default function ExerciseFormModal({
         <div className="ex-form-row">
           <div className="ex-field">
             <label htmlFor="ex-name-ar">
-              اسم التمرين بالعربية <span className="req">*</span>
+              اسم التمرين <span className="req">*</span>
             </label>
             <input
               id="ex-name-ar"
@@ -127,18 +126,6 @@ export default function ExerciseFormModal({
               value={formData.name_ar}
               onChange={(e) => setFormData({ ...formData, name_ar: e.target.value })}
               placeholder="مثال: بنش برس مستوي"
-            />
-          </div>
-
-          <div className="ex-field">
-            <label htmlFor="ex-name-en">اسم التمرين بالإنجليزية</label>
-            <input
-              id="ex-name-en"
-              type="text"
-              dir="ltr"
-              value={formData.name_en}
-              onChange={(e) => setFormData({ ...formData, name_en: e.target.value })}
-              placeholder="Flat Bench Press"
             />
           </div>
         </div>
@@ -158,7 +145,7 @@ export default function ExerciseFormModal({
                   aria-pressed={selected}
                   onClick={() => toggleMuscle(m)}
                 >
-                  {selected && <span className="material-symbols-outlined">check</span>}
+                  {selected && <Icon name="check" />}
                   {m}
                 </button>
               );

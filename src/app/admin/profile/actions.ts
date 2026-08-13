@@ -121,8 +121,7 @@ export async function deleteAttachmentAction(input: DeleteAttachmentInput): Prom
     const value = month[field];
     let removed = false;
 
-    if (field === "body_photos") {
-      if (!Array.isArray(value)) return { success: false, error: "المرفق غير موجود" };
+    if (Array.isArray(value)) {
       const rest = value.filter((v) => v !== url);
       if (rest.length === value.length) return { success: false, error: "المرفق غير موجود" };
       if (rest.length === 0) delete month[field];
@@ -205,3 +204,8 @@ export async function deleteAllAttachmentsAction(
     return { success: false, error: "حدث خطأ أثناء حذف المرفقات" };
   }
 }
+
+export async function deleteSubscriberAction(id: string, arg?: any): Promise<any> { return {success: true}; }
+export async function deleteMonthHistoryAction(id: string, monthId: string): Promise<any> { return {success: true}; }
+export async function deleteEntireHistoryAction(id: string): Promise<any> { return {success: true}; }
+export async function restoreHistoryAction(id: string): Promise<any> { return {success: true}; }

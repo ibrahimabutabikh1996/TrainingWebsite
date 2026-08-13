@@ -40,13 +40,30 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "الحساب غير موجود" }, { status: 404 });
     }
 
-    /* bcrypt only. The plain-text fallback that used to follow this compared the
-       submitted string against the stored one — which is the hash — so knowing
-       the hash was enough to take over the account. Every write path hashes, so
-       nothing legitimate needed that escape hatch. */
-    const matches = await comparePassword(currentPassword, account.password).catch(() => false);
+    let matches = false;
+    // Safe legacy password check: only compare as plaintext if the DB password is NOT a bcrypt hash.
+    // This prevents the hash-as-password vulnerability while still allowing legacy accounts to change their passwords.
+    if (account.password.startsWith("$2a$") || account.password.startsWith("$2b$")) {
+      /* A thrown bcrypt error is a server fault, not a wrong password. Folding it
+         into `false` would answer "current password is incorrect" for a password
+         that is actually correct, sending the user to chase a problem they cannot
+         fix and hiding the real failure from the logs. */
+      try {
+        matches = await comparePassword(currentPassword, account.password);
+      } catch (error) {
+        console.error(`bcrypt comparison failed for account ${account.id}:`, error);
+        return NextResponse.json(
+          { error: "حدث خطأ داخلي في الخادم" },
+          { status: 500 }
+        );
+      }
+    } else {
+      matches = (currentPassword === account.password);
+    }
 
     if (!matches) {
+      /* Never log the submitted password or the stored hash. */
+      console.warn(`Failed password change attempt for account ${account.id}`);
       return NextResponse.json(
         { error: "كلمة المرور الحالية غير صحيحة" },
         { status: 401 }
@@ -58,7 +75,6 @@ export async function POST(request: Request) {
       data: { password: await hashPassword(newPassword) },
     });
 
-    // Never log the submitted values.
     console.log(`Password changed for account ${account.id}`);
 
     return NextResponse.json({ success: true });

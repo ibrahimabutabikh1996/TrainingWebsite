@@ -45,3 +45,24 @@ yarn-error.log*
 next-env.d.ts
 
 /src/generated/prisma
+
+# one-off scripts written at the terminal while recovering from the Aug 13 reset,
+# plus the exercise dumps they produced. Kept locally, not part of the app.
+/recover_*.py
+/search_*.py
+/fix_*.py
+/restore_*.py
+/rewrite_*.py
+/patch.py
+/dump.ts
+/dump.js
+/delete_all.ts
+/test-delete.js
+/duplicate_*.js
+/update_*.js
+/safe_update_page.js
+/revert_exercises.js
+/process_skills.ps1
+/exercises.json
+/exercises_dump.json
+/temp_skills_repo/

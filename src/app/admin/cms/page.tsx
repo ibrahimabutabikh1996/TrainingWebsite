@@ -8,12 +8,11 @@ export default async function AdminCMSPage() {
     where: { id: "landing_content" },
   });
 
-  const contentEn = settings?.content_en as JsonRecord || defaultTranslations.en;
-  const contentAr = settings?.content_ar as JsonRecord || defaultTranslations.ar;
+  const contentAr = settings?.content_ar as JsonRecord || defaultTranslations;
 
   return (
     <div style={{ padding: 0 }}>
-      <AdminCMSClient initialEn={contentEn} initialAr={contentAr} />
+      <AdminCMSClient initialAr={contentAr} />
     </div>
   );
 }

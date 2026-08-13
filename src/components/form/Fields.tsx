@@ -6,8 +6,8 @@
    src/app/form/form.css under the .form-page scope. */
 
 import { useEffect, useId, useMemo, useState } from "react";
-import { useLanguage } from "@/contexts/LanguageContext";
-import type { TranslationKey } from "@/lib/translations";
+import { t, type TranslationKey } from "@/lib/translations";
+import { CustomSelect } from "@/components/CustomSelect";
 
 /* ─── Icons ─── */
 
@@ -95,7 +95,6 @@ interface FieldShellProps {
 }
 
 export function Field({ label, htmlFor, required, optional, hint, full, children }: FieldShellProps) {
-  const { t } = useLanguage();
   return (
     <div className={`field${full ? " field--full" : ""}`}>
       {label && (
@@ -121,7 +120,7 @@ interface TextInputProps {
   label: string;
   value: string;
   onChange: (value: string) => void;
-  type?: "text" | "number" | "tel";
+  type?: "text" | "number" | "tel" | "password";
   unit?: string;
   placeholder?: string;
   required?: boolean;
@@ -131,6 +130,9 @@ interface TextInputProps {
   min?: number;
   max?: number;
   inputMode?: "numeric" | "decimal" | "tel" | "text";
+  pattern?: string;
+  title?: string;
+  autoComplete?: string;
 }
 
 export function TextInput({
@@ -147,6 +149,9 @@ export function TextInput({
   min,
   max,
   inputMode,
+  pattern,
+  title,
+  autoComplete,
 }: TextInputProps) {
   const id = useId();
   return (
@@ -161,6 +166,9 @@ export function TextInput({
           value={value}
           min={min}
           max={max}
+          pattern={pattern}
+          title={title}
+          autoComplete={autoComplete}
           placeholder={placeholder}
           onChange={(e) => onChange(e.target.value)}
         />
@@ -237,29 +245,19 @@ export function SelectField({
   noPlaceholder,
 }: SelectFieldProps) {
   const id = useId();
-  const { t } = useLanguage();
   return (
     <Field label={label} htmlFor={id} required={required} optional={optional} hint={hint} full={full}>
       <div className="control control--select">
-        <select
-          id={id}
-          className="form-input"
-          required={required}
+        <CustomSelect
           disabled={disabled}
           value={value}
-          onChange={(e) => onChange(e.target.value)}
-        >
-          {!noPlaceholder && <option value="">{t("opt_select")}</option>}
-          {options.map((opt) => {
-            const val = typeof opt === "string" ? opt : opt.value;
-            const text = typeof opt === "string" ? t(opt) : opt.label;
-            return (
-              <option key={val} value={val}>
-                {text}
-              </option>
-            );
-          })}
-        </select>
+          onChange={onChange}
+          placeholder={noPlaceholder ? undefined : t("opt_select")}
+          options={options.map((opt) => ({
+            value: typeof opt === "string" ? opt : opt.value,
+            label: typeof opt === "string" ? t(opt) : opt.label,
+          }))}
+        />
       </div>
     </Field>
   );
@@ -274,6 +272,7 @@ export function ChipGroup({
   onToggle,
   hint,
   optional,
+  required,
 }: {
   label: string;
   options: readonly TranslationKey[];
@@ -281,11 +280,21 @@ export function ChipGroup({
   onToggle: (value: string) => void;
   hint?: string;
   optional?: boolean;
+  required?: boolean;
 }) {
-  const { t } = useLanguage();
   return (
-    <Field label={label} hint={hint} optional={optional} full>
-      <div className="chip-group">
+    <Field label={label} hint={hint} optional={optional} required={required} full>
+      <div className="chip-group" style={{ position: 'relative' }}>
+        {required && (
+          <input
+            type="text"
+            required
+            value={values.length > 0 ? "valid" : ""}
+            onChange={() => {}}
+            style={{ opacity: 0, position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: -1 }}
+            tabIndex={-1}
+          />
+        )}
         {options.map((opt) => {
           const checked = values.includes(opt);
           return (
@@ -346,6 +355,7 @@ interface DropzoneProps {
   hint?: string;
   sectionHint?: string;
   optional?: boolean;
+  required?: boolean;
 }
 
 export function Dropzone({
@@ -358,9 +368,9 @@ export function Dropzone({
   preview,
   hint,
   optional,
+  required,
 }: DropzoneProps) {
   const id = useId();
-  const { t } = useLanguage();
   const [dragging, setDragging] = useState(false);
   const previews = usePreviews(files, Boolean(preview));
 
@@ -373,9 +383,10 @@ export function Dropzone({
   const removeAt = (index: number) => onFiles(files.filter((_, i) => i !== index));
 
   return (
-    <Field label={label} optional={optional} full>
+    <Field label={label} optional={optional} required={required} full>
       <div
         className="dropzone"
+        style={{ position: 'relative' }}
         data-dragging={dragging}
         onDragOver={(e) => {
           e.preventDefault();
@@ -389,6 +400,16 @@ export function Dropzone({
         }}
         onClick={() => document.getElementById(id)?.click()}
       >
+        {required && (
+          <input
+            type="text"
+            required
+            value={files.length > 0 ? "valid" : ""}
+            onChange={() => {}}
+            style={{ opacity: 0, position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: -1 }}
+            tabIndex={-1}
+          />
+        )}
         <input
           id={id}
           type="file"

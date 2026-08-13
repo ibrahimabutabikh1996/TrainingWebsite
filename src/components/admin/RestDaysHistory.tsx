@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { subscriptionWindow } from "@/lib/subscription";
 import { formatDate, formatDayAndDate, toISODate } from "@/lib/trainingDates";
+import { Icon } from "@/components/Icon";
 
 /* The days the trainee took off, as they marked them themselves.
 
@@ -38,11 +39,16 @@ export default async function RestDaysHistory({ profileId }: { profileId: string
     : days;
 
   return (
-    <div className="crm-modal-section">
-      <h4 className="crm-modal-section-title">
-        <span className="material-symbols-outlined">self_improvement</span>
-        أيام الراحة {days.length > 0 && `(${days.length})`}
-      </h4>
+    <details className="crm-modal-section" style={{ background: 'var(--bg2)', padding: '24px', borderRadius: "var(--radius-lg)", border: '1px solid var(--border)' }}>
+      <summary className="crm-modal-section-title" style={{ margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Icon name="self_improvement" style={{ color: 'var(--primary)', fontSize: '24px' }} />
+          <span style={{ fontSize: '1.2rem', color: 'var(--text)', fontWeight: 600 }}>أيام الراحة {days.length > 0 && `(${days.length})`}</span>
+        </div>
+        <Icon name="expand_more" className="accordion-icon" style={{ color: 'var(--text-muted)' }} />
+      </summary>
+
+      <div style={{ marginTop: '24px' }}>
 
       {days.length === 0 ? (
         <p style={{ margin: 0, color: "var(--text-muted)", fontSize: "0.9rem" }}>
@@ -72,7 +78,7 @@ export default async function RestDaysHistory({ profileId }: { profileId: string
                     alignItems: "center",
                     gap: 6,
                     padding: "7px 12px",
-                    borderRadius: 999,
+                    borderRadius: "var(--radius-pill)",
                     background: "var(--bg3)",
                     border: `1px solid ${current ? "var(--border-primary)" : "var(--border)"}`,
                     color: current ? "var(--text)" : "var(--text-muted)",
@@ -80,9 +86,7 @@ export default async function RestDaysHistory({ profileId }: { profileId: string
                     fontWeight: 600,
                   }}
                 >
-                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
-                    bedtime
-                  </span>
+                  <Icon name="bedtime" style={{ fontSize: 16 }} />
                   {formatDayAndDate(d.rest_on)}
                 </span>
               );
@@ -90,6 +94,7 @@ export default async function RestDaysHistory({ profileId }: { profileId: string
           </div>
         </>
       )}
-    </div>
+      </div>
+    </details>
   );
 }

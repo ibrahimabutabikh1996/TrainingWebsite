@@ -17,6 +17,7 @@ import {
   deleteAttachmentAction,
 } from "@/app/admin/profile/actions";
 import type { AttachmentField } from "@/app/admin/profile/attachments";
+import { Icon, type IconName } from "@/components/Icon";
 
 interface ProfileDetailsTabsProps {
   currentData: JsonRecord;
@@ -84,7 +85,7 @@ function DeleteControl({
         cursor: pending ? "not-allowed" : "pointer",
       }}
     >
-      <span className="material-symbols-outlined" style={{ fontSize: 18 }}>delete_forever</span>
+      <Icon name="delete_forever" style={{ fontSize: 18 }} />
     </button>
   );
 }
@@ -119,12 +120,27 @@ export default function ProfileDetailsTabs({ currentData, profileId }: ProfileDe
   const bodyPhotos: string[] = Array.isArray(data.body_photos)
     ? data.body_photos.filter((u: unknown): u is string => typeof u === "string")
     : [];
-  const singleFiles = ([
-    ["analysis_file", "ملف التحاليل", "science"],
-    ["supplements_photo", "صورة المكملات", "medication"],
-    ["diet_history_file", "ملف النظام السابق", "receipt_long"],
-  ] as [AttachmentField, string, string][]).filter(([field]) => typeof data[field] === "string");
-  const attachmentCount = singleFiles.length + bodyPhotos.length;
+  const getFiles = (field: string): string[] => {
+    return Array.isArray(data[field])
+      ? (data[field] as unknown[]).filter((u): u is string => typeof u === "string")
+      : typeof data[field] === "string" ? [data[field] as string] : [];
+  };
+
+  const analysisFiles = getFiles("analysis_file");
+  const supplementsPhotos = getFiles("supplements_photo");
+  const dietHistoryFiles = getFiles("diet_history_file");
+  const homeEquipmentPhotos = getFiles("home_equipment_photo");
+
+  const otherFilesData = [
+    { field: "analysis_file", label: "ملف التحاليل", icon: "science", files: analysisFiles },
+    { field: "supplements_photo", label: "صورة المكملات", icon: "medication", files: supplementsPhotos },
+    { field: "diet_history_file", label: "ملف النظام السابق", icon: "receipt_long", files: dietHistoryFiles },
+    { field: "home_equipment_photo", label: "معدات التمرين المنزلي", icon: "fitness_center", files: homeEquipmentPhotos },
+  ] as const;
+
+  const otherFilesCount =
+    analysisFiles.length + supplementsPhotos.length + dietHistoryFiles.length + homeEquipmentPhotos.length;
+  const attachmentCount = bodyPhotos.length + otherFilesCount;
 
   const removeOne = (field: AttachmentField, url: string, label: string) => {
     setArmed(null);
@@ -182,11 +198,15 @@ export default function ProfileDetailsTabs({ currentData, profileId }: ProfileDe
       )}
 
       {/* 1. الأساسيات */}
-      <div className="crm-modal-section">
-        <h4 className="crm-modal-section-title">
-          <span className="material-symbols-outlined">person</span>
-          المعلومات الأساسية
-        </h4>
+      <details className="crm-modal-section" style={{ background: 'var(--bg2)', padding: '24px', borderRadius: '12px', border: '1px solid var(--border)' }}>
+        <summary className="crm-modal-section-title" style={{ margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Icon name="person" style={{ color: 'var(--primary)', fontSize: '24px' }} />
+            <span style={{ fontSize: '1.2rem', color: 'var(--text)', fontWeight: 600 }}>المعلومات الأساسية</span>
+          </div>
+          <Icon name="expand_more" className="accordion-icon" style={{ color: 'var(--text-muted)' }} />
+        </summary>
+        <div style={{ marginTop: '24px' }}>
         <div className="crm-stats-grid-small" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
           <div className="crm-stat-box-small">
             <span className="label">العمر</span>
@@ -213,14 +233,19 @@ export default function ProfileDetailsTabs({ currentData, profileId }: ProfileDe
             <span className="value" style={{ fontSize: '0.85rem' }}>{activityLabel(data.activity)}</span>
           </div>
         </div>
-      </div>
+        </div>
+      </details>
 
       {/* 2. المؤشرات البدنية */}
-      <div className="crm-modal-section">
-        <h4 className="crm-modal-section-title">
-          <span className="material-symbols-outlined">monitor_weight</span>
-          المؤشرات البدنية والقياسات
-        </h4>
+      <details className="crm-modal-section" style={{ background: 'var(--bg2)', padding: '24px', borderRadius: '12px', border: '1px solid var(--border)' }}>
+        <summary className="crm-modal-section-title" style={{ margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Icon name="monitor_weight" style={{ color: 'var(--primary)', fontSize: '24px' }} />
+            <span style={{ fontSize: '1.2rem', color: 'var(--text)', fontWeight: 600 }}>المؤشرات البدنية والقياسات</span>
+          </div>
+          <Icon name="expand_more" className="accordion-icon" style={{ color: 'var(--text-muted)' }} />
+        </summary>
+        <div style={{ marginTop: '24px' }}>
         <div className="crm-stats-grid-small" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
           <div className="crm-stat-box-small">
             <span className="label">الطول</span>
@@ -245,14 +270,19 @@ export default function ProfileDetailsTabs({ currentData, profileId }: ProfileDe
             </>
           )}
         </div>
-      </div>
+        </div>
+      </details>
 
       {/* 3. التغذية ونمط الحياة */}
-      <div className="crm-modal-section">
-        <h4 className="crm-modal-section-title">
-          <span className="material-symbols-outlined">restaurant</span>
-          التغذية ونمط الحياة
-        </h4>
+      <details className="crm-modal-section" style={{ background: 'var(--bg2)', padding: '24px', borderRadius: '12px', border: '1px solid var(--border)' }}>
+        <summary className="crm-modal-section-title" style={{ margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Icon name="restaurant" style={{ color: 'var(--primary)', fontSize: '24px' }} />
+            <span style={{ fontSize: '1.2rem', color: 'var(--text)', fontWeight: 600 }}>التغذية ونمط الحياة</span>
+          </div>
+          <Icon name="expand_more" className="accordion-icon" style={{ color: 'var(--text-muted)' }} />
+        </summary>
+        <div style={{ marginTop: '24px' }}>
         <div className="crm-stats-grid-small" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))' }}>
           <div className="crm-stat-box-small" style={{ gridColumn: '1 / -1' }}>
             <span className="label">أوقات الوجبات (أيام الدوام)</span>
@@ -272,7 +302,7 @@ export default function ProfileDetailsTabs({ currentData, profileId }: ProfileDe
           </div>
           <div className="crm-stat-box-small">
             <span className="label">نوع اللحوم المفضل</span>
-            <span className="value">{answerLabel(data.meat)}</span>
+            <span className="value">{answerList(data.meat)}</span>
           </div>
           <div className="crm-stat-box-small">
             <span className="label">معدل القهوة اليومي</span>
@@ -307,14 +337,19 @@ export default function ProfileDetailsTabs({ currentData, profileId }: ProfileDe
             </span>
           </div>
         </div>
-      </div>
+        </div>
+      </details>
 
       {/* 4. التمرين والالتزام */}
-      <div className="crm-modal-section">
-        <h4 className="crm-modal-section-title">
-          <span className="material-symbols-outlined">fitness_center</span>
-          التمرين والالتزام
-        </h4>
+      <details className="crm-modal-section" style={{ background: 'var(--bg2)', padding: '24px', borderRadius: '12px', border: '1px solid var(--border)' }}>
+        <summary className="crm-modal-section-title" style={{ margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Icon name="fitness_center" style={{ color: 'var(--primary)', fontSize: '24px' }} />
+            <span style={{ fontSize: '1.2rem', color: 'var(--text)', fontWeight: 600 }}>التمرين والالتزام</span>
+          </div>
+          <Icon name="expand_more" className="accordion-icon" style={{ color: 'var(--text-muted)' }} />
+        </summary>
+        <div style={{ marginTop: '24px' }}>
         <div className="crm-stats-grid-small" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
           <div className="crm-stat-box-small">
             <span className="label">خبرة التمرين</span>
@@ -343,14 +378,19 @@ export default function ProfileDetailsTabs({ currentData, profileId }: ProfileDe
             </div>
           )}
         </div>
-      </div>
+        </div>
+      </details>
 
       {/* 5. الصحة والمرفقات والتاريخ الدايت */}
-      <div className="crm-modal-section">
-        <h4 className="crm-modal-section-title">
-          <span className="material-symbols-outlined">medical_services</span>
-          التاريخ الصحي والمرفقات
-        </h4>
+      <details className="crm-modal-section" style={{ background: 'var(--bg2)', padding: '24px', borderRadius: '12px', border: '1px solid var(--border)' }}>
+        <summary className="crm-modal-section-title" style={{ margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Icon name="medical_services" style={{ color: 'var(--primary)', fontSize: '24px' }} />
+            <span style={{ fontSize: '1.2rem', color: 'var(--text)', fontWeight: 600 }}>التاريخ الصحي والمرفقات</span>
+          </div>
+          <Icon name="expand_more" className="accordion-icon" style={{ color: 'var(--text-muted)' }} />
+        </summary>
+        <div style={{ marginTop: '24px' }}>
         <div className="crm-stats-grid-small" style={{ gridTemplateColumns: '1fr' }}>
           {/* Always rendered: an empty answer is itself information for the
               coach ("no injuries reported"), and hiding the row made the whole
@@ -373,43 +413,58 @@ export default function ProfileDetailsTabs({ currentData, profileId }: ProfileDe
               {data.diet_history || "لا يوجد"}
             </span>
           </div>
+          <div className="crm-stat-box-small">
+            <span className="label">نوع الدايت الأخير وسبب فشله</span>
+            <span className="value" style={{ whiteSpace: 'pre-wrap', fontSize: '0.95rem' }}>
+              {data.last_diet_fail || "لا يوجد"}
+            </span>
+          </div>
+          <div className="crm-stat-box-small">
+            <span className="label">سبب تناول الطعام بكميات كبيرة أو قليلة</span>
+            <span className="value" style={{ whiteSpace: 'pre-wrap', fontSize: '0.95rem' }}>
+              {data.eating_reason || "لا يوجد"}
+            </span>
+          </div>
 
           {/* Files Section */}
-          {singleFiles.length > 0 && (
+          {/* Files Section */}
+          {otherFilesCount > 0 && (
             <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginTop: '16px' }}>
-              {singleFiles.map(([field, label, icon]) => (
-                <div
-                  key={field}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    padding: '6px 8px 6px 6px',
-                    borderRadius: 12,
-                    background: 'var(--bg3)',
-                    border: '1px solid var(--border)',
-                  }}
-                >
-                  <a
-                    href={data[field]}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="crm-btn-primary"
-                    style={{ padding: '8px 14px', fontSize: '0.95rem', textDecoration: 'none', background: 'transparent', color: 'var(--text)', border: 'none' }}
+              {otherFilesData.map(({ field, label, icon, files }) =>
+                files.map((url, idx) => (
+                  <div
+                    key={url}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      padding: '6px 8px 6px 6px',
+                      borderRadius: 12,
+                      background: 'var(--bg3)',
+                      border: '1px solid var(--border)',
+                    }}
                   >
-                    <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>{icon}</span>
-                    {label}
-                  </a>
-                  <DeleteControl
-                    armed={armed}
-                    setArmed={setArmed}
-                    pending={pending}
-                    id={`file:${field}`}
-                    title={`حذف ${label} نهائياً`}
-                    onConfirm={() => removeOne(field, data[field], label)}
-                  />
-                </div>
-              ))}
+                    <a
+                      href={url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="crm-btn-primary"
+                      style={{ padding: '8px 14px', fontSize: '0.95rem', textDecoration: 'none', background: 'transparent', color: 'var(--text)', border: 'none' }}
+                    >
+                      <Icon name={icon as any} style={{ fontSize: '20px' }} />
+                      {label} {files.length > 1 ? idx + 1 : ""}
+                    </a>
+                    <DeleteControl
+                      armed={armed}
+                      setArmed={setArmed}
+                      pending={pending}
+                      id={`file:${field}_${idx}`}
+                      title={`حذف ${label} نهائياً`}
+                      onConfirm={() => removeOne(field as AttachmentField, url, `${label} ${files.length > 1 ? idx + 1 : ""}`)}
+                    />
+                  </div>
+                ))
+              )}
             </div>
           )}
 
@@ -436,16 +491,20 @@ export default function ProfileDetailsTabs({ currentData, profileId }: ProfileDe
             </div>
           )}
         </div>
-      </div>
+        </div>
+      </details>
       
       {/* 6. التطور الجسدي (صور المشترك) */}
       {bodyPhotos.length > 0 && (
-        <div className="crm-modal-gallery" style={{ marginTop: '16px', paddingTop: '32px', borderTop: '1px solid var(--border)' }}>
-          <h4 style={{ marginBottom: '24px', fontSize: '1.2rem', color: 'var(--text)' }}>
-            <span className="material-symbols-outlined" style={{ verticalAlign: 'middle', marginInlineEnd: 12, color: 'var(--primary)' }}>photo_library</span>
-            صور المشترك (التطور الجسدي)
-          </h4>
-          <div className="crm-gallery-scroll" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '20px' }}>
+        <details className="crm-modal-section crm-modal-gallery" style={{ background: 'var(--bg2)', padding: '24px', borderRadius: '12px', border: '1px solid var(--border)', marginTop: '16px' }}>
+          <summary className="crm-modal-section-title" style={{ margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Icon name="photo_library" style={{ color: 'var(--primary)', fontSize: '24px' }} />
+              <span style={{ fontSize: '1.2rem', color: 'var(--text)', fontWeight: 600 }}>صور المشترك (التطور الجسدي)</span>
+            </div>
+            <Icon name="expand_more" className="accordion-icon" style={{ color: 'var(--text-muted)' }} />
+          </summary>
+          <div className="crm-gallery-scroll" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '20px', marginTop: '24px' }}>
             {bodyPhotos.map((url, idx) => (
               <div key={url} className="crm-gallery-item" style={{ width: '100%', position: 'relative' }}>
                 <a href={url} target="_blank" rel="noreferrer">
@@ -478,7 +537,7 @@ export default function ProfileDetailsTabs({ currentData, profileId }: ProfileDe
               </div>
             ))}
           </div>
-        </div>
+        </details>
       )}
 
     </div>

@@ -10,7 +10,7 @@ export default function AdminLoading() {
       minHeight: "60vh",
       gap: "16px"
     }}>
-      <div className="admin-spinner"></div>
+      <img src="/images/logo/vLogo.png" alt="Loading..." className="loading-vlogo" style={{ maxWidth: "180px" }} />
       <p style={{ color: "var(--admin-outline)", fontSize: "0.95rem", fontWeight: 500 }}>
         جاري التحميل...
       </p>

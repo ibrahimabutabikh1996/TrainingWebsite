@@ -6,17 +6,15 @@ import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { supabaseAdmin, UPLOADS_BUCKET } from "@/lib/supabaseAdmin";
 
-export async function saveLandingContent(contentEn: JsonRecord, contentAr: JsonRecord) {
+export async function saveLandingContent(contentAr: JsonRecord) {
   try {
     await prisma.site_settings.upsert({
       where: { id: "landing_content" },
       update: {
-        content_en: contentEn,
         content_ar: contentAr,
       },
       create: {
         id: "landing_content",
-        content_en: contentEn,
         content_ar: contentAr,
       },
     });
@@ -27,7 +25,7 @@ export async function saveLandingContent(contentEn: JsonRecord, contentAr: JsonR
     return { success: true };
   } catch (error) {
     console.error("Failed to save landing content:", error);
-    return { success: false, error: "Failed to save" };
+    return { success: false, error: "تعذّر حفظ المحتوى" };
   }
 }
 
@@ -137,9 +135,7 @@ export async function deleteImageServer(publicUrl: string): Promise<boolean> {
       });
       
       if (settings) {
-        const contentEn = settings.content_en as JsonRecord || {};
         const contentAr = settings.content_ar as JsonRecord || {};
-        let changed = false;
 
         // Recursive helper to clean up matching image URL from JSON content
         const removeUrl = (obj: JsonRecord): boolean => {
@@ -158,14 +154,10 @@ export async function deleteImageServer(publicUrl: string): Promise<boolean> {
           return localChanged;
         };
 
-        if (removeUrl(contentEn)) changed = true;
-        if (removeUrl(contentAr)) changed = true;
-
-        if (changed) {
+        if (removeUrl(contentAr)) {
           await prisma.site_settings.update({
             where: { id: "landing_content" },
             data: {
-              content_en: contentEn,
               content_ar: contentAr,
             },
           });

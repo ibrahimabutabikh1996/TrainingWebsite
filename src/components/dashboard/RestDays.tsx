@@ -3,6 +3,7 @@
 import { UserProfile } from "@/types";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { arabicCount, DAY } from "@/lib/arabicCount";
+import { Icon } from "@/components/Icon";
 import {
   DAY_MS,
   formatDayAndDate,
@@ -164,7 +165,7 @@ export function RestDays({ profile }: { profile: UserProfile }) {
         ) : (
           <>
             <div className="wl-hint">
-              <span className="material-symbols-outlined">self_improvement</span>
+              <Icon name="self_improvement" />
               <span>
                 حدّد أيام راحتك بنفسك من أيام اشتراكك — لا يوجد يوم راحة مفروض عليك. يوم
                 الراحة سجلّ لا يُحتسب ضمن تمارين الدورة، ولو تمرّنت في يوم حدّدته للراحة
@@ -224,7 +225,7 @@ export function RestDays({ profile }: { profile: UserProfile }) {
                   disabled={!picked || state === "saving"}
                   onClick={() => picked && mark(picked)}
                 >
-                  <span className="material-symbols-outlined">add</span>
+                  <Icon name="add" />
                   تحديد كيوم راحة
                 </button>
               </label>
@@ -244,7 +245,7 @@ export function RestDays({ profile }: { profile: UserProfile }) {
               <ul className="wl-rest-list">
                 {current.map((d) => (
                   <li key={d.id}>
-                    <span className="material-symbols-outlined">bedtime</span>
+                    <Icon name="bedtime" />
                     <strong>{formatDayAndDate(d.rest_on)}</strong>
                     {today && relativeDayLabel(d.rest_on, today) && (
                       <small>{relativeDayLabel(d.rest_on, today)}</small>
@@ -255,7 +256,7 @@ export function RestDays({ profile }: { profile: UserProfile }) {
                       onClick={() => unmark(d.rest_on)}
                       aria-label={`إلغاء يوم الراحة ${formatDayAndDate(d.rest_on)}`}
                     >
-                      <span className="material-symbols-outlined">close</span>
+                      <Icon name="close" />
                     </button>
                   </li>
                 ))}

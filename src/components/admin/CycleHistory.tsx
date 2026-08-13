@@ -3,6 +3,7 @@ import { toISODate } from "@/lib/trainingCycle";
 import { cycleTitle, dateRangeLabel, formatDayAndDate } from "@/lib/trainingDates";
 import { workoutDaysOf } from "@/lib/workoutDays";
 import { asDays } from "@/types/admin";
+import { Icon } from "@/components/Icon";
 
 /* Coach-side cycle-by-cycle record.
 
@@ -89,7 +90,7 @@ export default async function CycleHistory({ profileId }: { profileId: string })
     return (
       <div className="crm-modal-section">
         <h4 className="crm-modal-section-title">
-          <span className="material-symbols-outlined">calendar_month</span>
+          <Icon name="calendar_month" />
           الدورات التدريبية
         </h4>
         <p style={{ margin: 0, color: "var(--text-muted)", fontSize: "0.9rem" }}>
@@ -101,11 +102,16 @@ export default async function CycleHistory({ profileId }: { profileId: string })
   }
 
   return (
-    <div className="crm-modal-section">
-      <h4 className="crm-modal-section-title">
-        <span className="material-symbols-outlined">calendar_month</span>
-        الدورات التدريبية ({cycles.length})
-      </h4>
+    <details className="crm-modal-section" style={{ background: 'var(--bg2)', padding: '24px', borderRadius: '12px', border: '1px solid var(--border)' }}>
+      <summary className="crm-modal-section-title" style={{ margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', cursor: 'pointer', listStyle: 'none' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Icon name="calendar_month" style={{ color: 'var(--primary)', fontSize: '24px' }} />
+          <span style={{ fontSize: '1.2rem', color: 'var(--text)', fontWeight: 600 }}>الدورات التدريبية ({cycles.length})</span>
+        </div>
+        <Icon name="expand_more" className="accordion-icon" style={{ color: 'var(--text-muted)' }} />
+      </summary>
+      
+      <div style={{ marginTop: '24px' }}>
 
       {/* The cycle counts to the trainee's own answer, so a shorter plan leaves
           them days they must record without any exercises to do. */}
@@ -252,6 +258,7 @@ export default async function CycleHistory({ profileId }: { profileId: string })
           );
         })}
       </div>
-    </div>
+      </div>
+    </details>
   );
 }

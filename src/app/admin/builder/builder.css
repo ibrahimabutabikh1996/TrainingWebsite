@@ -1,0 +1,360 @@
+/* The course builder wears the diet-plan builder's clothes.
+   .diet-page, .diet-header, .diet-add-btn, .diet-btn-secondary, .diet-empty and
+   .diet-icon-btn come from ../diet/diet.css; the .dplan-* vocabulary — tabs,
+   toolbar, meal cards, item rows, the picker modal — comes from
+   ../diet/plan/plan.css. Nothing here re-implements any of that.
+
+   What is left is the handful of controls a training day needs and a meal does
+   not: the sets stepper, the per-set rep boxes, and the rest-window row. */
+
+.bldr-req { color: var(--error-text); }
+
+/* ---- Programme meta row ---- */
+
+/* Name and goal split the free width evenly. Left at their plan.css defaults
+   they sit at a fixed 220px each and the toolbar's space-between throws the
+   whole remainder into one gap between them. */
+.bldr-page .dplan-toolbar .dplan-name {
+  flex: 1 1 240px;
+  min-width: 0;
+}
+
+.bldr-page .dplan-toolbar .dplan-name input {
+  width: 100%;
+  min-width: 0;
+}
+
+.bldr-stats {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.bldr-flag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 13px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
+  background: var(--bg3);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.bldr-flag b { color: var(--admin-on-surface); font-size: var(--text-base); }
+
+.bldr-flag.ok {
+  border-color: color-mix(in srgb, var(--success) 40%, transparent);
+  background: var(--success-bg);
+  color: var(--success-text);
+}
+
+.bldr-flag.todo {
+  border-color: color-mix(in srgb, var(--error) 40%, transparent);
+  background: var(--error-bg);
+  color: var(--error-text);
+}
+
+/* ---- Day tabs ---- */
+
+/* Rides on .dplan-tab, so it has to read against both the transparent resting
+   tab and the filled active one — hence currentColor rather than a fixed pair. */
+.bldr-tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, currentColor 18%, transparent);
+  font-size: var(--text-xs);
+  font-weight: 700;
+}
+
+/* ---- Day toolbar ---- */
+
+.bldr-day-muscles {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1 1 320px;
+  min-width: 0;
+}
+
+.bldr-lbl {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.bldr-day-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ---- Exercise card ---- */
+
+/* Sits where the meal card shows its slot icon, so it matches that icon's box
+   rather than being a loose number beside the title. */
+.bldr-ex-num {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border-radius: var(--radius-md);
+  border: 1px solid color-mix(in srgb, var(--primary) 35%, transparent);
+  background: var(--primary-dim);
+  color: var(--primary-on-tint);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.bldr-flip { transform: rotate(180deg); }
+
+/* The three settings share one row of the card instead of each taking a
+   full-width strip. Stacked, .dplan-item-main grew to over a thousand pixels
+   and stranded that much empty space between every label and its control.
+
+   Flex bases rather than a media query or a grid, for the reason plan.css
+   gives upstream: the admin sidebar eats ~260px, so the card runs out of room
+   while the WINDOW is still "desktop". Rest carries the most controls, so it
+   takes the largest share and is the first to break onto a line of its own. */
+.bldr-page .dplan-items {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 12px;
+}
+
+.bldr-page .dplan-item {
+  flex: 1 1 250px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.bldr-page .dplan-item--reps { flex: 1 1 290px; }
+.bldr-page .dplan-item--rest { flex: 2 1 400px; }
+
+/* The label block. In a column its inherited `flex: 1 1 150px` would be read
+   as a 150px HEIGHT, which opens the gap it was meant to close. */
+.bldr-page .dplan-item-main { flex: 0 0 auto; }
+
+/* Deliberately NOT pushed to the bottom of the stretched card. The three labels
+   are the same two lines tall, so the controls already line up across the row
+   on their own; bottom-aligning them only opens a gap between a label and the
+   control it names as soon as one neighbour wraps to a second control line. */
+.bldr-row-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+/* The recessed control cluster the diet item rows use for their quantity
+   boxes, so a rep box and a gram box read as the same kind of thing. */
+.bldr-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 6px 12px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-strong);
+  background: var(--bg2);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.18);
+}
+
+.bldr-pill input,
+.bldr-pill select {
+  padding: 6px 8px;
+  border-radius: var(--admin-radius-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--bg3);
+  color: var(--text);
+  font-family: inherit;
+  font-size: var(--text-base);
+  font-weight: 700;
+  text-align: center;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.bldr-pill select { cursor: pointer; font-size: var(--text-sm); }
+
+.bldr-pill input:focus,
+.bldr-pill select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: var(--focus-ring);
+}
+
+/* Sets stepper */
+
+.bldr-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bldr-stepper button {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border-radius: var(--admin-radius-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--bg3);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: var(--text-md);
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+
+.bldr-stepper button:hover:not(:disabled) {
+  border-color: var(--primary);
+  color: var(--primary-on-tint);
+  background: var(--primary-dim);
+}
+
+.bldr-stepper button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.bldr-stepper input { width: 58px; color: var(--primary-on-tint); }
+
+/* Reps — one box per set, numbered so the coach can see which set they are
+   editing without counting boxes. */
+
+.bldr-rep {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.bldr-rep > span {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: var(--radius-pill);
+  background: var(--bg4);
+  color: var(--text-muted);
+  font-size: var(--text-2xs);
+  font-weight: 700;
+}
+
+.bldr-rep input { width: 52px; }
+
+.bldr-mini-btn {
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
+  border: 1px dashed color-mix(in srgb, var(--primary) 45%, transparent);
+  background: transparent;
+  color: var(--primary-on-tint);
+  font-family: inherit;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.bldr-mini-btn:hover {
+  border-color: var(--primary);
+  background: var(--primary-dim);
+}
+
+/* Rest window */
+
+.bldr-presets {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.bldr-preset {
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-strong);
+  background: var(--bg3);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+
+.bldr-preset:hover {
+  border-color: var(--primary);
+  color: var(--primary-on-tint);
+}
+
+.bldr-preset.active {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: var(--text-inverse);
+}
+
+.bldr-word {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.bldr-pill input.bldr-rest-val { width: 62px; }
+
+/* ---- Exercise picker rows ---- */
+
+/* .dplan-picker-list > li > button already sets the row geometry; these are the
+   two extras an exercise row carries that a food row does not. */
+.bldr-used {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--success-bg);
+  color: var(--success-text);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.bldr-pick-add {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  background: var(--primary-dim);
+  color: var(--primary-on-tint);
+}
+
+@media (max-width: 720px) {
+  /* .dplan-toolbar becomes a column here, and in a column a flex-basis is a
+     HEIGHT — these would stand 240px and 320px tall and tear a blank gap open
+     under the fields and under the muscle chips. */
+  .bldr-page .dplan-toolbar .dplan-name,
+  .bldr-day-muscles { flex: 0 0 auto; }
+
+  /* Two rep boxes still fit side by side once the badge and box give up a few
+     pixels; at the default widths they stack one per line. */
+  .bldr-rep input { width: 46px; }
+  .bldr-pill { padding: 6px 8px; gap: 6px; }
+}

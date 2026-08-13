@@ -1,33 +1,28 @@
 "use client";
 
-import { useLanguage } from "@/contexts/LanguageContext";
-import { FormGrid, FormSection, SelectField, TextArea, TextInput } from "./Fields";
+import { FormGrid, FormSection, SelectField, TextArea, TextInput, ChipGroup, Dropzone } from "./Fields";
 import type { StepProps } from "./types";
-import type { TranslationKey } from "@/lib/translations";
+import { t, type TranslationKey } from "@/lib/translations";
 
-const GOALS: TranslationKey[] = [
-  "opt_goal_weight_loss",
-  "opt_goal_muscle_gain",
-  "opt_goal_fitness",
-  "opt_goal_health",
-];
+
 const COFFEE: TranslationKey[] = ["opt_coffee_0", "opt_coffee_1", "opt_coffee_2", "opt_coffee_more"];
-const MEAT: TranslationKey[] = ["opt_meat_chicken", "opt_meat_beef", "opt_meat_fish", "opt_meat_mixed"];
 const YES_NO: TranslationKey[] = ["opt_yes", "opt_no"];
 
 export function StepThreeNutritionGoals({ formData, update }: StepProps) {
-  const { t } = useLanguage();
   const drinksCoffee = formData.coffee_rate !== "" && formData.coffee_rate !== "opt_coffee_0";
+
+
 
   return (
     <>
       <FormSection title={t("sec_goal")}>
         <FormGrid>
-          <SelectField
+          <TextArea
             label={t("lbl_sub_goal")}
             value={formData.sub_goal}
             onChange={(sub_goal) => update({ sub_goal })}
-            options={GOALS}
+            placeholder={t("lbl_sub_goal")}
+            rows={2}
             required
           />
           <TextInput
@@ -52,7 +47,7 @@ export function StepThreeNutritionGoals({ formData, update }: StepProps) {
             onChange={(allergies) => update({ allergies })}
             placeholder={t("ph_allergies")}
             rows={2}
-            optional
+            required
           />
           <TextArea
             label={t("lbl_fav_foods")}
@@ -60,14 +55,15 @@ export function StepThreeNutritionGoals({ formData, update }: StepProps) {
             onChange={(fav_foods) => update({ fav_foods })}
             placeholder={t("ph_fav_foods")}
             rows={2}
-            optional
-          />
-          <SelectField
-            label={t("lbl_meat")}
-            value={formData.meat}
-            onChange={(meat) => update({ meat })}
-            options={MEAT}
             required
+          />
+          <TextArea
+            label={t("lbl_meat")}
+            value={Array.isArray(formData.meat) ? formData.meat.join(', ') : (formData.meat || "")}
+            onChange={(meat) => update({ meat })}
+            placeholder={t("lbl_meat")}
+            rows={2}
+            optional
           />
           <SelectField
             label={t("lbl_coffee_rate")}
@@ -82,7 +78,7 @@ export function StepThreeNutritionGoals({ formData, update }: StepProps) {
               value={formData.coffee_type}
               onChange={(coffee_type) => update({ coffee_type })}
               placeholder={t("ph_coffee_type")}
-              optional
+              required
             />
           )}
         </FormGrid>
@@ -98,6 +94,27 @@ export function StepThreeNutritionGoals({ formData, update }: StepProps) {
             required
             full
           />
+          {formData.buy_supp === "opt_yes" && (
+            <>
+              <TextArea
+                label={t("lbl_supplements_list")}
+                value={formData.supplements_list}
+                onChange={(supplements_list) => update({ supplements_list })}
+                placeholder={t("ph_supplements")}
+                rows={2}
+                optional
+              />
+              <Dropzone
+                prompt={t("lbl_upload_supp_img")}
+                files={Array.isArray(formData.supplements_photo) ? formData.supplements_photo : (formData.supplements_photo ? [formData.supplements_photo as unknown as File] : [])}
+                onFiles={(files) => update({ supplements_photo: files })}
+                accept="image/*"
+                multiple
+                preview
+                optional
+              />
+            </>
+          )}
         </FormGrid>
       </FormSection>
     </>

@@ -7,6 +7,7 @@ export interface SubscriptionFormData {
   fullname: string;
   phone: string;
   plan: string;
+  plan_type: string;
   gender: "male" | "female";
   age: string;
   weight: string;
@@ -28,6 +29,8 @@ export interface SubscriptionFormData {
   workout_commit: string;
   workout_days: string;
   gym_time: string;
+  /* Only asked when workout_commit is "opt_commit_home". */
+  home_equipment_photo: File[];
 
   // Step 3 — nutrition & goal
   sub_goal: string;
@@ -41,16 +44,22 @@ export interface SubscriptionFormData {
 
   // Step 4 — health & attachments
   injuries: string;
-  analysis_file: File | null;
+  analysis_file: File[];
   body_photos: File[];
   meas_arm: string;
   meas_waist: string;
   meas_hips: string;
   meas_leg: string;
   supplements_list: string;
-  supplements_photo: File | null;
+  supplements_photo: File[];
   diet_history: string;
-  diet_history_file: File | null;
+  diet_history_file: File[];
+  last_diet_fail: string;
+  eating_reason: string;
+
+  // Account details
+  username?: string;
+  password?: string;
 }
 
 export interface StepProps {

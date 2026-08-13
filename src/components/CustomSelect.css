@@ -1,0 +1,120 @@
+/*
+  CustomSelect: Global styled dropdown component mimicking the native <select> functionality.
+*/
+
+.custom-select-container {
+  position: relative;
+  width: 100%;
+}
+
+.custom-select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 14px;
+  background-color: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text);
+  font-family: inherit;
+  font-size: var(--text-base);
+  cursor: pointer;
+  transition: border-color var(--dur), box-shadow var(--dur), background-color var(--dur);
+}
+
+.custom-select-trigger:hover:not(:disabled) {
+  background-color: var(--bg2);
+}
+
+.custom-select-trigger:focus-visible,
+.custom-select-trigger.open {
+  border-color: var(--primary);
+  box-shadow: var(--focus-ring);
+  outline: none;
+}
+
+.custom-select-trigger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: var(--bg);
+}
+
+.custom-select-icon {
+  font-size: 20px;
+  color: var(--text-muted);
+  transition: transform var(--dur);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.custom-select-trigger.open .custom-select-icon {
+  transform: rotate(180deg);
+}
+
+.custom-select-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background-color: var(--bg2);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  box-shadow: var(--elev-2);
+  z-index: 999;
+  max-height: 240px;
+  overflow-y: auto;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* For inner modal scrollbars */
+.custom-select-dropdown::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-select-dropdown::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-select-dropdown::-webkit-scrollbar-thumb {
+  background-color: var(--border-strong);
+  border-radius: 4px;
+}
+
+.custom-select-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: inherit;
+  font-size: var(--text-base);
+  cursor: pointer;
+  text-align: start;
+  transition: background-color var(--dur), color var(--dur);
+}
+
+.custom-select-option:hover {
+  background-color: var(--bg3);
+}
+
+.custom-select-option.selected {
+  background-color: var(--primary-dim);
+  color: var(--primary);
+  font-weight: var(--weight-semibold);
+}
+
+.custom-select-dot {
+  font-size: 24px;
+  line-height: 0;
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

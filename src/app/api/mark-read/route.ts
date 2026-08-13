@@ -7,7 +7,7 @@ export async function POST(request: Request) {
     const { id } = await request.json();
     
     if (!id) {
-      return NextResponse.json({ error: "Missing profile ID" }, { status: 400 });
+      return NextResponse.json({ error: "معرّف الملف مفقود" }, { status: 400 });
     }
 
     const profile = await prisma.profiles.findUnique({
@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     });
 
     if (!profile) {
-      return NextResponse.json({ error: "Profile not found" }, { status: 404 });
+      return NextResponse.json({ error: "لم يتم العثور على الملف" }, { status: 404 });
     }
 
     let data = profile.data as JsonRecord;
@@ -36,6 +36,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Mark read error:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json({ error: "حدث خطأ في الخادم" }, { status: 500 });
   }
 }

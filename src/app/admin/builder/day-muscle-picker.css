@@ -1,0 +1,242 @@
+.dmp-root {
+  position: relative;
+}
+
+.dmp-chips {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.dmp-placeholder {
+  font-size: var(--text-sm);
+  color: var(--admin-outline);
+}
+
+.dmp-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px 4px 10px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--primary) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--primary) 35%, transparent);
+  color: var(--primary-on-tint);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.dmp-chip button {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--primary) 20%, transparent);
+  color: var(--primary-on-tint);
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s;
+}
+
+.dmp-chip button:hover {
+  background: var(--error, #ef4444);
+  color: var(--text-inverse);
+}
+
+.dmp-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: var(--radius-pill);
+  border: 1px dashed color-mix(in srgb, var(--admin-on-surface) 22%, transparent);
+  background: transparent;
+  color: var(--admin-outline);
+  font-family: inherit;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+
+.dmp-add:hover {
+  border-color: var(--primary);
+  color: var(--primary-on-tint);
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
+}
+
+/* Popover. Anchored to the inline-start edge (right, in RTL) of the chip row. */
+.dmp-pop {
+  position: absolute;
+  top: calc(100% + 8px);
+  inset-inline-start: 0;
+  z-index: 50;
+  width: min(340px, 92vw);
+  padding: 14px;
+  border-radius: var(--admin-radius, 12px);
+  border: 1px solid var(--admin-card-border, rgba(255, 255, 255, 0.08));
+  background: var(--admin-bg-2, #0f0f0f);
+  box-shadow: var(--elev-3);
+  display: flex;
+  flex-direction: column;
+}
+
+.dmp-pop-title {
+  font-size: var(--text-sm);
+  color: var(--admin-outline, #9A9490);
+  margin-bottom: 10px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.dmp-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding-inline-end: 4px;
+}
+
+.dmp-list-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--admin-on-surface, var(--text, #F0EDE8));
+  font-family: inherit;
+  font-size: var(--text-base);
+  font-weight: 500;
+  cursor: pointer;
+  text-align: start;
+  transition: background 0.18s, color 0.18s;
+}
+
+.dmp-list-item:hover {
+  background: color-mix(in srgb, var(--primary, #C9A84C) 10%, transparent);
+  color: var(--primary, #C9A84C);
+}
+
+.dmp-list-item.active {
+  background: color-mix(in srgb, var(--primary, #C9A84C) 15%, transparent);
+  color: var(--primary, #C9A84C);
+  font-weight: 700;
+}
+
+.dmp-checkbox {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-xs);
+  border: 1.5px solid color-mix(in srgb, var(--admin-on-surface, #9A9490) 35%, transparent);
+  background: transparent;
+  transition: background 0.18s, border-color 0.18s, color 0.18s;
+  color: var(--text-inverse);
+  flex-shrink: 0;
+}
+
+.dmp-list-item:hover .dmp-checkbox {
+  border-color: var(--primary, #C9A84C);
+}
+
+.dmp-list-item.active .dmp-checkbox {
+  background: var(--primary, #C9A84C);
+  border-color: var(--primary, #C9A84C);
+  color: var(--text-inverse, #080808);
+}
+
+.dmp-item-text {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dmp-divider {
+  height: 1px;
+  background: color-mix(in srgb, var(--admin-on-surface, #fff) 8%, transparent);
+  margin: 10px 0;
+}
+
+.dmp-other-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px dashed color-mix(in srgb, var(--primary, #C9A84C) 40%, transparent);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--primary, #C9A84C) 5%, transparent);
+  color: var(--primary, #C9A84C);
+  font-family: inherit;
+  font-size: var(--text-base);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), opacity var(--dur) var(--ease), transform var(--dur) var(--ease);
+}
+
+.dmp-other-btn:hover,
+.dmp-other-btn.open {
+  background: color-mix(in srgb, var(--primary, #C9A84C) 12%, transparent);
+  border-color: var(--primary, #C9A84C);
+}
+
+.dmp-custom-box {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.dmp-custom-box input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid color-mix(in srgb, var(--admin-on-surface, #fff) 15%, transparent);
+  background: var(--admin-bg-3, #141414);
+  color: var(--admin-on-surface, var(--text, #F0EDE8));
+  font-family: inherit;
+  font-size: var(--text-sm);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.dmp-custom-box input:focus {
+  border-color: var(--primary, #C9A84C);
+  box-shadow: var(--focus-ring);
+}
+
+.dmp-custom-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--primary, #C9A84C);
+  color: var(--text-inverse, #080808);
+  font-family: inherit;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s, opacity 0.2s;
+}
+
+.dmp-custom-submit:hover:not(:disabled) {
+  background: var(--primary-hover, #E8C96A);
+}
+
+.dmp-custom-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

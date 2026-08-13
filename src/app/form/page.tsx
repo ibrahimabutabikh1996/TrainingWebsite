@@ -4,7 +4,7 @@ import { useCallback, useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import toast, { Toaster } from "react-hot-toast";
-import { useLanguage } from "@/contexts/LanguageContext";
+
 import { useTheme } from "@/contexts/ThemeContext";
 import { StepOneBasicInfo } from "@/components/form/StepOneBasicInfo";
 import { StepTwoWorkoutDetails } from "@/components/form/StepTwoWorkoutDetails";
@@ -12,7 +12,9 @@ import { StepThreeNutritionGoals } from "@/components/form/StepThreeNutritionGoa
 import { StepFourHealthAttachments } from "@/components/form/StepFourHealthAttachments";
 import { IconCheck } from "@/components/form/Fields";
 import type { SubscriptionFormData } from "@/components/form/types";
-import type { TranslationKey } from "@/lib/translations";
+import { useUploads } from "@/hooks/useUploads";
+import { INTAKE_UPLOAD_FIELDS, isIntakeUploadField } from "@/lib/uploadFields";
+import { t, type TranslationKey } from "@/lib/translations";
 import "../landing.css"; // fixed navbar + shared premium chrome
 import "./form.css";
 
@@ -29,20 +31,17 @@ const STEP_TITLES: TranslationKey[] = ["step1_title", "step2_title", "step3_titl
 
 function FormNavbar() {
   const { toggleTheme } = useTheme();
-  const { toggleLang, t } = useLanguage();
+
 
   return (
     <nav id="navbar" className="scrolled">
-      <Link href="/" className="nav-logo">
-        <span className="nav-logo-mark" aria-hidden="true">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-          </svg>
+      <Link href="/" className="nav-logo" title="Ibrahim Abutabikh Logo">
+        <span className="nav-logo-mark" style={{ width: "auto", maxWidth: "280px" }}>
+          <img src="/images/logo/hLogo.png" alt="Ibrahim Abutabikh Logo" style={{ maxHeight: "48px", height: "100%", width: "auto", objectFit: "contain", display: "block" }} />
         </span>
-        <span className="nav-logo-text">{t("nav_logo_text")}</span>
       </Link>
       <div className="nav-actions">
-        <button className="theme-toggle" id="themeToggle" onClick={toggleTheme} aria-label="Toggle theme">
+        <button className="theme-toggle" id="themeToggle" onClick={toggleTheme} aria-label="تبديل المظهر">
           <svg className="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="5"></circle>
             <line x1="12" y1="1" x2="12" y2="3"></line>
@@ -56,13 +55,6 @@ function FormNavbar() {
           </svg>
           <svg className="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-          </svg>
-        </button>
-        <button className="lang-toggle" id="langToggle" onClick={toggleLang} aria-label="Switch Language">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="2" y1="12" x2="22" y2="12"></line>
-            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
           </svg>
         </button>
         <Link href="/" className="nav-cta">
@@ -80,7 +72,6 @@ function Stepper({
   currentStep: number;
   onJump: (step: number) => void;
 }) {
-  const { t } = useLanguage();
   /* Fill spans the gaps already crossed, not the steps themselves. */
   const fill = ((currentStep - 1) / (TOTAL_STEPS - 1)) * 100;
 
@@ -135,6 +126,7 @@ const initialData: SubscriptionFormData = {
   fullname: "",
   phone: "",
   plan: "",
+  plan_type: "",
   gender: "male",
   age: "",
   weight: "",
@@ -155,6 +147,7 @@ const initialData: SubscriptionFormData = {
   workout_commit: "",
   workout_days: "",
   gym_time: "",
+  home_equipment_photo: [],
 
   sub_goal: "",
   target_weight: "",
@@ -166,20 +159,21 @@ const initialData: SubscriptionFormData = {
   buy_supp: "",
 
   injuries: "",
-  analysis_file: null,
+  analysis_file: [],
   body_photos: [],
   meas_arm: "",
   meas_waist: "",
   meas_hips: "",
   meas_leg: "",
   supplements_list: "",
-  supplements_photo: null,
+  supplements_photo: [],
   diet_history: "",
-  diet_history_file: null,
+  diet_history_file: [],
+  last_diet_fail: "",
+  eating_reason: "",
 };
 
 function FormContent() {
-  const { t } = useLanguage();
   const router = useRouter();
   const searchParams = useSearchParams();
   const isRenew = searchParams.get("renew") === "true";
@@ -187,14 +181,35 @@ function FormContent() {
 
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
   const [formData, setFormData] = useState<SubscriptionFormData>({
     ...initialData,
     plan: searchParams.get("plan") || "",
   });
 
-  const update = useCallback((patch: Partial<SubscriptionFormData>) => {
-    setFormData((prev) => ({ ...prev, ...patch }));
-  }, []);
+  /* Files leave for storage as they are chosen, not with the submission — see
+     `useUploads`. Vercel refuses a request body much over 4.5 MB, which one
+     phone photo can already exceed. */
+  const uploads = useUploads({
+    scope: isRenew && profileId ? "renewal" : "registration",
+    profileId: profileId ?? undefined,
+  });
+
+  const update = useCallback(
+    (patch: Partial<SubscriptionFormData>) => {
+      setFormData((prev) => ({ ...prev, ...patch }));
+
+      /* Any attachment field in this patch starts uploading now. Doing it here
+         rather than in an effect keeps it tied to the person's action, so the
+         upload begins on the click that chose the file. */
+      for (const [key, value] of Object.entries(patch)) {
+        if (isIntakeUploadField(key) && Array.isArray(value)) {
+          uploads.sync(key, value as File[]);
+        }
+      }
+    },
+    [uploads]
+  );
 
   const goTo = (step: number) => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -204,6 +219,17 @@ function FormContent() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    /* Explicit validation for required file upload dropzones that browser validation may bypass */
+    if (currentStep === 4 || currentStep === TOTAL_STEPS) {
+      if (formData.gender === "male" && (!formData.body_photos || formData.body_photos.length === 0)) {
+        toast.error("إرفاق صور الجسم (مطلوبة للذكور) حقل إجباري للمتابعة وإكمال الاستبيان.");
+        if (currentStep === TOTAL_STEPS) {
+          goTo(4);
+        }
+        return;
+      }
+    }
+
     /* Each step is its own submit, so the browser has already validated the
        fields currently on screen before we get here. */
     if (currentStep < TOTAL_STEPS) {
@@ -211,45 +237,92 @@ function FormContent() {
       return;
     }
 
+    /* A file still in flight has no confirmed record yet, so submitting now
+       would quietly drop it. A failed one has been refused by the server and
+       needs replacing, not ignoring. */
+    if (uploads.isUploading) {
+      toast.error("جاري رفع الملفات، يرجى الانتظار لحظة قبل الإرسال.");
+      return;
+    }
+    if (uploads.failed.length > 0) {
+      toast.error(`تعذّر رفع بعض الملفات: ${uploads.failed[0].error ?? ""} — يرجى إزالتها وإعادة اختيارها.`);
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      const submitData = new FormData();
+      /* The attachments are already in storage; the submission carries the
+         answers, the upload session, and which of its files are still wanted.
+         The File objects themselves are stripped out — they would serialise to
+         empty objects, and the server would ignore them anyway. */
+      const answers: Record<string, unknown> = { ...formData };
+      for (const field of INTAKE_UPLOAD_FIELDS) delete answers[field];
 
-      submitData.append(
-        "data",
-        JSON.stringify({
-          ...formData,
-          analysis_file: undefined,
-          body_photos: undefined,
-          supplements_photo: undefined,
-          diet_history_file: undefined,
-        })
-      );
-
-      if (formData.analysis_file) submitData.append("analysis_file", formData.analysis_file);
-      if (formData.supplements_photo) submitData.append("supplements_photo", formData.supplements_photo);
-      if (formData.diet_history_file) submitData.append("diet_history_file", formData.diet_history_file);
-
-      if (isRenew && profileId) {
-        submitData.append("profileId", profileId);
+      const res = await fetch("/api/submit-form", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          data: JSON.stringify(answers),
+          profileId: isRenew && profileId ? profileId : undefined,
+          uploadSessionId: uploads.getUploadSessionId() ?? undefined,
+          keepItemIds: uploads.keepItemIds,
+        }),
+      });
+      if (!res.ok) {
+        const errorText = await res.text().catch(() => "");
+        let errorData: any = {};
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          console.error(`Server rejected submission [${res.status} ${res.statusText}] HTML/Text:`, errorText);
+        }
+        console.error(`Server rejected submission [${res.status} ${res.statusText}] JSON:`, errorData);
+        throw new Error(errorData.error || t("form_error_send"));
       }
 
-      formData.body_photos.forEach((file) => submitData.append("body_photos", file));
-
-      const res = await fetch("/api/submit-form", { method: "POST", body: submitData });
-      if (!res.ok) throw new Error(t("form_error_send"));
-
       setIsSubmitting(false);
-      toast.success(`${t("form_success_title")}\n${t("form_success_msg")}`, { duration: 6000 });
-      router.push("/dashboard");
+
+      if (formData.plan === "plan1") {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        setShowWhatsAppModal(true);
+      } else {
+        toast.success(`${t("form_success_title")}\n${t("form_success_msg")}`, { duration: 8000 });
+        if (isRenew) {
+          router.push("/dashboard");
+        } else {
+          router.push("/login?registered=true");
+        }
+      }
     } catch (err) {
       console.error("Submission error:", err);
-      toast.error(t("form_error_generic"));
+      toast.error(err instanceof Error ? err.message : t("form_error_generic"));
       setIsSubmitting(false);
     }
   };
 
   const stepProps = { formData, update };
+
+  if (showWhatsAppModal) {
+    const text = encodeURIComponent("تم الاشتراك في الخطة ذاتية التوجيه");
+    const waLink = `https://wa.me/9647877511605?text=${text}`;
+    
+    return (
+      <div className="form-shell" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+        <article className="form-sheet" style={{ textAlign: 'center', padding: '40px 20px', maxWidth: '480px' }}>
+          <h2 style={{ fontSize: '1.8rem', marginBottom: '16px', color: 'var(--text)' }}>تم استلام طلبك بنجاح!</h2>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '32px', lineHeight: 1.6, fontSize: '1.1rem' }}>
+            لإتمام عملية الدفع وتفعيل الخطة ذاتية التوجيه، يرجى التواصل مع الكابتن عبر الواتساب بالضغط على الزر أدناه.
+          </p>
+          <a href={waLink} target="_blank" rel="noopener noreferrer" className="form-btn form-btn--primary" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '12px', textDecoration: 'none', padding: '16px' }}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 448 512" fill="currentColor">
+              <path d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-23.1-115-65.1-157.1zM223.9 414.7c-33 0-65.3-8.9-93.6-25.7l-6.7-4-69.5 18.2L72.7 334l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-32.6-16.3-54-29.1-75.5-66-5.7-9.8 5.7-9.1 16.3-30.3 1.8-3.7.9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 35.2 15.2 49 16.5 66.6 13.9 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z"/>
+            </svg>
+            انتقال إلى الواتساب
+          </a>
+        </article>
+      </div>
+    );
+  }
 
   return (
     <div className="form-shell">
@@ -304,10 +377,9 @@ function FormContent() {
 }
 
 function FormFallback() {
-  const { t } = useLanguage();
   return (
     <div className="form-loading">
-      <span className="btn-spinner" aria-hidden="true" />
+      <img src="/images/logo/vLogo.png" alt="Loading..." className="loading-vlogo" />
       <span>{t("form_loading")}</span>
     </div>
   );

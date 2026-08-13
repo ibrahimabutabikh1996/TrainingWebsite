@@ -21,16 +21,29 @@ export function useProfile() {
         if (data.success && data.profile) {
           setProfile(data.profile);
         } else {
-          setError(data.error || "Failed to load profile");
+          setError(data.error || "تعذّر تحميل الملف");
         }
         setLoading(false);
       })
       .catch(err => {
         console.error("Error fetching profile:", err);
-        setError("Error fetching profile");
+        setError("حدث خطأ أثناء جلب الملف");
         setLoading(false);
       });
   }, [router]);
 
-  return { profile, loading, error };
+  const reload = () => {
+    const userId = localStorage.getItem("loggedInUserId");
+    if (!userId) return;
+    fetch(`/api/profile?userId=${userId}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.profile) {
+          setProfile(data.profile);
+        }
+      })
+      .catch(console.error);
+  };
+
+  return { profile, loading, error, reload };
 }

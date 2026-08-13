@@ -1,6 +1,6 @@
 "use client";
 
-import { useLanguage } from "@/contexts/LanguageContext";
+import { t } from "@/lib/translations";
 import { FormGrid, SelectField, TextInput } from "./Fields";
 import type { StepProps } from "./types";
 
@@ -12,7 +12,6 @@ const ACTIVITY_OPTIONS = [
 ] as const;
 
 export function StepOneBasicInfo({ formData, update }: StepProps) {
-  const { t } = useLanguage();
 
   return (
     <FormGrid>
@@ -47,6 +46,21 @@ export function StepOneBasicInfo({ formData, update }: StepProps) {
         disabled
         full
       />
+
+      {formData.plan === "plan1" && (
+        <SelectField
+          label="نوع الاشتراك المطلوب"
+          value={formData.plan_type}
+          onChange={(plan_type) => update({ plan_type })}
+          options={[
+            { value: "both", label: "نظام تدريبي + غذائي" },
+            { value: "diet", label: "نظام غذائي فقط" },
+            { value: "training", label: "نظام تدريبي فقط" },
+          ]}
+          required
+          noPlaceholder
+        />
+      )}
 
       <SelectField
         label={t("lbl_gender")}

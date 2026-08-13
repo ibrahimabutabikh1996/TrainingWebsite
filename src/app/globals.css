@@ -17,21 +17,25 @@ body {
     --primary-light: #93C5FD;
     --primary-active: #2563EB;
     --primary-dim: rgba(var(--primary-rgb), 0.18);
+    /* The brand colour when it is used as *text or an icon* rather than a fill.
+       On dark, --primary is a light blue on near-black surfaces and already
+       clears AA everywhere, so this is just an alias. */
+    --primary-on-tint: var(--primary);
     --secondary: #93C5FD;
     --accent: #60A5FA;
 
-    /* Named semantic surfaces (blue slate scale) */
-    --background: #0F172A;
-    --surface: #111827;
-    --surface-secondary: #1E293B;
-    --card: #1E293B;
+    /* Named semantic surfaces — same hue (210°) as the light-mode palette, inverted lightness */
+    --background: #0A121A;
+    --surface: #0A121A;
+    --surface-secondary: #15212E;
+    --card: #15212E;
 
     /* Functional background scale used across existing components.
        Ascending lightness keeps cards/elevated surfaces distinct from the page. */
-    --bg: #0F172A;
-    --bg2: #1E293B;
-    --bg3: #334155;
-    --bg4: #475569;
+    --bg: #0A121A;
+    --bg2: #15212E;
+    --bg3: #243342;
+    --bg4: #3E5265;
 
     /* Text */
     --text: #F8FAFC;
@@ -43,27 +47,39 @@ body {
     --muted2: #CBD5E1;
 
     /* Borders */
-    --border: #334155;
-    --border-strong: #475569;
+    --border: #162235;
+    --border-strong: #22334D;
     --border-primary: rgba(var(--primary-rgb), 0.30);
 
-    /* Status */
+    /* Status — fills */
     --success: #22C55E;
     --warning: #FBBF24;
     --error: #F87171;
     --info: #60A5FA;
+    /* Status — as text or an icon. On dark these are already light shapes on a
+       near-black page, so they alias the fills. See the light block for why the
+       split exists. */
+    --success-text: var(--success);
+    --warning-text: var(--warning);
+    --error-text: var(--error);
+    --mono-icon-color: #FFFFFF;
 
     --watermark: rgba(148, 163, 184, 0.05);
-    --overlay-scrim: rgba(15, 23, 42, 0.6);
-    --nav-bg: rgba(15, 23, 42, 0.95);
-    --nav-bg-glass: rgba(15, 23, 42, 0.7);
-    --nav-bg-scrolled: rgba(15, 23, 42, 0.95);
+    --overlay-scrim: rgba(10, 18, 26, 0.6);
+    --nav-bg: rgba(10, 18, 26, 0.95);
+    --nav-bg-glass: rgba(10, 18, 26, 0.7);
+    --nav-bg-scrolled: rgba(10, 18, 26, 0.95);
 
     /* Subtle blue-tinted shadow + brand gradient */
     --shadow-color: rgba(2, 6, 23, 0.55);
     --shadow-primary: rgba(var(--primary-rgb), 0.25);
     --brand-gradient: linear-gradient(135deg, #1E3A8A 0%, #2563EB 35%, #3B82F6 70%, #60A5FA 100%);
-    --r: 12px;
+
+    /* Elevation — dark needs a deeper, more diffuse shadow to read at all.
+       See the scale's contract in the "Design tokens" block further down. */
+    --elev-1: 0 1px 2px rgba(2, 6, 23, 0.40);
+    --elev-2: 0 2px 8px rgba(2, 6, 23, 0.36);
+    --elev-3: 0 12px 32px rgba(2, 6, 23, 0.48);
 
     /* Mapped to generic variables for legacy components */
     --primary-glow: var(--primary-dim);
@@ -71,60 +87,81 @@ body {
     --bg-image: none;
     --card-bg: var(--bg2);
     --card-border: var(--border);
-    --card-shadow: 0 8px 32px 0 rgba(37, 99, 235, 0.10);
+    --card-shadow: var(--elev-2);
     --text-main: var(--text);
     --input-bg: var(--bg3);
     --input-border: var(--border);
     --input-focus: var(--primary);
     --error-bg: rgba(248, 113, 113, 0.12);
     --success-bg: rgba(34, 197, 94, 0.12);
-    --font-primary: 'DM Sans', sans-serif;
-    --font-display: 'Bebas Neue', sans-serif;
-    --font-editorial: 'DM Serif Display', serif;
-    --font-arabic: 'Amiri', serif;
+    --font-primary: 'Baloo 2 Local', 'Baloo 2', sans-serif;
+    --font-display: 'Baloo 2 Local', 'Baloo 2', sans-serif;
+    --font-editorial: 'Baloo 2 Local', 'Baloo 2', sans-serif;
+    --font-arabic: 'Cairo Local', 'Cairo', sans-serif;
+    --font-ar: 'Cairo Local', 'Cairo', sans-serif;
 }
 
 [data-theme="light"] {
     /* --- Light Mode Colors (Blue Monochromatic) --- */
-    --primary: #2563EB; --primary-rgb: 37, 99, 235;
-    --primary-hover: #1D4ED8;
-    --primary-light: #3B82F6;
-    --primary-active: #1E40AF;
+    --primary: #1A56DB; --primary-rgb: 26, 86, 219;
+    --primary-hover: #1546B5;
+    --primary-light: #3E77F1;
+    --primary-active: #10368C;
     --primary-dim: rgba(var(--primary-rgb), 0.10);
-    --secondary: #60A5FA;
-    --accent: #3B82F6;
+    /* Brand colour as text/icon. #2563EB is a fine *fill* (white on it is
+       5.2:1) but a poor foreground here: 4.2:1 on --bg2, 3.2:1 on --bg3 and
+       4.3:1 on a --primary-dim wash — all under AA. The deeper accent clears
+       every surface in this palette (7.1:1 on --bg2, 5.3:1 on --bg3) while
+       staying the same blue. Fills keep using --primary. */
+    --primary-on-tint: var(--primary-active);
+    --secondary: #3E77F1;
+    --accent: #1A56DB;
 
     /* Named semantic surfaces */
-    --background: #FFFFFF;
-    --surface: #F8FAFC;
-    --surface-secondary: #EFF6FF;
-    --card: #FFFFFF;
+    --background: #F6F8FB;
+    --surface: #F6F8FB;
+    --surface-secondary: #EBF1F8;
+    --card: #EBF1F8;
 
-    /* Functional background scale â€” page is the subtle surface so white cards pop. */
-    --bg: #F8FAFC;
-    --bg2: #FFFFFF;
-    --bg3: #EFF6FF;
-    --bg4: #DBEAFE;
+    /* Functional background scale — new light palette, lightest to darkest. */
+    --bg: #F6F8FB;
+    --bg2: #EBF1F8;
+    --bg3: #DBE5F0;
+    --bg4: #C3D2E3;
 
     /* Text */
     --text: #0F172A;
     --text-primary: #0F172A;
     --text-secondary: #475569;
-    --text-muted: #64748B;
+    /* Was #64748B. This theme's --bg2 is a saturated pale blue rather than
+       white, and #64748B only reached 3.9:1 on it — muted captions and card
+       subtitles were failing AA on every card in the product. #5B6779 clears
+       --bg (5.5:1) and --bg2 (4.7:1) while staying a visible step lighter than
+       --text-secondary. It is still too light for --bg3; use --text-secondary
+       there (see the shared table header recipe). */
+    --text-muted: #5B6779;
     --text-inverse: #FFFFFF;
-    --muted: #64748B;
+    --muted: #5B6779;
     --muted2: #475569;
 
     /* Borders */
-    --border: #E2E8F0;
-    --border-strong: #CBD5E1;
+    --border: #DBE5F0;
+    --border-strong: #C3D2E3;
     --border-primary: rgba(var(--primary-rgb), 0.35);
 
-    /* Status */
+    /* Status — fills. Unchanged: white on these reads fine, and they are the
+       colours the product's badges and bars are recognised by. */
     --success: #16A34A;
     --warning: #F59E0B;
     --error: #DC2626;
     --info: #2563EB;
+    /* Status — as text or an icon. The fills are far too light to read as
+       foreground on this palette: on --bg2 the amber lands at 1.8:1 and the
+       green at 2.7:1. These keep the same hues at a legible depth. */
+    --success-text: #166534;
+    --warning-text: #92400E;
+    --error-text: #B91C1C;
+    --mono-icon-color: #000000;
 
     --nav-bg: rgba(255, 255, 255, 0.98);
     --nav-bg-glass: rgba(255, 255, 255, 0.85);
@@ -134,39 +171,150 @@ body {
 
     --shadow-color: rgba(15, 23, 42, 0.10);
     --shadow-primary: rgba(var(--primary-rgb), 0.18);
-    --card-shadow: 0 8px 32px 0 rgba(37, 99, 235, 0.06);
     --error-bg: rgba(220, 38, 38, 0.08);
     --success-bg: rgba(22, 163, 74, 0.08);
+
+    /* Elevation — light mode reads shadows easily, so these stay barely there. */
+    --elev-1: 0 1px 2px rgba(15, 23, 42, 0.05);
+    --elev-2: 0 2px 8px rgba(15, 23, 42, 0.06);
+    --elev-3: 0 12px 32px rgba(15, 23, 42, 0.10);
+    --card-shadow: var(--elev-2);
 }
 
-/* --- Material Symbols icon font ---
-   The Google Fonts css2 API ships only the @font-face, never this class binding,
-   so without it every <span class="material-symbols-outlined"> inherits the page
-   font (Amiri in Arabic) and renders the ligature name as literal text.
-   font-family is forced with !important to beat the :lang(ar) inherited font. */
-.material-symbols-outlined {
-    font-family: 'Material Symbols Outlined' !important;
-    font-weight: normal;
-    font-style: normal;
-    line-height: 1;
-    letter-spacing: normal;
-    text-transform: none;
+/* ==========================================================================
+   Design tokens
+   The palette above is the brand; this is the geometry, depth, motion and type
+   that carry it. Everything below — and every page stylesheet — reads from
+   these, so a change here moves the whole product at once.
+   ========================================================================== */
+:root {
+    /* --- Spacing — 4px base. Layout gaps and paddings pick from this only. --- */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-8: 32px;
+    --space-10: 40px;
+    --space-12: 48px;
+    --space-16: 64px;
+    --space-20: 80px;
+
+    /* --- Radius ---
+       One step per component weight: the bigger the surface, the softer the
+       corner. `pill` and `circle` are shape choices, not steps on the scale,
+       so they stay literal. */
+    --radius-xs: 6px;    /* tags, chips, badges, inline markers */
+    --radius-sm: 8px;    /* icon buttons, small tiles, table cells */
+    --radius-md: 10px;   /* inputs, buttons, tabs, nav items */
+    --radius-lg: 14px;   /* cards, panels, sections */
+    --radius-xl: 18px;   /* modals, drawers, hero surfaces */
+    --radius-pill: 999px;
+    --radius-circle: 50%;
+
+    /* --- Elevation ---
+       Flat by default. A shadow here means "this surface floats above that
+       one" — never decoration, and never tinted with the brand colour.
+         1 → resting cards and inputs
+         2 → raised/hovered surfaces, sticky bars
+         3 → true overlays: modals, drawers, popovers
+       The values themselves are per-theme, above. */
+    --elev-0: none;
+
+    /* --- Motion ---
+       Two easings: `--ease` for state changes that should feel instant,
+       `--ease-out` for anything that travels (entrances, drawers, bars). */
+    --dur-fast: 120ms;
+    --dur: 180ms;
+    --dur-slow: 280ms;
+    --ease: cubic-bezier(0.2, 0, 0, 1);
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+    /* --- Type scale ---
+       rem-based so it honours the user's browser text size. */
+    --text-2xs: 0.6875rem;  /* 11px — eyebrows, uppercase micro-labels */
+    --text-xs: 0.75rem;     /* 12px — captions, meta, badges */
+    --text-sm: 0.8125rem;   /* 13px — secondary body, dense table text */
+    --text-base: 0.9375rem; /* 15px — default body */
+    --text-md: 1rem;        /* 16px — emphasised body, input text */
+    --text-lg: 1.125rem;    /* 18px — card titles */
+    --text-xl: 1.375rem;    /* 22px — section titles */
+    --text-2xl: 1.75rem;    /* 28px — page titles */
+    --text-3xl: 2.25rem;    /* 36px — display */
+
+    --leading-tight: 1.25;
+    --leading-snug: 1.45;
+    --leading-normal: 1.65;
+    --leading-relaxed: 1.8;   /* Arabic body copy */
+
+    --weight-normal: 400;
+    --weight-medium: 500;
+    --weight-semibold: 600;
+    --weight-bold: 700;
+
+    /* --- Focus ring — one definition, used by every interactive element. --- */
+    --focus-ring: 0 0 0 3px rgba(var(--primary-rgb), 0.28);
+}
+
+/* --- Icons (see src/components/Icon.tsx) ---
+   Each icon is an inline <svg> sized 1em square, so the `font-size` rules the
+   stylesheets already used to size the old webfont glyphs still control it and
+   `currentColor` still colours it. Only box behaviour is set here.
+   flex-shrink:0 matters — an icon in a flex row would otherwise be squeezed to
+   nothing by a long label beside it, which a glyph never was. */
+.app-icon {
     display: inline-block;
-    white-space: nowrap;
-    word-wrap: normal;
-    direction: ltr;
-    -webkit-font-feature-settings: 'liga';
-    font-feature-settings: 'liga';
-    -webkit-font-smoothing: antialiased;
-    text-rendering: optimizeLegibility;
-    font-variant-ligatures: normal;
+    vertical-align: middle;
+    flex-shrink: 0;
+    line-height: 1;
 }
 
-/* --- Global focus visibility (design system: every interactive element) --- */
+/* --- Global focus visibility (design system: every interactive element) ---
+   `:where()` keeps this at zero specificity so a component can restyle its own
+   focus state without an `!important`, while everything that doesn't bother
+   still gets a visible ring. */
 :where(a, button, input, textarea, select, [tabindex]):focus-visible {
     outline: 2px solid var(--primary);
-    outline-offset: 3px;
-    border-radius: 4px;
+    outline-offset: 2px;
+}
+
+/* ==========================================================================
+   Shared geometry
+
+   This used to be a block of `!important` overrides that forced every card to
+   6px, every control to 5px and every chip to 4px. Two problems with that: the
+   `button`/`input` element selectors also flattened controls that are meant to
+   be circular (the theme toggle, the water-tracker steppers, the drawer close
+   button), and nothing downstream could opt out without another `!important`.
+
+   The radii now live on the tokens above and the page stylesheets consume them
+   directly, so this block only has to do the two things a stylesheet can't say
+   locally: point the admin aliases at the shared scale, and give unstyled
+   controls a sane default.
+   ========================================================================== */
+:root {
+    --admin-radius-lg: var(--radius-lg);
+    --admin-radius: var(--radius-md);
+    --admin-radius-sm: var(--radius-sm);
+}
+
+/* Baseline for controls that never set a radius of their own. Zero specificity,
+   so any component rule — including the circular ones — still wins. */
+:where(input, select, textarea, button) {
+    border-radius: var(--radius-md);
+}
+
+/* One shared transition contract for interactive surfaces. Named properties
+   rather than `all`: `all` also animates layout properties, which is what made
+   hovers feel heavy and occasionally janky. */
+:where(a, button, input, select, textarea, [role="button"]) {
+    transition:
+        background-color var(--dur) var(--ease),
+        border-color var(--dur) var(--ease),
+        color var(--dur) var(--ease),
+        box-shadow var(--dur) var(--ease),
+        transform var(--dur) var(--ease);
 }
 
 /* --- Respect reduced motion preferences --- */
@@ -186,71 +334,41 @@ body {
 
 /* --- Global Typography System --- */
 @font-face {
-    font-family: 'Material Symbols Outlined';
-    src: url('/fonts/MaterialSymbolsOutlined_28pt-Medium.woff2') format('woff2');
-    font-weight: 400;
+    font-family: 'Baloo 2 Local';
+    src: url('/fonts/Baloo2-VariableFont_wght.woff2') format('woff2');
+    font-weight: 100 900;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Baloo 2';
+    src: url('/fonts/Baloo2-VariableFont_wght.woff2') format('woff2');
+    font-weight: 100 900;
     font-style: normal;
     font-display: swap;
 }
 
 @font-face {
-    font-family: 'Amiri Local';
-    src: url('/fonts/Amiri-Regular.woff2') format('woff2');
-    font-weight: 400;
+    font-family: 'Cairo Local';
+    src: url('/fonts/Cairo-VariableFont_slnt,wght.woff2') format('woff2');
+    font-weight: 200 1000;
     font-style: normal;
     font-display: swap;
 }
 @font-face {
-    font-family: 'Amiri Local';
-    src: url('/fonts/Amiri-Bold.woff2') format('woff2');
-    font-weight: 700;
+    font-family: 'Cairo';
+    src: url('/fonts/Cairo-VariableFont_slnt,wght.woff2') format('woff2');
+    font-weight: 200 1000;
     font-style: normal;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'DM Sans Local';
-    src: url('/fonts/DMSans-Regular.woff2') format('woff2');
-    font-weight: 400;
-    font-style: normal;
-    font-display: swap;
-}
-@font-face {
-    font-family: 'DM Sans Local';
-    src: url('/fonts/DMSans-Bold.woff2') format('woff2');
-    font-weight: 700;
-    font-style: normal;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'Bebas Neue Local';
-    src: url('/fonts/BebasNeue-Regular.woff2') format('woff2');
-    font-weight: 400;
-    font-style: normal;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'DM Serif Display Local';
-    src: url('/fonts/DMSerifDisplay-Regular.woff2') format('woff2');
-    font-weight: 400;
-    font-style: normal;
-    font-display: swap;
-}
-@font-face {
-    font-family: 'DM Serif Display Local';
-    src: url('/fonts/DMSerifDisplay-Italic.woff2') format('woff2');
-    font-weight: 400;
-    font-style: italic;
     font-display: swap;
 }
 
 :root {
-    --font-primary: 'DM Sans Local', sans-serif;
-    --font-display: 'Bebas Neue Local', sans-serif;
-    --font-editorial: 'DM Serif Display Local', serif;
-    --font-arabic: 'Amiri Local', serif;
+    --font-primary: 'Baloo 2 Local', 'Baloo 2', sans-serif;
+    --font-display: 'Baloo 2 Local', 'Baloo 2', sans-serif;
+    --font-editorial: 'Baloo 2 Local', 'Baloo 2', sans-serif;
+    --font-arabic: 'Cairo Local', 'Cairo', sans-serif;
+    --font-ar: 'Cairo Local', 'Cairo', sans-serif;
 }
 
 body {
@@ -272,9 +390,11 @@ html:lang(ar) body, html:lang(ar) {
     --font-editorial: var(--font-arabic);
 }
 
-:lang(ar) *:not(.material-symbols-outlined) {
+:lang(ar) *:not(.app-icon) {
     font-family: var(--font-arabic) !important;
     letter-spacing: 0 !important;
+    font-variant-numeric: tabular-nums !important;
+    font-feature-settings: "anum" 0, "tnum" 1, "lnum" 1 !important;
 }
 
 
@@ -293,7 +413,7 @@ html:lang(ar) body, html:lang(ar) {
     align-items: center;
     padding: 12px 20px 24px 20px;
     z-index: 1000;
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
+    box-shadow: var(--elev-2);
 }
 
 .nav-item {
@@ -303,14 +423,14 @@ html:lang(ar) body, html:lang(ar) {
     gap: 4px;
     color: var(--text-muted);
     text-decoration: none;
-    font-size: 0.75rem;
+    font-size: var(--text-xs);
     font-weight: 500;
     background: none;
     border: none;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), opacity var(--dur) var(--ease), transform var(--dur) var(--ease);
     padding: 8px 16px;
-    border-radius: 16px;
+    border-radius: var(--radius-xl);
 }
 
 body[lang="ar"] .nav-item {
@@ -326,12 +446,12 @@ body[lang="ar"] .nav-item {
 }
 
 .nav-item:hover {
-    color: var(--primary);
-    background: rgba(255, 255, 255, 0.1);
+    color: var(--primary-on-tint);
+    background: var(--bg3);
 }
 
 .nav-item.active {
-    color: var(--primary);
+    color: var(--primary-on-tint);
 }
 
 .nav-item.active svg {
@@ -344,7 +464,7 @@ body[lang="ar"] .nav-item {
     display: block;
     width: 4px;
     height: 4px;
-    border-radius: 50%;
+    border-radius: var(--radius-circle);
     background-color: transparent;
     transition: background-color 0.3s ease;
     margin-top: 2px;
@@ -427,7 +547,7 @@ body[lang="ar"] .nav-item {
 }
 
 .section-title {
-  font-size: 1.2rem;
+  font-size: var(--text-lg);
   font-weight: 700;
   border-bottom: 2px solid var(--input-border);
   padding-bottom: 8px;
@@ -454,7 +574,7 @@ body[lang="ar"] .nav-item {
 .diet-card {
   background: var(--input-bg);
   border: 1px solid var(--input-border);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 14px;
 }
 
@@ -466,18 +586,18 @@ body[lang="ar"] .nav-item {
 }
 
 .diet-title {
-  font-size: 0.95rem;
-  color: var(--primary);
+  font-size: var(--text-base);
+  color: var(--primary-on-tint);
 }
 
 .diet-time {
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   color: var(--text-muted);
   font-weight: 600;
 }
 
 .diet-desc {
-  font-size: 0.88rem;
+  font-size: var(--text-base);
   line-height: 1.5;
   color: var(--text-main);
 }
@@ -490,17 +610,17 @@ body[lang="ar"] .nav-item {
 
 .pill-badge {
   background: var(--primary-glow);
-  color: var(--primary);
-  font-size: 0.85rem;
+  color: var(--primary-on-tint);
+  font-size: var(--text-sm);
   font-weight: 700;
   padding: 4px 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
 }
 
 .water-tracker-container {
   background: var(--input-bg);
   border: 1px solid var(--input-border);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 16px;
   margin-bottom: 16px;
   display: flex;
@@ -509,7 +629,7 @@ body[lang="ar"] .nav-item {
 }
 
 .water-tracker-title {
-  font-size: 1rem;
+  font-size: var(--text-md);
   color: #00bcd4;
   display: flex;
   align-items: center;
@@ -517,7 +637,7 @@ body[lang="ar"] .nav-item {
 }
 
 .water-tracker-subtitle {
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   color: var(--text-muted);
   font-weight: 600;
 }
@@ -526,8 +646,8 @@ body[lang="ar"] .nav-item {
   width: 40px;
   height: 40px;
   padding: 0;
-  font-size: 1.2rem;
-  border-radius: 50%;
+  font-size: var(--text-lg);
+  border-radius: var(--radius-circle);
   margin: 0;
   box-shadow: none;
 }
@@ -542,7 +662,7 @@ body[lang="ar"] .nav-item {
 .water-glass {
   width: 16px;
   height: 24px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   transition: background 0.3s;
 }
 
@@ -603,7 +723,7 @@ body[lang="ar"] .nav-item {
 .admin-sidebar {
   width: 280px;
   background-color: var(--card-bg);
-  border-left: 1px solid var(--card-border);
+  border-inline-end: 1px solid var(--card-border);
   display: flex;
   flex-direction: column;
   padding: 24px;
@@ -611,15 +731,10 @@ body[lang="ar"] .nav-item {
   z-index: 10;
 }
 
-body[dir="ltr"] .admin-sidebar {
-  border-left: none;
-  border-right: 1px solid var(--card-border);
-}
-
 .admin-logo {
   font-size: 1.5rem;
-  font-weight: 800;
-  color: var(--primary);
+  font-weight: var(--weight-bold);
+  color: var(--primary-on-tint);
   margin-bottom: 40px;
   display: flex;
   align-items: center;
@@ -638,13 +753,13 @@ body[dir="ltr"] .admin-sidebar {
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-weight: 600;
   color: var(--text-muted);
   cursor: pointer;
   border: 1px solid transparent;
   background: transparent;
-  transition: all 0.2s ease;
+  transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), opacity var(--dur) var(--ease), transform var(--dur) var(--ease);
   text-decoration: none;
 }
 
@@ -655,7 +770,7 @@ body[dir="ltr"] .admin-sidebar {
 
 .admin-nav-btn.active {
   background-color: var(--primary-glow);
-  color: var(--primary);
+  color: var(--primary-on-tint);
   border-color: rgba(var(--primary-hue), 85%, 60%, 0.2);
 }
 
@@ -682,7 +797,7 @@ body[dir="ltr"] .admin-sidebar {
 }
 
 .field-label {
-    font-size: 0.9rem;
+    font-size: var(--text-base);
     font-weight: 600;
     color: var(--text-main);
     display: flex;
@@ -694,10 +809,10 @@ body[dir="ltr"] .admin-sidebar {
     padding: 12px 16px;
     background-color: var(--input-bg);
     border: 1px solid var(--input-border);
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     color: var(--text-main);
     font-family: inherit;
-    font-size: 1rem;
+    font-size: var(--text-md);
     transition: border-color 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
     appearance: none;
     -webkit-appearance: none;
@@ -707,23 +822,23 @@ body[dir="ltr"] .admin-sidebar {
 select.form-input {
     background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394A3B8%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E");
     background-repeat: no-repeat;
-    background-position: right 16px center; /* LTR default */
+    /* `inset-inline-end` has no background-position equivalent, so the arrow
+       side is still chosen per-direction — but the padding that clears it is
+       logical, which is the part that used to need a duplicate rule. */
+    background-position: right 16px center;
     background-size: 16px;
-    padding-right: 40px;
+    padding-inline-end: 40px;
     cursor: pointer;
 }
 
-/* Arabic RTL support for the select arrow */
 :lang(ar) select.form-input {
     background-position: left 16px center;
-    padding-left: 40px;
-    padding-right: 16px;
 }
 
 .form-input:focus {
     outline: none;
     border-color: var(--input-focus);
-    box-shadow: 0 0 0 3px var(--primary-glow);
+    box-shadow: var(--focus-ring);
 }
 
 .form-input:disabled {
@@ -735,5 +850,46 @@ select.form-input {
 textarea.form-input {
     resize: vertical;
     min-height: 100px;
+}
+
+/* --- Global Loading Logo Animation --- */
+.loading-vlogo {
+  max-width: 200px;
+  width: 80%;
+  height: auto;
+  object-fit: contain;
+  animation: pulse-vlogo 2s ease-in-out infinite;
+}
+
+@keyframes pulse-vlogo {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(0.94);
+    opacity: 0.75;
+  }
+}
+
+/* Hide default spin buttons on number inputs globally */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+
+/* Hide default spin buttons on number inputs globally */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
 }
 

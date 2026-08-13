@@ -498,12 +498,13 @@ model webauthn_credentials {
 }
 
 model accounts {
-  id         String     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  username   String     @unique
-  password   String
-  created_at DateTime?  @default(now()) @db.Timestamptz(6)
-  courses    courses[]
-  profiles   profiles[]
+  id              String            @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  username        String            @unique
+  password        String
+  created_at      DateTime?         @default(now()) @db.Timestamptz(6)
+  courses         courses[]
+  profiles        profiles[]
+  upload_sessions upload_sessions[]
 
   @@schema("public")
 }
@@ -523,14 +524,14 @@ model client_courses {
 }
 
 model courses {
-  id             String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  coach_id       String?          @db.Uuid
-  name           String
-  days_data      Json             @default("[]")
-  created_at     DateTime         @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
-  cover_image    String?
-  description    String?
-  client_courses client_courses[]
+  id              String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  coach_id        String?           @db.Uuid
+  name            String
+  days_data       Json              @default("[]")
+  created_at      DateTime          @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
+  cover_image     String?
+  description     String?
+  client_courses  client_courses[]
   users           accounts?         @relation(fields: [coach_id], references: [id], onUpdate: NoAction)
   profiles        profiles[]
   training_cycles training_cycles[]
@@ -543,7 +544,6 @@ model courses {
 model exercises {
   id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name_ar       String
-  name_en       String?
   target_muscle String?
   video_url     String?
   notes         String?
@@ -554,19 +554,21 @@ model exercises {
 }
 
 model profiles {
-  id                   String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id                   String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   username             String
   data                 Json
-  created_at           DateTime         @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
-  user_id              String?          @db.Uuid
-  current_course_id    String?          @db.Uuid
-  is_suspended         Boolean          @default(false)
-  subscription_ends_at DateTime?        @db.Timestamptz(6)
+  created_at           DateTime          @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
+  user_id              String?           @db.Uuid
+  current_course_id    String?           @db.Uuid
+  is_suspended         Boolean           @default(false)
+  subscription_ends_at DateTime?         @db.Timestamptz(6)
   client_courses       client_courses[]
-  courses              courses?         @relation(fields: [current_course_id], references: [id], onUpdate: NoAction)
-  accounts             accounts?        @relation(fields: [user_id], references: [id], onUpdate: NoAction)
+  courses              courses?          @relation(fields: [current_course_id], references: [id], onUpdate: NoAction)
+  accounts             accounts?         @relation(fields: [user_id], references: [id], onUpdate: NoAction)
+  diet_plans           diet_plans[]
   rest_days            rest_days[]
   training_cycles      training_cycles[]
+  upload_sessions      upload_sessions[]
   workout_logs         workout_logs[]
 
   @@index([username, created_at(sort: Desc)], map: "idx_profiles_username_created")
@@ -580,7 +582,6 @@ model profiles {
 /// Stores site settings and dynamic content like the landing page CMS data
 model site_settings {
   id         String   @id @default("landing_content")
-  content_en Json?    @default("{}")
   content_ar Json?    @default("{}")
   updated_at DateTime @default(now()) @updatedAt @db.Timestamptz(6)
 
@@ -746,4 +747,95 @@ enum one_time_token_type {
   phone_change_token
 
   @@schema("auth")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model diet_plans {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  profile_id String   @db.Uuid
+  /// Coach-facing label, e.g. "نظام يوم التمرين".
+  name       String
+  /// 1-based slot, unique per trainee. How many slots a trainee may hold is an
+  /// application rule (see MAX_PLANS_PER_TRAINEE), not a constraint here.
+  position   Int      @default(1) @db.SmallInt
+  /// The five meal slots and their items. Items snapshot the nutrition library
+  /// rather than joining it — see prisma/manual/2026-07-31-diet-plans.sql.
+  meals_data Json     @default("{}")
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  profiles   profiles @relation(fields: [profile_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([profile_id, position], map: "uq_diet_plans_profile_position")
+  @@index([profile_id, position], map: "idx_diet_plans_profile")
+  @@schema("public")
+}
+
+/// One browser's worth of direct-to-storage uploads, and the authority behind
+/// them. The client never names a path, a bucket or a profile — it hands back an
+/// id issued here and the server looks the rest up.
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model upload_sessions {
+  id           String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  /// 'registration' | 'renewal' | 'cms'
+  scope        String
+  /// Null during registration — nobody is signed in yet, which is why the
+  /// expiry and the rate limit carry the weight there.
+  account_id   String?        @db.Uuid
+  profile_id   String?        @db.Uuid
+  /// 'open' | 'consumed'. A consumed session can never issue or confirm again.
+  status       String         @default("open")
+  created_at   DateTime       @default(now()) @db.Timestamptz(6)
+  expires_at   DateTime       @db.Timestamptz(6)
+  consumed_at  DateTime?      @db.Timestamptz(6)
+  /// For rate limiting and tracing. Not an identity.
+  client_ip    String?
+  accounts     accounts?      @relation(fields: [account_id], references: [id], onDelete: Cascade)
+  profiles     profiles?      @relation(fields: [profile_id], references: [id], onDelete: Cascade)
+  upload_items upload_items[]
+
+  @@index([expires_at], map: "idx_upload_sessions_expiry", where: raw("(status = 'open'::text)"))
+  @@index([profile_id], map: "idx_upload_sessions_profile")
+  @@schema("public")
+}
+
+/// One object in storage, and what is known about it. Nothing is referenced by a
+/// profile until it reaches `attached`.
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model upload_items {
+  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  session_id      String          @db.Uuid
+  /// The form field this slot was granted for — checked again at attach time.
+  field           String
+  /// Built entirely by the server, unique so a path cannot be claimed twice.
+  storage_path    String          @unique
+  /// 'created' | 'confirmed' | 'rejected' | 'attached'
+  status          String          @default("created")
+  /// Read from the object's own bytes at confirmation, never from the client.
+  detected_type   String?
+  mime            String?
+  size_bytes      BigInt?
+  created_at      DateTime        @default(now()) @db.Timestamptz(6)
+  confirmed_at    DateTime?       @db.Timestamptz(6)
+  attached_at     DateTime?       @db.Timestamptz(6)
+  upload_sessions upload_sessions @relation(fields: [session_id], references: [id], onDelete: Cascade)
+
+  @@index([session_id], map: "idx_upload_items_session")
+  @@index([status, created_at], map: "idx_upload_items_sweep", where: raw("(status <> 'attached'::text)"))
+  @@schema("public")
+}
+
+model nutrition_sources {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name         String
+  category     String
+  image_url    String?
+  serving_size String?
+  calories     Decimal?  @db.Decimal(6, 2)
+  protein      Decimal?  @db.Decimal(6, 2)
+  carbs        Decimal?  @db.Decimal(6, 2)
+  fats         Decimal?  @db.Decimal(6, 2)
+  notes        String?
+  created_at   DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@schema("public")
 }

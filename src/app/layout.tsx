@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import { ThemeProvider } from "@/contexts/ThemeContext";
-import { LanguageProvider } from "@/contexts/LanguageContext";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "GYM Plans - Power Your Future",
-  description: "Personalized GYM plans and tracking",
+  title: "Ibrahim Abutabikh",
+  description: "خطط تدريب وأنظمة غذائية مخصصة مع متابعة كاملة",
+  icons: {
+    icon: "/images/logo/mainLogo.png",
+  },
 };
 
 export default function RootLayout({
@@ -16,11 +18,9 @@ export default function RootLayout({
   return (
     <html lang="ar" dir="rtl">
       <body>
-        <LanguageProvider>
-          <ThemeProvider>
-            {children}
-          </ThemeProvider>
-        </LanguageProvider>
+        <ThemeProvider>
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

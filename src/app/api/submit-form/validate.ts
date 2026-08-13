@@ -8,30 +8,30 @@
 /** Every key the form is allowed to submit. */
 const ALLOWED_KEYS = [
   // step 1
-  "fullname", "phone", "plan", "gender", "age", "weight", "height",
+  "fullname", "phone", "plan", "plan_type", "gender", "age", "weight", "height",
   "activity", "residence", "employment",
   // step 2
   "workday_breakfast", "workday_lunch", "workday_dinner",
   "holiday_breakfast", "holiday_lunch", "holiday_dinner",
   "workout_exp", "workout_type_exp", "workout_type_other_desc",
-  "workout_commit", "workout_days", "gym_time",
+  "workout_commit", "workout_days", "gym_time", "home_equipment_photo",
   // step 3
   "sub_goal", "target_weight", "allergies", "fav_foods",
   "coffee_rate", "coffee_type", "meat", "buy_supp",
   // step 4 (file fields arrive separately as multipart entries)
   "injuries", "meas_arm", "meas_waist", "meas_hips", "meas_leg",
-  "supplements_list", "diet_history",
+  "supplements_list", "diet_history", "last_diet_fail", "eating_reason",
   "analysis_file", "body_photos", "supplements_photo", "diet_history_file",
+  "username", "password",
 ] as const;
 
 /** Must be present and non-empty — these mirror the form's `required` fields. */
 const REQUIRED_KEYS = [
   "fullname", "phone", "plan", "gender", "age", "weight", "height",
   "activity", "residence", "employment",
-  "workday_breakfast", "workday_lunch", "workday_dinner",
-  "holiday_breakfast", "holiday_lunch", "holiday_dinner",
-  "workout_exp", "workout_commit", "workout_days",
-  "sub_goal", "target_weight", "meat", "coffee_rate", "buy_supp",
+  "workout_exp", "workout_type_exp", "workout_commit", "workout_days",
+  "sub_goal", "target_weight", "allergies", "fav_foods", "coffee_rate", "buy_supp",
+  "injuries",
 ] as const;
 
 /** Numeric answers are stored as strings; check they at least parse. */
@@ -63,8 +63,27 @@ export function validateSubmission(input: unknown): ValidationResult {
 
   for (const key of REQUIRED_KEYS) {
     const v = data[key];
-    if (v === undefined || v === null || (typeof v === "string" && v.trim() === "")) {
+    if (
+      v === undefined || 
+      v === null || 
+      (typeof v === "string" && v.trim() === "") ||
+      (Array.isArray(v) && v.length === 0)
+    ) {
       errors.push(`missing required field: ${key}`);
+    }
+  }
+
+  if (data.plan === "plan1") {
+    const v = data.plan_type;
+    if (v === undefined || v === null || (typeof v === "string" && v.trim() === "")) {
+      errors.push("missing required field: plan_type");
+    }
+  }
+
+  if (data.coffee_rate && data.coffee_rate !== "opt_coffee_0") {
+    const v = data.coffee_type;
+    if (v === undefined || v === null || (typeof v === "string" && v.trim() === "")) {
+      errors.push("missing required field: coffee_type");
     }
   }
 
@@ -72,9 +91,22 @@ export function validateSubmission(input: unknown): ValidationResult {
     errors.push(`gender must be "male" or "female"`);
   }
 
+  /* Females submit measurements in place of body photos (which the route
+     requires for males), so they carry the same weight as a required field. */
+  if (data.gender === "female") {
+    for (const key of ["meas_arm", "meas_waist", "meas_hips", "meas_leg"]) {
+      const v = data[key];
+      if (v === undefined || v === null || (typeof v === "string" && v.trim() === "")) {
+        errors.push(`missing required field: ${key}`);
+      }
+    }
+  }
+
   if (data.workout_type_exp !== undefined && !Array.isArray(data.workout_type_exp)) {
     errors.push("workout_type_exp must be an array");
   }
+
+
 
   for (const [key, range] of Object.entries(NUMERIC_KEYS)) {
     const raw = data[key];

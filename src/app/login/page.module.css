@@ -14,7 +14,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-family: var(--font-geist-sans);
+  font-family: var(--font-primary, 'Baloo 2', sans-serif);
   background-color: var(--background);
 }
 
@@ -50,7 +50,7 @@
 
 .intro p {
   max-width: 440px;
-  font-size: 18px;
+  font-size: var(--text-lg);
   line-height: 32px;
   text-wrap: balance;
   color: var(--text-secondary);
@@ -67,7 +67,7 @@
   width: 100%;
   max-width: 440px;
   gap: 16px;
-  font-size: 14px;
+  font-size: var(--text-base);
 }
 
 .ctas a {
@@ -76,7 +76,7 @@
   align-items: center;
   height: 40px;
   padding: 0 16px;
-  border-radius: 128px;
+  border-radius: var(--radius-pill);
   border: 1px solid transparent;
   transition: 0.2s;
   cursor: pointer;

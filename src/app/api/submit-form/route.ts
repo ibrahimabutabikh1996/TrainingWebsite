@@ -1,29 +1,80 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import type { Prisma } from "@prisma/client";
-import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import nodemailer from "nodemailer";
 import { validateSubmission } from "./validate";
+import { hashPassword } from "@/lib/auth";
+import { getSession, sessionOwnsProfile } from "@/lib/authGuard";
+import { readIntakeData, withoutCredentials } from "@/lib/intakeData";
+import { attachSessionItems, confirmedPathsFor, openSession } from "@/lib/uploadSessions";
 import { subscriptionEndFrom } from "@/lib/subscription";
 import type { JsonRecord } from "@/types";
 
 export const dynamic = "force-dynamic";
 
 
+/* The submission is JSON now, not multipart.
+ *
+ * The files reached Supabase directly from the browser before this runs — see
+ * `@/lib/uploadSessions`. What arrives here is the answers plus an upload
+ * session id, so the request is a few kilobytes whatever was attached to it.
+ * That is what gets past Vercel's ~4.5 MB body limit, which a single phone photo
+ * could already exceed.
+ */
 export async function POST(request: Request) {
   try {
-    const formData = await request.formData();
-    const dataString = formData.get("data") as string;
-    const profileId = formData.get("profileId") as string | null;
+    let body: {
+      data?: unknown;
+      profileId?: unknown;
+      uploadSessionId?: unknown;
+      keepItemIds?: unknown;
+    };
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: "صيغة البيانات غير صحيحة" }, { status: 400 });
+    }
+
+    const dataString = typeof body.data === "string" ? body.data : null;
+    const profileId = typeof body.profileId === "string" && body.profileId ? body.profileId : null;
+    const uploadSessionId =
+      typeof body.uploadSessionId === "string" && body.uploadSessionId ? body.uploadSessionId : null;
+    /* Which of the session's confirmed files the form still wants — the person
+       may have removed one after it uploaded. Narrowing only; see
+       `confirmedPathsFor`. */
+    const keepItemIds = Array.isArray(body.keepItemIds)
+      ? body.keepItemIds.filter((id): id is string => typeof id === "string").slice(0, 100)
+      : undefined;
+
     if (!dataString) {
-      return NextResponse.json({ error: "Missing data" }, { status: 400 });
+      return NextResponse.json({ error: "البيانات مفقودة" }, { status: 400 });
+    }
+
+    /* Two different operations share this handler.
+     *
+     * Registration is open — a stranger filling in the intake form is the whole
+     * point of it. Renewal is not: it overwrites a profile in place, pushes the
+     * previous answers into `history` and restarts the subscription period. It
+     * took the profile id straight from the request body and did as it was told,
+     * so anyone could overwrite any trainee's record and hand them — or
+     * themselves — thirty fresh days. The renewal path now has to be the owner
+     * of that profile, or the coach. */
+    const viewer = await getSession();
+
+    if (profileId) {
+      if (!viewer) {
+        return NextResponse.json({ error: "يجب تسجيل الدخول لتجديد الاشتراك" }, { status: 401 });
+      }
+      if (!(await sessionOwnsProfile(viewer, profileId))) {
+        return NextResponse.json({ error: "غير مصرح لك بهذا الإجراء" }, { status: 403 });
+      }
     }
 
     let jsonData: Record<string, unknown>;
     try {
       jsonData = JSON.parse(dataString);
     } catch {
-      return NextResponse.json({ error: "Malformed data payload" }, { status: 400 });
+      return NextResponse.json({ error: "صيغة البيانات غير صحيحة" }, { status: 400 });
     }
 
     /* Reject drifted or malformed submissions here rather than storing them in
@@ -37,74 +88,69 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
+
+    /* The attachments, read from the upload session rather than from the request.
+     *
+     * Only rows the server itself confirmed are here: an object that was
+     * uploaded but failed verification, or was never confirmed at all, is not
+     * part of the submission and will be swept. The client cannot add to this
+     * list — it has no say in which paths exist or which field they belong to. */
+    let uploadedFiles: Record<string, string[]> = {};
+
+    if (uploadSessionId) {
+      const opened = await openSession(uploadSessionId, viewer);
+      if (!opened.ok) {
+        return NextResponse.json({ error: opened.error }, { status: opened.status });
+      }
+
+      /* A renewal session belongs to one profile and may only be spent on it;
+         a registration session belongs to none and may not be spent on an
+         existing profile at all. */
+      const scope = opened.session.scope;
+      if (profileId) {
+        if (scope !== "renewal" || opened.session.profile_id !== profileId) {
+          return NextResponse.json({ error: "جلسة الرفع لا تخصّ هذا الاشتراك" }, { status: 403 });
+        }
+      } else if (scope !== "registration") {
+        return NextResponse.json({ error: "جلسة الرفع لا تخصّ هذا الطلب" }, { status: 403 });
+      }
+
+      uploadedFiles = await confirmedPathsFor(opened.session.id, keepItemIds);
+    }
+
+    if (jsonData.gender === "male" && (uploadedFiles.body_photos?.length ?? 0) === 0) {
+      return NextResponse.json(
+        { error: "بيانات الاستمارة غير صالحة", details: ["missing required field: body_photos"] },
+        { status: 400 }
+      );
+    }
+
     /* Validated above, so fullname is present and a string. */
     const fullname = String(jsonData.fullname ?? "").trim();
-    const userId = `${Date.now()}_${fullname.replace(/[^a-zA-Z0-9]/g, '_') || 'user'}`;
-    const userFolder = `usersData/${userId}`;
 
-    const uploadedFiles: Record<string, string | string[]> = {};
-
-    // Helper to upload a file to Supabase
-    const uploadFile = async (file: File, path: string) => {
-      const buffer = Buffer.from(await file.arrayBuffer());
-      const { error } = await supabaseAdmin.storage
-        .from('uploads')
-        .upload(path, buffer, {
-          contentType: file.type,
-          upsert: false
-        });
-      
-      if (error) {
-        console.error("Supabase upload error:", error);
-        throw new Error("Failed to upload file");
-      }
-      
-      const { data: publicUrlData } = supabaseAdmin.storage
-        .from('uploads')
-        .getPublicUrl(path);
-        
-      return publicUrlData.publicUrl;
-    };
-
-    // Upload analysis_file
-    const analysisFile = formData.get("analysis_file") as File | null;
-    if (analysisFile && analysisFile.name) {
-      uploadedFiles.analysis_file = await uploadFile(analysisFile, `${userFolder}/analysis_${analysisFile.name}`);
-    }
-
-    // Upload supplements_photo
-    const supplementsPhoto = formData.get("supplements_photo") as File | null;
-    if (supplementsPhoto && supplementsPhoto.name) {
-      uploadedFiles.supplements_photo = await uploadFile(supplementsPhoto, `${userFolder}/supplements_${supplementsPhoto.name}`);
-    }
-
-    // Upload diet_history_file
-    const dietHistoryFile = formData.get("diet_history_file") as File | null;
-    if (dietHistoryFile && dietHistoryFile.name) {
-      uploadedFiles.diet_history_file = await uploadFile(dietHistoryFile, `${userFolder}/diet_history_${dietHistoryFile.name}`);
-    }
-
-    // Upload body_photos (multiple)
-    const bodyPhotos = formData.getAll("body_photos") as File[];
-    if (bodyPhotos.length > 0) {
-      const photoUrls = await Promise.all(
-        bodyPhotos.map(async (file, index) => {
-          if (file.name) {
-            return await uploadFile(file, `${userFolder}/body_photo_${index}_${file.name}`);
-          }
-          return null;
-        })
-      );
-      uploadedFiles.body_photos = photoUrls.filter(Boolean) as string[];
-    }
-
-    // Combine all data
+    /* Combine all data.
+     *
+     * The credentials come back out before anything is stored: `rawPassword`
+     * below hashes into `accounts`, which is the only copy that should exist.
+     * Spreading `jsonData` wholesale left a second, plain-text copy sitting in
+     * this jsonb column, from where it travelled to the dashboard as
+     * `raw_answers` and to the coach's panel in full. */
     const finalData: Record<string, unknown> = {
-      ...jsonData,
+      ...withoutCredentials(jsonData),
       ...uploadedFiles,
       is_new: true, // For admin notifications
     };
 
+    /* The profile write and the attachment of its files commit together.
+     *
+     * Storage and Postgres are two systems and cannot share a transaction, so
+     * the bytes are already in the bucket by now whatever happens next. What can
+     * be made atomic is the pair that matters: the profile that references the
+     * paths, and the rows that mark those paths as spoken for. Split apart, a
+     * failure between them either leaves a record pointing at files the sweep
+     * thinks are abandoned, or files nothing points at. Together, a failure
+     * leaves confirmed-but-unattached objects, which is exactly what the sweep
+     * is for. */
     let profile;
 
     if (profileId) {
@@ -112,11 +158,12 @@ export async function POST(request: Request) {
       const existingProfile = await prisma.profiles.findUnique({
         where: { id: profileId }
       });
-      
-      let existingData = existingProfile?.data as JsonRecord || {};
-      if (typeof existingData === "string") {
-        try { existingData = JSON.parse(existingData); } catch { existingData = {}; }
-      }
+
+      /* Read through the same filter: a renewal copies the previous answers
+         into `history` wholesale, so a password stored by an older version of
+         this route would otherwise be carried forward into a snapshot and
+         outlive the cleanup. */
+      const existingData: JsonRecord = readIntakeData(existingProfile?.data);
 
       const history = existingData.history || [];
       const dataWithoutHistory = { ...existingData };
@@ -142,22 +189,56 @@ export async function POST(request: Request) {
       finalData.history = history;
       finalData.is_renewal = true;
 
-      profile = await prisma.profiles.update({
-        where: { id: profileId },
-        data: {
-          username: fullname || existingProfile?.username || "Unknown User",
-          data: finalData as Prisma.InputJsonObject,
-          // Submitting the renewal form restarts the subscription period.
-          subscription_ends_at: subscriptionEndFrom()
+      profile = await prisma.$transaction(async (tx) => {
+        const updated = await tx.profiles.update({
+          where: { id: profileId },
+          data: {
+            username: fullname || existingProfile?.username || "مستخدم غير معروف",
+            data: finalData as Prisma.InputJsonObject,
+            // Submitting the renewal form restarts the subscription period.
+            subscription_ends_at: subscriptionEndFrom()
+          }
+        });
+        if (uploadSessionId) {
+          await attachSessionItems(tx, uploadSessionId, updated.id, keepItemIds);
         }
+        return updated;
       });
     } else {
-      // Save to Prisma profiles
-      profile = await prisma.profiles.create({
-        data: {
-          username: fullname || "Unknown User",
-          data: finalData as Prisma.InputJsonObject,
-        },
+      const rawUsername = String(jsonData.username || "").trim();
+      const rawPassword = String(jsonData.password || "").trim();
+
+      if (rawUsername && rawPassword) {
+        const existingAccount = await prisma.accounts.findUnique({ where: { username: rawUsername } });
+        if (existingAccount) {
+          return NextResponse.json({ error: "اسم المستخدم محجوز، يرجى اختيار اسم آخر" }, { status: 400 });
+        }
+      }
+
+      const hashedPassword = rawUsername && rawPassword ? await hashPassword(rawPassword) : null;
+
+      profile = await prisma.$transaction(async (tx) => {
+        let accountId: string | undefined;
+
+        if (hashedPassword) {
+          const newAccount = await tx.accounts.create({
+            data: { username: rawUsername, password: hashedPassword },
+          });
+          accountId = newAccount.id;
+        }
+
+        const created = await tx.profiles.create({
+          data: {
+            username: fullname || "مستخدم غير معروف",
+            user_id: accountId,
+            data: finalData as Prisma.InputJsonObject,
+          },
+        });
+
+        if (uploadSessionId) {
+          await attachSessionItems(tx, uploadSessionId, created.id, keepItemIds);
+        }
+        return created;
       });
     }
 
@@ -177,7 +258,7 @@ export async function POST(request: Request) {
                          jsonData.plan === "plan3" ? "خطة شهرية (متابعة يومية)" : jsonData.plan;
 
         await transporter.sendMail({
-          from: `"Gym Portal" <${process.env.EMAIL_USER}>`,
+          from: `"Ibrahim Abutabikh" <${process.env.EMAIL_USER}>`,
           to: "ibrahim1996.im@gmail.com",
           subject: profileId ? `طلب تجديد اشتراك: ${jsonData.fullname}` : `مشترك جديد: ${jsonData.fullname}`,
           html: `
@@ -203,6 +284,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true, profileId: profile.id });
   } catch (error) {
     console.error("Submit form error:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return NextResponse.json({ error: errorMessage || "حدث خطأ في الخادم" }, { status: 500 });
   }
 }

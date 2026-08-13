@@ -28,7 +28,7 @@ export function useAuth() {
       localStorage.setItem("loggedInUserId", data.userId);
       localStorage.setItem("loggedInUsername", data.username);
       
-      if (data.username === "admin") {
+      if (data.username === "admin" || data.username === "mkm94admin") {
         router.push("/admin");
       } else {
         router.push("/dashboard");

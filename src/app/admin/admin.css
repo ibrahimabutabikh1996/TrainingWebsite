@@ -1,9 +1,25 @@
+/*
+ * Admin shell.
+ *
+ * Shares the trainee dashboard's visual language (see dashboard.css): the same
+ * radial-gradient + noise page backdrop, the same glass card recipe, the same
+ * 12/16px radii and the same pill-shaped active nav state. The tokens below are
+ * the single place that recipe is written down for the admin area — the
+ * per-page stylesheets (crm, courses, exercises, diet, cms) consume them so all
+ * of them move together.
+ *
+ * The shell stays fixed with an internally scrolling main pane, unlike the
+ * dashboard's natural page scroll: the CRM split layout and its side drawer are
+ * sized against the viewport (height: 100%), so switching to page scroll would
+ * collapse them.
+ */
 .admin-layout-wrapper {
-  /* Mapped to global theme for Day/Night support and Gold theme */
+  /* Mapped to global theme for Day/Night support */
   --admin-card-bg: var(--nav-bg-glass);
   --admin-card-border: var(--border);
-  --admin-card-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
-  
+  --admin-card-shadow: var(--elev-1);
+  --admin-card-shadow-hover: var(--elev-2);
+
   --admin-primary: var(--primary);
   --admin-on-surface: var(--text);
   --admin-outline: var(--muted2);
@@ -14,6 +30,12 @@
   --admin-bg-2: var(--bg2);
   --admin-bg-3: var(--bg3);
   --admin-bg-4: var(--bg4);
+
+  /* Geometry comes from the shared scale in globals.css. These three aliases
+     used to be redefined here with literal 6/5/4px values, and because this is a
+     descendant scope those local copies beat the :root definitions — which left
+     the entire admin area on the old sharp corners while every other surface
+     moved to the new scale. Don't reintroduce them. */
 
   display: flex;
   height: 100vh;
@@ -28,7 +50,30 @@
   background-color: var(--bg);
 }
 
-/* Minimalist design removes gradient and noise overlays */
+/* Backdrop, identical to .dashboard-page: primary-tinted glow from the top… */
+.admin-layout-wrapper::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--primary) 8%, transparent) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* …and a noise overlay to keep the large flat areas from banding. */
+.admin-layout-wrapper::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.014;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ==========================================================================
+   Ultra-Premium SaaS Sidebar (Linear & Apple Pro Studio Architecture)
+   ========================================================================== */
 
 /* Sidebar Glass Panel */
 .admin-sidebar-glass {
@@ -36,103 +81,271 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 24px 0;
-  width: 260px;
-  background: var(--admin-bg-2);
-  border-left: 1px solid var(--admin-card-border); /* RTL */
+  gap: 20px;
+  padding: 24px 0 20px;
+  width: 268px;
+  max-height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+  background: var(--nav-bg-glass, rgba(15, 15, 15, 0.75));
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  /* The border is what separates the rail from the canvas. A 40px drop shadow
+     on top of it just muddied the edge. Logical, so the rail's inner edge stays
+     correct if the layout is ever run LTR. */
+  border-inline-end: 1px solid var(--admin-card-border);
   z-index: 40;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+  transition: width var(--dur-slow) var(--ease-out), padding var(--dur-slow) var(--ease-out);
 }
 
-.admin-brand-header {
-  padding: 0 24px;
-  margin-bottom: 32px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
+/* Collapsed State Rules */
+.admin-sidebar-glass.collapsed {
+  width: 92px;
 }
 
-.admin-brand-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 4px;
-  background-color: var(--primary-dim);
+/* ==========================================================================
+   Interactive Studio Toggle Button
+   ========================================================================== */
+.admin-collapse-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--admin-primary);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.admin-collapse-btn:hover {
+  background: var(--primary-dim);
+  color: var(--primary-on-tint);
+  border-color: var(--border-primary);
+}
+
+/* Brand Header Area */
+.admin-brand-header {
+  padding: 0 22px;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+  transition: padding 0.3s ease;
+}
+
+.admin-sidebar-glass.collapsed .admin-brand-header {
+  padding: 0 16px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+/* Collapsed Logo Tile Halo Effect */
+.admin-collapsed-logo-tile {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-md);
+  background: var(--primary-dim);
+  border: 1px solid var(--border-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  transition: border-color var(--dur) var(--ease);
+}
+
+.admin-collapsed-logo-tile:hover {
+  border-color: var(--primary);
+}
+
+.admin-hlogo-link {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  transition: opacity var(--dur) var(--ease);
+}
+
+.admin-hlogo-link:hover {
+  opacity: 0.8;
+}
+
+.admin-brand-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  background: var(--primary-dim);
+  border: 1px solid var(--border-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary-on-tint);
+  flex-shrink: 0;
 }
 
 .admin-brand-title {
   font-family: var(--font-display);
-  font-size: 1.5rem;
-  line-height: 1.75rem;
-  font-weight: 400; /* Bebas Neue looks better at 400 */
-  color: var(--admin-primary);
-  letter-spacing: 1px;
+  font-size: var(--text-xl);
+  line-height: var(--leading-tight);
+  font-weight: var(--weight-bold);
+  color: var(--primary-on-tint);
+  letter-spacing: 0;
   margin: 0;
 }
 
 .admin-brand-subtitle {
   font-family: var(--font-primary);
-  font-size: 0.85rem;
-  line-height: 1rem;
-  color: var(--admin-outline);
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  color: var(--text-secondary);
   margin: 0;
 }
 
+/* ==========================================================================
+   Navigation Links & Containers
+   ========================================================================== */
 .admin-nav-container {
   padding: 0 16px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
+}
+
+.admin-sidebar-glass.collapsed .admin-nav-container,
+.admin-sidebar-glass.collapsed .admin-bottom-actions {
+  padding-inline: 16px !important;
+  padding-top: 16px !important;
+  align-items: center;
 }
 
 .admin-nav-label {
-  padding: 0 8px;
-  font-size: 0.75rem;
-  line-height: 1rem;
-  font-weight: 600;
-  color: var(--admin-outline);
+  padding: 0 10px;
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 8px;
+  letter-spacing: 0.08em;
+  margin-bottom: var(--space-2);
 }
 
+.admin-sidebar-glass.collapsed .admin-nav-label,
+.admin-sidebar-glass.collapsed .admin-nav-text {
+  display: none;
+}
+
+/* Navigation item.
+   Rest → hover → active is carried by fill and colour alone. The item used to
+   also slide 4px, scale its icon 1.15× and cast a tinted shadow; three signals
+   for one state change is what made the rail feel busy. */
 .admin-nav-link {
   width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 12px;
-  border-radius: 4px;
-  transition: all 0.3s ease;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  transition:
+    background-color var(--dur) var(--ease),
+    color var(--dur) var(--ease),
+    border-color var(--dur) var(--ease);
   border: 1px solid transparent;
-  color: var(--admin-outline);
+  color: var(--text-secondary);
   text-decoration: none;
+  position: relative;
+  overflow: hidden;
 }
 
-.admin-nav-link:hover {
+.admin-nav-link:hover:not(.active) {
   color: var(--text);
-  background-color: var(--bg3);
-  transform: translateX(-4px); /* RTL */
+  background: color-mix(in srgb, var(--text) 6%, transparent);
 }
 
 .admin-nav-link.active {
-  background-color: var(--primary-dim);
-  color: var(--admin-primary);
+  background: var(--primary-dim);
+  color: var(--primary-on-tint);
+  border-color: var(--border-primary);
+  font-weight: var(--weight-bold);
+}
+
+/* Active marker. Sits on the inline-start edge so it follows RTL/LTR instead of
+   being pinned to the physical right. */
+.admin-nav-link.active::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  inset-inline-end: 5px;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 20px;
+  background: var(--primary);
+  border-radius: var(--radius-pill);
 }
 
 .admin-nav-link-inner {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
+}
+
+.admin-sidebar-glass.collapsed .admin-nav-link,
+.admin-sidebar-glass.collapsed .admin-logout-btn {
+  width: 52px;
+  height: 52px;
+  padding: 0;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  margin-bottom: 2px;
+}
+
+.admin-sidebar-glass.collapsed .admin-nav-link-inner {
+  gap: 0;
+  justify-content: center;
+  width: 100%;
+}
+
+.admin-sidebar-glass.collapsed .admin-nav-link.active::before {
+  inset-inline-end: 3px;
+  height: 16px;
+}
+
+.admin-nav-link .app-icon,
+.admin-logout-btn .app-icon {
+  transition: color var(--dur) var(--ease);
+  font-size: 20px;
+}
+
+.admin-nav-link:hover .app-icon,
+.admin-nav-link.active .app-icon {
+  color: var(--primary-on-tint);
 }
 
 .admin-nav-text {
-  font-weight: 500;
-  font-size: 0.875rem;
-  line-height: 1.25rem;
+  font-weight: var(--weight-medium);
+  font-size: var(--text-base);
+  line-height: var(--leading-tight);
   font-family: var(--font-primary);
+}
+
+.admin-nav-link.active .admin-nav-text {
+  font-weight: var(--weight-semibold);
+}
+
+/* ==========================================================================
+   Footer Actions & System Buttons
+   ========================================================================== */
+.admin-bottom-actions {
+  padding: 0 var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  border-top: 1px solid var(--border);
+  padding-top: var(--space-4);
+  margin-top: auto;
 }
 
 .admin-logout-btn {
@@ -140,41 +353,118 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 12px;
-  border-radius: 4px;
-  transition: all 0.3s ease;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  transition:
+    background-color var(--dur) var(--ease),
+    color var(--dur) var(--ease),
+    border-color var(--dur) var(--ease);
   border: 1px solid transparent;
   background-color: transparent;
-  color: var(--admin-outline);
+  color: var(--text-secondary);
   cursor: pointer;
   font-family: var(--font-primary);
+  font-size: var(--text-base);
+  font-weight: var(--weight-medium);
 }
 
 .admin-logout-btn:hover {
-  color: var(--admin-error);
-  background-color: rgba(239, 68, 68, 0.1);
-  transform: translateX(-4px);
+  color: var(--text);
+  background: color-mix(in srgb, var(--text) 6%, transparent);
+}
+
+.admin-logout-btn.danger-btn:hover {
+  color: var(--error-text);
+  background-color: color-mix(in srgb, var(--error) 12%, transparent);
+  border-color: color-mix(in srgb, var(--error) 30%, transparent);
 }
 
 .admin-main-content {
   flex-grow: 1;
   position: relative;
+  z-index: 2;
   overflow-y: auto;
-  padding: 40px;
+  padding: var(--space-10);
 }
 
-/* Font override removed per user request */
+/* Keeps admin pages on a readable measure the way .dashboard-main does, while
+   staying wide enough for the CRM's list + drawer split. */
+.admin-main-content > * {
+  max-width: 100%;
+  width: 100%;
+  /* `backwards`, not `forwards`/`both`: a filled-forwards transform would stay
+     applied after the animation ends, and any transform makes this div the
+     containing block for `position: fixed` descendants — which would trap the
+     admin modals (.cms-modal-overlay, .dplan-picker-backdrop) inside it instead
+     of letting them cover the viewport. These pages don't portal their modals
+     out, so the transform has to be gone once the entrance finishes. */
+  animation: adminFadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
 
-/* Custom Scrollbar for Admin Area */
-.admin-main-content::-webkit-scrollbar {
+@keyframes adminFadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 768px) {
+  .admin-main-content {
+    padding: 24px 20px;
+  }
+}
+
+/*
+ * The shared card surface. Same recipe as .dashboard-card so an admin panel and
+ * a trainee panel read as the same component.
+ */
+.admin-card {
+  background: var(--admin-card-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--admin-card-border);
+  border-radius: var(--admin-radius-lg);
+  padding: var(--space-6);
+  box-shadow: var(--admin-card-shadow);
+  transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+
+/* A panel is a container, not a control — it shouldn't lift on hover the way a
+   clickable card does. Only the border responds, so hovering a wide dashboard
+   no longer makes the whole page twitch. */
+.admin-card:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--admin-card-shadow-hover);
+}
+
+.admin-card-title {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: var(--space-3);
+  margin-bottom: var(--space-5);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Custom Scrollbar for Admin Area & Sidebar */
+.admin-main-content::-webkit-scrollbar,
+.admin-sidebar-glass::-webkit-scrollbar {
   width: 6px;
 }
-.admin-main-content::-webkit-scrollbar-track {
+.admin-main-content::-webkit-scrollbar-track,
+.admin-sidebar-glass::-webkit-scrollbar-track {
   background: transparent;
 }
-.admin-main-content::-webkit-scrollbar-thumb {
+.admin-main-content::-webkit-scrollbar-thumb,
+.admin-sidebar-glass::-webkit-scrollbar-thumb {
   background: var(--admin-outline);
-  border-radius: 4px;
+  border-radius: var(--admin-radius-sm);
+}
+.admin-sidebar-glass::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
 }
 
 .admin-loading-screen {
@@ -183,8 +473,8 @@
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  background-color: #041124;
-  color: white;
+  background-color: var(--bg);
+  color: var(--text);
 }
 
 .admin-spinner {
@@ -192,7 +482,7 @@
   height: 40px;
   border: 4px solid color-mix(in srgb, var(--admin-on-surface) 10%, transparent);
   border-top-color: var(--primary);
-  border-radius: 50%;
+  border-radius: var(--radius-circle);
   animation: spin 1s linear infinite;
   margin-bottom: 16px;
 }

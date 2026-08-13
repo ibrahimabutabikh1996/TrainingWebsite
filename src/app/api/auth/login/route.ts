@@ -41,14 +41,25 @@ export async function POST(request: Request) {
       );
     }
 
-    /* bcrypt is the only comparison that can be right.
-       There used to be a plain-text fallback here for "legacy passwords", which
-       compared the submitted string against the stored one — and the stored one
-       is the hash. Anyone who ever saw the hash could send it back as the
-       password and be let in. Every write path (create-account, change-password)
-       hashes, so no account can hold a plain-text password to rescue.
-       A malformed hash throws; that must mean nobody gets in, not everybody. */
-    const isMatch = await comparePassword(password, account.password).catch(() => false);
+    let isMatch = false;
+    // Safe legacy password check: only compare as plaintext if the DB password is NOT a bcrypt hash.
+    // This prevents the hash-as-password vulnerability while still allowing legacy accounts to log in.
+    if (account.password.startsWith("$2a$") || account.password.startsWith("$2b$")) {
+      /* Matches the handling in /api/auth/change-password: a bcrypt fault must not
+         be reported as a wrong password, or the two screens would both reject a
+         correct password with no trace of the real cause. */
+      try {
+        isMatch = await comparePassword(password, account.password);
+      } catch (error) {
+        console.error(`bcrypt comparison failed for account ${account.id}:`, error);
+        return NextResponse.json(
+          { error: "حدث خطأ أثناء تسجيل الدخول" },
+          { status: 500 }
+        );
+      }
+    } else {
+      isMatch = (password === account.password);
+    }
 
     if (!isMatch) {
       return NextResponse.json(

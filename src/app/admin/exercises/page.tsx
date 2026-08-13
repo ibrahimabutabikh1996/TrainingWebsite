@@ -13,7 +13,6 @@ export default async function AdminExercisesPage() {
       select: {
         id: true,
         name_ar: true,
-        name_en: true,
         target_muscle: true,
         video_url: true,
         notes: true,
@@ -23,7 +22,6 @@ export default async function AdminExercisesPage() {
     exercises = rows.map((ex) => ({
       id: ex.id,
       name_ar: ex.name_ar,
-      name_en: ex.name_en ?? null,
       target_muscle: ex.target_muscle ?? null,
       video_url: ex.video_url ?? null,
       notes: ex.notes ?? null,
@@ -37,8 +35,8 @@ export default async function AdminExercisesPage() {
   return (
     /* Same shell as the other admin screens; the old bespoke wrapper had its
        own padding and max-width, which is why this page never lined up. */
-    <div className="crm-dashboard" style={{ overflowY: "auto" }}>
-      <div className="crm-main-area" style={{ paddingInlineEnd: 0 }}>
+    <div className="crm-dashboard">
+      <div className="crm-main-area">
         <AdminExercisesClient initialExercises={exercises} />
       </div>
     </div>

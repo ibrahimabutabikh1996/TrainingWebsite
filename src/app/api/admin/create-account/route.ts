@@ -1,15 +1,26 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { hashPassword } from "@/lib/auth";
+import { requireAdmin } from "@/lib/authGuard";
 import type { JsonRecord } from "@/types";
 
 export async function POST(request: Request) {
+  const auth = await requireAdmin();
+  if (!auth.ok) return auth.response;
+
   try {
     const { profileId, username, password } = await request.json();
 
     if (!profileId || !username || !password) {
       return NextResponse.json(
-        { error: "جميع الحقول مطلوبة" },
+        { error: "المعرف واسم المستخدم وكلمة المرور مطلوبة" },
+        { status: 400 }
+      );
+    }
+    
+    if (password.length < 8) {
+      return NextResponse.json(
+        { error: "كلمة المرور يجب أن تكون 8 أحرف على الأقل" },
         { status: 400 }
       );
     }

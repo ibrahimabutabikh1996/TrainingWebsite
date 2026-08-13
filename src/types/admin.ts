@@ -19,7 +19,6 @@ export type TraineeOption = {
 export type Exercise = {
   id: string;
   name_ar: string;
-  name_en: string | null;
   target_muscle: string | null;
   video_url: string | null;
   notes: string | null;
@@ -42,15 +41,33 @@ export type Exercise = {
  */
 export type DayExercise = {
   id: string;
-  refId: string;
-  name_ar: string;
-  target_muscle: string;
-  sets: number;
-  reps: string[];
+  refId?: string;
+  name?: string;
+  name_ar?: string;
+  target_muscle?: string;
+  sets?: number;
+  reps?: string[] | string | number;
+  rest_from?: string;
+  rest_from_unit?: string;
+  rest_to?: string;
+  rest_to_unit?: string;
+  rest_time?: string;
+  notes?: string;
+  is_custom?: boolean;
+  custom_col_1?: string;
+  custom_col_2?: string;
+  custom_col_3?: string;
+  custom_col_4?: string;
 };
 
 export type Day = {
   id: string;
+  name?: string;
+  title?: string;
+  /* The muscle groups this day targets, chosen by the coach. Optional so older
+     courses saved before this field still parse — read it as `?? []`. Stored in
+     the jsonb days_data alongside the exercises, so no migration is involved. */
+  muscles?: string[];
   exercises: DayExercise[];
 };
 
@@ -95,3 +112,18 @@ export function countExercises(raw: unknown): number {
     0
   );
 }
+
+export type NutritionSource = {
+  id: string;
+  name: string;
+  category: string;
+  image_url: string | null;
+  serving_size: string | null;
+  calories: number | null;
+  protein: number | null;
+  carbs: number | null;
+  fats: number | null;
+  notes: string | null;
+  created_at: Date | string | null;
+};
+

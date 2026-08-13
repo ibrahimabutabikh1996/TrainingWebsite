@@ -1,13 +1,14 @@
 "use client";
 
 import React from "react";
+import { Icon, type IconName } from "@/components/Icon";
 import "../crm.css";
 
 interface AdminModalProps {
   isOpen: boolean;
   onClose: () => void;
   title: string;
-  icon?: string;
+  icon?: IconName;
   children: React.ReactNode;
   footer?: React.ReactNode;
   maxWidth?: number;
@@ -17,32 +18,32 @@ export default function AdminModal({ isOpen, onClose, title, icon = "info", chil
   if (!isOpen) return null;
 
   return (
-    <div style={{ 
-      position: "fixed", inset: 0, zIndex: 9999, 
-      backgroundColor: "rgba(0,0,0,0.8)", backdropFilter: "blur(4px)", 
-      display: "flex", alignItems: "center", justifyContent: "center", padding: 24 
+    <div style={{
+      position: "fixed", top: 0, bottom: 0, left: 0, right: "var(--sidebar-width, 0px)", zIndex: 9999,
+      backgroundColor: "var(--overlay-scrim)", backdropFilter: "blur(4px)",
+      display: "flex", alignItems: "center", justifyContent: "center", padding: "var(--space-6)"
     }}>
-      <div className="crm-glass-panel" style={{ width: "100%", maxWidth, maxHeight: "90vh", display: "flex", flexDirection: "column", overflow: "hidden", backgroundColor: "var(--admin-bg-2, var(--bg2))", borderRadius: 12, boxShadow: "0 20px 40px rgba(0,0,0,0.3)", border: "1px solid color-mix(in srgb, var(--admin-on-surface) 8%, transparent)" }}>
-        
+      <div className="crm-glass-panel" style={{ width: "100%", maxWidth, maxHeight: "90vh", display: "flex", flexDirection: "column", overflow: "hidden", backgroundColor: "var(--bg2)", borderRadius: "var(--radius-xl)", boxShadow: "var(--elev-3)", border: "1px solid var(--border)" }}>
+
         {/* Header */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 24px", borderBottom: "1px solid color-mix(in srgb, var(--admin-on-surface) 8%, transparent)", flexShrink: 0 }}>
-          <h3 style={{ fontSize: "1.25rem", fontWeight: 700, margin: 0, display: "flex", alignItems: "center", gap: 8, color: "var(--admin-on-surface)" }}>
-            <span className="material-symbols-outlined" style={{ color: "var(--primary)" }}>{icon}</span>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "var(--space-4) var(--space-6)", borderBottom: "1px solid var(--border)", flexShrink: 0 }}>
+          <h3 style={{ fontSize: "var(--text-lg)", fontWeight: "var(--weight-semibold)", margin: 0, display: "flex", alignItems: "center", gap: "var(--space-2)", color: "var(--text)" }}>
+            <Icon name={icon} style={{ color: "var(--primary)" }} />
             {title}
           </h3>
-          <button onClick={onClose} style={{ background: "transparent", border: "none", color: "var(--admin-outline)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 4, borderRadius: 4 }}>
-            <span className="material-symbols-outlined">close</span>
+          <button onClick={onClose} aria-label="إغلاق" style={{ background: "transparent", border: "none", color: "var(--text-muted)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: "var(--space-1)", borderRadius: "var(--radius-sm)" }}>
+            <Icon name="close" />
           </button>
         </div>
-        
+
         {/* Body */}
         <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column" }} className="custom-scrollbar">
           {children}
         </div>
-        
+
         {/* Footer */}
         {footer && (
-          <div style={{ padding: "16px 24px", borderTop: "1px solid color-mix(in srgb, var(--admin-on-surface) 8%, transparent)", flexShrink: 0, display: "flex", justifyContent: "flex-end", gap: 12 }}>
+          <div style={{ padding: "var(--space-4) var(--space-6)", borderTop: "1px solid var(--border)", flexShrink: 0, display: "flex", justifyContent: "flex-end", gap: "var(--space-3)" }}>
             {footer}
           </div>
         )}

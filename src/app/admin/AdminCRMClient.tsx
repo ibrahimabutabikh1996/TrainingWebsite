@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Profile } from "@/types/admin";
 import { Toaster, toast } from "react-hot-toast";
 import { planLabel } from "@/lib/formLabels";
+import { Icon } from "@/components/Icon";
 import "./crm.css";
 
 /* The intake blob, parsed. Older rows stored it as a string, newer ones as JSON.
@@ -19,6 +20,44 @@ function getProfileData(p: Profile): JsonRecord {
     }
   }
   return p.data || {};
+}
+
+function CustomSelect({ value, onChange, options }: { value: string, onChange: (val: string) => void, options: {value: string, label: string}[] }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const selectedOption = options.find(o => o.value === value);
+
+  return (
+    <div className="crm-custom-select-container">
+      <button 
+        type="button" 
+        className={`crm-filter-select ${isOpen ? 'open' : ''}`}
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <span>{selectedOption?.label}</span>
+        <Icon name="expand_more" className="crm-select-icon" />
+      </button>
+
+      {isOpen && (
+        <>
+          <div className="crm-select-backdrop" onClick={() => setIsOpen(false)} />
+          <div className="crm-select-dropdown">
+            {options.map(opt => (
+              <button
+                key={opt.value}
+                className={`crm-select-option ${opt.value === value ? 'selected' : ''}`}
+                onClick={() => {
+                  onChange(opt.value);
+                  setIsOpen(false);
+                }}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
 }
 
 export default function AdminCRMClient({ initialProfiles }: { initialProfiles: Profile[] }) {
@@ -36,7 +75,7 @@ export default function AdminCRMClient({ initialProfiles }: { initialProfiles: P
         toast(() => (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--primary)', fontWeight: 'bold' }}>
-              <span className="material-symbols-outlined" style={{ fontSize: 20 }}>notifications_active</span>
+              <Icon name="notifications_active" style={{ fontSize: 20 }} />
               {data.is_renewal ? 'طلب تجديد اشتراك!' : 'مشترك جديد!'}
             </div>
             <div>
@@ -84,43 +123,47 @@ export default function AdminCRMClient({ initialProfiles }: { initialProfiles: P
     }
   };
 
-  const handleToggleSuspend = async (e: React.MouseEvent, profile: Profile) => {
-    e.stopPropagation(); // Prevent card click
+  const handleExportToExcel = () => {
+    if (profiles.length === 0) return;
+
+    // Build CSV content
+    const headers = ["اسم المستخدم", "الاسم الكامل", "رقم الهاتف", "تاريخ الانضمام", "نوع الخطة", "عدد اشهر الاشتراك"];
     
-    const data = getProfileData(profile);
-    const isSuspended = !!profile.is_suspended;
-
-    if (!confirm(`هل أنت متأكد من رغبتك في ${isSuspended ? "تفعيل" : "إيقاف"} حساب ${data.fullname || profile.username}؟`)) return;
-
-    try {
-      const res = await fetch("/api/admin/suspend-account", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ profileId: profile.id, isSuspended: !isSuspended }),
-      });
-      const result = await res.json();
-
-      if (!res.ok) {
-        toast.error(result.error || "حدث خطأ");
-        return;
-      }
-
-      toast.success(`تم ${isSuspended ? "تفعيل" : "إيقاف"} الحساب بنجاح`);
+    const rows = profiles.map(p => {
+      const data = getProfileData(p);
+      const fullname = data.fullname || "";
+      const phone = data.phone || "";
+      const plan = planLabel(data.plan, "غير محدد");
+      const dateObj = new Date(p.created_at);
+      const dateStr = dateObj.toLocaleDateString("ar-EG");
       
-      // Update local state
-      setProfiles(prev => prev.map(p => {
-        if (p.id === profile.id) {
-          const pData = getProfileData(p);
-          const newIsSuspended = !isSuspended;
-          const newActivationDate = (!newIsSuspended && !pData.activation_date) ? new Date().toISOString() : pData.activation_date;
-          return { ...p, is_suspended: newIsSuspended, data: { ...pData, is_suspended: newIsSuspended, activation_date: newActivationDate } };
-        }
-        return p;
-      }));
+      const diffTime = Date.now() - dateObj.getTime();
+      // Using 30.44 days for an average month
+      const diffMonths = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 30.44)));
 
-    } catch {
-      toast.error("حدث خطأ في الاتصال بالخادم");
-    }
+      // Wrap strings in quotes to handle commas correctly
+      return [
+        `"${p.username || ""}"`, 
+        `"${fullname}"`, 
+        `"${phone}"`, 
+        `"${dateStr}"`, 
+        `"${plan}"`,
+        `"${diffMonths}"`
+      ].join(",");
+    });
+
+    const csvContent = "\uFEFF" + headers.join(",") + "\n" + rows.join("\n");
+    
+    // Create Blob and trigger download
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `subscribers_${new Date().toISOString().split("T")[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const filteredProfiles = profiles
@@ -144,7 +187,12 @@ export default function AdminCRMClient({ initialProfiles }: { initialProfiles: P
       return true;
     })
     .sort((a, b) => {
-      const dateA = new Date(a.created_at).getTime();
+      const dateA = new Date(a.created_at).getTime();            <div className="crm-hero-stats-group">
+              <div className="crm-hero-stat">
+                <span className="stat-val">{totalSubscribers}</span>
+                <span className="stat-lbl">إجمالي المتدربين</span>
+              </div>
+            </div>
       const dateB = new Date(b.created_at).getTime();
       return sortBy === "newest" ? dateB - dateA : dateA - dateB;
     });
@@ -168,10 +216,10 @@ export default function AdminCRMClient({ initialProfiles }: { initialProfiles: P
         toastOptions={{ 
           style: { 
             background: '#141414', 
-            color: '#F0EDE8', 
+            color: 'var(--text)', 
             border: '1px solid var(--primary)', 
             padding: '16px 24px', 
-            borderRadius: '4px',
+            borderRadius: "var(--radius-xs)",
             direction: 'rtl',
             fontSize: '0.95rem',
             fontWeight: '600'
@@ -182,33 +230,25 @@ export default function AdminCRMClient({ initialProfiles }: { initialProfiles: P
       <div className="crm-split-layout">
         
         {/* Main List Area */}
-        <div className="crm-main-area" style={{ width: '100%', maxWidth: '1200px', margin: '0 auto' }}>
+        <div className="crm-main-area">
+          <div style={{ width: '100%', maxWidth: '1200px', margin: '0 auto' }}>
           
           <div className="crm-hero-header">
             <div className="crm-hero-title-group">
-              <h1 className="crm-hero-title">نظرة عامة</h1>
+              <h1 className="crm-hero-title">ادارة المشتركين</h1>
               <p className="crm-hero-subtitle">تحليل وتتبع أداء المتدربين</p>
             </div>
-            
             <div className="crm-hero-stats-group">
               <div className="crm-hero-stat">
                 <span className="stat-val">{totalSubscribers}</span>
                 <span className="stat-lbl">إجمالي المتدربين</span>
-              </div>
-              <div className="crm-hero-stat highlight">
-                <span className="stat-val">{activePlans}</span>
-                <span className="stat-lbl">باقات نشطة</span>
-              </div>
-              <div className="crm-hero-stat">
-                <span className="stat-val">+{recentSubscribers}</span>
-                <span className="stat-lbl">انضموا حديثاً</span>
               </div>
             </div>
           </div>
 
           <div className="crm-toolbar">
             <div className="crm-search-box">
-              <span className="material-symbols-outlined crm-search-icon">search</span>
+              <Icon name="search" className="crm-search-icon" />
               <input 
                 type="text" 
                 placeholder="ابحث باسم المتدرب أو المعرف..." 
@@ -218,23 +258,39 @@ export default function AdminCRMClient({ initialProfiles }: { initialProfiles: P
               />
             </div>
             <div className="crm-toolbar-filters">
-              <select className="crm-filter-select" value={filterPlan} onChange={(e) => setFilterPlan(e.target.value)}>
-                <option value="all">جميع الباقات</option>
-                <option value="bronze">التدريب الذاتي</option>
-                <option value="silver">المتابعة الاسبوعية</option>
-                <option value="primary">المتابعة اليومية</option>
-              </select>
-              <select className="crm-filter-select" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-                <option value="newest">الأحدث أولاً</option>
-                <option value="oldest">الأقدم أولاً</option>
-              </select>
+              <CustomSelect 
+                value={filterPlan} 
+                onChange={setFilterPlan} 
+                options={[
+                  { value: "all", label: "جميع الخطط" },
+                  { value: "bronze", label: "خطة ذاتية التوجيه" },
+                  { value: "silver", label: "خطة المتابعة الأسبوعية" },
+                  { value: "primary", label: "خطة المتابعة اليومية" }
+                ]} 
+              />
+              <CustomSelect 
+                value={sortBy} 
+                onChange={setSortBy} 
+                options={[
+                  { value: "newest", label: "الأحدث أولاً" },
+                  { value: "oldest", label: "الأقدم أولاً" }
+                ]} 
+              />
+              <button 
+                className="crm-export-btn"
+                onClick={handleExportToExcel}
+                title="تصدير جميع بيانات المشتركين إلى ملف إكسل"
+              >
+                <Icon name="excel" />
+                تصدير إكسل
+              </button>
             </div>
           </div>
 
           <div className="crm-list-cards">
             {filteredProfiles.length === 0 ? (
               <div className="crm-empty-state">
-                <span className="material-symbols-outlined">person_off</span>
+                <Icon name="person_off" />
                 <p>لا يوجد متدربين مطابقين للبحث</p>
               </div>
             ) : (
@@ -251,7 +307,7 @@ export default function AdminCRMClient({ initialProfiles }: { initialProfiles: P
                     style={{ animationDelay: `${i * 0.03}s` }}
                   >
                     <div className="crm-card-avatar" style={{ position: 'relative' }}>
-                      {initial}
+                      <Icon name="user_male" style={{ fontSize: 28 }} />
                       {data.is_new && (
                         <div style={{ position: 'absolute', top: -2, right: -2, width: 12, height: 12, background: '#ef4444', borderRadius: '50%', border: '2px solid var(--bg-2)' }} title="مشترك جديد"></div>
                       )}
@@ -262,42 +318,35 @@ export default function AdminCRMClient({ initialProfiles }: { initialProfiles: P
                     </div>
 
                     <div className="crm-card-meta">
-                      <span className={`crm-tag ${data.plan ? 'primary-tag' : ''}`}>
+                      <span className={`crm-tag ${
+                        data.plan === 'plan1' ? 'plan-1' : 
+                        data.plan === 'plan2' ? 'plan-2' : 
+                        data.plan === 'plan3' ? 'plan-3' : 
+                        data.plan ? 'primary-tag' : ''
+                      }`}>
                         {planLabel(data.plan, "غير محدد")}
                       </span>
+                      {data.plan_type && (
+                        <span className="crm-tag" style={{ background: "var(--bg3)", color: "var(--text-secondary)", border: "1px solid var(--border)" }}>
+                          {data.plan_type === 'both' ? 'نظام تدريبي + غذائي' : 
+                           data.plan_type === 'diet' ? 'نظام غذائي فقط' : 
+                           data.plan_type === 'training' ? 'نظام تدريبي فقط' : data.plan_type}
+                        </span>
+                      )}
                       <span className="crm-card-date" title="تاريخ بداية الاشتراك">
-                        <span className="material-symbols-outlined" style={{ fontSize: 14 }}>calendar_today</span>
-                        {new Date(data.activation_date || profile.created_at).toLocaleDateString("ar-SA")}
+                        <Icon name="calendar_today" style={{ fontSize: 14 }} />
+                        {new Date(data.activation_date || profile.created_at).toLocaleDateString("en-GB")}
                       </span>
                     </div>
 
-                    <div className="crm-card-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <button 
-                        onClick={(e) => handleToggleSuspend(e, profile)}
-                        title={profile.is_suspended ? "تفعيل الحساب" : "إيقاف الحساب"}
-                        style={{ 
-                          background: 'transparent', 
-                          border: 'none', 
-                          color: profile.is_suspended ? 'var(--primary)' : 'var(--error, #ef4444)',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          padding: '4px',
-                          borderRadius: '4px',
-                          transition: '0.2s'
-                        }}
-                      >
-                        <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
-                          {profile.is_suspended ? 'play_circle' : 'block'}
-                        </span>
-                      </button>
-                      <span className="material-symbols-outlined crm-chevron">chevron_left</span>
+                    <div className="crm-card-actions">
+                      <Icon name="chevron_left" className="crm-chevron" />
                     </div>
                   </div>
                 );
               })
             )}
+          </div>
           </div>
         </div>
       </div>

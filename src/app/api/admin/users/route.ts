@@ -12,6 +12,6 @@ export async function GET() {
     return NextResponse.json({ profiles });
   } catch (error: unknown) {
     console.error("Admin Users Error:", error);
-    return NextResponse.json({ error: "Failed to fetch users" }, { status: 500 });
+    return NextResponse.json({ error: "تعذّر جلب المستخدمين" }, { status: 500 });
   }
 }

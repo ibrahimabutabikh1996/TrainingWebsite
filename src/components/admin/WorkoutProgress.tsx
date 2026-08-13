@@ -2,6 +2,7 @@ import { Fragment } from "react";
 import { prisma } from "@/lib/db";
 import { arabicCount, DAY } from "@/lib/arabicCount";
 import { formatDayAndDate } from "@/lib/trainingDates";
+import { Icon } from "@/components/Icon";
 
 /* Coach-side view of what the trainee actually lifted.
 
@@ -50,7 +51,7 @@ export default async function WorkoutProgress({ profileId }: { profileId: string
     return (
       <div className="crm-modal-section">
         <h4 className="crm-modal-section-title">
-          <span className="material-symbols-outlined">monitoring</span>
+          <Icon name="monitoring" />
           سجل الأوزان ومتابعة التقدّم
         </h4>
         <p style={{ margin: 0, color: "var(--text-muted)", fontSize: "0.9rem" }}>
@@ -88,11 +89,16 @@ export default async function WorkoutProgress({ profileId }: { profileId: string
   );
 
   return (
-    <div className="crm-modal-section">
-      <h4 className="crm-modal-section-title">
-        <span className="material-symbols-outlined">monitoring</span>
-        سجل الأوزان ومتابعة التقدّم
-      </h4>
+    <details className="crm-modal-section" style={{ background: 'var(--bg2)', padding: '24px', borderRadius: "var(--radius-lg)", border: '1px solid var(--border)' }}>
+      <summary className="crm-modal-section-title" style={{ margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', cursor: 'pointer', listStyle: 'none' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Icon name="monitoring" style={{ color: 'var(--primary)', fontSize: '24px' }} />
+          <span style={{ fontSize: '1.2rem', color: 'var(--text)', fontWeight: 600 }}>سجل الأوزان ومتابعة التقدّم</span>
+        </div>
+        <Icon name="expand_more" className="accordion-icon" style={{ color: 'var(--text-muted)' }} />
+      </summary>
+
+      <div style={{ marginTop: '24px' }}>
 
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 18 }}>
         <span className="crm-tag primary-tag">{arabicCount(totalSessions, DAY)} تمرين مُسجَّل</span>
@@ -227,6 +233,7 @@ export default async function WorkoutProgress({ profileId }: { profileId: string
       <p style={{ margin: "12px 0 0", fontSize: "0.78rem", color: "var(--text-muted)" }}>
         الأرقام بالكيلوغرام. ▲ تعني أن الوزن في هذه الجولة ارتفع عن أول يوم مُسجَّل.
       </p>
-    </div>
+      </div>
+    </details>
   );
 }

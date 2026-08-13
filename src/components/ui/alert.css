@@ -1,0 +1,85 @@
+.shadcn-alert {
+  position: relative;
+  width: 100%;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  padding: 16px;
+  /* Support RTL naturally, Icon is absolutely positioned */
+  padding-inline-start: 48px;
+  background: var(--bg2);
+  color: var(--text);
+  font-family: inherit;
+  transition: all var(--dur) var(--ease);
+}
+
+.shadcn-alert > svg {
+  position: absolute;
+  inset-inline-start: 16px;
+  top: 16px;
+  color: var(--text);
+  height: 20px;
+  width: 20px;
+}
+
+.shadcn-alert-title {
+  margin: 0 0 4px 0;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  font-size: var(--text-base);
+}
+
+.shadcn-alert-description {
+  font-size: var(--text-sm);
+  line-height: 1.625;
+  color: var(--text-secondary);
+}
+
+.shadcn-alert-description p {
+  line-height: 1.625;
+  margin: 0;
+}
+
+/* Shadcn-like Variants matched to globals.css tokens */
+
+/* Destructive / Error */
+.shadcn-alert-destructive {
+  border-color: color-mix(in srgb, var(--error) 40%, transparent);
+  background: color-mix(in srgb, var(--error) 10%, var(--bg));
+  color: var(--error-text);
+}
+.shadcn-alert-destructive > svg {
+  color: var(--error-text);
+}
+.shadcn-alert-destructive .shadcn-alert-description {
+  color: var(--error-text);
+  opacity: 0.9;
+}
+
+/* Success */
+.shadcn-alert-success {
+  border-color: color-mix(in srgb, var(--success) 40%, transparent);
+  background: color-mix(in srgb, var(--success) 10%, var(--bg));
+  color: var(--success-text);
+}
+.shadcn-alert-success > svg {
+  color: var(--success-text);
+}
+.shadcn-alert-success .shadcn-alert-description {
+  color: var(--success-text);
+  opacity: 0.9;
+}
+
+/* Warning */
+.shadcn-alert-warning {
+  border-color: color-mix(in srgb, var(--warning) 40%, transparent);
+  background: color-mix(in srgb, var(--warning) 10%, var(--bg));
+  color: var(--warning-text);
+}
+.shadcn-alert-warning > svg {
+  color: var(--warning-text);
+}
+.shadcn-alert-warning .shadcn-alert-description {
+  color: var(--warning-text);
+  opacity: 0.9;
+}

@@ -2,15 +2,14 @@
 import type { JsonRecord } from "@/types";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { useLanguage } from "@/contexts/LanguageContext";
+import { useEffect, useState, Suspense } from "react";
+import { t } from "@/lib/translations";
 import { useTheme } from "@/contexts/ThemeContext";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { getLandingContent } from "../admin/cms/actions";
 import './login.css';
 
 export default function LoginPage() {
-  const { lang, toggleLang, t } = useLanguage();
   const { toggleTheme } = useTheme();
   const [cmsData, setCmsData] = useState<JsonRecord | null>(null);
 
@@ -20,11 +19,8 @@ export default function LoginPage() {
       if (previewData) {
         try {
           const parsed = JSON.parse(previewData);
-          // Only use preview data if it matches current lang
-          if (parsed.lang === lang) {
-            setCmsData(parsed.payload);
-            return;
-          }
+          setCmsData(parsed.payload);
+          return;
         } catch {}
       }
 
@@ -32,7 +28,7 @@ export default function LoginPage() {
       if (res) {
         /* The stored column is a free-form JSON value; only an object is usable
            as content, so anything else is treated as absent. */
-        const content = lang === "ar" ? res.content_ar : res.content_en;
+        const content = res.content_ar;
         if (content && typeof content === "object" && !Array.isArray(content)) {
           setCmsData(content as JsonRecord);
         }
@@ -42,14 +38,12 @@ export default function LoginPage() {
 
     const handleMessage = (e: MessageEvent) => {
       if (e.data?.type === "CMS_PREVIEW") {
-        if (e.data.lang === lang) {
-          setCmsData(e.data.payload);
-        }
+        setCmsData(e.data.payload);
       }
     };
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
-  }, [lang]);
+  }, []);
 
   const bgStyle = cmsData?.login_bg_url ? { 
     background: `linear-gradient(135deg, color-mix(in srgb, var(--bg) 60%, transparent) 0%, color-mix(in srgb, var(--bg) 20%, transparent) 60%, color-mix(in srgb, var(--bg) 75%, transparent) 100%), url("${cmsData.login_bg_url}") center/cover no-repeat` 
@@ -65,33 +59,26 @@ export default function LoginPage() {
 
       {/* Top Glass Navbar */}
       <header className="top-bar">
-        <Link href="/" className="image-logo">
-          <div className="image-logo-mark">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        <Link href="/" className="image-logo" title="العودة للصفحة الرئيسية">
+          <div className="image-logo-mark" style={{ height: "48px", maxWidth: "280px" }}>
+            <img src="/images/logo/hLogo.png" alt="Ibrahim Abutabikh Logo" style={{ maxHeight: "48px", height: "100%", width: "auto", objectFit: "contain", display: "block" }} />
           </div>
-          {t("site_title")}
         </Link>
 
         <div className="nav-actions">
+          <Link href="/#membership" className="btn-nav-register">
+            تسجيل جديد
+          </Link>
           <button 
             className="theme-toggle" 
             onClick={toggleTheme} 
-            aria-label="Toggle theme"
+            aria-label="تبديل المظهر"
           >
             <svg className="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
             </svg>
             <svg className="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-            </svg>
-          </button>
-          <button 
-            className="lang-toggle" 
-            onClick={toggleLang} 
-            aria-label="Switch Language"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
             </svg>
           </button>
         </div>
@@ -101,26 +88,24 @@ export default function LoginPage() {
       <div className="panel-image">
         <div className="panel-image-bg" style={bgStyle}></div>
         <div className="panel-image-content">
-          {cmsData?.login_title && (
-            <div style={{ marginTop: 'auto', marginBottom: '10vh', maxWidth: '480px', animation: 'fadeUp 0.8s ease-out' }}>
-              <h1 style={{ fontSize: '3.5rem', fontFamily: 'var(--font-display)', marginBottom: '16px', lineHeight: 1.1, color: 'var(--text)' }}>
-                {cmsData.login_title.split('\\n').map((line: string, i: number) => (
-                  <span key={i} style={{ display: 'block' }}>{line}</span>
-                ))}
-              </h1>
-              {cmsData?.login_subtitle && (
-                <p style={{ fontSize: '1.25rem', color: 'var(--text)', opacity: 0.85, lineHeight: 1.6, fontWeight: 500 }}>
-                  {cmsData.login_subtitle}
-                </p>
-              )}
-            </div>
-          )}
+          <div style={{ marginTop: 'auto', marginBottom: '10vh', maxWidth: '480px', animation: 'fadeUp 0.8s ease-out' }}>
+            <h1 style={{ fontSize: '3.5rem', fontFamily: 'var(--font-display)', marginBottom: '16px', lineHeight: 1.1, color: 'var(--text)' }}>
+              {(cmsData?.login_title || t("title")).split('\\n').map((line: string, i: number) => (
+                <span key={i} style={{ display: 'block' }}>{line}</span>
+              ))}
+            </h1>
+            <p style={{ fontSize: '1.25rem', color: 'var(--text)', opacity: 0.85, lineHeight: 1.6, fontWeight: 500 }}>
+              {cmsData?.login_subtitle || t("subtitle")}
+            </p>
+          </div>
         </div>
       </div>
 
       {/* RIGHT: Form panel */}
       <div className="panel-form">
-        <LoginForm />
+        <Suspense fallback={<div>جاري التحميل...</div>}>
+          <LoginForm />
+        </Suspense>
       </div>
     </div>
   );

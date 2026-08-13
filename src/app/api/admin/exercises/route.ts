@@ -11,7 +11,7 @@ export async function GET() {
     return NextResponse.json({ exercises });
   } catch (error: unknown) {
     console.error("Admin Exercises Error:", error);
-    return NextResponse.json({ error: "Failed to fetch exercises" }, { status: 500 });
+    return NextResponse.json({ error: "تعذّر جلب التمارين" }, { status: 500 });
   }
 }
 
@@ -21,7 +21,6 @@ export async function POST(req: Request) {
     const newExercise = await prisma.exercises.create({
       data: {
         name_ar: data.name_ar,
-        name_en: data.name_en || null,
         target_muscle: data.target_muscle || null,
         video_url: data.video_url || null,
         notes: data.notes || null,
@@ -31,7 +30,7 @@ export async function POST(req: Request) {
     return NextResponse.json(newExercise);
   } catch (error) {
     console.error("Failed to create exercise:", error);
-    return NextResponse.json({ error: "Failed to create exercise" }, { status: 500 });
+    return NextResponse.json({ error: "تعذّر إضافة التمرين" }, { status: 500 });
   }
 }
 
@@ -42,7 +41,6 @@ export async function PUT(req: Request) {
       where: { id: data.id },
       data: {
         name_ar: data.name_ar,
-        name_en: data.name_en || null,
         target_muscle: data.target_muscle || null,
         video_url: data.video_url || null,
         notes: data.notes || null,
@@ -52,7 +50,7 @@ export async function PUT(req: Request) {
     return NextResponse.json(updated);
   } catch (error) {
     console.error("Failed to update exercise:", error);
-    return NextResponse.json({ error: "Failed to update exercise" }, { status: 500 });
+    return NextResponse.json({ error: "تعذّر تعديل التمرين" }, { status: 500 });
   }
 }
 
@@ -60,12 +58,12 @@ export async function DELETE(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
-    if (!id) return NextResponse.json({ error: "ID required" }, { status: 400 });
+    if (!id) return NextResponse.json({ error: "معرّف التمرين مطلوب" }, { status: 400 });
     
     await prisma.exercises.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Failed to delete exercise:", error);
-    return NextResponse.json({ error: "Failed to delete exercise" }, { status: 500 });
+    return NextResponse.json({ error: "تعذّر حذف التمرين" }, { status: 500 });
   }
 }

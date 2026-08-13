@@ -55,7 +55,6 @@ export default async function AdminBuilderPage({
       select: {
         id: true,
         name_ar: true,
-        name_en: true,
         target_muscle: true,
         video_url: true,
         notes: true,
@@ -65,7 +64,6 @@ export default async function AdminBuilderPage({
     exercises = exerciseRows.map((ex) => ({
       id: ex.id,
       name_ar: ex.name_ar,
-      name_en: ex.name_en ?? null,
       target_muscle: ex.target_muscle ?? null,
       video_url: ex.video_url ?? null,
       notes: ex.notes ?? null,
@@ -99,14 +97,20 @@ export default async function AdminBuilderPage({
   }
 
   return (
-    <AdminBuilderClient
-      /* Builder state is seeded from these props, so a different course or
-         trainee has to remount rather than keep the previous form contents. */
-      key={`${courseToEdit?.id ?? "new"}:${assignedTraineeId || "none"}`}
-      initialTrainees={trainees}
-      initialExercises={exercises}
-      initialCourse={courseToEdit}
-      initialTraineeId={assignedTraineeId}
-    />
+    /* Same shell the diet plan builder sits in, so both pages scroll and gutter
+       identically inside the admin frame. */
+    <div className="crm-dashboard">
+      <div className="crm-main-area">
+        <AdminBuilderClient
+          /* Builder state is seeded from these props, so a different course or
+             trainee has to remount rather than keep the previous form contents. */
+          key={`${courseToEdit?.id ?? "new"}:${assignedTraineeId || "none"}`}
+          initialTrainees={trainees}
+          initialExercises={exercises}
+          initialCourse={courseToEdit}
+          initialTraineeId={assignedTraineeId}
+        />
+      </div>
+    </div>
   );
 }

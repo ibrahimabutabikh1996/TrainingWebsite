@@ -8,12 +8,51 @@ export const CATEGORIES = ["مقاومة", "كارديو", "إطالة"] as cons
 
 export interface ExerciseFormValues {
   name_ar: string;
-  name_en: string;
   target_muscles: string[];
   category: string;
   video_url: string;
   notes: string;
 }
+
+const MUSCLE_GROUPS = [
+  "كل التمارين",
+  "صدر",
+  "ظهر",
+  "أكتاف",
+  "ذراعين",
+  "أرجل",
+  "بطن"
+];
+
+const MUSCLE_MAPPING: Record<string, string[]> = {
+  "صدر": ["صدر", "بنج", "pectoral", "chest"],
+  "ظهر": ["ظهر", "مجنص", "ترابيس", "قطني", "latissimus", "back", "traps", "lower back"],
+  "أكتاف": ["كتف", "أكتاف", "دالي", "deltoid", "shoulder"],
+  "ذراعين": ["باي", "تراي", "سواعد", "ساعد", "ذراع", "bicep", "tricep", "forearm", "arm"],
+  "أرجل": ["رجل", "أرجل", "فخذ", "أفخاذ", "سمان", "ربلة", "أرداف", "جلوت", "ضام", "مبعد", "رباعي", "خلفيات", "أوتار", "leg", "quad", "hamstring", "glute", "calf"],
+  "بطن": ["بطن", "معدة", "خواصر", "مائلة", "abdomin", "abs", "oblique"],
+};
+
+export const getStandardMuscleGroups = (rawMuscles: string): string[] => {
+  if (!rawMuscles) return [];
+  const rawArray = rawMuscles.split(",").map(m => m.trim().toLowerCase());
+  const foundGroups = new Set<string>();
+  
+  rawArray.forEach(raw => {
+    let matched = false;
+    for (const [group, keywords] of Object.entries(MUSCLE_MAPPING)) {
+      if (keywords.some(kw => raw.includes(kw))) {
+        foundGroups.add(group);
+        matched = true;
+      }
+    }
+    if (!matched && raw) {
+      foundGroups.add(raw);
+    }
+  });
+  
+  return Array.from(foundGroups);
+};
 
 export function useExercises(initialExercises: Exercise[]) {
   const router = useRouter();
@@ -21,7 +60,7 @@ export function useExercises(initialExercises: Exercise[]) {
 
   const [search, setSearch] = useState("");
   /** Target-muscle filter (from the picture strip). */
-  const [selectedCategory, setSelectedCategory] = useState("الكل");
+  const [selectedCategory, setSelectedCategory] = useState("كل التمارين");
   /** Exercise type filter — مقاومة / كارديو / إطالة. */
   const [selectedType, setSelectedType] = useState("الكل");
 
@@ -29,13 +68,14 @@ export function useExercises(initialExercises: Exercise[]) {
     const m = new Set<string>();
     exercises.forEach((ex) => {
       if (ex.target_muscle) {
-        ex.target_muscle.split(",").forEach((muscle) => {
-          const trimmed = muscle.trim();
-          if (trimmed) m.add(trimmed);
-        });
+        const groups = getStandardMuscleGroups(ex.target_muscle);
+        groups.forEach(g => m.add(g));
       }
     });
-    return ["الكل", ...Array.from(m)];
+    
+    const standard = MUSCLE_GROUPS.slice(1).filter(g => m.has(g));
+    const others = Array.from(m).filter(g => !MUSCLE_GROUPS.includes(g));
+    return ["كل التمارين", ...standard, ...others];
   }, [exercises]);
 
   const countsByType = useMemo(() => {
@@ -53,16 +93,11 @@ export function useExercises(initialExercises: Exercise[]) {
       const matchesSearch =
         !term ||
         ex.name_ar.toLowerCase().includes(term) ||
-        (ex.name_en?.toLowerCase().includes(term) ?? false) ||
         (ex.target_muscle?.toLowerCase().includes(term) ?? false);
 
-      /* Compare whole entries rather than a substring of the joined string:
-         "ظهر" used to also match "أسفل الظهر". */
-      const muscles = ex.target_muscle
-        ? ex.target_muscle.split(",").map((m) => m.trim())
-        : [];
+      const muscles = ex.target_muscle ? getStandardMuscleGroups(ex.target_muscle) : [];
       const matchesMuscle =
-        selectedCategory === "الكل" || muscles.includes(selectedCategory);
+        selectedCategory === "كل التمارين" || muscles.includes(selectedCategory);
 
       const matchesType =
         selectedType === "الكل" || (ex.category || "مقاومة") === selectedType;
@@ -81,11 +116,10 @@ export function useExercises(initialExercises: Exercise[]) {
       return false;
     }
 
-    const toastId = toast.loading(editingEx ? "جاري تحديث التمرين..." : "جاري حفظ التمرين...");
+    const toastId = toast.loading(editingEx ? "جارٍ تحديث التمرين..." : "جارٍ حفظ التمرين...");
     try {
       const payload = {
         name_ar: formData.name_ar.trim(),
-        name_en: formData.name_en.trim() || null,
         category: formData.category,
         video_url: formData.video_url.trim() || null,
         notes: formData.notes.trim() || null,
@@ -125,7 +159,7 @@ export function useExercises(initialExercises: Exercise[]) {
        which card the click landed on. */
     if (!confirm(`حذف تمرين «${target?.name_ar ?? ""}» نهائياً؟`)) return;
 
-    const toastId = toast.loading("جاري الحذف...");
+    const toastId = toast.loading("جارٍ الحذف...");
     try {
       const res = await fetch(`/api/admin/exercises?id=${id}`, { method: "DELETE" });
       if (!res.ok) {

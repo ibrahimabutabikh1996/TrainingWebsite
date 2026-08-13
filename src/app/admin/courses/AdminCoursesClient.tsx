@@ -15,6 +15,7 @@ import AdminModal from "../components/AdminModal";
 import { deleteCourseAction, assignCourseAction } from "../builder/actions";
 import { arabicCount, DAY, EXERCISE, TRAINEE } from "@/lib/arabicCount";
 import { toast, Toaster } from "react-hot-toast";
+import { Icon } from "@/components/Icon";
 import "../crm.css";
 import "./courses.css";
 
@@ -162,7 +163,7 @@ export default function AdminCoursesClient({
         }} 
       />
 
-      <div className={`crm-split-layout ${selectedCourse ? 'has-drawer' : ''}`}>
+      <div className="crm-split-layout">
         
         {/* Main List Area */}
         <div className="crm-main-area co-page">
@@ -179,7 +180,7 @@ export default function AdminCoursesClient({
             </div>
 
             <Link href="/admin/builder" className="co-add-btn">
-              <span className="material-symbols-outlined" style={{ fontSize: 20 }}>add</span>
+              <Icon name="add" style={{ fontSize: 20 }} />
               <span>إنشاء كورس جديد</span>
             </Link>
           </header>
@@ -187,7 +188,7 @@ export default function AdminCoursesClient({
           <div className="co-toolbar">
             <div className="co-toolbar-row">
               <div className="co-search">
-                <span className="material-symbols-outlined">search</span>
+                <Icon name="search" />
                 <input
                   type="text"
                   placeholder="ابحث بالاسم أو الهدف أو اسم المشترك..."
@@ -196,7 +197,7 @@ export default function AdminCoursesClient({
                 />
                 {searchTerm && (
                   <button className="co-search-clear" onClick={() => setSearchTerm("")} aria-label="مسح البحث">
-                    <span className="material-symbols-outlined" style={{ fontSize: 16 }}>close</span>
+                    <Icon name="close" style={{ fontSize: 16 }} />
                   </button>
                 )}
               </div>
@@ -232,9 +233,7 @@ export default function AdminCoursesClient({
             {filteredCourses.length === 0 ? (
               /* A fruitless search is not the same as an empty library. */
               <div className="co-empty">
-                <span className="material-symbols-outlined">
-                  {courses.length === 0 ? "library_books" : "search_off"}
-                </span>
+                <Icon name={courses.length === 0 ? "library_books" : "search_off"} />
                 <p>
                   {courses.length === 0
                     ? "لا توجد كورسات بعد — ابدأ بإنشاء كورس جديد"
@@ -242,7 +241,7 @@ export default function AdminCoursesClient({
                 </p>
                 {courses.length === 0 ? (
                   <Link href="/admin/builder" className="co-add-btn">
-                    <span className="material-symbols-outlined" style={{ fontSize: 20 }}>add</span>
+                    <Icon name="add" style={{ fontSize: 20 }} />
                     <span>إنشاء كورس جديد</span>
                   </Link>
                 ) : (
@@ -250,7 +249,7 @@ export default function AdminCoursesClient({
                     className="co-add-btn"
                     onClick={() => { setSearchTerm(""); setAssignFilter("all"); }}
                   >
-                    <span className="material-symbols-outlined" style={{ fontSize: 20 }}>filter_alt_off</span>
+                    <Icon name="filter_alt_off" style={{ fontSize: 20 }} />
                     <span>إزالة التصفية</span>
                   </button>
                 )}
@@ -270,7 +269,7 @@ export default function AdminCoursesClient({
                   >
                     <div className="co-card-head">
                       <span className="co-card-icon">
-                        <span className="material-symbols-outlined">fitness_center</span>
+                        <Icon name="fitness_center" />
                       </span>
                       <div className="co-card-title">
                         <h3>{course.name}</h3>
@@ -285,7 +284,7 @@ export default function AdminCoursesClient({
                     <div className="co-chips">
                       {daysCount === 0 ? (
                         <span className="co-chip co-chip--empty">
-                          <span className="material-symbols-outlined">warning</span>
+                          <Icon name="warning" />
                           برنامج فارغ
                         </span>
                       ) : (
@@ -296,7 +295,7 @@ export default function AdminCoursesClient({
                       )}
                       {assigned.length > 0 && (
                         <span className="co-chip co-chip--assigned" title={assigned.join("، ")}>
-                          <span className="material-symbols-outlined">person</span>
+                          <Icon name="person" />
                           {arabicCount(assigned.length, TRAINEE)}
                         </span>
                       )}
@@ -304,7 +303,7 @@ export default function AdminCoursesClient({
 
                     <div className="co-card-foot">
                       <span className="co-card-date">
-                        <span className="material-symbols-outlined">calendar_today</span>
+                        <Icon name="calendar_today" />
                         {new Date(course.created_at).toLocaleDateString("ar-SA")}
                       </span>
 
@@ -315,7 +314,7 @@ export default function AdminCoursesClient({
                           title="تعيين لمشترك"
                           aria-label={`تعيين ${course.name} لمشترك`}
                         >
-                          <span className="material-symbols-outlined">person_add</span>
+                          <Icon name="person_add" />
                         </button>
                         <Link
                           className="co-icon-btn"
@@ -324,7 +323,7 @@ export default function AdminCoursesClient({
                           title="تعديل"
                           aria-label={`تعديل ${course.name}`}
                         >
-                          <span className="material-symbols-outlined">edit</span>
+                          <Icon name="edit" />
                         </Link>
                         <button
                           className="co-icon-btn danger"
@@ -332,7 +331,7 @@ export default function AdminCoursesClient({
                           title="حذف"
                           aria-label={`حذف ${course.name}`}
                         >
-                          <span className="material-symbols-outlined">delete</span>
+                          <Icon name="delete" />
                         </button>
                       </div>
                     </div>
@@ -343,49 +342,57 @@ export default function AdminCoursesClient({
           </div>
         </div>
 
-        {/* Side Drawer for Course Details */}
+        {/* Centered Modal for Course Details */}
         {selectedCourse && (
-          <div className="crm-side-drawer">
-            <div className="crm-drawer-header">
-              <button className="crm-drawer-close" onClick={() => setSelectedCourseId(null)}>
-                <span className="material-symbols-outlined">close</span>
-              </button>
-              <div className="crm-drawer-actions">
-                <button 
-                  onClick={() => setShowAssignModal(selectedCourse.id)}
+          <AdminModal
+            isOpen={!!selectedCourse}
+            onClose={() => setSelectedCourseId(null)}
+            title={selectedCourse.name}
+            icon="fitness_center"
+            maxWidth={820}
+            footer={
+              <div style={{ display: "flex", gap: 12, justifyContent: "flex-end", width: "100%", direction: "rtl" }}>
+                <a
+                  href={`/export-workout?courseId=${selectedCourse.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="crm-btn-secondary"
-                  style={{ padding: '8px 16px', fontSize: '0.85rem' }}
+                  style={{ padding: "10px 18px", fontSize: "0.9rem", display: "flex", alignItems: "center", gap: "6px", textDecoration: "none", cursor: "pointer" }}
                 >
-                  <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>person_add</span>
-                  تعيين لمشترك
+                  <Icon name="file_download" style={{ fontSize: 18 }} />
+                  <span>تحميل النظام التدريبي PDF</span>
+                </a>
+                <button
+                  onClick={() => { setShowAssignModal(selectedCourse.id); setSelectedCourseId(null); }}
+                  className="crm-btn-secondary"
+                  style={{ padding: "10px 18px", fontSize: "0.9rem", display: "flex", alignItems: "center", gap: "6px", cursor: "pointer" }}
+                >
+                  <Icon name="person_add" style={{ fontSize: 18 }} />
+                  <span>تعيين لمشترك</span>
                 </button>
-                <Link 
+                <Link
                   href={`/admin/builder?courseId=${selectedCourse.id}`}
                   className="crm-btn-primary"
-                  style={{ padding: '8px 16px', fontSize: '0.85rem', textDecoration: 'none' }}
+                  style={{ padding: "10px 18px", fontSize: "0.9rem", textDecoration: "none", display: "flex", alignItems: "center", gap: "6px" }}
                 >
-                  <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>edit</span>
-                  تعديل البرنامج
+                  <Icon name="edit" style={{ fontSize: 18 }} />
+                  <span>تعديل البرنامج</span>
                 </Link>
               </div>
-            </div>
-
-            <div className="crm-drawer-scroll-area">
-              
-              <div style={{ marginBottom: 32, paddingBottom: 24, borderBottom: "1px solid color-mix(in srgb, var(--admin-on-surface) 6%, transparent)" }}>
-                <h3 style={{ margin: "0 0 8px 0", color: "var(--admin-on-surface)", fontSize: "1.5rem", fontFamily: "var(--font-display)" }}>
-                  {selectedCourse.name}
-                </h3>
+            }
+          >
+            <div style={{ padding: "24px 28px", direction: "rtl", textAlign: "start" }}>
+              <div style={{ marginBottom: 24, paddingBottom: 20, borderBottom: "1px solid color-mix(in srgb, var(--admin-on-surface) 6%, transparent)" }}>
                 {selectedCourse.description && (
-                  <p style={{ margin: "0 0 8px 0", color: "var(--admin-on-surface)", fontSize: "0.95rem", lineHeight: 1.7 }}>
+                  <p style={{ margin: "0 0 12px 0", color: "var(--admin-on-surface)", fontSize: "0.95rem", lineHeight: 1.7 }}>
                     {selectedCourse.description}
                   </p>
                 )}
-                <p style={{ margin: "0 0 12px 0", color: "var(--admin-outline)", fontSize: "0.9rem" }}>
+                <p style={{ margin: "0 0 14px 0", color: "var(--admin-outline)", fontSize: "0.9rem" }}>
                   تم الإنشاء في: {new Date(selectedCourse.created_at).toLocaleDateString("ar-SA")}
                 </p>
 
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
                   <span className="crm-tag primary-tag">{arabicCount(countDays(selectedCourse.days_data), DAY)}</span>
                   <span className="crm-tag">{arabicCount(countExercises(selectedCourse.days_data), EXERCISE)}</span>
                 </div>
@@ -393,14 +400,14 @@ export default function AdminCoursesClient({
                 {/* Who is on this course. Previously invisible anywhere in the UI. */}
                 {assignedTo(selectedCourse.id).length > 0 ? (
                   <div style={{ fontSize: "0.9rem", color: "var(--admin-on-surface)", display: "flex", gap: 8, alignItems: "flex-start" }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: 18, color: "var(--primary)" }}>group</span>
+                    <Icon name="group" style={{ fontSize: 18, color: "var(--primary)" }} />
                     <span>
                       <strong>{arabicCount(assignedTo(selectedCourse.id).length, TRAINEE)}:</strong>{" "}
                       {assignedTo(selectedCourse.id).join("، ")}
                     </span>
                   </div>
                 ) : (
-                  <p style={{ margin: 0, color: "var(--admin-outline)", fontSize: "0.85rem" }}>
+                  <p style={{ margin: "0 0 0 0", color: "var(--admin-outline)", fontSize: "0.85rem" }}>
                     غير معيَّن لأي مشترك حالياً.
                   </p>
                 )}
@@ -409,7 +416,7 @@ export default function AdminCoursesClient({
               <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
                 {asDays(selectedCourse.days_data).length === 0 ? (
                   <div className="crm-empty-state" style={{ padding: "32px 16px" }}>
-                    <span className="material-symbols-outlined">inventory_2</span>
+                    <Icon name="inventory_2" />
                     <p style={{ margin: 0, fontSize: "0.95rem" }}>لا توجد أيام تدريبية مضافة لهذا الكورس.</p>
                   </div>
                 ) : (
@@ -417,47 +424,88 @@ export default function AdminCoursesClient({
                     <div 
                       key={day.id || dIndex} 
                       className="crm-modal-section"
-                      style={{ background: "var(--admin-bg-3)", padding: "16px", borderRadius: "4px", border: "1px solid color-mix(in srgb, var(--admin-on-surface) 4%, transparent)" }}
+                      style={{ background: "var(--admin-bg-3)", padding: "18px 20px", borderRadius: "8px", border: "1px solid color-mix(in srgb, var(--admin-on-surface) 5%, transparent)" }}
                     >
-                      <h4 className="crm-modal-section-title">
-                        <span className="material-symbols-outlined">calendar_today</span>
-                        اليوم التدريبي {dIndex + 1}
+                      <h4 className="crm-modal-section-title" style={{ display: "flex", alignItems: "center", gap: "8px", margin: "0 0 14px 0", fontSize: "1.05rem", color: "var(--admin-on-surface)", fontWeight: 700 }}>
+                        <Icon name="calendar_today" style={{ color: "var(--primary)" }} />
+                        <span>اليوم التدريبي {dIndex + 1}</span>
                       </h4>
-                      
+
+                      {/* The muscles the coach marked this day for, if any. */}
+                      {(day.muscles?.length ?? 0) > 0 && (
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, margin: "-4px 0 14px" }}>
+                          {day.muscles!.map((m) => (
+                            <span key={m} className="crm-tag primary-tag" style={{ padding: "2px 12px", fontSize: "0.75rem", borderRadius: "20px" }}>
+                              {m}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
                       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                         {!day.exercises || day.exercises.length === 0 ? (
-                          <div style={{ color: "var(--admin-outline)", fontSize: "0.8rem", fontStyle: "italic" }}>
+                          <div style={{ color: "var(--admin-outline)", fontSize: "0.85rem", fontStyle: "italic", padding: "6px 0" }}>
                             لا توجد تمارين مضافة في هذا اليوم.
                           </div>
                         ) : (
-                          day.exercises.map((ex, exIndex) => (
-                            <div 
-                              key={ex.id || exIndex} 
-                              style={{ 
-                                background: "color-mix(in srgb, var(--admin-on-surface) 2%, transparent)", 
-                                border: "1px solid color-mix(in srgb, var(--admin-on-surface) 4%, transparent)", 
-                                borderRadius: "4px", 
-                                padding: "10px 12px",
-                                display: "flex",
-                                flexDirection: "column",
-                                gap: 6
-                              }}
-                            >
-                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                <span style={{ fontWeight: 600, fontSize: "0.85rem", color: "var(--admin-on-surface)" }}>
-                                  {exIndex + 1}. {ex.name_ar || "تمرين غير مسمى"}
-                                </span>
-                                <span className="crm-tag primary-tag" style={{ padding: "2px 8px", fontSize: "0.7rem" }}>
-                                  {ex.target_muscle}
-                                </span>
-                              </div>
-                              <div style={{ fontSize: "0.8rem", color: "var(--admin-outline)", display: "flex", gap: "12px" }}>
-                                <span>الجولات: {ex.sets}</span>
-                                <span>•</span>
-                                <span>التكرار: {Array.isArray(ex.reps) ? ex.reps.join(" - ") : ex.reps || "10"}</span>
-                              </div>
-                            </div>
-                          ))
+                          <div className="co-minimal-table-wrapper">
+                            <table className="co-minimal-table">
+                              <thead>
+                                <tr>
+                                  <th style={{ textAlign: "start" }}>التمرين</th>
+                                  <th style={{ textAlign: "center", width: "70px", paddingInline: "6px" }}>الجولات</th>
+                                  <th style={{ textAlign: "start" }}>التكرارات</th>
+                                  <th style={{ textAlign: "center", width: "140px" }}>وقت الراحة</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {day.exercises.map((ex, exIndex) => {
+                                  const repItems = Array.isArray(ex.reps)
+                                    ? ex.reps
+                                    : (typeof (ex.reps as unknown) === "string" ? String(ex.reps).split(/\s*[-–,،]\s*/).filter(Boolean) : [String(ex.reps || "10")]);
+
+                                  return (
+                                    <tr key={ex.id || exIndex}>
+                                      <td style={{ textAlign: "start" }}>
+                                        <div className="co-exercise-cell">
+                                          <div className="co-exercise-title">
+                                            <span className="co-exercise-num">{exIndex + 1}.</span>
+                                            <span>{ex.name_ar || "تمرين غير مسمى"}</span>
+                                          </div>
+                                          {ex.target_muscle && (
+                                            <span className="crm-tag primary-tag" style={{ padding: "2px 8px", fontSize: "0.7rem", fontWeight: 500 }}>
+                                              {ex.target_muscle}
+                                            </span>
+                                          )}
+                                        </div>
+                                      </td>
+                                      <td style={{ textAlign: "center", paddingInline: "6px" }}>
+                                        <span className="co-sets-badge">
+                                          {ex.sets || "—"}
+                                        </span>
+                                      </td>
+                                      <td style={{ textAlign: "start" }}>
+                                        <div className="co-reps-container">
+                                          {repItems.map((rep, rIdx) => (
+                                            <span
+                                              key={rIdx}
+                                              className="co-rep-chip"
+                                              title={`الجولة ${rIdx + 1}: ${rep} تكرار`}
+                                            >
+                                              {rep}
+                                            </span>
+                                          ))}
+                                        </div>
+                                      </td>
+                                      <td style={{ textAlign: "center", fontSize: "0.82rem", color: "var(--primary)", fontWeight: 600 }}>
+                                        {ex.rest_time || "من 60 ثانية إلى 90 ثانية"}
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
                         )}
                       </div>
                     </div>
@@ -465,7 +513,7 @@ export default function AdminCoursesClient({
                 )}
               </div>
             </div>
-          </div>
+          </AdminModal>
         )}
       </div>
 

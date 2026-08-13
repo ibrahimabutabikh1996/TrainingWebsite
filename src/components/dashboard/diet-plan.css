@@ -1,0 +1,336 @@
+/* ─── Trainee Diet Plan: Minimalist & Editorial Design System ─── */
+
+.dpv-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.dpv-none {
+  margin: 0;
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: var(--text-md);
+}
+
+/* Plan Selector Tabs (Minimalist Segmented Control) */
+.dpv-tabs {
+  display: inline-flex;
+  gap: 6px;
+  padding: 5px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--bg2);
+  width: fit-content;
+  margin-bottom: 4px;
+}
+
+.dpv-tabs button {
+  padding: 8px 18px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: var(--text-base);
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), opacity var(--dur) var(--ease), transform var(--dur) var(--ease);
+}
+
+.dpv-tabs button:hover:not([aria-selected="true"]) {
+  color: var(--text);
+  background: var(--bg3);
+}
+
+.dpv-tabs button[aria-selected="true"] {
+  background: var(--primary);
+  color: var(--text-inverse);
+  font-weight: 700;
+}
+
+/* ─── Minimalist KPI Summary Header ─── */
+.dpv-kpi-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  padding: 4px 0;
+}
+
+@media (max-width: 900px) {
+  .dpv-kpi-bar {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .dpv-kpi-bar {
+    grid-template-columns: 1fr;
+  }
+}
+
+.dpv-min-card {
+  padding: 16px 18px;
+  border-radius: var(--radius-xl);
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+  transition: border-color 0.25s ease;
+}
+
+.dpv-min-card:hover {
+  border-color: color-mix(in srgb, var(--primary) 40%, var(--border));
+}
+
+.dpv-min-lbl {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dpv-min-val {
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.5px;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.dpv-min-unit {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.dpv-min-accent {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-circle);
+}
+
+/* ─── Meals Section & Minimalist Cards ─── */
+.dpv-meals {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.dpv-meal {
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border);
+  border-inline-start: 4px solid var(--meal-accent, var(--border));
+  background: var(--bg2);
+  overflow: hidden;
+  transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), opacity var(--dur) var(--ease), transform var(--dur) var(--ease);
+  position: relative;
+}
+
+.dpv-meal:hover {
+  border-color: color-mix(in srgb, var(--meal-accent, var(--primary)) 45%, var(--border));
+  box-shadow: var(--elev-2);
+  transform: translateY(-2px);
+}
+
+.dpv-meal--empty {
+  opacity: 0.55;
+  background: transparent;
+  border-style: dashed;
+  border-inline-start-style: dashed;
+}
+
+/* Minimalist Meal Header with Soft Accent Ambient Tint */
+.dpv-meal-head {
+  padding: 18px 24px;
+  background: linear-gradient(to left, color-mix(in srgb, var(--meal-accent, var(--primary)) 8%, transparent) 0%, transparent 85%);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.dpv-meal-title-group {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.dpv-meal-icon-minimal {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--meal-accent, var(--primary)) 15%, var(--bg3));
+  border: 1px solid color-mix(in srgb, var(--meal-accent, var(--primary)) 35%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--meal-accent, var(--primary));
+  font-size: 21px;
+  flex-shrink: 0;
+  box-shadow: var(--elev-2);
+}
+
+.dpv-meal-titles {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.dpv-meal-name {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+
+.dpv-time-sub {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* Unified Minimalist Meal Summary String */
+.dpv-meal-min-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+  flex-wrap: wrap;
+}
+
+.dpv-min-sum-item {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.dpv-min-sum-sep {
+  color: var(--text-muted);
+  opacity: 0.5;
+}
+
+/* ─── Minimalist Clean Table System ─── */
+.dpv-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 0;
+  border-top: 1px solid var(--border);
+}
+
+/* Shares the recipe used by .co-minimal-table and .wl-exercise-table. */
+.dpv-min-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: start;
+  font-size: var(--text-sm);
+  min-width: 600px;
+}
+
+.dpv-min-table th {
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg3);
+  color: var(--text-secondary);
+  font-weight: var(--weight-semibold);
+  font-size: var(--text-xs);
+  text-align: start;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.dpv-min-table th.center,
+.dpv-min-table td.center {
+  text-align: center;
+}
+
+.dpv-min-table tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background-color var(--dur) var(--ease);
+}
+
+.dpv-min-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+/* Was rgba(255,255,255,0.015) — a white wash that did nothing on the light
+   theme. The surface token works in both. */
+.dpv-min-table tbody tr:hover {
+  background: var(--bg3);
+}
+
+.dpv-min-table td {
+  padding: var(--space-3) var(--space-4);
+  color: var(--text);
+  vertical-align: middle;
+  font-variant-numeric: tabular-nums;
+}
+
+.dpv-food-title {
+  font-weight: var(--weight-semibold);
+  color: var(--text);
+  font-size: var(--text-base);
+}
+
+.dpv-serving-text {
+  color: var(--text-secondary);
+  font-size: var(--text-base);
+}
+
+.dpv-num-highlight {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.dpv-num-muted {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* Empty State & Note Box */
+.dpv-meal-empty-msg {
+  padding: 24px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: var(--text-base);
+}
+
+.dpv-note-box-min {
+  margin: 0 24px 20px 24px;
+  padding: 12px 16px;
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--meal-accent, var(--primary)) 8%, var(--bg3));
+  border: 1px dashed color-mix(in srgb, var(--meal-accent, var(--primary)) 35%, var(--border));
+  border-inline-start: 3.5px solid var(--meal-accent, var(--primary));
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: var(--text-sm);
+}
+
+.dpv-note-box-min b {
+  color: var(--meal-accent, var(--primary));
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.dpv-note-box-min span {
+  color: var(--text-secondary);
+  line-height: 1.5;
+}

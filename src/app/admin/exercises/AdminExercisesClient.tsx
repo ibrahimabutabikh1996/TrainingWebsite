@@ -5,7 +5,10 @@ import { Toaster } from "react-hot-toast";
 import { Exercise } from "@/types/admin";
 import MuscleTabs from "../components/MuscleTabs";
 import ExerciseFormModal from "./ExerciseFormModal";
+import AdminModal from "../components/AdminModal";
 import { useExercises, CATEGORIES } from "./useExercises";
+import { getEmbedUrl } from "@/lib/videoEmbed";
+import { Icon } from "@/components/Icon";
 import "../crm.css";
 import "./exercises.css";
 
@@ -24,6 +27,7 @@ export default function AdminExercisesClient({ initialExercises }: { initialExer
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEx, setEditingEx] = useState<Exercise | null>(null);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
   /* Bumped on every open so the modal remounts with fields seeded from the
      exercise being edited, instead of syncing props into state in an effect. */
   const [modalKey, setModalKey] = useState(0);
@@ -73,7 +77,7 @@ export default function AdminExercisesClient({ initialExercises }: { initialExer
         </div>
 
         <button onClick={openAddModal} className="ex-add-btn">
-          <span className="material-symbols-outlined" style={{ fontSize: 20 }}>add</span>
+          <Icon name="add" style={{ fontSize: 20 }} />
           <span>إضافة تمرين جديد</span>
         </button>
       </header>
@@ -81,16 +85,16 @@ export default function AdminExercisesClient({ initialExercises }: { initialExer
       <div className="ex-toolbar">
         <div className="ex-toolbar-row">
           <div className="ex-search">
-            <span className="material-symbols-outlined">search</span>
+            <Icon name="search" />
             <input
               type="text"
-              placeholder="ابحث بالاسم العربي أو الإنجليزي..."
+              placeholder="ابحث باسم التمرين أو العضلة المستهدفة..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
             {search && (
               <button className="ex-search-clear" onClick={() => setSearch("")} aria-label="مسح البحث">
-                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>close</span>
+                <Icon name="close" style={{ fontSize: 16 }} />
               </button>
             )}
           </div>
@@ -128,9 +132,7 @@ export default function AdminExercisesClient({ initialExercises }: { initialExer
         {filteredExercises.length === 0 ? (
           /* An empty library and a fruitless search need different wording. */
           <div className="ex-empty">
-            <span className="material-symbols-outlined">
-              {exercises.length === 0 ? "exercise" : "search_off"}
-            </span>
+            <Icon name={exercises.length === 0 ? "exercise" : "search_off"} />
             <p>
               {exercises.length === 0
                 ? "لا توجد تمارين بعد — ابدأ بإضافة أول تمرين إلى المكتبة"
@@ -138,7 +140,7 @@ export default function AdminExercisesClient({ initialExercises }: { initialExer
             </p>
             {exercises.length === 0 ? (
               <button onClick={openAddModal} className="ex-add-btn">
-                <span className="material-symbols-outlined" style={{ fontSize: 20 }}>add</span>
+                <Icon name="add" style={{ fontSize: 20 }} />
                 <span>إضافة تمرين جديد</span>
               </button>
             ) : (
@@ -147,7 +149,7 @@ export default function AdminExercisesClient({ initialExercises }: { initialExer
                   className="ex-add-btn"
                   onClick={() => { setSearch(""); setSelectedCategory("الكل"); setSelectedType("الكل"); }}
                 >
-                  <span className="material-symbols-outlined" style={{ fontSize: 20 }}>filter_alt_off</span>
+                  <Icon name="filter_alt_off" style={{ fontSize: 20 }} />
                   <span>إزالة التصفية</span>
                 </button>
               )
@@ -165,7 +167,6 @@ export default function AdminExercisesClient({ initialExercises }: { initialExer
                 <div className="ex-card-head">
                   <div className="ex-card-title">
                     <h3>{ex.name_ar}</h3>
-                    {ex.name_en && <span>{ex.name_en}</span>}
                   </div>
                   <div className="ex-card-actions">
                     <button
@@ -174,7 +175,7 @@ export default function AdminExercisesClient({ initialExercises }: { initialExer
                       title="تعديل"
                       aria-label={`تعديل ${ex.name_ar}`}
                     >
-                      <span className="material-symbols-outlined">edit</span>
+                      <Icon name="edit" />
                     </button>
                     <button
                       className="ex-icon-btn danger"
@@ -182,7 +183,7 @@ export default function AdminExercisesClient({ initialExercises }: { initialExer
                       title="حذف"
                       aria-label={`حذف ${ex.name_ar}`}
                     >
-                      <span className="material-symbols-outlined">delete</span>
+                      <Icon name="delete" />
                     </button>
                   </div>
                 </div>
@@ -196,18 +197,16 @@ export default function AdminExercisesClient({ initialExercises }: { initialExer
 
                 {ex.notes && (
                   <div className="ex-notes">
-                    <span className="material-symbols-outlined">sticky_note_2</span>
+                    <Icon name="sticky_note_2" />
                     <span>{ex.notes}</span>
                   </div>
                 )}
 
-                {/* The video link was captured in the form but never rendered,
-                    so the coach could save one and never reach it again. */}
                 {ex.video_url && (
-                  <a className="ex-video" href={ex.video_url} target="_blank" rel="noreferrer">
-                    <span className="material-symbols-outlined">play_circle</span>
+                  <button className="ex-video" onClick={() => setVideoUrl(ex.video_url)}>
+                    <Icon name="play_circle" />
                     مشاهدة الفيديو
-                  </a>
+                  </button>
                 )}
               </article>
             );
@@ -223,6 +222,25 @@ export default function AdminExercisesClient({ initialExercises }: { initialExer
         uniqueMuscles={uniqueMuscles}
         onSave={saveExercise}
       />
+
+      <AdminModal
+        isOpen={!!videoUrl}
+        onClose={() => setVideoUrl(null)}
+        title="معاينة الفيديو"
+        icon="play_circle"
+        maxWidth={800}
+      >
+        {videoUrl && (
+          <div style={{ position: "relative", width: "100%", aspectRatio: "16 / 9", background: "#000" }}>
+            <iframe
+              src={getEmbedUrl(videoUrl)}
+              allow="autoplay; encrypted-media; picture-in-picture"
+              allowFullScreen
+              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none" }}
+            />
+          </div>
+        )}
+      </AdminModal>
     </div>
   );
 }
