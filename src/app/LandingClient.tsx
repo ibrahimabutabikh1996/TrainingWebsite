@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useCurrentUsername } from "@/lib/clientSession";
 import { RICH_TEXT_KEYS, safeMediaUrl, setRichText, setText } from "@/lib/richText";
 import { optimizedCssUrl, optimizedSrc, optimizedSrcSet } from "@/lib/imageOptim";
+import { useParallax } from "@/hooks/useParallax";
 import { PromotionalPopup } from "@/components/PromotionalPopup";
 
 /* Baseline copy. Anything the coach edits in the CMS overrides these at runtime
@@ -359,37 +360,35 @@ export default function LandingClient({
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
 
-    // Hero parallax & load
-    const heroBg = document.getElementById("heroBg");
-    let parallax: (() => void) | null = null;
-    let loadTimer: ReturnType<typeof setTimeout> | undefined;
     const reduceMotion = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
     ).matches;
-    if (heroBg) {
-      loadTimer = setTimeout(() => heroBg.classList.add("loaded"), 100);
-      if (!reduceMotion) {
-        let ticking = false;
-        parallax = () => {
-          if (ticking) return;
-          ticking = true;
-          requestAnimationFrame(() => {
-            heroBg.style.transform = `scale(${1.06 + window.scrollY * 0.0005})`;
-            ticking = false;
-          });
-        };
-        window.addEventListener("scroll", parallax, { passive: true });
-      }
-    }
+
+    /* The hero's own parallax used to live here, writing `transform: scale()`
+       straight onto the background element. Two problems: scaling a layer whose
+       paint is a `background-size: cover` photograph re-rasterises it every
+       frame rather than just recompositing it, and it owned the element's only
+       `transform` slot so nothing else could move. It is now one layer among
+       several in `useParallax`, which translates on the GPU and leaves the
+       stylesheet in charge of composition.
+
+       The `loaded` class that was set alongside it went with it — no rule in
+       landing.css, or anywhere else, ever selected on it. */
 
     // Nav active links
-    const sections = document.querySelectorAll("section[id]");
+    const sections = document.querySelectorAll<HTMLElement>("section[id]");
     const navLinks = document.querySelectorAll(".nav-links a");
     const scrollSpy = () => {
       let current = "";
       sections.forEach((s) => {
-        if (window.scrollY >= (s as HTMLElement).offsetTop - 130)
-          current = s.id;
+        /* A section switched off in the content manager is `display: none`, and
+           `offsetTop` reports 0 for one of those — which reads as "you have
+           scrolled past it" from the very top of the page. With a hidden
+           section last in the markup, `current` ended up pinned to it and no
+           navigation link was ever marked active. `offsetParent` is null for
+           exactly the elements that have no box, and for nothing else. */
+        if (s.offsetParent === null) return;
+        if (window.scrollY >= s.offsetTop - 130) current = s.id;
       });
       navLinks.forEach((a) => {
         a.classList.toggle("active", a.getAttribute("href") === `#${current}`);
@@ -435,8 +434,6 @@ export default function LandingClient({
     return () => {
       window.removeEventListener("scroll", handleScroll);
       window.removeEventListener("scroll", scrollSpy);
-      if (parallax) window.removeEventListener("scroll", parallax);
-      if (loadTimer) clearTimeout(loadTimer);
       document.removeEventListener("click", handleAnchorClick);
       obs.disconnect();
     };
@@ -472,6 +469,12 @@ export default function LandingClient({
         (t): t is Testimonial => Boolean(t) && typeof t === "object"
       )
     : [];
+
+  /* Every `[data-parallax]` layer in the markup below, driven from one scroll
+     pass. Keyed on `cmsData` rather than left to run once: the testimonials
+     section only exists once a testimonial has been written, so the set of
+     layers on the page changes with the content. */
+  useParallax(cmsData);
 
   useEffect(() => {
     /* Saved content, unless an unsaved draft is being previewed.
@@ -970,9 +973,16 @@ export default function LandingClient({
       {/* HERO */}
       <main id="main">
         <section className="hero" id="home">
-          <div 
-            className="hero-bg" 
+          {/* The deepest layer on the page. Anchored to the scroll position so
+              it sits exactly where it was designed to on arrival, and held to a
+              third of the reader's speed — slow enough to read as distance,
+              never fast enough to expose the edge of its own box. */}
+          <div
+            className="hero-bg"
             id="heroBg"
+            data-parallax="0.3"
+            data-parallax-scroll
+            data-parallax-max="400"
             style={safeMediaUrl(activeData.hero_bg_url) ? ({
               "--hero-scrim": "linear-gradient(to bottom, rgba(0,0,0,0.5), var(--bg))",
               "--hero-image": optimizedCssUrl(safeMediaUrl(activeData.hero_bg_url)!, 1920),
@@ -981,7 +991,16 @@ export default function LandingClient({
           ></div>
           <div className="hero-scrim"></div>
           <div className="hero-accent-line"></div>
-          <div className="hero-content">
+          {/* The nearest layer, and the only one that fades. It leaves upward
+              slightly faster than the page scrolls, which is what separates it
+              from the photograph behind it. */}
+          <div
+            className="hero-content"
+            data-parallax="-0.12"
+            data-parallax-scroll
+            data-parallax-max="140"
+            data-parallax-fade
+          >
             <div className="hero-eyebrow" data-i18n="hero_eyebrow">
               تدريب شخصي وتغذية
             </div>
@@ -1049,12 +1068,27 @@ export default function LandingClient({
 
         {/* MEET THE COACH */}
         <section id="coach" style={{ display: activeData.section_coach_active === "false" ? "none" : undefined }}>
+          {/* The oversized word behind the section — until now a `::before` on
+              the section itself, which meant it could not be moved
+              independently of it. A real element instead, so it can carry its
+              own parallax layer and drift against the text in front of it.
+              Decorative and repeated in the heading beside it, so it is hidden
+              from screen readers rather than read out twice. */}
+          <div
+            className="section-watermark"
+            data-parallax="0.07"
+            data-parallax-max="70"
+            data-parallax-desktop
+            aria-hidden="true"
+          >
+            COACH
+          </div>
           <div className="coach-inner">
             <div className="coach-header reveal">
               <div className="section-eyebrow" data-i18n="coach_eyebrow">
                 الملف الشخصي الكامل
               </div>
-              <div className="section-title" data-i18n="coach_title">
+              <div className="section-title" data-parallax="0.05" data-parallax-max="28" data-i18n="coach_title">
                 تعرف على المدرب
               </div>
               <div className="primary-divider"></div>
@@ -1067,7 +1101,7 @@ export default function LandingClient({
                   src="https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=800&q=80&fit=crop"
                   alt="صورة المدرب"
                   data-i18n-alt="coach_img_alt"
-                  className="coach-img"
+                  className="coach-img" data-parallax="0.05" data-parallax-max="18"
                 />
                 <div className="coach-badge" data-i18n="coach_badge">
                   معتمد من ISSA
@@ -1130,7 +1164,7 @@ export default function LandingClient({
                 <div className="section-eyebrow" data-i18n="testi_eyebrow">
                   {activeData.testi_eyebrow}
                 </div>
-                <div className="section-title" data-i18n="testi_title">
+                <div className="section-title" data-parallax="0.05" data-parallax-max="28" data-i18n="testi_title">
                   {activeData.testi_title}
                 </div>
                 <div className="primary-divider"></div>
@@ -1178,12 +1212,21 @@ export default function LandingClient({
 
         {/* MEMBERSHIP */}
         <section id="membership" style={{ display: activeData.section_membership_active === "false" ? "none" : undefined }}>
+          <div
+            className="section-watermark"
+            data-parallax="0.07"
+            data-parallax-max="70"
+            data-parallax-desktop
+            aria-hidden="true"
+          >
+            PLANS
+          </div>
           <div className="membership-inner">
             <div className="membership-header reveal">
               <div className="section-eyebrow" data-i18n="mem_eyebrow">
                 اختر مسارك
               </div>
-              <div className="section-title" data-i18n="mem_title">
+              <div className="section-title" data-parallax="0.05" data-parallax-max="28" data-i18n="mem_title">
                 الاشتراكات
               </div>
               <div className="primary-divider"></div>
@@ -1194,7 +1237,7 @@ export default function LandingClient({
                 <div className="membership-card-media">
                   <img
                     id="card1-img-el"
-                    className="membership-card-img"
+                    className="membership-card-img" data-parallax="0.06" data-parallax-max="20"
                     loading="lazy"
                     src="https://images.unsplash.com/photo-1540497077202-7c8a3999166f?w=600&q=80&fit=crop"
                     alt="خطة ذاتية التوجيه"
@@ -1256,7 +1299,7 @@ export default function LandingClient({
                 <div className="membership-card-media">
                   <img
                     id="card2-img-el"
-                    className="membership-card-img"
+                    className="membership-card-img" data-parallax="0.06" data-parallax-max="20"
                     loading="lazy"
                     src="https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=600&q=80&fit=crop"
                     alt="خطة المتابعة الأسبوعية"
@@ -1322,7 +1365,7 @@ export default function LandingClient({
                 <div className="membership-card-media">
                   <img
                     id="card3-img-el"
-                    className="membership-card-img"
+                    className="membership-card-img" data-parallax="0.06" data-parallax-max="20"
                     loading="lazy"
                     src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=600&q=80&fit=crop"
                     alt="خطة المتابعة اليومية"
@@ -1381,12 +1424,21 @@ export default function LandingClient({
 
         {/* OFFERS */}
         <section id="offers" style={{ display: activeData.section_offers_active === "false" ? "none" : undefined }}>
+          <div
+            className="section-watermark"
+            data-parallax="0.07"
+            data-parallax-max="70"
+            data-parallax-desktop
+            aria-hidden="true"
+          >
+            OFFERS
+          </div>
           <div className="membership-inner">
             <div className="membership-header reveal">
               <div className="section-eyebrow" data-i18n="off_eyebrow">
                 اكتشف العروض
               </div>
-              <div className="section-title" data-i18n="off_title">
+              <div className="section-title" data-parallax="0.05" data-parallax-max="28" data-i18n="off_title">
                 العروض الخاصة
               </div>
               <div className="primary-divider"></div>
@@ -1397,7 +1449,7 @@ export default function LandingClient({
                 <div className="membership-card-media">
                   <img
                     id="off-card1-img-el"
-                    className="membership-card-img"
+                    className="membership-card-img" data-parallax="0.06" data-parallax-max="20"
                     loading="lazy"
                     src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=500&q=80&fit=crop"
                     alt="صمم مسيرتك الرياضية"
@@ -1493,7 +1545,7 @@ export default function LandingClient({
                 <div className="membership-card-media">
                   <img
                     id="off-card2-img-el"
-                    className="membership-card-img"
+                    className="membership-card-img" data-parallax="0.06" data-parallax-max="20"
                     loading="lazy"
                     src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=500&q=80&fit=crop"
                     alt="باقة المحترفين المتكاملة"
@@ -1590,7 +1642,7 @@ export default function LandingClient({
                 <div className="membership-card-media">
                   <img
                     id="off-card3-img-el"
-                    className="membership-card-img"
+                    className="membership-card-img" data-parallax="0.06" data-parallax-max="20"
                     loading="lazy"
                     src="https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?w=500&q=80&fit=crop"
                     alt="باقة التجهيز للبطولات"
@@ -1673,12 +1725,21 @@ export default function LandingClient({
 
         {/* CONTACT */}
         <section id="contact" style={{ display: activeData.section_contact_active === "false" ? "none" : undefined }}>
+          <div
+            className="section-watermark"
+            data-parallax="0.07"
+            data-parallax-max="70"
+            data-parallax-desktop
+            aria-hidden="true"
+          >
+            CONTACT
+          </div>
           <div className="contact-inner">
             <div className="contact-header reveal">
               <div className="section-eyebrow" data-i18n="contact_eyebrow">
                 تواصل معنا
               </div>
-              <div className="section-title" data-i18n="contact_title">
+              <div className="section-title" data-parallax="0.05" data-parallax-max="28" data-i18n="contact_title">
                 معلومات التواصل
               </div>
               <div className="primary-divider"></div>
@@ -1776,7 +1837,7 @@ export default function LandingClient({
                   alt="صورة المدرب"
                   data-i18n-alt="contact_img_alt"
                   loading="lazy"
-                  className="trainer-image"
+                  className="trainer-image" data-parallax="0.05" data-parallax-max="18"
                 />
               </div>
             </div>

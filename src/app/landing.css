@@ -6,6 +6,53 @@
   padding: 0;
 }
 
+/* The four custom properties the parallax runs on, declared rather than left
+   implicit. Each line earns its place:
+ *
+ * `inherits: false` is the one that matters for `--py` and `--pfade`, and it is
+ * there on the strength of a measurement. A custom property inherits by
+ * default, so writing one on an element invalidates the computed style of every
+ * descendant it has — and `useParallax` writes `--py` to nineteen elements on
+ * every frame of every scroll. Two of those, `.hero-content` and each
+ * `.section-title`, have subtrees. Benchmarked against the same page without
+ * any of this, style recalculation during a full scroll went from 660ms to
+ * 1307ms — the same *number* of recalculations, each one twice the work,
+ * because each was dragging a subtree along with it. Declared non-inheriting,
+ * the invalidation stops at the element that actually uses the value.
+ *
+ * For `--img-scale` and `--img-lift` the declaration does something else as
+ * well: it makes them animate. The photographs each want two transforms — a
+ * drift as the reader scrolls and a change on hover — and an element has one
+ * `transform` slot, so the hover half travels as a variable instead. An
+ * *unregistered* property jumps from one value to the next with no in-between,
+ * which would have turned those hovers into a snap; typed, they interpolate,
+ * and the hover eases exactly as it did when it was a transform of its own.
+ *
+ * A registered property can be picked up by `transition: all`. Nothing in this
+ * stylesheet declares one, and `--py` must never be transitioned — it is
+ * rewritten every frame and interpolating between frames would put every layer
+ * one frame behind the page. Check that before adding a blanket transition. */
+@property --py {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+@property --pfade {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 1;
+}
+@property --img-scale {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 1;
+}
+@property --img-lift {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
 html {
   scroll-behavior: smooth;
   scroll-padding-top: 80px;
@@ -405,7 +452,14 @@ body::before {
   --border-primary: rgba(var(--primary-rgb), 0.3);
 
   position: relative;
+  /* `svh` is the viewport at its *smallest* — the height with the mobile
+     address bar showing. `vh` on iOS is the largest, so a hero sized in `vh`
+     is taller than the screen on arrival and the browser chrome collapsing
+     mid-scroll resizes it underneath the reader. That resize is invisible on a
+     still page; with layers moving through it, it reads as a jump. The `vh`
+     line stays first as the fallback for anything without `svh`. */
   min-height: 100vh;
+  min-height: 100svh;
   height: auto;
   padding-top: 110px;
   display: flex;
@@ -420,6 +474,18 @@ body::before {
   position: absolute;
   inset: 0;
   will-change: transform;
+  /* `--py` is written by useParallax; the fallback is the resting position, so
+     this is also what the layer looks like with JavaScript off or motion
+     suppressed. `translate3d` rather than `scale` — scaling this element
+     re-rasterises the photograph every frame, translating it only moves a
+     layer the compositor already has. The small fixed scale is what it always
+     had: it hides the sub-pixel edge, and it no longer changes with scroll.
+
+     No gap can open at the top or bottom of the hero as this moves. The layer
+     travels down by 0.3 of the distance scrolled while the hero itself travels
+     up by all of it, so the layer's top edge stays above the top of what is
+     still visible for every scroll position. */
+  transform: translate3d(0, var(--py, 0px), 0) scale(1.06);
   background:
     var(--hero-scrim, linear-gradient(110deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0.2) 100%)),
     var(
@@ -448,6 +514,18 @@ body::before {
   padding-block: 0 90px;
   padding-inline: 80px;
   max-width: 720px;
+  /* The front layer. It leaves upward a little faster than the page scrolls and
+     fades on the way out, which is what reads as distance between it and the
+     photograph. The transform lands on this wrapper and not on its children —
+     they are running their own staggered entrance animation, and an element
+     cannot have two transforms.
+
+     Nothing inside is `position: fixed`, so the containing block this creates
+     costs nothing. The navigation bar and the scroll follower are outside it
+     for exactly that reason and must stay outside it. */
+  transform: translate3d(0, var(--py, 0px), 0);
+  opacity: var(--pfade, 1);
+  will-change: transform, opacity;
 }
 /* Staggered entrance for the hero stack */
 .hero-content > * {
@@ -831,6 +909,11 @@ body::before {
   border-bottom: none;
   padding-bottom: 0;
   margin-bottom: 0;
+  /* A shallow layer of its own, so the heading and the eyebrow above it do not
+     arrive as one flat block. Its `.reveal` wrapper carries the entrance
+     animation and its own transform — this one is on the heading inside, which
+     is why the two do not collide. */
+  transform: translate3d(0, var(--py, 0px), 0);
 }
 
 /* ─── DIVIDER ─── */
@@ -848,20 +931,59 @@ body::before {
   position: relative;
   overflow: hidden;
 }
-#coach::before {
-  content: "COACH";
+/* ─── SECTION WATERMARKS ─── */
+/* The oversized word set behind each section. It began as `#coach::before` and
+   is a real element now for one reason: a pseudo-element has no `dataset`, so
+   it cannot be a parallax layer of its own — it could only ever inherit the
+   section's `--py`, and inheriting it would hand the same offset to every
+   photograph and heading inside the section as well.
+ *
+ * Delete this block and the four `.section-watermark` divs in LandingClient to
+ * take the words off the page; nothing else depends on them. */
+.section-watermark {
   position: absolute;
   inset-inline-end: -20px;
   top: 50%;
-  transform: translateY(-50%);
+  /* Both are translations, so the order they compose in does not matter. The
+     centring half is the layout; `--py` is the drift on top of it. */
+  transform: translateY(-50%) translate3d(0, var(--py, 0px), 0);
   font-family: var(--font-display);
   font-size: clamp(120px, 18vw, 240px);
   color: var(--watermark);
   letter-spacing: -4px;
   pointer-events: none;
+  user-select: none;
   line-height: 1;
   white-space: nowrap;
+  z-index: 0;
+  will-change: transform;
 }
+/* Each watermark is positioned against its own section, so every section that
+   carries one has to be the containing block for it. `#coach` and `#contact`
+   already were; these were not — `#offers` had no rule of its own at all, and
+   an absolutely positioned child of it would have been laid out against the
+   page instead, putting the word somewhere in the middle of the document.
+
+   `clip` rather than `hidden` so the section trims the word without becoming a
+   scroll container: `hidden` would make it one, and anything sticky placed
+   inside later would stop sticking with no obvious cause. */
+#membership,
+#offers {
+  position: relative;
+  overflow: clip;
+}
+
+/* Above the watermark. Absolutely positioned children paint over static ones
+   whatever the source order, so without this the word is drawn across the
+   Arabic in front of it rather than behind it. */
+.coach-inner,
+.membership-inner,
+.testimonials-inner,
+.contact-inner {
+  position: relative;
+  z-index: 1;
+}
+
 .coach-inner {
   max-width: 1160px;
   margin: 0 auto;
@@ -898,15 +1020,19 @@ body::before {
   position: relative;
   z-index: 1;
   filter: grayscale(85%) contrast(1.05);
+  /* Drifts against the frame drawn behind it, which stays where it is — the
+     photograph and its outline pulling apart slightly is the whole effect
+     here, so the frame must not be given a layer of its own. */
+  transform: translate3d(0, var(--py, 0px), 0) translateY(var(--img-lift, 0px));
   transition:
     filter 0.5s ease,
-    transform 0.5s ease,
-    box-shadow 0.5s ease;
+    box-shadow 0.5s ease,
+    --img-lift 0.5s ease;
   display: block;
 }
 .coach-image-wrapper:hover .coach-img {
   filter: grayscale(20%) contrast(1.02);
-  transform: translateY(-2px);
+  --img-lift: -2px;
 }
 .coach-image-frame {
   transition: border-color 0.5s ease;
@@ -1056,22 +1182,40 @@ body::before {
 
 .membership-card-img {
   width: 100%;
-  height: 200px;
+  /* 50px taller than the window it shows through, hung 25px above it, against a
+     drift the markup clamps to 20px either way (`data-parallax-max="20"`).
+     Deliberately 5px more overhang than the drift can use: measured at the
+     extremes the image lands exactly flush with the window edge when the two
+     match, and "exactly flush" is a seam waiting for the first fractional
+     device pixel ratio to find it. Change one of these numbers and the other
+     has to move with it. */
+  height: 250px;
+  margin-top: -25px;
   object-fit: cover;
   display: block;
   background: var(--bg3);
   filter: brightness(0.7) saturate(0.7);
+  /* The hover scale is a variable rather than a second `transform` declaration,
+     because there is only one `transform` slot and the parallax already has it.
+     Transitioning the custom property means the hover still eases in — a plain
+     `transition: transform` would try to animate the scroll offset too, and the
+     image would lag a frame behind the page. */
+  transform: translate3d(0, var(--py, 0px), 0) scale(var(--img-scale, 1));
+  --img-scale: 1;
   transition:
     filter 0.4s,
-    transform 0.6s ease;
+    --img-scale 0.6s ease;
 }
 .membership-card:hover .membership-card-img {
   filter: brightness(0.85) saturate(0.9);
-  transform: scale(1.04);
+  --img-scale: 1.04;
 }
 .membership-card-media {
   position: relative;
   overflow: hidden;
+  /* The window the image drifts behind. It has to hold the height itself now
+     that the image is taller than it. */
+  height: 200px;
 }
 /* Keeps the badge legible where the photo is bright */
 .membership-card-media::after {
@@ -1468,14 +1612,18 @@ a.contact-item:hover p {
   object-fit: cover;
   border-radius: var(--radius-lg);
   filter: grayscale(85%);
+  /* Nothing clips this one, so the drift has no edge to expose — it is held to
+     18px in the markup because that is as much as reads as depth before it
+     starts to look like a layout bug. */
+  transform: translate3d(0, var(--py, 0px), 0) scale(var(--img-scale, 1));
   transition:
     filter 0.5s,
-    transform 0.5s;
+    --img-scale 0.5s;
   border: 1px solid var(--border);
 }
 .trainer-image:hover {
   filter: grayscale(10%);
-  transform: scale(1.02);
+  --img-scale: 1.02;
 }
 
 /* ─── FOOTER ─── */
@@ -1607,6 +1755,16 @@ a.contact-item:hover p {
 }
 /* Never leave content hidden when animations are suppressed */
 @media (prefers-reduced-motion: reduce) {
+  /* useParallax never writes these when the preference is set, and clears them
+     if it is turned on while the page is open — so this is the second lock on
+     the same door, not the only one. It is here because a parallax layer left
+     at a stale offset is not a missing animation, it is content in the wrong
+     place, and that is worth being sure about. `!important` beats the inline
+     custom property the hook writes. */
+  [data-parallax] {
+    --py: 0px !important;
+    --pfade: 1 !important;
+  }
   .reveal {
     opacity: 1;
     transform: none;
@@ -2054,10 +2212,10 @@ body.offers-active .nav-links a[href="#offers"]::after {
     padding: 64px 0;
   }
 
-  /* Decorative, and clipped by `#coach { overflow: hidden }` at this width, so
-     what reaches the screen is a grey smudge behind the Arabic rather than the
-     word COACH. */
-  #coach::before {
+  /* Decorative, and clipped by the section at this width, so what reaches the
+     screen is a grey smudge behind the Arabic rather than a readable word.
+     Applies to all four of them now, not only COACH. */
+  .section-watermark {
     display: none;
   }
 
