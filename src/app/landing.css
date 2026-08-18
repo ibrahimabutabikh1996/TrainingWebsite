@@ -931,42 +931,78 @@ body::before {
   position: relative;
   overflow: hidden;
 }
-/* ─── SECTION WATERMARKS ─── */
-/* The oversized word set behind each section. It began as `#coach::before` and
-   is a real element now for one reason: a pseudo-element has no `dataset`, so
-   it cannot be a parallax layer of its own — it could only ever inherit the
-   section's `--py`, and inheriting it would hand the same offset to every
-   photograph and heading inside the section as well.
+/* ─── SECTION TEXTURE ─── */
+/* The pattern set behind each section, and the parallax layer furthest from the
+   reader.
  *
- * Delete this block and the four `.section-watermark` divs in LandingClient to
- * take the words off the page; nothing else depends on them. */
-.section-watermark {
+ * It replaced an oversized English word per section — COACH, PLANS, OFFERS,
+ * CONTACT — which began life as `#coach::before`. Two things were wrong with
+ * it. As a pseudo-element it had no `dataset`, so it could never be a parallax
+ * layer of its own; it could only inherit the section's `--py`, and inheriting
+ * that would hand the same offset to every heading and photograph inside the
+ * section too. And as a word it was legible: large English type reading as
+ * content on a page that is otherwise entirely Arabic.
+ *
+ * A dot field says the same thing about depth and says nothing at all.
+ *
+ * Delete this block and the four `.section-texture` divs in LandingClient to
+ * take it off the page; nothing else depends on either. */
+.section-texture {
   position: absolute;
-  inset-inline-end: -20px;
-  top: 50%;
-  /* Both are translations, so the order they compose in does not matter. The
-     centring half is the layout; `--py` is the drift on top of it. */
-  transform: translateY(-50%) translate3d(0, var(--py, 0px), 0);
-  font-family: var(--font-display);
-  font-size: clamp(120px, 18vw, 240px);
-  color: var(--watermark);
-  letter-spacing: -4px;
+  /* A panel on the outer edge, where the word used to sit. `inset-inline-end`
+     rather than `right`, so it follows the page into RTL and lands on the left
+     the way the word did.
+
+     The vertical overhang is the drift budget: the layer travels up to 70px
+     (`data-parallax-max` in the markup) and 120px of overhang means the top and
+     bottom edges of the pattern stay outside the section at both extremes. */
+  top: -120px;
+  bottom: -120px;
+  inset-inline-end: 0;
+  width: min(48%, 620px);
+  transform: translate3d(0, var(--py, 0px), 0);
+
+  /* The pattern itself: two dot fields interleaved rather than one, so it reads
+     as texture instead of graph paper.
+
+     The dots are the same slate as `--watermark` but carry more alpha than it
+     does, and the difference is not an oversight. A word at 0.05 is visible
+     because letterforms are large contiguous areas of colour; dots at 0.05 cover
+     a few percent of the panel and disappear entirely — checked on screen, the
+     section looked exactly as it did with nothing there at all. This is the
+     alpha at which the texture is present without being a thing you look at. */
+  --dot: rgba(148, 163, 184, 0.13);
+  background-image:
+    radial-gradient(var(--dot) 1.6px, transparent 1.6px),
+    radial-gradient(var(--dot) 1px, transparent 1px);
+  background-size:
+    44px 44px,
+    22px 22px;
+  background-position:
+    0 0,
+    11px 11px;
+
+  /* Without this it is a rectangle of dots with four hard edges. The mask fades
+     it out in every direction, so it has no border to notice — which is the
+     difference between texture and a pasted panel. */
+  mask-image: radial-gradient(ellipse at center, #000 0%, transparent 70%);
+  -webkit-mask-image: radial-gradient(ellipse at center, #000 0%, transparent 70%);
+
   pointer-events: none;
   user-select: none;
-  line-height: 1;
-  white-space: nowrap;
   z-index: 0;
   will-change: transform;
 }
-/* Each watermark is positioned against its own section, so every section that
-   carries one has to be the containing block for it. `#coach` and `#contact`
-   already were; these were not — `#offers` had no rule of its own at all, and
-   an absolutely positioned child of it would have been laid out against the
-   page instead, putting the word somewhere in the middle of the document.
+/* Each texture panel is positioned against its own section, so every section
+   that carries one has to be the containing block for it. `#coach` and
+   `#contact` already were; these were not — `#offers` had no rule of its own at
+   all, and an absolutely positioned child of it would have been laid out
+   against the page instead, putting the pattern somewhere in the middle of the
+   document.
 
-   `clip` rather than `hidden` so the section trims the word without becoming a
-   scroll container: `hidden` would make it one, and anything sticky placed
-   inside later would stop sticking with no obvious cause. */
+   `clip` rather than `hidden` so the section trims the overhang without
+   becoming a scroll container: `hidden` would make it one, and anything sticky
+   placed inside later would stop sticking with no obvious cause. */
 #membership,
 #offers {
   position: relative;
@@ -2212,11 +2248,14 @@ body.offers-active .nav-links a[href="#offers"]::after {
     padding: 64px 0;
   }
 
-  /* Decorative, and clipped by the section at this width, so what reaches the
-     screen is a grey smudge behind the Arabic rather than a readable word.
-     Applies to all four of them now, not only COACH. */
-  .section-watermark {
-    display: none;
+  /* The word this replaced had to be hidden outright at this width: clipped by
+     the section, what reached the screen was a grey smudge behind the Arabic.
+     A pattern has no such problem — there is nothing to half-read — so it stays,
+     narrower and fainter. It keeps a phone from looking like a different site
+     than the one on a desktop, which is what hiding it did. */
+  .section-texture {
+    width: 70%;
+    opacity: 0.7;
   }
 
   /* Three numbers, three columns. Stacked one per row with a rule between them,

@@ -1068,21 +1068,22 @@ export default function LandingClient({
 
         {/* MEET THE COACH */}
         <section id="coach" style={{ display: activeData.section_coach_active === "false" ? "none" : undefined }}>
-          {/* The oversized word behind the section — until now a `::before` on
-              the section itself, which meant it could not be moved
-              independently of it. A real element instead, so it can carry its
-              own parallax layer and drift against the text in front of it.
-              Decorative and repeated in the heading beside it, so it is hidden
-              from screen readers rather than read out twice. */}
+          {/* The soft texture behind the section, and the parallax layer
+              furthest from the reader. It replaced an oversized English word —
+              COACH here, PLANS, OFFERS and CONTACT in the sections below —
+              which was legible enough to read as content on a page that is
+              otherwise entirely Arabic. A pattern says the same thing about
+              depth without saying a word.
+
+              It carries no meaning at all now, so it stays out of the
+              accessibility tree. Empty by design: everything it shows comes
+              from `background-image` in landing.css. */}
           <div
-            className="section-watermark"
+            className="section-texture"
             data-parallax="0.07"
             data-parallax-max="70"
-            data-parallax-desktop
             aria-hidden="true"
-          >
-            COACH
-          </div>
+          />
           <div className="coach-inner">
             <div className="coach-header reveal">
               <div className="section-eyebrow" data-i18n="coach_eyebrow">
@@ -1213,14 +1214,11 @@ export default function LandingClient({
         {/* MEMBERSHIP */}
         <section id="membership" style={{ display: activeData.section_membership_active === "false" ? "none" : undefined }}>
           <div
-            className="section-watermark"
+            className="section-texture"
             data-parallax="0.07"
             data-parallax-max="70"
-            data-parallax-desktop
             aria-hidden="true"
-          >
-            PLANS
-          </div>
+          />
           <div className="membership-inner">
             <div className="membership-header reveal">
               <div className="section-eyebrow" data-i18n="mem_eyebrow">
@@ -1425,14 +1423,11 @@ export default function LandingClient({
         {/* OFFERS */}
         <section id="offers" style={{ display: activeData.section_offers_active === "false" ? "none" : undefined }}>
           <div
-            className="section-watermark"
+            className="section-texture"
             data-parallax="0.07"
             data-parallax-max="70"
-            data-parallax-desktop
             aria-hidden="true"
-          >
-            OFFERS
-          </div>
+          />
           <div className="membership-inner">
             <div className="membership-header reveal">
               <div className="section-eyebrow" data-i18n="off_eyebrow">
@@ -1726,14 +1721,11 @@ export default function LandingClient({
         {/* CONTACT */}
         <section id="contact" style={{ display: activeData.section_contact_active === "false" ? "none" : undefined }}>
           <div
-            className="section-watermark"
+            className="section-texture"
             data-parallax="0.07"
             data-parallax-max="70"
-            data-parallax-desktop
             aria-hidden="true"
-          >
-            CONTACT
-          </div>
+          />
           <div className="contact-inner">
             <div className="contact-header reveal">
               <div className="section-eyebrow" data-i18n="contact_eyebrow">
