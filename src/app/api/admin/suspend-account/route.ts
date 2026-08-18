@@ -2,8 +2,13 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { subscriptionEndFrom } from "@/lib/subscription";
 import type { JsonRecord } from "@/types";
+import { requireAdmin } from "@/lib/authGuard";
 
+/* Suspension gates sign-in, so who may set it is the whole point of it. */
 export async function POST(request: Request) {
+  const auth = await requireAdmin();
+  if (!auth.ok) return auth.response;
+
   try {
     const { profileId, isSuspended } = await request.json();
 
@@ -54,7 +59,12 @@ export async function POST(request: Request) {
       },
     });
 
-    return NextResponse.json({ success: true, is_suspended: isSuspended });
+    /* The value that was stored, not the one that arrived. `suspended` is the
+       coerced boolean the row now holds; `isSuspended` is whatever the request
+       carried. AccountManager writes this straight into its own state, so
+       echoing the raw input left the switch showing something the database did
+       not agree with. */
+    return NextResponse.json({ success: true, is_suspended: suspended });
   } catch (error) {
     console.error("Suspend account error:", error);
     return NextResponse.json(

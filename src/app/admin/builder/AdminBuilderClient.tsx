@@ -2,11 +2,14 @@
 
 import { useState, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { DayExercise, Exercise, TraineeOption } from "@/types/admin";
+import { CourseTemplate, DayExercise, Exercise, TraineeOption } from "@/types/admin";
 import { useCourseBuilder, normalizeDays } from "./useCourseBuilder";
+import { isCustomExercise } from "@/types/admin";
 import DayMusclePicker from "./DayMusclePicker";
+import AdminModal from "../components/AdminModal";
 import { Toaster, toast } from "react-hot-toast";
-import { saveCourseAction } from "./actions";
+import { loadCourseTemplateAction, saveCourseAction } from "./actions";
+import { arabicCount, DAY, EXERCISE } from "@/lib/arabicCount";
 import { Icon } from "@/components/Icon";
 import { CustomSelect } from "@/components/CustomSelect";
 /* Same order the diet plan builder uses: the shared page vocabulary first, then
@@ -15,16 +18,6 @@ import "../diet/diet.css";
 import "../diet/plan/plan.css";
 import "./day-muscle-picker.css";
 import "./builder.css";
-
-/* The rest windows coaches reach for constantly. One tap writes both ends of
-   the range instead of four separate controls. */
-const REST_PRESETS = [
-  { label: "30 ث", from: "30", to: "30", unit: "ثانية" },
-  { label: "45 ث", from: "45", to: "45", unit: "ثانية" },
-  { label: "60 ث", from: "60", to: "60", unit: "ثانية" },
-  { label: "60–90 ث", from: "60", to: "90", unit: "ثانية" },
-  { label: "دقيقتان", from: "2", to: "2", unit: "دقيقة" },
-];
 
 /* Reps are stored as an array but older rows may hold a bare string/number. */
 function repList(reps: DayExercise["reps"]): string[] {
@@ -37,12 +30,15 @@ export default function AdminBuilderClient({
   initialTrainees,
   initialExercises,
   initialCourse = null,
-  initialTraineeId = ""
+  initialTraineeId = "",
+  initialTemplates = []
 }: {
   initialTrainees: TraineeOption[],
   initialExercises: Exercise[],
   initialCourse?: { id: string, name: string, description?: string, days_data: unknown } | null,
-  initialTraineeId?: string
+  initialTraineeId?: string,
+  /** Courses already in the library, to start a new one from. Empty when editing. */
+  initialTemplates?: CourseTemplate[]
 }) {
   const router = useRouter();
 
@@ -54,7 +50,7 @@ export default function AdminBuilderClient({
     addDay, deleteDay, moveDay, setDayMuscles,
     addExerciseToDay, addCustomExerciseToDay,
     updateSets, updateRep, applyRepsToAll, updateCustomCol, updateCustomTitle,
-    removeExercise, moveExercise, updateRestTime, applyRestPreset,
+    removeExercise, moveExercise, updateRestTime,
     totals,
   } = useCourseBuilder({
     name: initialCourse?.name,
@@ -76,6 +72,14 @@ export default function AdminBuilderClient({
   /* Deleting a training day asks first; this holds what the dialog is about. */
   const [dayToDelete, setDayToDelete] = useState<{ id: string; index: number; exCount: number } | null>(null);
 
+  /* "Start from an existing course": the picker, its search box, and which
+     course the contents on screen were taken from — kept only so the header can
+     say so, since after this point the two are unrelated documents. */
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [templateQuery, setTemplateQuery] = useState("");
+  const [templateLoading, setTemplateLoading] = useState<string | null>(null);
+  const [startedFrom, setStartedFrom] = useState<string | null>(null);
+
   const nameRef = useRef<HTMLInputElement>(null);
 
   const currentDay = days.find((d) => d.id === activeDayId) || days[0] || null;
@@ -94,6 +98,54 @@ export default function AdminBuilderClient({
 
   const nameFilled = courseName.trim().length > 0;
 
+  const templateQ = templateQuery.trim().toLowerCase();
+  const filteredTemplates = useMemo(
+    () =>
+      !templateQ
+        ? initialTemplates
+        : initialTemplates.filter(
+            (t) =>
+              t.name.toLowerCase().includes(templateQ) ||
+              t.description.toLowerCase().includes(templateQ)
+          ),
+    [initialTemplates, templateQ]
+  );
+
+  /**
+   * Loads an existing course into this builder as the starting point for a new
+   * one.
+   *
+   * Nothing about the course it came from is kept — no id above all, so the
+   * save below still takes the "create" branch and the original stays exactly
+   * as it is, along with whoever is training on it. What lands here is a
+   * detached copy of its days that the coach edits like any other draft.
+   */
+  const handlePickTemplate = async (template: CourseTemplate) => {
+    setTemplateLoading(template.id);
+    try {
+      const result = await loadCourseTemplateAction(template.id);
+      if (!result.success) {
+        toast.error(result.error);
+        return;
+      }
+
+      const loaded = normalizeDays(result.course.days);
+      setCourseName(`${result.course.name} (نسخة)`);
+      setCourseDesc(result.course.description);
+      setDays(loaded);
+      setActiveDayId(loaded.length > 0 ? loaded[0].id : null);
+      setStartedFrom(result.course.name);
+      setShowTemplates(false);
+      setTemplateQuery("");
+      toast.success(`تم تحميل نسخة من "${result.course.name}" — عدّلها ثم احفظها ككورس جديد.`);
+    } catch (error) {
+      console.error(error);
+      toast.error("تعذّر تحميل الكورس.");
+    } finally {
+      setTemplateLoading(null);
+    }
+  };
+
   const handleSaveCourse = async () => {
     if (!courseName.trim()) {
       toast.error("يرجى إدخال اسم الكورس أولاً.");
@@ -110,15 +162,14 @@ export default function AdminBuilderClient({
     const toastId = toast.loading("جاري حفظ الكورس...");
 
     try {
-      const coachId = typeof window !== "undefined" ? localStorage.getItem("loggedInUserId") : undefined;
-
+      /* No coach id is sent: the action takes it from the session. Reading it
+         out of localStorage meant the browser naming who authored the course. */
       const result = await saveCourseAction({
         courseId: initialCourse?.id,
         name: courseName,
         description: courseDesc,
         traineeId: selectedTrainee || undefined,
         daysData: days,
-        coachId: coachId || undefined,
       });
 
       if (result.success) {
@@ -152,6 +203,11 @@ export default function AdminBuilderClient({
     setDayToDelete({ id: dayId, index, exCount });
   };
 
+  /* Deleting a training day takes two steps: `handleDeleteDay` above names the
+     day, and this confirms it. The dialog between them was missing — nothing
+     rendered `dayToDelete` and nothing called this — so pressing the day's
+     delete button set a piece of state and stopped. No dialog, no deletion, no
+     error: the day simply stayed. The dialog is at the end of this component. */
   const confirmDeleteDay = () => {
     if (!dayToDelete) return;
     deleteDay(dayToDelete.id);
@@ -188,7 +244,14 @@ export default function AdminBuilderClient({
       <header className="diet-header">
         <div className="diet-header-text">
           <h1>{initialCourse ? "تعديل الكورس التدريبي" : "تصميم الكورس التدريبي"}</h1>
-
+          {/* Said once, where the coach is about to press save: this is a new
+              course, and the one it was copied from is not being edited. */}
+          {startedFrom && (
+            <p className="bldr-from-note">
+              <Icon name="content_copy" />
+              نسخة من «{startedFrom}» — سيُحفظ ككورس جديد ولن يتأثر الأصل.
+            </p>
+          )}
         </div>
 
         <div className="dplan-header-actions">
@@ -204,6 +267,20 @@ export default function AdminBuilderClient({
               }))}
             />
           </label>
+
+          {/* Offered only when building something new — the server sends an
+              empty list while editing, so this is not a second guard so much as
+              the same rule stated where it is visible. */}
+          {initialTemplates.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setShowTemplates(true)}
+              className="diet-btn-secondary"
+            >
+              <Icon name="content_copy" style={{ fontSize: 20 }} />
+              <span>ابدأ من كورس موجود</span>
+            </button>
+          )}
 
           <a href="/admin/courses" className="diet-btn-secondary">
             <Icon name="library_books" style={{ fontSize: 20 }} />
@@ -344,7 +421,8 @@ export default function AdminBuilderClient({
                     const sets = typeof ex.sets === "number" ? ex.sets : reps.length || 1;
                     const repValues = Array.from({ length: sets }, (_, i) => reps[i] ?? "10");
 
-                    return ex.is_custom ? (
+                    const isCustomEx = isCustomExercise(ex);
+                    return isCustomEx ? (
                       <section key={`ex-${ex.id}-${exIndex}`} className="dplan-meal">
                         <header className="dplan-meal-head">
                           <div className="dplan-meal-title" style={{ flex: 1 }}>
@@ -450,12 +528,23 @@ export default function AdminBuilderClient({
                           </li>
 
                           <li className="dplan-item dplan-item--reps" style={{ minWidth: 0 }}>
-                            <div className="dplan-item-main">
+                            <div className="dplan-item-main" style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "10px" }}>
                               <strong>التكرارات لكل جولة</strong>
+                              {repValues.length > 1 && (
+                                <button
+                                  type="button"
+                                  className="bldr-mini-btn"
+                                  onClick={() => applyRepsToAll(currentDay.id, ex.id, repValues[0])}
+                                  title="نسخ تكرار الجولة الأولى إلى بقية الجولات"
+                                  style={{ flexShrink: 0 }}
+                                >
+                                  توحيد الكل
+                                </button>
+                              )}
                             </div>
 
-                            <div className="bldr-row-controls" style={{ flexWrap: "nowrap", overflowX: "auto" }}>
-                              <div className="bldr-pill" style={{ display: "grid", gridTemplateColumns: `repeat(${repValues.length}, 1fr)`, width: "100%", gap: "8px" }}>
+                            <div className="bldr-row-controls" style={{ flexWrap: "wrap", overflowX: "auto" }}>
+                              <div className="bldr-pill" style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(repValues.length, 4)}, 1fr)`, width: "100%", gap: "8px" }}>
                                 {repValues.map((rep, rIndex) => (
                                   <label key={rIndex} className="bldr-rep" style={{ width: "100%" }}>
                                     <span>{rIndex + 1}</span>
@@ -471,18 +560,6 @@ export default function AdminBuilderClient({
                                   </label>
                                 ))}
                               </div>
-
-                              {repValues.length > 1 && (
-                                <button
-                                  type="button"
-                                  className="bldr-mini-btn"
-                                  onClick={() => applyRepsToAll(currentDay.id, ex.id, repValues[0])}
-                                  title="نسخ تكرار الجولة الأولى إلى بقية الجولات"
-                                  style={{ flexShrink: 0 }}
-                                >
-                                  توحيد الكل
-                                </button>
-                              )}
                             </div>
                           </li>
 
@@ -491,29 +568,8 @@ export default function AdminBuilderClient({
                               <strong>وقت الراحة</strong>
                             </div>
 
-                            <div className="bldr-row-controls" style={{ flexWrap: "nowrap", overflowX: "auto" }}>
-                              <div className="bldr-presets" style={{ flexWrap: "nowrap", flexShrink: 0, display: "flex", gap: "8px" }}>
-                                {REST_PRESETS.map((p) => {
-                                  const active =
-                                    (ex.rest_from ?? "60") === p.from &&
-                                    (ex.rest_to ?? "90") === p.to &&
-                                    (ex.rest_from_unit ?? "ثانية") === p.unit &&
-                                    (ex.rest_to_unit ?? "ثانية") === p.unit;
-                                  return (
-                                    <button
-                                      key={p.label}
-                                      type="button"
-                                      className={`bldr-preset ${active ? "active" : ""}`}
-                                      onClick={() => applyRestPreset(currentDay.id, ex.id, p.from, p.to, p.unit)}
-                                      style={{ flexShrink: 0, whiteSpace: "nowrap" }}
-                                    >
-                                      {p.label}
-                                    </button>
-                                  );
-                                })}
-                              </div>
-
-                              <div className="bldr-pill" style={{ flexWrap: "nowrap" }}>
+                            <div className="bldr-row-controls" style={{ flexWrap: "wrap", overflow: "visible" }}>
+                              <div className="bldr-pill" style={{ flexWrap: "wrap" }}>
                                 <span className="bldr-word" style={{ whiteSpace: "nowrap" }}>من</span>
                                 <input
                                   type="number"
@@ -581,6 +637,115 @@ export default function AdminBuilderClient({
           )}
         </>
       )}
+
+      <AdminModal
+        isOpen={dayToDelete !== null}
+        onClose={() => setDayToDelete(null)}
+        title="حذف اليوم التدريبي"
+        icon="warning"
+        maxWidth={480}
+        footer={
+          <>
+            <button
+              type="button"
+              className="crm-btn-secondary"
+              style={{ padding: "10px 20px", borderRadius: "var(--radius-md)" }}
+              onClick={() => setDayToDelete(null)}
+            >
+              إلغاء
+            </button>
+            <button
+              type="button"
+              onClick={confirmDeleteDay}
+              style={{
+                background: "var(--error)",
+                color: "#fff",
+                border: "none",
+                padding: "10px 24px",
+                borderRadius: "var(--radius-md)",
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+            >
+              تأكيد الحذف
+            </button>
+          </>
+        }
+      >
+        <div style={{ padding: "var(--space-6)", color: "var(--text)", lineHeight: 1.8 }}>
+          <p style={{ margin: 0 }}>
+            سيتم حذف <strong>اليوم {(dayToDelete?.index ?? 0) + 1}</strong> من هذا الكورس.
+          </p>
+          {(dayToDelete?.exCount ?? 0) > 0 && (
+            <p style={{ margin: "12px 0 0", color: "var(--error-text)" }}>
+              يحتوي هذا اليوم على {dayToDelete?.exCount} تمرين — سيتم حذفها معه.
+            </p>
+          )}
+          <p style={{ margin: "12px 0 0", color: "var(--text-muted)", fontSize: "0.9rem" }}>
+            لن يُحفظ الحذف نهائياً إلا بعد الضغط على حفظ الكورس.
+          </p>
+        </div>
+      </AdminModal>
+
+      <AdminModal
+        isOpen={showTemplates}
+        onClose={() => { setShowTemplates(false); setTemplateQuery(""); }}
+        title="ابدأ من كورس موجود"
+        icon="content_copy"
+        maxWidth={620}
+      >
+        <div className="bldr-tpl">
+          <p className="bldr-tpl-lead">
+            اختر كورساً لتُحمَّل أيامه وتمارينه هنا كنسخة جديدة. عدّل ما تشاء، اختر المشترك، ثم احفظ —
+            الكورس الأصلي ومَن يتدرب عليه لا يتأثران.
+          </p>
+
+          {/* Only worth saying when there is something to lose. */}
+          {(days.length > 0 || courseName.trim() !== "") && (
+            <p className="bldr-tpl-warn">
+              <Icon name="warning" />
+              سيحل الكورس المختار محل ما صمّمته في هذه الصفحة حتى الآن.
+            </p>
+          )}
+
+          <div className="bldr-tpl-search">
+            <Icon name="search" />
+            <input
+              type="text"
+              value={templateQuery}
+              onChange={(e) => setTemplateQuery(e.target.value)}
+              placeholder="ابحث باسم الكورس أو وصفه…"
+            />
+          </div>
+
+          <ul className="bldr-tpl-list">
+            {filteredTemplates.length === 0 ? (
+              <li className="bldr-tpl-empty">لا توجد كورسات مطابقة.</li>
+            ) : (
+              filteredTemplates.map((t) => (
+                <li key={t.id}>
+                  <button
+                    type="button"
+                    onClick={() => handlePickTemplate(t)}
+                    disabled={templateLoading !== null}
+                  >
+                    <span className="bldr-tpl-name">
+                      <strong>{t.name}</strong>
+                      {t.description && <small>{t.description}</small>}
+                    </span>
+                    <span className="bldr-tpl-meta">
+                      {arabicCount(t.days, DAY)} · {arabicCount(t.exercises, EXERCISE)}
+                    </span>
+                    <span className="bldr-tpl-take">
+                      {templateLoading === t.id ? "جارٍ التحميل…" : "استخدام"}
+                    </span>
+                  </button>
+                </li>
+              ))
+            )}
+          </ul>
+        </div>
+      </AdminModal>
 
       {pickerDayId && (
         <ExercisePicker

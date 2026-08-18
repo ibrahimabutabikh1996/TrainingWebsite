@@ -9,6 +9,7 @@ import ExportProfileClient from "./ExportProfileClient";
 import { notFound } from "next/navigation";
 import type { MonthlyArchive, JsonRecord } from "@/types";
 import type { Day } from "@/types/admin";
+import { formatTimestamp } from "@/lib/trainingDates";
 
 export const dynamic = "force-dynamic";
 
@@ -151,9 +152,9 @@ export default async function ExportProfilePage({
     thigh: data.meas_leg || data.meas_thigh,
     chest: data.meas_chest,
     shoulders: data.meas_shoulders,
-  }) as Record<string, any>;
+  }) as Record<string, string | number | null | undefined>;
   const gender = String(data.gender || "male").toLowerCase();
-  const formattedRegDate = new Date(regDate).toLocaleDateString("en-GB");
+  const formattedRegDate = formatTimestamp(regDate);
 
   return (
     <ExportProfileClient

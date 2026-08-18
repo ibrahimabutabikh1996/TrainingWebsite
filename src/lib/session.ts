@@ -39,6 +39,15 @@ export interface Session {
   isAdmin: boolean;
   /** Unix seconds. */
   expiresAt: number;
+  /**
+   * When this token was minted, unix seconds.
+   *
+   * The token cannot be revoked — it is a signature, not a row — so this is what
+   * lets a later event disown it. `accounts.password_changed_at` is compared
+   * against it, and a token older than the last password change is refused. See
+   * `sessionRefusal` in `@/lib/authGuard`.
+   */
+  issuedAt: number;
 }
 
 /** What actually goes into the token, kept short because it rides on every request. */
@@ -49,11 +58,19 @@ interface TokenPayload {
   u: string;
   /** Expiry, unix seconds. */
   e: number;
+  /** Issued at, unix seconds. */
+  i: number;
 }
 
 /* Bumped if the payload shape ever changes, so old tokens are rejected rather
-   than misread. */
-const TOKEN_VERSION = "v1";
+   than misread.
+ *
+ * v1 → v2 added `i`. A v1 token cannot be checked against a password change,
+ * because it does not say when it was issued — and "cannot be checked" has to
+ * mean refused, or the gap this version exists to close would stay open for
+ * every session already outstanding. The cost is that everyone signs in once
+ * more after this deploys. */
+const TOKEN_VERSION = "v2";
 
 /* Only ever used when SESSION_SECRET is unset outside production, so that
    `npm run dev` still signs someone in on a fresh clone. Production throws
@@ -137,8 +154,9 @@ export async function createSessionToken(
   account: { id: string; username: string },
   ttlSeconds: number = SESSION_TTL_SECONDS
 ): Promise<{ token: string; expiresAt: number }> {
-  const expiresAt = Math.floor(Date.now() / 1000) + ttlSeconds;
-  const payload: TokenPayload = { s: account.id, u: account.username, e: expiresAt };
+  const issuedAt = Math.floor(Date.now() / 1000);
+  const expiresAt = issuedAt + ttlSeconds;
+  const payload: TokenPayload = { s: account.id, u: account.username, e: expiresAt, i: issuedAt };
 
   const body = `${TOKEN_VERSION}.${bytesToBase64Url(new TextEncoder().encode(JSON.stringify(payload)))}`;
   const signature = await crypto.subtle.sign(
@@ -183,7 +201,12 @@ export async function verifySessionToken(token: string | undefined | null): Prom
     if (!valid) return null;
 
     const payload = JSON.parse(new TextDecoder().decode(base64UrlToBytes(encodedPayload))) as TokenPayload;
-    if (typeof payload?.s !== "string" || typeof payload?.u !== "string" || typeof payload?.e !== "number") {
+    if (
+      typeof payload?.s !== "string" ||
+      typeof payload?.u !== "string" ||
+      typeof payload?.e !== "number" ||
+      typeof payload?.i !== "number"
+    ) {
       return null;
     }
     if (payload.e <= Math.floor(Date.now() / 1000)) return null;
@@ -196,6 +219,7 @@ export async function verifySessionToken(token: string | undefined | null): Prom
          whenever their cookie happens to expire. */
       isAdmin: isAdminUsername(payload.u),
       expiresAt: payload.e,
+      issuedAt: payload.i,
     };
   } catch {
     return null;

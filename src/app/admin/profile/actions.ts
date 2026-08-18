@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
+import { comparePassword } from "@/lib/auth";
+import { requireAdminAction } from "@/lib/authGuard";
 import { storagePathOf, supabaseAdmin, UPLOADS_BUCKET } from "@/lib/supabaseAdmin";
 import type { JsonRecord } from "@/types";
 import {
@@ -88,6 +90,12 @@ async function removeFromStorage(url: string): Promise<void> {
 }
 
 export async function deleteAttachmentAction(input: DeleteAttachmentInput): Promise<DeleteResult> {
+  /* Permanently destroys a trainee's uploaded file. A server action is a public
+     endpoint however it reads at the call site, so it asks for itself. */
+  if (!(await requireAdminAction())) {
+    return { success: false, error: "غير مصرح لك بهذا الإجراء" };
+  }
+
   try {
     const { profileId, field, url, monthIndex } = input;
 
@@ -160,6 +168,10 @@ export async function deleteAllAttachmentsAction(
   profileId: string,
   monthIndex: number | null
 ): Promise<DeleteResult & { deleted?: number }> {
+  if (!(await requireAdminAction())) {
+    return { success: false, error: "غير مصرح لك بهذا الإجراء" };
+  }
+
   try {
     if (!profileId || !isValidUUID(profileId)) {
       return { success: false, error: "معرّف المشترك غير صالح" };
@@ -205,7 +217,197 @@ export async function deleteAllAttachmentsAction(
   }
 }
 
-export async function deleteSubscriberAction(id: string, arg?: any): Promise<any> { return {success: true}; }
-export async function deleteMonthHistoryAction(id: string, monthId: string): Promise<any> { return {success: true}; }
-export async function deleteEntireHistoryAction(id: string): Promise<any> { return {success: true}; }
-export async function restoreHistoryAction(id: string): Promise<any> { return {success: true}; }
+/* ------------------------------------------------------------------ *
+ * Removing a subscriber, and hiding months from their history
+ * ------------------------------------------------------------------ *
+ *
+ * All four of these existed as one-line stubs that took their arguments,
+ * ignored them and returned `{ success: true }`. The panel believed the answer
+ * and said "تم الحذف بنجاح" every time, so four buttons reported work that had
+ * never happened and no error anywhere said otherwise.
+ */
+
+/**
+ * Checks a password against an account, tolerating the legacy plaintext rows the
+ * sign-in path still allows for. Same rule as /api/auth/login: a value that is
+ * not a bcrypt hash is compared as plaintext, and a bcrypt fault is an error
+ * rather than a silent "wrong password".
+ */
+async function passwordMatches(accountId: string, submitted: string): Promise<boolean> {
+  const account = await prisma.accounts.findUnique({
+    where: { id: accountId },
+    select: { password: true },
+  });
+  if (!account) return false;
+
+  if (account.password.startsWith("$2a$") || account.password.startsWith("$2b$")) {
+    return comparePassword(submitted, account.password);
+  }
+  return submitted === account.password;
+}
+
+/**
+ * Deletes a subscriber: their profile, everything that hangs off it, their
+ * uploaded files, and the account they signed in with.
+ *
+ * The coach re-types their own password to get here. That is not authentication
+ * — the session already settled who is asking — it is confirmation, on an
+ * action with no undo, from a panel that may have been left open.
+ *
+ * Order matters. The attachment addresses are read before the row goes, because
+ * afterwards there is nothing left to read them from; the files are removed
+ * after the row, because a file deleted first would leave the coach looking at a
+ * profile full of links to nothing if the delete then failed.
+ */
+export async function deleteSubscriberAction(
+  profileId: string,
+  adminPassword: string
+): Promise<{ success: boolean; error?: string }> {
+  const session = await requireAdminAction();
+  if (!session) return { success: false, error: "غير مصرح لك بهذا الإجراء" };
+
+  if (!profileId || !isValidUUID(profileId)) {
+    return { success: false, error: "معرّف المشترك غير صالح" };
+  }
+  if (!adminPassword) {
+    return { success: false, error: "كلمة المرور مطلوبة" };
+  }
+
+  try {
+    if (!(await passwordMatches(session.userId, adminPassword))) {
+      console.warn(`Failed subscriber-delete confirmation by account ${session.userId}`);
+      return { success: false, error: "كلمة المرور غير صحيحة" };
+    }
+
+    const profile = await prisma.profiles.findUnique({
+      where: { id: profileId },
+      select: { id: true, data: true, user_id: true },
+    });
+    if (!profile) return { success: false, error: "المشترك غير موجود" };
+
+    const files = allAttachmentUrls(parseBlob(profile.data));
+
+    /* client_courses, diet_plans, training_cycles (and the sessions
+       under them), upload_sessions and workout_logs all cascade from this row —
+       see the onDelete: Cascade relations in prisma/schema.prisma. */
+    await prisma.profiles.delete({ where: { id: profileId } });
+
+    /* The sign-in account goes too, but only once it has no other profile left
+       to belong to.
+
+       This check is load-bearing, not a courtesy. `profiles.user_id` is
+       ON DELETE SET NULL — verified against the database, not assumed — so
+       deleting an account that still has another profile would not be refused:
+       it would succeed and quietly null that profile's `user_id`, leaving a
+       trainee who cannot sign in and a row nothing links to. */
+    if (profile.user_id) {
+      const remaining = await prisma.profiles.count({ where: { user_id: profile.user_id } });
+      if (remaining === 0) {
+        await prisma.accounts.delete({ where: { id: profile.user_id } });
+      }
+    }
+
+    for (const url of files) await removeFromStorage(url);
+
+    revalidatePath("/admin");
+    revalidatePath(`/admin/profile/${profileId}`);
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to delete subscriber:", error);
+    return { success: false, error: "حدث خطأ أثناء حذف المشترك" };
+  }
+}
+
+/**
+ * Reads the profile's blob, hands it to `edit`, and writes back whatever that
+ * returns. The three history actions differ only in that one function.
+ */
+async function updateBlob(
+  profileId: string,
+  edit: (blob: JsonRecord) => void
+): Promise<{ success: boolean; error?: string }> {
+  const session = await requireAdminAction();
+  if (!session) return { success: false, error: "غير مصرح لك بهذا الإجراء" };
+
+  if (!profileId || !isValidUUID(profileId)) {
+    return { success: false, error: "معرّف المشترك غير صالح" };
+  }
+
+  const profile = await prisma.profiles.findUnique({
+    where: { id: profileId },
+    select: { id: true, data: true },
+  });
+  if (!profile) return { success: false, error: "المشترك غير موجود" };
+
+  const blob = parseBlob(profile.data);
+  edit(blob);
+
+  await prisma.profiles.update({ where: { id: profileId }, data: { data: blob } });
+
+  revalidatePath("/dashboard");
+  revalidatePath(`/admin/profile/${profileId}`);
+  return { success: true };
+}
+
+/**
+ * Hides one month from the subscription history.
+ *
+ * A number, not a row: the months are derived from the activation date on every
+ * read — see the loop in /api/profile — so there is nothing to delete. Hiding
+ * is recorded as the month's number in `deleted_months`, which every reader
+ * (the API, the export page, both timelines) already skips. That is also what
+ * makes `restoreHistoryAction` possible: nothing was destroyed.
+ */
+export async function deleteMonthHistoryAction(
+  profileId: string,
+  monthNumber: number
+): Promise<{ success: boolean; error?: string }> {
+  if (!Number.isInteger(monthNumber) || monthNumber < 1) {
+    return { success: false, error: "رقم الشهر غير صالح" };
+  }
+
+  try {
+    return await updateBlob(profileId, (blob) => {
+      const hidden = Array.isArray(blob.deleted_months)
+        ? (blob.deleted_months as unknown[]).filter(
+            (m): m is number => typeof m === "number"
+          )
+        : [];
+      if (!hidden.includes(monthNumber)) hidden.push(monthNumber);
+      hidden.sort((a, b) => a - b);
+      blob.deleted_months = hidden;
+    });
+  } catch (error) {
+    console.error("Failed to hide month from history:", error);
+    return { success: false, error: "حدث خطأ أثناء حذف الشهر" };
+  }
+}
+
+/** Hides the whole history at once — the flag every reader checks first. */
+export async function deleteEntireHistoryAction(
+  profileId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    return await updateBlob(profileId, (blob) => {
+      blob.delete_all_history = true;
+    });
+  } catch (error) {
+    console.error("Failed to hide the subscription history:", error);
+    return { success: false, error: "حدث خطأ أثناء حذف السجل" };
+  }
+}
+
+/** Brings all of it back: both the per-month list and the all-at-once flag. */
+export async function restoreHistoryAction(
+  profileId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    return await updateBlob(profileId, (blob) => {
+      blob.deleted_months = [];
+      blob.delete_all_history = false;
+    });
+  } catch (error) {
+    console.error("Failed to restore the subscription history:", error);
+    return { success: false, error: "حدث خطأ أثناء استرجاع السجل" };
+  }
+}

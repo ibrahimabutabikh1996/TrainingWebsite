@@ -17,7 +17,7 @@ import {
   deleteAttachmentAction,
 } from "@/app/admin/profile/actions";
 import type { AttachmentField } from "@/app/admin/profile/attachments";
-import { Icon, type IconName } from "@/components/Icon";
+import { Icon } from "@/components/Icon";
 
 interface ProfileDetailsTabsProps {
   currentData: JsonRecord;
@@ -126,12 +126,16 @@ export default function ProfileDetailsTabs({ currentData, profileId }: ProfileDe
       : typeof data[field] === "string" ? [data[field] as string] : [];
   };
 
+  const paymentReceipts = getFiles("payment_receipt");
   const analysisFiles = getFiles("analysis_file");
   const supplementsPhotos = getFiles("supplements_photo");
   const dietHistoryFiles = getFiles("diet_history_file");
   const homeEquipmentPhotos = getFiles("home_equipment_photo");
 
   const otherFilesData = [
+    /* First in the list on purpose: it is the one attachment the coach looks for
+       before anything else, since it is what says the month was paid for. */
+    { field: "payment_receipt", label: "وصل الدفع", icon: "payments", files: paymentReceipts },
     { field: "analysis_file", label: "ملف التحاليل", icon: "science", files: analysisFiles },
     { field: "supplements_photo", label: "صورة المكملات", icon: "medication", files: supplementsPhotos },
     { field: "diet_history_file", label: "ملف النظام السابق", icon: "receipt_long", files: dietHistoryFiles },
@@ -139,6 +143,7 @@ export default function ProfileDetailsTabs({ currentData, profileId }: ProfileDe
   ] as const;
 
   const otherFilesCount =
+    paymentReceipts.length +
     analysisFiles.length + supplementsPhotos.length + dietHistoryFiles.length + homeEquipmentPhotos.length;
   const attachmentCount = bodyPhotos.length + otherFilesCount;
 
@@ -451,7 +456,7 @@ export default function ProfileDetailsTabs({ currentData, profileId }: ProfileDe
                       className="crm-btn-primary"
                       style={{ padding: '8px 14px', fontSize: '0.95rem', textDecoration: 'none', background: 'transparent', color: 'var(--text)', border: 'none' }}
                     >
-                      <Icon name={icon as any} style={{ fontSize: '20px' }} />
+                      <Icon name={icon} style={{ fontSize: '20px' }} />
                       {label} {files.length > 1 ? idx + 1 : ""}
                     </a>
                     <DeleteControl

@@ -3,6 +3,10 @@
    silently at runtime instead of at compile time. */
 
 export interface SubscriptionFormData {
+  /* Step 0 — the payment gate that opens the form. Registration only; a
+     renewal goes straight to step 1. */
+  payment_receipt: File[];
+
   // Step 1 — basic info
   fullname: string;
   phone: string;
@@ -66,4 +70,8 @@ export interface StepProps {
   formData: SubscriptionFormData;
   /* Patch semantics: steps pass only the keys they change. */
   update: (patch: Partial<SubscriptionFormData>) => void;
+  /* True when the visitor arrived on a `?plan=` link, so the plan is already
+     decided and the field only displays it. False when they reached /form with
+     no plan named — then they have to be able to pick one. */
+  planLocked?: boolean;
 }

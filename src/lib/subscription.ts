@@ -10,7 +10,6 @@
    and "who has expired?" becomes an indexed column comparison instead of
    digging the last element out of a JSON array. */
 
-import { toISODate, utcMidnight } from "@/lib/trainingDates";
 
 export const SUBSCRIPTION_DAYS = 30;
 
@@ -21,38 +20,12 @@ export function subscriptionEndFrom(from: Date = new Date()): Date {
   return new Date(from.getTime() + SUBSCRIPTION_DAYS * DAY_MS);
 }
 
-export interface SubscriptionWindow {
-  /** `YYYY-MM-DD` of the day the period began. */
-  start: string;
-  /** `YYYY-MM-DD` of its last day. */
-  end: string;
-}
-
-/**
- * The subscription period as calendar days — "the month" the trainee is inside,
- * running from the day they subscribed to the last day it covers. These are the
- * days a rest day may be placed on.
- *
- * Only the end is stored; the start is `SUBSCRIPTION_DAYS` back from it, which is
- * exactly where `subscriptionEndFrom` put it. Null when never activated.
- */
-export function subscriptionWindow(
-  endsAt: Date | string | null | undefined
-): SubscriptionWindow | null {
-  if (!endsAt) return null;
-  const end = endsAt instanceof Date ? endsAt : new Date(endsAt);
-  if (Number.isNaN(end.getTime())) return null;
-  /* Read as a calendar day, so the stored instant's time of day — an artefact of
-     whenever the coach happened to click activate — does not shift the window.
-     Read in local time, not UTC: `subscriptionEndFrom` stamped it from the same
-     clock `todayISODate` reads, and a subscription activated in the small hours
-     of a UTC+3 evening would otherwise come back a day early at both ends. */
-  const endDay = utcMidnight(end.getFullYear(), end.getMonth(), end.getDate());
-  return {
-    start: toISODate(new Date(endDay.getTime() - SUBSCRIPTION_DAYS * DAY_MS)),
-    end: toISODate(endDay),
-  };
-}
+/* `SubscriptionWindow` and `subscriptionWindow` stood here: the subscription
+   period expressed as a first and last calendar day. Their only readers were the
+   rest-days route and the coach's rest-days panel, which computed which days a
+   trainee was allowed to mark off. That feature is gone, and with it the only
+   question this pair answered. `subscriptionEndFrom` and `isSubscriptionExpired`
+   below cover everything the rest of the app asks about a subscription. */
 
 /** A subscription with no end date has never been activated — not expired. */
 export function isSubscriptionExpired(

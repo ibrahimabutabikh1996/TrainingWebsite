@@ -1,34 +1,37 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { requireUser, sessionOwnsProfile } from "@/lib/authGuard";
-import { PdfBusyError, renderPagePdf } from "@/lib/pdf";
+import { requireUser } from "@/lib/authGuard";
 import { SESSION_COOKIE } from "@/lib/sessionCookies";
+import { PdfBusyError, renderPagePdf, PDF_MAX_DURATION_SECONDS } from "@/lib/pdf";
 
 export const dynamic = "force-dynamic";
-export const runtime = "nodejs";
-/* Chromium needs longer than the platform's default. Written as a literal
-   because Next reads segment config statically — an imported constant is
-   rejected at build time with "Invalid segment configuration export". Keep it in
-   step with PDF_MAX_DURATION_SECONDS in @/lib/pdf. */
-export const maxDuration = 60;
 
-// Renders the /export-diet page in a headless browser and prints it to a
-// real PDF (selectable text, vector graphics) via Chrome's own print engine.
+/* Repeated from PDF_MAX_DURATION_SECONDS — Next reads segment config
+   statically and rejects an imported constant. */
+export const maxDuration = 60;
+void (PDF_MAX_DURATION_SECONDS satisfies typeof maxDuration);
+
+/**
+ * Prints /export-diet to a PDF. See the workout route for the reasoning; this
+ * one differs only in the page it prints and the key it accepts.
+ *
+ * /export-diet checks `sessionOwnsProfile` for itself, so forwarding the
+ * session cookie is both what makes the render work and what keeps it to the
+ * caller's own plan.
+ */
 export async function GET(request: NextRequest) {
   const auth = await requireUser();
   if (!auth.ok) return auth.response;
 
   const { searchParams, origin } = request.nextUrl;
-  const profileId = searchParams.get("profileId");
 
-  /* The diet sheet names the trainee and lists their allergies. */
-  if (profileId && !(await sessionOwnsProfile(auth.session, profileId))) {
-    return NextResponse.json({ error: "غير مصرح لك بهذا الإجراء" }, { status: 403 });
-  }
+  const params: Record<string, string> = {};
+  const profileId = searchParams.get("profileId");
+  if (profileId) params.profileId = profileId;
 
   try {
     const pdf = await renderPagePdf({
       path: "/export-diet",
-      params: profileId ? { profileId } : {},
+      params,
       origin,
       sessionCookie: request.cookies.get(SESSION_COOKIE)?.value,
     });
@@ -42,11 +45,11 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     if (error instanceof PdfBusyError) {
       return NextResponse.json(
-        { error: "جاري تجهيز ملف آخر، يرجى المحاولة بعد لحظات" },
+        { error: "جارٍ تجهيز ملف آخر — حاول بعد لحظات" },
         { status: 503, headers: { "Retry-After": "10" } }
       );
     }
-    console.error("Diet PDF generation failed:", error);
-    return NextResponse.json({ error: "تعذّر تجهيز الملف" }, { status: 500 });
+    console.error("Diet PDF render failed:", error);
+    return NextResponse.json({ error: "تعذّر إنشاء الملف" }, { status: 500 });
   }
 }

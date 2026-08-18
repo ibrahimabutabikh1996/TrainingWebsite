@@ -34,15 +34,15 @@
   z-index: 10;
   width: 100%;
   max-width: 1200px;
-  margin: 100px auto 60px auto;
-  padding: 0 32px;
+  margin: 32px auto 0 auto;
+  padding: 0 32px 104px 32px;
   animation: fadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @media (max-width: 768px) {
   .dashboard-main {
-    padding: 0 20px;
-    margin-top: 80px;
+    padding: 0 20px 96px 20px;
+    margin-top: 24px;
   }
 }
 
@@ -124,8 +124,8 @@
   align-items: center;
   gap: var(--space-4);
   padding: var(--space-3) 0;
-  /* Was rgba(…,0.03) — invisible in both themes, so rows ran together. The
-     token separator is the same hairline used everywhere else. */
+  /* Was rgba(…,0.03) — effectively invisible, so rows ran together. The token
+     separator is the same hairline used everywhere else. */
   border-bottom: 1px solid var(--border);
 }
 
@@ -270,6 +270,11 @@
 .image-logo-mark img {
   height: 100%;
   width: auto;
+  /* At a 48px height this image is 301px wide, which is more than the box
+     around it allows for. A max-width on the parent does not constrain a child,
+     so without this it simply overflowed — the same defect the sign-in header
+     had. Matches .nav-logo-mark img in landing.css, which already had it. */
+  max-width: 100%;
   max-height: 48px;
   object-fit: contain;
 }
@@ -322,53 +327,6 @@
   border-color: var(--primary);
   color: var(--text-inverse); /* Contrast text on primary */
 }
-
-.theme-toggle {
-  position: relative;
-  background: transparent;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-circle);
-  color: var(--text-secondary);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 42px;
-  height: 42px;
-  overflow: hidden;
-}
-.theme-toggle:hover {
-  background: var(--bg3);
-  border-color: var(--border-strong);
-  color: var(--primary-on-tint);
-}
-.theme-toggle:active {
-  transform: scale(0.94);
-}
-.theme-toggle svg {
-  position: absolute;
-  width: 18px;
-  height: 18px;
-  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s ease;
-}
-.theme-toggle .sun-icon {
-  opacity: 1;
-  transform: rotate(0deg) scale(1);
-}
-.theme-toggle .moon-icon {
-  opacity: 0;
-  transform: rotate(-90deg) scale(0.5);
-}
-[data-theme="light"] .theme-toggle .sun-icon {
-  opacity: 0;
-  transform: rotate(90deg) scale(0.5);
-}
-[data-theme="light"] .theme-toggle .moon-icon {
-  opacity: 1;
-  transform: rotate(0deg) scale(1);
-}
-
-
 
 /* ─── PROCESSING PROFILE SCREEN ─── */
 .processing-card {
@@ -457,89 +415,147 @@
   transform: translateY(1px);
 }
 
-/* ─── TRAINEE DASHBOARD HORIZONTAL 5-TAB NAVIGATION ─── */
-.dash-tabs-wrapper {
-  margin: 0 0 32px 0;
-  width: 100%;
+/* ─── TRAINEE DASHBOARD BOTTOM NAVIGATION ─── */
+.dash-bottom-nav {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  min-width: 320px;
+  max-width: 95vw;
+  height: 68px;
   display: flex;
-  justify-content: center;
-}
-
-/* Segmented control. The bar itself is the container; only the selected
-   segment gets fill, so the row reads as one control rather than five buttons. */
-.dash-tabs-bar {
-  display: flex;
+  flex-direction: row;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--space-1);
-  width: 100%;
-  max-width: 1100px;
-  background: var(--bg2);
+  justify-content: center;
+  padding: 0 16px;
+  background: color-mix(in srgb, var(--bg2) 85%, transparent);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: var(--space-1);
-  box-shadow: var(--elev-1);
+  border-radius: var(--radius-pill);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15), 0 0 0 1px color-mix(in srgb, var(--primary) 10%, transparent);
+  z-index: 100;
 }
 
-.dash-tab-btn {
-  flex: 1;
+.dash-brand-header {
+  display: flex;
+  align-items: center;
+}
+
+.dash-collapsed-logo-tile {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-md);
+  background: var(--primary-dim);
+  border: 1px solid var(--border-primary);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-2);
-  padding: var(--space-3) var(--space-4);
-  border: 1px solid transparent;
-  border-radius: var(--radius-md);
-  background: transparent;
-  color: var(--text-muted);
-  font-family: inherit;
-  font-size: var(--text-base);
-  font-weight: var(--weight-medium);
-  cursor: pointer;
-  white-space: nowrap;
-  position: relative;
-  overflow: hidden;
+  transition: border-color var(--dur) var(--ease);
 }
 
-.dash-tab-btn:hover:not(.active) {
-  background: var(--bg3);
-  color: var(--text);
-}
-
-.dash-tab-btn.active {
-  background: var(--primary);
-  color: var(--text-inverse);
+.dash-collapsed-logo-tile:hover {
   border-color: var(--primary);
-  font-weight: var(--weight-semibold);
 }
 
-.dash-tab-icon {
-  display: inline-flex;
+.dash-nav-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+}
+
+.dash-nav-link,
+.dash-logout-btn {
+  width: 52px;
+  height: 52px;
+  display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.15rem;
+  border-radius: var(--radius-md);
+  transition: background-color var(--dur) var(--ease), color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+  border: 1px solid transparent;
+  color: var(--text-secondary);
+  text-decoration: none;
+  background-color: transparent;
+  cursor: pointer;
+  position: relative;
+  padding: 0;
 }
 
-/* On screens under 992px, convert tab text to ONLY ICONS as requested by user to eliminate crowding */
-@media (max-width: 991px) {
-  .dash-tabs-bar {
+.dash-nav-link:hover:not(.active),
+.dash-logout-btn:hover {
+  color: var(--text);
+  background: color-mix(in srgb, var(--text) 6%, transparent);
+}
+
+.dash-nav-link.active {
+  background: var(--primary-dim);
+  color: var(--primary-on-tint);
+  border-color: var(--border-primary);
+}
+
+.dash-nav-link.active::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 50%;
+  transform: translateX(-50%);
+  height: 3px;
+  width: 20px;
+  background: var(--primary);
+  border-radius: var(--radius-pill);
+}
+
+.dash-nav-link .app-icon,
+.dash-logout-btn .app-icon {
+  transition: color var(--dur) var(--ease);
+  font-size: 24px;
+}
+
+.dash-nav-link:hover .app-icon,
+.dash-nav-link.active .app-icon {
+  color: var(--primary-on-tint);
+}
+
+.dash-bottom-actions {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.dash-logout-btn.danger-btn:hover {
+  color: var(--error-text);
+  background-color: color-mix(in srgb, var(--error) 12%, transparent);
+  border-color: color-mix(in srgb, var(--error) 30%, transparent);
+}
+
+@media (max-width: 768px) {
+  .dash-bottom-nav {
+    padding: 0 8px;
+    gap: 4px;
+  }
+  .dash-nav-container {
     gap: 2px;
-    padding: var(--space-1);
   }
-  .dash-tab-btn {
-    flex: 1;
-    padding: var(--space-3) var(--space-2);
-    gap: 0;
+  .dash-bottom-actions {
+    gap: 2px;
   }
-  .dash-tab-text {
-    display: none !important;
+  .dash-nav-link, .dash-logout-btn {
+    width: clamp(36px, 11vw, 44px);
+    height: clamp(36px, 11vw, 44px);
   }
-  .dash-tab-icon {
-    font-size: 1.4rem;
-    margin: 0 auto;
+  .dash-collapsed-logo-tile {
+    width: clamp(36px, 11vw, 44px);
+    height: clamp(36px, 11vw, 44px);
+  }
+  .dash-nav-link .app-icon, .dash-logout-btn .app-icon {
+    font-size: clamp(18px, 6vw, 24px);
   }
 }
-
 /* ─── HOME (DEFAULT TAB) OVERVIEW & STATISTICS CARDS ─── */
 .home-overview-container {
   display: flex;
@@ -604,7 +620,7 @@
 
 .home-stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
   gap: var(--space-6);
 }
 
@@ -741,8 +757,8 @@
 }
 
 /* Primary action. `--text-inverse` rather than the hardcoded #080808 this
-   inherited from the old gold theme — on the light theme's blue that literal
-   near-black was the wrong colour. */
+   inherited from the old gold theme, so the ink stays tied to the palette
+   instead of being pinned to one literal. */
 .dash-primary-btn,
 .hero-btn.primary-btn {
   display: inline-flex;
@@ -843,12 +859,62 @@
   transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), transform var(--dur-fast) var(--ease) !important;
 }
 .timeline-card-btn:hover {
-  background: var(--t-color-idle) !important;
+  /* --t-color-idle is defined nowhere, so this hover resolved to nothing and
+     the button stayed flat. --primary is what the paired --text-inverse
+     below was already written for. */
+  background: var(--primary) !important;
   color: var(--text-inverse) !important;
-  border-color: var(--t-color-idle) !important;
+  border-color: var(--primary) !important;
   transform: translateY(-2px) !important;
   box-shadow: var(--elev-2) !important;
 }
+
+/* ─── MORE MENU ─── */
+.dash-more-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: var(--text-base);
+  font-family: inherit;
+  font-weight: var(--weight-medium);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  cursor: pointer;
+  transition: all var(--dur) var(--ease);
+  text-align: right;
+  width: 100%;
+}
+
+.dash-more-item:hover {
+  background: var(--bg3);
+  color: var(--text);
+}
+
+.dash-more-item.danger {
+  color: var(--error);
+}
+
+.dash-more-item.danger:hover {
+  background: color-mix(in srgb, var(--error) 12%, transparent);
+  color: var(--error-text);
+}
+
+.dash-more-item .app-icon {
+  font-size: 20px;
+}
+
 .timeline-card-btn:active {
   transform: scale(0.97) translateY(0) !important;
 }
+/* Custom Hover Colors for CMS Badges */
+.crm-tag.plan-1:hover { background-color: #820911 !important; color: #FFFFFF !important; border-color: #FFFFFF !important; }
+.crm-tag.plan-2:hover { background-color: #FFD700 !important; color: #000000 !important; border-color: #FFFFFF !important; }
+.crm-tag.plan-3:hover { background-color: #370F75 !important; color: #FFFFFF !important; border-color: #FFFFFF !important; }
+/* Custom Default Colors for CMS Badges */
+.crm-tag.plan-1 { background-color: #820911 !important; color: #FFFFFF !important; border-color: #FFFFFF !important; }
+.crm-tag.plan-2 { background-color: #FFD700 !important; color: #000000 !important; border-color: #FFFFFF !important; }
+.crm-tag.plan-3 { background-color: #370F75 !important; color: #FFFFFF !important; border-color: #FFFFFF !important; }

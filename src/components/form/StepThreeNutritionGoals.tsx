@@ -1,6 +1,6 @@
 "use client";
 
-import { FormGrid, FormSection, SelectField, TextArea, TextInput, ChipGroup, Dropzone } from "./Fields";
+import { FormGrid, FormSection, SelectField, TextArea, TextInput, Dropzone } from "./Fields";
 import type { StepProps } from "./types";
 import { t, type TranslationKey } from "@/lib/translations";
 

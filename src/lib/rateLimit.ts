@@ -59,6 +59,12 @@ export interface RateLimitOptions {
 export const UPLOAD_SESSION_LIMIT: RateLimitOptions = { max: 6, windowMinutes: 15 };
 export const UPLOAD_SLOT_LIMIT: RateLimitOptions = { max: 60, windowMinutes: 15 };
 
+/* The intake form. Submitting it creates an account, a profile and a mail, so it
+   is the most expensive thing an anonymous caller can ask for. Five in a window
+   leaves room for a genuine retry after a validation error — or for a household
+   registering together — without leaving the table open to being filled. */
+export const SUBMIT_FORM_LIMIT: RateLimitOptions = { max: 5, windowMinutes: 15 };
+
 /** Greppable in logs, stable across refactors — alert on this string. */
 const DEGRADED_MARKER = "[rateLimit][DEGRADED]";
 

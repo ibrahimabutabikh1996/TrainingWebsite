@@ -22,9 +22,8 @@ export function arabicCount(n: number, forms: CountForms): string {
   return `${count} ${noun}`;
 }
 
-/* There is no WEEK here. A trainee's unit of progress is a cycle, which is
-   labelled by its number (`cycleTitle`) rather than counted, so no forms for it
-   are needed — and the week forms this file used to carry were never used. */
+/* There is no WEEK here: the week forms this file used to carry were never
+   used by anything. */
 
 export const DAY: CountForms = {
   one: "يوم",

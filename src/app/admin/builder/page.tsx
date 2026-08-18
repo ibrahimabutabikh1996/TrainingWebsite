@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
+import { requireAdminPage } from "@/lib/authGuard";
 import AdminBuilderClient from "./AdminBuilderClient";
-import type { Exercise, TraineeOption } from "@/types/admin";
+import { countDays, countExercises, type CourseTemplate, type Exercise, type TraineeOption } from "@/types/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -24,10 +25,17 @@ export default async function AdminBuilderPage({
 }: {
   searchParams: Promise<{ courseId?: string; traineeId?: string }>;
 }) {
+  /* The proxy already turned strangers away before this rendered — but a
+     matcher is a list of paths, and this page reads every subscriber it can
+     find. It proves the caller for itself rather than inheriting the answer.
+     See @/lib/authGuard. */
+  await requireAdminPage();
+
   const { courseId, traineeId } = await searchParams;
 
   let trainees: TraineeOption[] = [];
   let exercises: Exercise[] = [];
+  let templates: CourseTemplate[] = [];
   let courseToEdit: { id: string; name: string; description: string; days_data: unknown } | null = null;
   let assignedTraineeId = traineeId && isValidUUID(traineeId) ? traineeId : "";
 
@@ -70,6 +78,22 @@ export default async function AdminBuilderPage({
       category: ex.category ?? null,
     }));
 
+    /* Every course already built, for the "start from an existing course"
+       picker. Counted here so the days themselves never leave the server —
+       see `CourseTemplate`. */
+    const templateRows = await prisma.courses.findMany({
+      orderBy: { created_at: "desc" },
+      select: { id: true, name: true, description: true, days_data: true, created_at: true },
+    });
+    templates = templateRows.map((c) => ({
+      id: c.id,
+      name: c.name,
+      description: c.description ?? "",
+      days: countDays(c.days_data),
+      exercises: countExercises(c.days_data),
+      created_at: c.created_at.toISOString(),
+    }));
+
     if (courseId && isValidUUID(courseId)) {
       const course = await prisma.courses.findUnique({
         where: { id: courseId },
@@ -109,6 +133,10 @@ export default async function AdminBuilderPage({
           initialExercises={exercises}
           initialCourse={courseToEdit}
           initialTraineeId={assignedTraineeId}
+          /* Offered only when building something new. Editing an existing
+             course is a different act, and replacing its contents wholesale
+             from another course is not what the coach came here to do. */
+          initialTemplates={courseToEdit ? [] : templates}
         />
       </div>
     </div>

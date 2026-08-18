@@ -45,6 +45,12 @@ export type DayExercise = {
   name?: string;
   name_ar?: string;
   target_muscle?: string;
+  /* Copied from the library alongside the name, for the same reason — see
+     `useCourseBuilder`, which writes it when the coach adds the exercise. It
+     was missing from this type while being written and read, so the export
+     sheet had to reach for it through a cast. Rows saved before it existed do
+     not carry it; the export falls back to a live lookup by `refId`. */
+  video_url?: string | null;
   sets?: number;
   reps?: string[] | string | number;
   rest_from?: string;
@@ -87,6 +93,21 @@ export type Course = {
 /* Names of the trainees a course is currently assigned to, keyed by course id. */
 export type CourseAssignments = Record<string, string[]>;
 
+/**
+ * A "custom" row is a free-text line the coach writes themselves: a title plus
+ * four columns they define. It is not a library exercise and carries no sets,
+ * reps or rest — the builder creates it with nothing but `is_custom` and the
+ * four columns, and library rows always carry a `refId`.
+ *
+ * It lives here, beside the types, because the editor, the course library and
+ * the PDF export all have to agree on the answer. Each of them used to decide
+ * for itself, which is how the export came to print a 3×10 and a 60–90s rest
+ * for rows that never had either.
+ */
+export function isCustomExercise(ex: Partial<DayExercise> | null | undefined): boolean {
+  return !!ex && (ex.is_custom === true || !ex.refId);
+}
+
 /** Narrows a jsonb days_data blob to the day list, tolerating legacy rows. */
 export function asDays(raw: unknown): Day[] {
   if (!Array.isArray(raw)) return [];
@@ -104,6 +125,25 @@ export function asDays(raw: unknown): Day[] {
 export function countDays(raw: unknown): number {
   return asDays(raw).length;
 }
+
+/**
+ * A library course as the builder's "start from an existing course" list shows
+ * it: enough to recognise and choose one, and no `days_data`.
+ *
+ * The blob stays on the server deliberately. The list is every course the coach
+ * has ever built, and shipping all of their days to the browser to render a
+ * name and two numbers would grow with the library forever — the counts are
+ * taken where the rows are read, and the days of the one course that gets
+ * picked are fetched on its own.
+ */
+export type CourseTemplate = {
+  id: string;
+  name: string;
+  description: string;
+  days: number;
+  exercises: number;
+  created_at: string;
+};
 
 /** Total exercises across every day. */
 export function countExercises(raw: unknown): number {

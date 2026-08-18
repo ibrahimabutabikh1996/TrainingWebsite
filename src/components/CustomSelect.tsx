@@ -17,6 +17,10 @@ interface CustomSelectProps {
   placeholder?: string;
   disabled?: boolean;
   className?: string;
+  /* Goes on the trigger, so a `<label htmlFor>` still reaches the control after
+     a native <select> is replaced by this. Without it the label points at an id
+     that no longer exists, which is worse for a screen reader than no label. */
+  id?: string;
 }
 
 export function CustomSelect({
@@ -26,6 +30,7 @@ export function CustomSelect({
   placeholder,
   disabled,
   className = "",
+  id,
 }: CustomSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -49,8 +54,11 @@ export function CustomSelect({
     <div className={`custom-select-container ${className}`} ref={containerRef}>
       <button
         type="button"
+        id={id}
         className={`custom-select-trigger ${isOpen ? "open" : ""}`}
         disabled={disabled}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
         onClick={() => !disabled && setIsOpen(!isOpen)}
       >
         <span className="custom-select-label" style={{ opacity: !selectedOption ? 0.6 : 1 }}>

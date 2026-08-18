@@ -1,20 +1,31 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { requireUser } from "@/lib/authGuard";
 import { isSubscriptionExpired } from "@/lib/subscription";
 import { asMeals, planTotals, type DietPlan } from "@/types/diet";
 import { toISODate } from "@/lib/trainingCycle";
 
+/**
+ * GET /api/profile → the signed-in trainee's own profile.
+ *
+ * Whose profile this is comes from the session cookie, not from the query
+ * string. It used to come from `?userId=`, which the dashboard read out of
+ * `localStorage` — so the answer to "whose data may I have?" was whatever the
+ * browser last wrote there. Editing that one value in a console returned
+ * somebody else's intake answers, health notes, measurements and photos.
+ *
+ * The coach may still name a `userId` explicitly, because the panel is built on
+ * reading other people's files; nobody else's is even looked at.
+ */
 export async function GET(request: Request) {
+  const auth = await requireUser();
+  if (!auth.ok) return auth.response;
+
   try {
     const { searchParams } = new URL(request.url);
-    const userId = searchParams.get("userId");
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: "الرقم التعريفي مطلوب (userId)" },
-        { status: 400 }
-      );
-    }
+    const requested = searchParams.get("userId");
+    const userId =
+      auth.session.isAdmin && requested ? requested : auth.session.userId;
 
     // 1. Fetch the user's profile
     const profile = await prisma.profiles.findFirst({
@@ -63,53 +74,45 @@ export async function GET(request: Request) {
        whether the very same subscription had expired. */
     const isExpired = isSubscriptionExpired(profile.subscription_ends_at);
 
-    /* Calculate completed training cycles and collect all workout dates associated with the trainee */
-    let completedCycles = 0;
-    let workoutDates: string[] = [];
-    try {
-      const allCycles = await prisma.training_cycles.findMany({
-        where: { profile_id: profile.id },
-        select: {
-          days_count: true,
-          completed_at: true,
-          training_sessions: {
-            select: { performed_on: true },
-          },
-        },
-      });
-      const datesSet = new Set<string>();
-      allCycles.forEach((c) => {
-        c.training_sessions.forEach((s) => {
-          if (s.performed_on !== null) {
-            datesSet.add(toISODate(s.performed_on));
-          }
-        });
-      });
-      const allLogs = await prisma.workout_logs.findMany({
-        where: { profile_id: profile.id },
-        select: { session_date: true },
-      });
-      allLogs.forEach((l) => {
-        if (l.session_date !== null && l.session_date !== undefined) {
-          datesSet.add(toISODate(l.session_date));
-        }
-      });
-      workoutDates = Array.from(datesSet);
-
-      // Ensure only truly finished cycles (with completed_at set and all sessions performed) are counted
-      completedCycles = allCycles.filter((c) => {
-        const doneSessions = c.training_sessions.filter((s) => s.performed_on !== null).length;
-        return c.completed_at !== null && doneSessions >= c.days_count && c.days_count > 0;
-      }).length;
-    } catch (err) {
-      console.error("Failed to count completed training cycles or fetch workout dates:", err);
-    }
-
     // Calculate actual prescribed calories from the coach's diet plan if available
     let actualCalories = data.dietCalories || null;
     if (dietPlans && dietPlans.length > 0) {
       const calculated = Math.round(planTotals(dietPlans[0].meals).calories);
       if (calculated > 0) actualCalories = calculated;
+    }
+
+    // Build basic monthly history timeline
+    const monthNamesAr = ["الأول", "الثاني", "الثالث", "الرابع", "الخامس", "السادس", "السابع", "الثامن", "التاسع", "العاشر", "الحادي عشر", "الثاني عشر"];
+    const monthlyHistory = [];
+    const regDate = data.activation_date ? new Date(data.activation_date) : (profile.created_at ? new Date(profile.created_at) : new Date());
+    const now = new Date();
+    const diffMs = now.getTime() - regDate.getTime();
+    const totalDays = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
+    const totalMonths = Math.max(1, Math.floor(totalDays / 30) + 1);
+
+    const deletedMonths = Array.isArray(data.deleted_months) ? data.deleted_months : [];
+    const deleteAllHistory = Boolean(data.delete_all_history);
+
+    for (let m = 1; m <= totalMonths; m++) {
+      if (deleteAllHistory || deletedMonths.includes(m)) {
+        continue;
+      }
+      const start = new Date(regDate.getTime() + (m - 1) * 30 * 86400000);
+      const end = new Date(regDate.getTime() + m * 30 * 86400000);
+      const isCurrent = m === totalMonths;
+      
+      const arabicIdx = m - 1;
+      const monthTitle = arabicIdx < monthNamesAr.length ? `الشهر ${monthNamesAr[arabicIdx]}` : `الشهر رقم ${m}`;
+
+      monthlyHistory.push({
+        monthNumber: m,
+        monthName: monthTitle,
+        startDate: toISODate(start),
+        endDate: toISODate(end),
+        status: isCurrent ? "current" : "completed",
+        workout: null,
+        diet: null,
+      });
     }
 
     // Prepare response data mapped to UI needs
@@ -134,14 +137,13 @@ export async function GET(request: Request) {
       workouts: Array.isArray(courseData) ? courseData : (courseData?.workouts || []),
       measurements: data.measurements || null,
       photos: data.photos || null,
+      weightLogs: data.weightLogs || [],
       raw_answers: data, // Return all raw answers for the dashboard
       isExpired: isExpired,
       created_at: profile.created_at ? profile.created_at.toISOString() : undefined,
       activation_date: data.activation_date || (profile.created_at ? profile.created_at.toISOString() : null),
       subscription_ends_at: profile.subscription_ends_at ? profile.subscription_ends_at.toISOString() : null,
-      completedWorkoutDays: completedCycles,
-      completedCycles: completedCycles,
-      workoutDates: workoutDates,
+      monthlyHistory: monthlyHistory,
     };
 
     return NextResponse.json({

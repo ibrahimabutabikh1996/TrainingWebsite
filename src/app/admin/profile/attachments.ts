@@ -2,8 +2,9 @@
    A `"use server"` module may only export async functions, so the constant and
    the types that both sides need live here instead. */
 
-/** The four things the registration form can attach. */
+/** What the registration form can attach. */
 export const ATTACHMENT_FIELDS = [
+  "payment_receipt",
   "analysis_file",
   "supplements_photo",
   "diet_history_file",

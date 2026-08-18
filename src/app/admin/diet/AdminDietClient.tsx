@@ -29,6 +29,12 @@ export default function AdminDietClient({ initialSources }: { initialSources: Nu
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSource, setEditingSource] = useState<NutritionSource | null>(null);
+
+  /* Bumped on every open, and passed to the modal as its `key`, so React
+     rebuilds it from scratch and its fields initialise from `editingSource`.
+     This is what resets the form — the modal has no effect doing it a second
+     time. Both are set in the same handler, so the remount already sees the new
+     source. Don't drop one without the other. */
   const [modalKey, setModalKey] = useState(0);
 
   const openAddModal = () => {
@@ -187,7 +193,14 @@ export default function AdminDietClient({ initialSources }: { initialSources: Nu
             return (
               <article key={source.id} className="diet-card-minimal">
                 <div className="diet-card-minimal-icon">
-                  <img src={badge.image} alt={source.name} />
+                  {/* The source's own photograph when it has one, the category
+                      picture when it does not. `image_url` was written by the
+                      form, saved by the action, read back by the page and passed
+                      down here — and then never rendered by anything, so every
+                      card showed one of five generic category pictures and the
+                      photograph the coach uploaded for this food was stored and
+                      never seen. */}
+                  <img src={source.image_url || badge.image} alt={source.name} loading="lazy" />
                 </div>
 
                 <div className="diet-card-minimal-text">

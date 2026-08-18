@@ -22,6 +22,8 @@ const ALLOWED_KEYS = [
   "injuries", "meas_arm", "meas_waist", "meas_hips", "meas_leg",
   "supplements_list", "diet_history", "last_diet_fail", "eating_reason",
   "analysis_file", "body_photos", "supplements_photo", "diet_history_file",
+  // step 0
+  "payment_receipt",
   "username", "password",
 ] as const;
 
@@ -41,6 +43,40 @@ const NUMERIC_KEYS: Record<string, { min: number; max: number }> = {
   height: { min: 100, max: 250 },
   target_weight: { min: 30, max: 300 },
 };
+
+/* How long any one answer may be.
+ *
+ * There was no ceiling of any kind: `profiles.data` is a jsonb column and the
+ * route wrote whatever arrived, so a single submission could carry megabytes of
+ * text in `diet_history` or `allergies` and the only limit was the platform's
+ * body size. Nothing here is meant to be an essay — the longest of them are a
+ * few sentences about an injury or a past diet — and the admin panel renders
+ * them into table cells.
+ *
+ * Generous on purpose: the point is a ceiling, not a word count, and a rejected
+ * genuine answer is worse than a long one. Counted in code units, which for
+ * Arabic is close enough to characters for a bound this loose. */
+const MAX_ANSWER_LENGTH = 2_000;
+
+/** Free-text fields where someone may legitimately keep writing. */
+const LONG_ANSWER_KEYS = new Set([
+  "injuries", "allergies", "fav_foods", "supplements_list",
+  "diet_history", "last_diet_fail", "eating_reason", "workout_type_other_desc",
+]);
+
+/** Everything else is a name, a choice or a short phrase. */
+const MAX_SHORT_ANSWER_LENGTH = 200;
+
+/* Credentials. The account these create is the trainee's only way back in, and
+   the row lives in `accounts.username`, which is unique — so a name has to be
+   something a person can be told over the phone and type again.
+   Imported rather than restated: /api/admin/create-account makes accounts too,
+   and the two rules must not drift apart. */
+import {
+  MAX_PASSWORD_LENGTH,
+  MIN_PASSWORD_LENGTH,
+  USERNAME_PATTERN,
+} from "@/lib/auth";
 
 export interface ValidationResult {
   ok: boolean;
@@ -116,6 +152,56 @@ export function validateSubmission(input: unknown): ValidationResult {
       errors.push(`${key} must be numeric, got ${JSON.stringify(raw)}`);
     } else if (n < range.min || n > range.max) {
       errors.push(`${key} out of range (${range.min}-${range.max}): ${n}`);
+    }
+  }
+
+  /* Length, on every string that arrives — including the entries of the one
+     array field, since `workout_type_exp` is a list of strings and an unbounded
+     list of unbounded strings is the same problem wearing a hat. */
+  const checkLength = (key: string, value: unknown, label = key) => {
+    if (typeof value !== "string") return;
+    const max = LONG_ANSWER_KEYS.has(key) ? MAX_ANSWER_LENGTH : MAX_SHORT_ANSWER_LENGTH;
+    if (value.length > max) {
+      errors.push(`${label} is too long (${value.length} > ${max})`);
+    }
+  };
+
+  for (const [key, value] of Object.entries(data)) {
+    if (key === "username" || key === "password") continue;
+    if (Array.isArray(value)) {
+      if (value.length > 50) errors.push(`${key} has too many entries (${value.length} > 50)`);
+      value.slice(0, 50).forEach((entry, i) => checkLength(key, entry, `${key}[${i}]`));
+      continue;
+    }
+    checkLength(key, value);
+  }
+
+  /* Credentials are optional — the form has always allowed a submission with no
+     account attached — but if one is being created it has to be usable. There is
+     no length or shape check anywhere on the client, so this is the only one. */
+  const username = data.username;
+  const password = data.password;
+
+  if (typeof username === "string" && username !== "") {
+    if (!USERNAME_PATTERN.test(username)) {
+      errors.push("username must be 3-32 characters of letters, digits, dot, underscore or hyphen");
+    }
+    if (typeof password !== "string" || password === "") {
+      errors.push("password is required when a username is given");
+    }
+  }
+
+  if (typeof password === "string" && password !== "") {
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      errors.push(`password must be at least ${MIN_PASSWORD_LENGTH} characters`);
+    }
+    /* bcrypt truncates at 72 bytes; the cap is well above that and exists so a
+       megabyte "password" cannot be handed to the hashing round. */
+    if (password.length > MAX_PASSWORD_LENGTH) {
+      errors.push(`password must be at most ${MAX_PASSWORD_LENGTH} characters`);
+    }
+    if (typeof username !== "string" || username === "") {
+      errors.push("username is required when a password is given");
     }
   }
 

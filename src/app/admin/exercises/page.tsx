@@ -1,10 +1,17 @@
 import { prisma } from "@/lib/db";
+import { requireAdminPage } from "@/lib/authGuard";
 import AdminExercisesClient from "./AdminExercisesClient";
 import type { Exercise } from "@/types/admin";
 
 export const dynamic = "force-dynamic"; // Ensure fresh data on load
 
 export default async function AdminExercisesPage() {
+  /* The proxy already turned strangers away before this rendered — but a
+     matcher is a list of paths, and this page reads every subscriber it can
+     find. It proves the caller for itself rather than inheriting the answer.
+     See @/lib/authGuard. */
+  await requireAdminPage();
+
   let exercises: Exercise[] = [];
 
   try {

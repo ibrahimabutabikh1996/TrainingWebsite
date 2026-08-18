@@ -14,21 +14,33 @@ Use this design system consistently across every page, section, and component �
 
 # Theming
 
-Both themes are always supported. The active one is set by a `data-theme` attribute on `<html>` (`"light"` or `"dark"`), managed by `src/contexts/ThemeContext.tsx`:
+**The site is dark-only.** There is one palette, defined on bare `:root` in
+`globals.css`. There is no `data-theme` attribute, no `prefers-color-scheme`
+query, and no theme context — `src/contexts/` does not exist.
 
-* First visit follows `prefers-color-scheme`.
-* The user's choice is saved to `localStorage` under `theme` and wins afterwards.
-* `useTheme()` exposes `theme` and `toggleTheme()`.
+This file used to describe a two-theme system managed by
+`src/contexts/ThemeContext.tsx`, with a full light palette and a `useTheme()`
+hook. None of it is in the codebase. It is recorded here because the shape of the
+tokens still carries its fingerprints, and they are worth reading correctly
+rather than mistaking for dead weight:
 
-Never read the theme in CSS any other way, and never hardcode a colour that only works in one theme. Every colour comes from a token so both themes resolve correctly.
+* `--primary-on-tint`, `--success-text`, `--warning-text`, `--error-text` are
+  each an **alias of the matching fill**. They were the light theme's darker
+  foregrounds. Keep using them for text and icons — the distinction between a
+  fill and a foreground is real and the stylesheets are written against it, so
+  reintroducing a second palette stays a change to `globals.css` alone.
+* The `--muted`, `--muted2`, `--card-bg`, `--input-bg`, `--text-main` family are
+  legacy aliases for older components. Prefer the primary names in new code.
+
+Still true, and the reason all of this stays token-driven: **never hardcode a
+colour.** A literal in a component is a colour that cannot be changed from one
+place, which is what put ~90 hex values into the interface files.
 
 ---
 
 # Color System
 
 Monochromatic blue. Blue is the accent — never a page background.
-
-## Dark Theme
 
 ### Primary
 
@@ -57,8 +69,8 @@ Ascending lightness — keeps elevated surfaces distinct from the page.
 
 ### Borders
 
-* `--border`: `#243342`
-* `--border-strong`: `#3E5265`
+* `--border`: `#162235`
+* `--border-strong`: `#22334D`
 * `--border-primary`: `rgba(96, 165, 250, 0.30)`
 
 ### Elevation
@@ -69,82 +81,58 @@ Ascending lightness — keeps elevated surfaces distinct from the page.
 
 ---
 
-## Light Theme
+## Plan Accents
 
-### Primary
+One colour per membership tier: `--plan-1` `#820911`, `--plan-2` `#FFD700`,
+`--plan-3` `#370F75`, each with an `-rgb` companion and a `--plan-n-text`
+foreground for labels laid on the fill.
 
-* Primary: `#2563EB` (`--primary-rgb: 37, 99, 235`)
-* Hover: `#1D4ED8`
-* Light: `#3B82F6`
-* Active: `#1E40AF`
-* Dim: `rgba(37, 99, 235, 0.10)`
-* **As text/icon**: `--primary-on-tint` = `--primary-active` `#1E40AF`
-
-### Backgrounds
-
-* `--bg`: `#F8FAFC`
-* `--bg2`: `#D9EAFD`
-* `--bg3`: `#BCCCDC`
-* `--bg4`: `#9AA6B2`
-
-### Text
-
-* `--text`: `#0F172A`
-* `--text-secondary`: `#475569`
-* `--text-muted`: `#5B6779`
-* `--text-inverse`: `#FFFFFF`
-
-### Borders
-
-* `--border`: `#BCCCDC`
-* `--border-strong`: `#9AA6B2`
-* `--border-primary`: `rgba(37, 99, 235, 0.35)`
-
-### Elevation
-
-* `--elev-1`: `0 1px 2px rgba(15, 23, 42, 0.05)`
-* `--elev-2`: `0 2px 8px rgba(15, 23, 42, 0.06)`
-* `--elev-3`: `0 12px 32px rgba(15, 23, 42, 0.10)`
-
----
+The landing page remaps `--primary` to the tier's colour inside each plan card,
+and the CRM tints its plan tags with them. **They must always stay defined:**
+`--primary: var(--plan-1)` with `--plan-1` missing makes `--primary` itself
+resolve to nothing, which silently strips the brand colour and the border from
+everything inside the card.
 
 ## Status Colors
 
 Each status has a **fill** and a **foreground**. Never use the fill as text.
 
-| Fill      | Dark      | Light     | Foreground        | Dark          | Light     |
-| --------- | --------- | --------- | ----------------- | ------------- | --------- |
-| `--success` | `#22C55E` | `#16A34A` | `--success-text` | = `--success` | `#14532D` |
-| `--warning` | `#FBBF24` | `#F59E0B` | `--warning-text` | = `--warning` | `#78350F` |
-| `--error`   | `#F87171` | `#DC2626` | `--error-text`   | = `--error`   | `#991B1B` |
-| `--info`    | `#60A5FA` | `#2563EB` | —                 |               |           |
+| Fill        | Value     | Foreground       | Value         |
+| ----------- | --------- | ---------------- | ------------- |
+| `--success` | `#22C55E` | `--success-text` | = `--success` |
+| `--warning` | `#FBBF24` | `--warning-text` | = `--warning` |
+| `--error`   | `#F87171` | `--error-text`   | = `--error`   |
+| `--info`    | `#60A5FA` | —                |               |
 
-The light foregrounds are calibrated against **`--bg3`**, not `--bg2`. A shade that
-clears AA on a card still lands at 3.9–4.3:1 on the tinted rows and tiles inside
-that card, and those are exactly where status text appears.
-
-A status **fill** is sized for badges, dots and edges — not for carrying text. In
-the light theme `--success` under white text is only 3.3:1, so a filled button in
-a status colour uses the `-text` token as its fill and `--text-inverse` on top.
+The foregrounds alias the fills, because these are already light shapes on a
+near-black page. Keep using the `-text` names for text and icons anyway — see
+the note under **Theming** for why the distinction is worth preserving even
+while the two resolve the same.
 
 Tinted status backgrounds: `--success-bg`, `--error-bg`.
 
 ## Training-Day Palette
 
-The one categorical set in the system: `--day-1` … `--day-8`, each with a
-`--day-n-text` partner. Used to give every day of a training cycle its own
-identity (day buttons, session headers, accent edges, confetti).
+Eight colours giving every day of a training cycle its own identity — day
+buttons, session headers, accent edges.
 
-Same contract as the status colours — `--day-n` is a fill and always carries
-`--text-inverse`; `--day-n-text` is the only one allowed to be text or an icon.
-Dark uses the 400 level for both roles; light uses 700 for fills and 800/900 for
-foregrounds.
+They are **not tokens**. They are a literal array, `DAY_ACCENT_COLORS` in
+`src/components/dashboard/WorkoutPlan.tsx`, indexed by day number and wrapping
+after eight:
 
-`WorkoutPlan` remaps the brand tokens to the active day inside the session
-subtree (`--primary`, `--primary-on-tint`, `--primary-dim`, `--border-primary`),
-so ordinary token-driven components pick up the day's hue with no extra work.
-**Remap the foreground with the fill** — leaving `--primary-on-tint` behind makes
-half the subtree blue while the other half turns the day's colour.
+`#E8C96A` gold · `#F97316` orange · `#10B981` emerald · `#A855F7` purple ·
+`#EF4444` crimson · `#EC4899` magenta · `#14B8A6` teal · `#8B5CF6` violet
+
+`WorkoutPlan` sets the chosen one as a single custom property, `--day-accent`,
+on the element itself; `workout-log.css` reads it through
+`var(--day-accent, var(--primary))` and mixes it with `color-mix()` for the
+tinted background and border. Nothing else in the system is remapped — the rest
+of the subtree stays brand blue.
+
+This is the one place the codebase keeps colour outside `globals.css`. If it
+moves, it should move as `--day-1` … `--day-8` on `:root` with the component
+selecting rather than defining. Until then, do not add a ninth colour anywhere
+else and expect it to participate.
 
 ## Surface Utilities
 
@@ -287,7 +275,7 @@ Container at `--radius-lg` with `--space-1` padding; segments at `--radius-md`. 
 
 ### Tables
 
-Bordered wrapper (`--radius-lg`, `--elev-1`, `overflow: hidden`), `--bg3` header row, `--text-xs` `--text-secondary` headers (`--text-muted` cannot reach AA on `--bg3` in the light theme), hairline `--border` row separators, `--bg3` row hover, `--space-3 --space-4` cell padding. See `.co-minimal-table`, `.wl-exercise-table`, `.dpv-min-table` — all three follow this.
+Bordered wrapper (`--radius-lg`, `--elev-1`, `overflow: hidden`), `--bg3` header row, `--text-xs` `--text-secondary` headers (`--text-muted` cannot reach AA on `--bg3`), hairline `--border` row separators, `--bg3` row hover, `--space-3 --space-4` cell padding. See `.co-minimal-table`, `.wl-exercise-table`, `.dpv-min-table` — all three follow this.
 
 ### Modals and drawers
 
@@ -303,7 +291,7 @@ Bordered wrapper (`--radius-lg`, `--elev-1`, `overflow: hidden`), `--bg3` header
 * **No `transition: all`.** Name the properties; `all` animates layout and makes hovers feel heavy.
 * **No `!important` for styling.** It is only acceptable to defeat a third-party or inline style you cannot reach. If you reach for it to win a specificity fight, fix the selector instead.
 * **Restrained micro-interactions.** Hover lifts stay at 2–3px; scale stays under 1.06. Prefer a colour or border change over movement, especially for items in a list.
-* **Accessible contrast in both themes** (AA: 4.5:1 for body text, 3:1 for large), and a visible focus ring on everything focusable. The light theme is the one that catches people out — its `--bg2`/`--bg3` are saturated pale blues, not white, so a colour that passes on `--bg` can still fail on a card. Brand and status colours therefore split into a fill and a foreground: use `--primary-on-tint`, `--success-text`, `--warning-text`, `--error-text` for text and icons, and `--primary`/`--success`/`--warning`/`--error` only as fills.
+* **Accessible contrast** (AA: 4.5:1 for body text, 3:1 for large), and a visible focus ring on everything focusable. The trap on a near-black page is the ascending background scale: `--bg3` and `--bg4` are considerably lighter than `--bg`, so `--text-muted` that reads well on the page can fall under AA on a tinted row or a table header — which is why the table contract below specifies `--text-secondary` for headers. Brand and status colours split into a fill and a foreground: use `--primary-on-tint`, `--success-text`, `--warning-text`, `--error-text` for text and icons, and `--primary`/`--success`/`--warning`/`--error` only as fills.
 * **Responsive across desktop, tablet and mobile.** Two traps this codebase has already hit: responsive overrides must match the base rule's specificity (a bare `nav { }` will not beat `.landing-wrapper nav { }`), and grid/flex items need `min-width: 0` or their min-content width becomes a floor that overflows the container.
 * **Don't rely on `:hover` alone to reveal a control.** Touch devices never fire it. Pair it with a `@media (hover: none)` rule that shows the control outright.
 * **Every new page or component inherits this system automatically** unless I explicitly request otherwise.

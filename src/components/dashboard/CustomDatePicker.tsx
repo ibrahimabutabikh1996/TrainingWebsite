@@ -10,6 +10,7 @@ interface CustomDatePickerProps {
   maxDate?: string | null;
   onlyToday?: boolean;
   disabled?: boolean;
+  fullWidth?: boolean;
   onChange: (date: string | null) => void;
   onInvalidSelect?: () => void;
 }
@@ -21,7 +22,7 @@ const ArabicMonths = [
 
 const WeekDays = ["أحد", "إثن", "ثلا", "أرب", "خمي", "جمعة", "سبت"];
 
-export function CustomDatePicker({ value, minDate, maxDate, onlyToday = false, disabled = false, onChange, onInvalidSelect }: CustomDatePickerProps) {
+export function CustomDatePicker({ value, minDate, maxDate, onlyToday = false, disabled = false, fullWidth = false, onChange, onInvalidSelect }: CustomDatePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const popupRef = useRef<HTMLDivElement>(null);
 
@@ -29,10 +30,23 @@ export function CustomDatePicker({ value, minDate, maxDate, onlyToday = false, d
   const validYear = !isNaN(initialDate.getFullYear()) ? initialDate.getFullYear() : new Date().getFullYear();
   const validMonth = !isNaN(initialDate.getMonth()) ? initialDate.getMonth() : new Date().getMonth();
 
+  /* Which month the calendar is showing.
+   *
+   * Two things move it: the arrows, and a new `value` arriving from outside —
+   * so it is state, but state that has to follow a prop. That used to be an
+   * effect on `value`, which meant the calendar painted the old month first and
+   * the right one a render later.
+   *
+   * This is React's own recipe for it: remember the `value` this state was
+   * derived from, and when a different one arrives, adjust during the render
+   * that brought it. React re-runs this component immediately, before anything
+   * reaches the screen, so no wrong month is ever painted. */
   const [currentYear, setCurrentYear] = useState(validYear);
   const [currentMonth, setCurrentMonth] = useState(validMonth);
+  const [shownFor, setShownFor] = useState(value);
 
-  useEffect(() => {
+  if (value !== shownFor) {
+    setShownFor(value);
     if (value && value.length >= 10) {
       const d = new Date(value);
       if (!isNaN(d.getTime())) {
@@ -40,7 +54,7 @@ export function CustomDatePicker({ value, minDate, maxDate, onlyToday = false, d
         setCurrentMonth(d.getUTCMonth());
       }
     }
-  }, [value]);
+  }
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -107,7 +121,7 @@ export function CustomDatePicker({ value, minDate, maxDate, onlyToday = false, d
   };
 
   return (
-    <div style={{ position: "relative", display: "inline-block" }} ref={popupRef}>
+    <div style={{ position: "relative", display: fullWidth ? "block" : "inline-block", width: fullWidth ? "100%" : "auto" }} ref={popupRef}>
       {/* Trigger Pill Button */}
       <button
         type="button"
@@ -122,7 +136,9 @@ export function CustomDatePicker({ value, minDate, maxDate, onlyToday = false, d
           borderRadius: "14px",
           fontSize: "0.98rem",
           fontWeight: 700,
-          display: "inline-flex",
+          display: "flex",
+          width: fullWidth ? "100%" : "auto",
+          justifyContent: fullWidth ? "space-between" : "center",
           alignItems: "center",
           gap: "10px",
           cursor: disabled ? "not-allowed" : "pointer",

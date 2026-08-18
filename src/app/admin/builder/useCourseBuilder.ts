@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Day, DayExercise, Exercise } from "@/types/admin";
+import { Day, DayExercise, Exercise, isCustomExercise } from "@/types/admin";
 
 /* Collision-free ids. Date.now() was used before, which hands out the same id
    to two weeks/days/exercises created in the same millisecond — and since
@@ -48,25 +48,66 @@ export function normalizeDays(raw: unknown): Day[] {
     items = raw.flatMap((week: any) => week.days || []);
   }
 
+  /* Spread first, then backfill. This used to build each day and exercise from
+     a fixed list of fields, which made it a whitelist: anything not named was
+     dropped the moment a saved course was reopened. `custom_col_1`–`4` were the
+     visible casualty — the coach typed into the four extra columns, saved, and
+     reopened to find them blank — but `notes`, `is_custom` and the day's
+     `name`/`title` went the same way. days_data is a jsonb blob the editor round
+     trips wholesale, so preserving unknown keys is the correct default. */
   return items.map((day: Partial<Day>) => ({
+    ...day,
     id: day?.id || newId(),
     muscles: Array.isArray(day?.muscles)
       ? day.muscles.filter((m): m is string => typeof m === "string" && m.trim() !== "")
       : [],
     exercises: Array.isArray(day?.exercises)
-      ? day.exercises.map((ex: Partial<DayExercise>) => ({
-          id: ex?.id || newId(),
-          refId: ex?.refId || "",
-          name_ar: ex?.name_ar || "",
-          target_muscle: ex?.target_muscle || "",
-          sets: typeof ex?.sets === "number" ? ex.sets : (Array.isArray(ex?.reps) ? ex.reps.length : 3),
-          reps: Array.isArray(ex?.reps) ? ex.reps : ["10", "10", "10"],
-          rest_from: ex?.rest_from || "60",
-          rest_from_unit: ex?.rest_from_unit || "ثانية",
-          rest_to: ex?.rest_to || "90",
-          rest_to_unit: ex?.rest_to_unit || "ثانية",
-          rest_time: ex?.rest_time || "من 60 ثانية إلى 90 ثانية",
-        }))
+      ? day.exercises.map((ex: Partial<DayExercise>) => {
+          const base = {
+            ...ex,
+            id: ex?.id || newId(),
+            name_ar: ex?.name_ar || "",
+          };
+          /* A custom row has no sets, reps or rest to fall back to. Applying
+             the library defaults here is what turned every saved custom row
+             into a 3×10 exercise resting 60–90 seconds — values the coach
+             never typed, shown as if they had. */
+          if (isCustomExercise(ex)) {
+            const custom: Partial<DayExercise> = { ...base };
+            /* Rows saved before this fix already have those defaults baked into
+               the stored jsonb, so drop them on the way in too — otherwise the
+               invented numbers survive here and get written straight back out
+               on the next save. */
+            delete custom.sets;
+            delete custom.reps;
+            delete custom.rest_from;
+            delete custom.rest_from_unit;
+            delete custom.rest_to;
+            delete custom.rest_to_unit;
+            delete custom.rest_time;
+            return {
+              ...custom,
+              id: base.id,
+              is_custom: true,
+              custom_col_1: ex?.custom_col_1 || "",
+              custom_col_2: ex?.custom_col_2 || "",
+              custom_col_3: ex?.custom_col_3 || "",
+              custom_col_4: ex?.custom_col_4 || "",
+            };
+          }
+          return {
+            ...base,
+            refId: ex?.refId || "",
+            target_muscle: ex?.target_muscle || "",
+            sets: typeof ex?.sets === "number" ? ex.sets : (Array.isArray(ex?.reps) ? ex.reps.length : 3),
+            reps: Array.isArray(ex?.reps) ? ex.reps : ["10", "10", "10"],
+            rest_from: ex?.rest_from || "60",
+            rest_from_unit: ex?.rest_from_unit || "ثانية",
+            rest_to: ex?.rest_to || "90",
+            rest_to_unit: ex?.rest_to_unit || "ثانية",
+            rest_time: ex?.rest_time || "من 60 ثانية إلى 90 ثانية",
+          };
+        })
       : [],
   }));
 }

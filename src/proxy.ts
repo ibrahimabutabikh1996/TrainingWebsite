@@ -23,7 +23,7 @@ import { verifySessionToken } from "@/lib/session";
 import { SESSION_COOKIE } from "@/lib/sessionCookies";
 
 /** Paths only the coach may open. */
-const ADMIN_PREFIXES = ["/admin"];
+const ADMIN_PREFIXES = ["/admin", "/cms-preview"];
 
 export async function proxy(request: NextRequest) {
   const session = await verifySessionToken(request.cookies.get(SESSION_COOKIE)?.value);
@@ -49,10 +49,14 @@ export async function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     "/admin/:path*",
+    /* The content manager's preview of the home page. It sits outside /admin so
+       that it renders with the landing page's stylesheet alone rather than the
+       panel's, but it is the coach's screen and is gated like the rest of them. */
+    "/cms-preview",
     "/dashboard/:path*",
     "/account/:path*",
     "/export-workout",
-    "/export-diet",
     "/export-profile",
+    "/export-diet",
   ],
 };

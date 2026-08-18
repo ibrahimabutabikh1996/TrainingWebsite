@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Icon } from "@/components/Icon";
+import { useIsClient } from "@/hooks/useIsClient";
 
 interface WorkoutCompletionModalProps {
   isOpen: boolean;
@@ -31,8 +32,38 @@ const CONFETTI_COLORS = [
   "#ffffff", // White
 ];
 
+/* Scatter without `Math.random`.
+ *
+ * The pieces were laid out with six `Math.random()` calls each, in a `useMemo`
+ * — which still runs during render, so the render was not idempotent and React
+ * could produce two different layouts for the same component. It never looked
+ * wrong, because nobody compares two runs of a confetti burst; it was wrong in
+ * the way the rule is about.
+ *
+ * This is a plain integer hash of the piece's index and a channel number, which
+ * gives every piece its own unscattered-looking spread and gives the whole
+ * thing the same layout every time it is drawn. For 50 pieces of falling paper
+ * that is indistinguishable from random, and it is a pure function of the
+ * index. */
+function spread(index: number, channel: number): number {
+  let h = (index + 1) * 374_761_393 + channel * 668_265_263;
+  h = (h ^ (h >>> 13)) * 1_274_126_177;
+  return ((h ^ (h >>> 16)) >>> 0) / 4_294_967_296;
+}
+
+const CONFETTI: ConfettiPiece[] = Array.from({ length: 50 }, (_, i) => ({
+  id: i,
+  left: spread(i, 0) * 100,
+  size: Math.floor(spread(i, 1) * 10) + 8,
+  color: CONFETTI_COLORS[Math.floor(spread(i, 2) * CONFETTI_COLORS.length)],
+  delay: spread(i, 3) * 0.6,
+  duration: spread(i, 4) * 2 + 2.2,
+  rotation: spread(i, 5) * 720 - 360,
+  shape: i % 3 === 0 ? "star" : i % 2 === 0 ? "circle" : "rect",
+}));
+
 export function WorkoutCompletionModal({ isOpen, dayNumber, onClose }: WorkoutCompletionModalProps) {
-  const [mounted, setMounted] = useState(false);
+  const mounted = useIsClient();
 
   const handleClose = React.useCallback(() => {
     onClose();
@@ -40,10 +71,6 @@ export function WorkoutCompletionModal({ isOpen, dayNumber, onClose }: WorkoutCo
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
   }, [onClose]);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -55,18 +82,7 @@ export function WorkoutCompletionModal({ isOpen, dayNumber, onClose }: WorkoutCo
     }
   }, [isOpen, handleClose]);
 
-  const confetti = useMemo<ConfettiPiece[]>(() => {
-    return Array.from({ length: 50 }).map((_, i) => ({
-      id: i,
-      left: Math.random() * 100,
-      size: Math.floor(Math.random() * 10) + 8,
-      color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
-      delay: Math.random() * 0.6,
-      duration: Math.random() * 2 + 2.2,
-      rotation: Math.random() * 720 - 360,
-      shape: i % 3 === 0 ? "star" : i % 2 === 0 ? "circle" : "rect",
-    }));
-  }, []);
+  const confetti = CONFETTI;
 
   if (!mounted || !isOpen || typeof document === "undefined") return null;
 

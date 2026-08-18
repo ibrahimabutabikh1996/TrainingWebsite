@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { hashPassword } from "@/lib/auth";
+import { credentialError, hashPassword } from "@/lib/auth";
 import { requireAdmin } from "@/lib/authGuard";
 import type { JsonRecord } from "@/types";
 
@@ -17,12 +17,16 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-    
-    if (password.length < 8) {
-      return NextResponse.json(
-        { error: "كلمة المرور يجب أن تكون 8 أحرف على الأقل" },
-        { status: 400 }
-      );
+
+    /* The same rule the intake form applies — see `@/lib/auth`. This path used
+       to check the password's length and nothing about the username at all, so
+       an account could be made here that its owner then had to reproduce
+       exactly at a sign-in screen. `password.length` was also read off whatever
+       arrived: a number has no `length`, `undefined < 8` is false, and it went
+       through to bcrypt. */
+    const credentialProblem = credentialError(username, password);
+    if (credentialProblem) {
+      return NextResponse.json({ error: credentialProblem }, { status: 400 });
     }
 
     // Check if the username already exists
@@ -68,7 +72,9 @@ export async function POST(request: Request) {
         },
       });
 
-      let currentData = profile.data as JsonRecord;
+      /* `|| {}` for the same reason as /api/admin/renew-account: the column is
+         nullable, and assigning onto null throws. */
+      let currentData = (profile.data as JsonRecord) || {};
       if (typeof currentData === "string") {
         try { currentData = JSON.parse(currentData); } catch { currentData = {}; }
       }
@@ -95,6 +101,17 @@ export async function POST(request: Request) {
     });
     
   } catch (error: unknown) {
+    /* The look-up above and this insert are two statements. `accounts.username`
+       being unique is what actually prevents a duplicate; without this the
+       second of two simultaneous requests surfaced as "حدث خطأ" for something
+       the coach could have fixed by choosing another name. */
+    if ((error as { code?: string })?.code === "P2002") {
+      return NextResponse.json(
+        { error: "اسم المستخدم موجود مسبقاً، يرجى اختيار اسم آخر" },
+        { status: 400 }
+      );
+    }
+
     console.error("Create Account API Error:", error);
     return NextResponse.json(
       { error: "حدث خطأ أثناء إنشاء الحساب" },

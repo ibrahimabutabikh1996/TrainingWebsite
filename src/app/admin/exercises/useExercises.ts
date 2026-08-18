@@ -4,7 +4,7 @@ import { toast } from "react-hot-toast";
 import { Exercise } from "@/types/admin";
 
 /** The categories the form offers; also drives the filter and the counters. */
-export const CATEGORIES = ["مقاومة", "كارديو", "إطالة"] as const;
+export const CATEGORIES = ["مقاومة", "كارديو", "اطالة"] as const;
 
 export interface ExerciseFormValues {
   name_ar: string;
@@ -18,18 +18,18 @@ const MUSCLE_GROUPS = [
   "كل التمارين",
   "صدر",
   "ظهر",
-  "أكتاف",
+  "اكتاف",
   "ذراعين",
-  "أرجل",
+  "ارجل",
   "بطن"
 ];
 
 const MUSCLE_MAPPING: Record<string, string[]> = {
   "صدر": ["صدر", "بنج", "pectoral", "chest"],
   "ظهر": ["ظهر", "مجنص", "ترابيس", "قطني", "latissimus", "back", "traps", "lower back"],
-  "أكتاف": ["كتف", "أكتاف", "دالي", "deltoid", "shoulder"],
+  "اكتاف": ["كتف", "اكتاف", "دالي", "deltoid", "shoulder"],
   "ذراعين": ["باي", "تراي", "سواعد", "ساعد", "ذراع", "bicep", "tricep", "forearm", "arm"],
-  "أرجل": ["رجل", "أرجل", "فخذ", "أفخاذ", "سمان", "ربلة", "أرداف", "جلوت", "ضام", "مبعد", "رباعي", "خلفيات", "أوتار", "leg", "quad", "hamstring", "glute", "calf"],
+  "ارجل": ["رجل", "ارجل", "فخذ", "افخاذ", "سمان", "ربلة", "ارداف", "جلوت", "ضام", "مبعد", "رباعي", "خلفيات", "اوتار", "leg", "quad", "hamstring", "glute", "calf"],
   "بطن": ["بطن", "معدة", "خواصر", "مائلة", "abdomin", "abs", "oblique"],
 };
 

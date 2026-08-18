@@ -6,16 +6,14 @@ import toast, { Toaster } from "react-hot-toast";
 import type { NutritionSource, TraineeOption } from "@/types/admin";
 import { CustomSelect } from "@/components/CustomSelect";
 import {
-  MEAL_SLOTS,
   MAX_PLANS_PER_TRAINEE,
   defaultPlanName,
-  emptyMeals,
   itemFromSource,
   getCategoryBadge,
   normalizeFoodCategory,
   type DietPlan,
-  type MealSlotKey,
   type MealsData,
+  type Meal,
 } from "@/types/diet";
 import { saveDietPlanAction, deleteDietPlanAction } from "./actions";
 import { Icon } from "@/components/Icon";
@@ -59,7 +57,7 @@ export default function DietPlanBuilder({
   const [plans, setPlans] = useState<EditablePlan[]>(initialPlans);
   const [saved, setSaved] = useState<Record<number, string>>(() => buildSnapshots(initialPlans));
   const [activePosition, setActivePosition] = useState(initialPlans[0]?.position ?? 1);
-  const [pickerSlot, setPickerSlot] = useState<MealSlotKey | null>(null);
+  const [pickerMealId, setPickerMealId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
   const activePlan = plans.find((p) => p.position === activePosition) ?? null;
@@ -81,10 +79,10 @@ export default function DietPlanBuilder({
     setPlans((prev) => prev.map((p) => (p.position === activePosition ? fn(p) : p)));
   };
 
-  const updateMeal = (slot: MealSlotKey, fn: (meal: MealsData[MealSlotKey]) => MealsData[MealSlotKey]) => {
+  const updateMeal = (mealId: string, fn: (meal: Meal) => Meal) => {
     updateActivePlan((plan) => ({
       ...plan,
-      meals: { ...plan.meals, [slot]: fn(plan.meals[slot]) },
+      meals: plan.meals.map((m) => (m.id === mealId ? fn(m) : m)),
     }));
   };
 
@@ -95,35 +93,45 @@ export default function DietPlanBuilder({
       return;
     }
     setPlans((prev) =>
-      [...prev, { id: null, name: defaultPlanName(position), position, meals: emptyMeals() }].sort(
+      [...prev, { id: null, name: defaultPlanName(position), position, meals: [] }].sort(
         (a, b) => a.position - b.position
       )
     );
     setActivePosition(position);
   };
 
-  const handleAddItem = (slot: MealSlotKey, source: NutritionSource) => {
-    updateMeal(slot, (meal) => ({ ...meal, items: [...meal.items, itemFromSource(source)] }));
-    toast.success(`أُضيف ${source.name}`);
-  };
-
-  const handleRemoveItem = (slot: MealSlotKey, itemId: string) => {
-    updateMeal(slot, (meal) => ({ ...meal, items: meal.items.filter((i) => i.id !== itemId) }));
-  };
-
-  const handleQtyChange = (slot: MealSlotKey, itemId: string, raw: string) => {
-    const qty = Number(raw);
-    updateMeal(slot, (meal) => ({
-      ...meal,
-      items: meal.items.map((i) =>
-        i.id === itemId ? { ...i, qty: Number.isFinite(qty) && qty >= 0 ? qty : i.qty } : i
-      ),
+  const handleAddMeal = () => {
+    updateActivePlan((plan) => ({
+      ...plan,
+      meals: [...plan.meals, { id: crypto.randomUUID(), name: "", time: "", startNote: "", note: "", items: [] }],
     }));
   };
 
-  const handleWeightChange = (slot: MealSlotKey, itemId: string, raw: string) => {
+  const handleRemoveMeal = (mealId: string) => {
+    if (!confirm("هل أنت متأكد من حذف هذه الوجبة؟")) return;
+    updateActivePlan((plan) => ({
+      ...plan,
+      meals: plan.meals.filter((m) => m.id !== mealId),
+    }));
+  };
+
+  const handleAddItem = (mealId: string, source: NutritionSource) => {
+    updateMeal(mealId, (meal) => ({ ...meal, items: [...meal.items, itemFromSource(source)] }));
+    toast.success(`أُضيف ${source.name}`);
+  };
+
+  const handleRemoveItem = (mealId: string, itemId: string) => {
+    updateMeal(mealId, (meal) => ({ ...meal, items: meal.items.filter((i) => i.id !== itemId) }));
+  };
+
+  /* `handleQtyChange` used to live here, editing `item.qty` — a multiplier of a
+     100g serving. The builder asks for the weight directly now, so `qty` is
+     only read as a fallback when displaying a row saved before `weight`
+     existed, and nothing edits it. */
+
+  const handleWeightChange = (mealId: string, itemId: string, raw: string) => {
     const w = Number(raw);
-    updateMeal(slot, (meal) => ({
+    updateMeal(mealId, (meal) => ({
       ...meal,
       items: meal.items.map((i) =>
         i.id === itemId ? { ...i, weight: Number.isFinite(w) && w >= 0 ? w : i.weight } : i
@@ -131,8 +139,8 @@ export default function DietPlanBuilder({
     }));
   };
 
-  const handleUnitChange = (slot: MealSlotKey, itemId: string, newUnit: string) => {
-    updateMeal(slot, (meal) => ({
+  const handleUnitChange = (mealId: string, itemId: string, newUnit: string) => {
+    updateMeal(mealId, (meal) => ({
       ...meal,
       items: meal.items.map((i) =>
         i.id === itemId ? { ...i, unit: newUnit } : i
@@ -152,6 +160,10 @@ export default function DietPlanBuilder({
     }
     if (pending.some((p) => !p.name.trim())) {
       toast.error("اسم النظام الغذائي مطلوب");
+      return;
+    }
+    if (pending.some((p) => p.meals.some((m) => !m.name.trim()))) {
+      toast.error("يرجى تسمية جميع الوجبات");
       return;
     }
 
@@ -229,22 +241,22 @@ export default function DietPlanBuilder({
         <div className="diet-header-text">
           <h1>تصميم النظام الغذائي</h1>
           <p>
-            خمس وجبات ثابتة لكل نظام: الفطور، سناك، الغداء، سناك، العشاء. تُضاف الأصناف من مكتبة
-            المصادر الغذائية مع تحديد الكمية والوزن الموصى به لكل وجبة.
+            تُضاف الوجبات بشكل غير محدود. لكل وجبة يُضاف الأصناف من مكتبة المصادر مع إمكانية تسمية الوجبة وتحديد الوقت.
           </p>
         </div>
 
         <div className="dplan-header-actions">
           <label className="dplan-trainee">
             <span>المشترك</span>
-            <select value={initialTraineeId} onChange={(e) => handleTraineeChange(e.target.value)}>
-              <option value="">— اختر المشترك —</option>
-              {trainees.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
-                </option>
-              ))}
-            </select>
+            <CustomSelect
+              value={initialTraineeId}
+              onChange={handleTraineeChange}
+              placeholder="— اختر المشترك —"
+              options={[
+                { value: "", label: "— اختر المشترك —" },
+                ...trainees.map((t) => ({ value: t.id, label: t.name })),
+              ]}
+            />
           </label>
 
           <button
@@ -339,15 +351,30 @@ export default function DietPlanBuilder({
               </div>
 
               <div className="dplan-meals">
-                {MEAL_SLOTS.map((slot) => {
-                  const meal = activePlan.meals[slot.key];
+                {activePlan.meals.map((meal) => {
 
                   return (
-                    <section key={slot.key} className="dplan-meal">
+                    <section key={meal.id} className="dplan-meal">
                       <header className="dplan-meal-head">
-                        <div className="dplan-meal-title">
-                          <Icon name={slot.icon} />
-                          <h3>{slot.label}</h3>
+                        <div className="dplan-meal-title" style={{ flex: 1 }}>
+                          <Icon name="restaurant_menu" />
+                          <input
+                            value={meal.name}
+                            onChange={(e) => updateMeal(meal.id, (m) => ({ ...m, name: e.target.value }))}
+                            placeholder="اسم الوجبة (مثال: وجبة الفطور، وجبة بعد التمرين...)"
+                            style={{ 
+                              background: "transparent", 
+                              border: "1px solid var(--border)", 
+                              color: "var(--text)", 
+                              fontSize: "1.1rem", 
+                              fontWeight: 800, 
+                              padding: "6px 12px", 
+                              flex: 1,
+                              borderRadius: "var(--radius-md)",
+                              outline: "none"
+                            }}
+                            maxLength={80}
+                          />
                           <span className="dplan-meal-count">{meal.items.length} صنف</span>
                         </div>
 
@@ -356,13 +383,33 @@ export default function DietPlanBuilder({
                             className="dplan-time"
                             value={meal.time}
                             onChange={(e) =>
-                              updateMeal(slot.key, (m) => ({ ...m, time: e.target.value }))
+                              updateMeal(meal.id, (m) => ({ ...m, time: e.target.value }))
                             }
                             placeholder="الوقت (اختياري)"
                             maxLength={40}
                           />
+                          <button
+                            className="diet-icon-btn danger"
+                            onClick={() => handleRemoveMeal(meal.id)}
+                            title="حذف الوجبة"
+                            style={{ marginLeft: 8 }}
+                          >
+                            <Icon name="delete" />
+                          </button>
                         </div>
                       </header>
+
+                      <div style={{ padding: "0 16px", marginBottom: "12px" }}>
+                        <input
+                          className="dplan-note"
+                          value={meal.startNote || ""}
+                          onChange={(e) =>
+                            updateMeal(meal.id, (m) => ({ ...m, startNote: e.target.value }))
+                          }
+                          placeholder="ملاحظة في بداية الوجبة (اختياري)"
+                          maxLength={500}
+                        />
+                      </div>
 
                       {meal.items.length === 0 ? (
                         <p className="dplan-meal-empty">لم تُضف أصناف لهذه الوجبة بعد.</p>
@@ -372,7 +419,7 @@ export default function DietPlanBuilder({
                             const itemBadge = getCategoryBadge(item.category || "");
                             return (
                               <li key={item.id} className="dplan-item">
-                                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: "12px", flex: "1 1 200px", minWidth: 0 }}>
                                   <div
                                     style={{
                                       width: "38px",
@@ -401,42 +448,21 @@ export default function DietPlanBuilder({
                                   const displayWeight = item.weight != null ? Math.round(item.weight * 10) / 10 : Math.round(item.qty * baseGrams * 10) / 10;
                                   return (
                                     <div style={{ display: "inline-flex", alignItems: "center", gap: "10px", flexWrap: "wrap", background: "color-mix(in srgb, var(--bg2, #0F0F0F) 85%, transparent)", padding: "6px 12px", borderRadius: "var(--radius-lg)", border: "1px solid color-mix(in srgb, var(--primary, #C9A84C) 25%, rgba(255,255,255,0.08))", boxShadow: "inset 0 1px 3px rgba(0,0,0,0.4)" }}>
-                                      {/* Quantity / Count Input */}
-                                      <label className="dplan-qty" style={{ margin: 0, gap: "6px" }}>
-                                        <span style={{ color: "var(--text-secondary, #9A9490)", fontWeight: 800, fontSize: "0.8rem" }}>العدد</span>
-                                        <input
-                                          type="number"
-                                          min="0"
-                                          step="0.25"
-                                          style={{ width: "70px", background: "var(--bg1, #080808)", fontWeight: 800, color: "var(--primary, #C9A84C)", border: "1px solid color-mix(in srgb, var(--primary, #C9A84C) 40%, transparent)", borderRadius: "var(--radius-sm)", padding: "6px", textAlign: "center" }}
-                                          value={item.qty}
-                                          onChange={(e) =>
-                                            handleQtyChange(slot.key, item.id, e.target.value)
-                                          }
-                                          title="عدد الحصص (المضاعف)"
-                                        />
-                                      </label>
-
-                                      <span style={{ color: "rgba(255,255,255,0.15)", fontWeight: 900 }}>|</span>
-
                                       {/* Weight/Amount & Unit Input */}
                                       <div className="dplan-qty" style={{ margin: 0, gap: "6px", display: "inline-flex", alignItems: "center" }}>
-                                        <span style={{ color: "#38BDF8", fontWeight: 800, fontSize: "0.8rem" }}>
-                                          {!item.unit || item.unit === "غرام" || item.unit === "كغم" ? "الوزن" : "الكمية"}
-                                        </span>
                                         <input
                                           type="number"
                                           min="0"
                                           step="0.5"
                                           style={{ width: "76px", background: "color-mix(in srgb, #071926 75%, var(--bg1, #080808))", fontWeight: 800, color: "#38BDF8", border: "1px solid color-mix(in srgb, #38BDF8 45%, transparent)", borderRadius: "var(--radius-sm)", padding: "6px", textAlign: "center" }}
                                           value={displayWeight}
-                                          onChange={(e) => handleWeightChange(slot.key, item.id, e.target.value)}
+                                          onChange={(e) => handleWeightChange(meal.id, item.id, e.target.value)}
                                           title="الوزن أو الكمية الإجمالية"
                                         />
                                         <div style={{ width: 110 }}>
                                           <CustomSelect
                                             value={item.unit || "غرام"}
-                                            onChange={(v) => handleUnitChange(slot.key, item.id, v)}
+                                            onChange={(v) => handleUnitChange(meal.id, item.id, v)}
                                             options={[
                                               { value: "غرام", label: "غرام" },
                                               { value: "كغم", label: "كغم" },
@@ -459,7 +485,7 @@ export default function DietPlanBuilder({
 
                                 <button
                                   className="diet-icon-btn danger"
-                                  onClick={() => handleRemoveItem(slot.key, item.id)}
+                                  onClick={() => handleRemoveItem(meal.id, item.id)}
                                   title="إزالة الصنف"
                                 >
                                   <Icon name="close" />
@@ -471,7 +497,7 @@ export default function DietPlanBuilder({
                       )}
 
                       <div className="dplan-meal-foot">
-                        <button className="dplan-add-item" onClick={() => setPickerSlot(slot.key)}>
+                        <button className="dplan-add-item" onClick={() => setPickerMealId(meal.id)}>
                           <Icon name="add" style={{ fontSize: 18 }} />
                           <span>إضافة صنف</span>
                         </button>
@@ -480,7 +506,7 @@ export default function DietPlanBuilder({
                           className="dplan-note"
                           value={meal.note}
                           onChange={(e) =>
-                            updateMeal(slot.key, (m) => ({ ...m, note: e.target.value }))
+                            updateMeal(meal.id, (m) => ({ ...m, note: e.target.value }))
                           }
                           placeholder="ملاحظة للمشترك (اختياري)"
                           maxLength={500}
@@ -489,18 +515,47 @@ export default function DietPlanBuilder({
                     </section>
                   );
                 })}
+                
+                <button
+                  onClick={handleAddMeal}
+                  style={{
+                    width: "100%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "8px",
+                    padding: "16px",
+                    borderRadius: "var(--radius-lg)",
+                    border: "2px dashed color-mix(in srgb, var(--primary) 30%, transparent)",
+                    background: "transparent",
+                    color: "var(--primary)",
+                    fontWeight: 800,
+                    fontSize: "1.1rem",
+                    cursor: "pointer",
+                    transition: "all 0.2s",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "color-mix(in srgb, var(--primary) 10%, transparent)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "transparent";
+                  }}
+                >
+                  <Icon name="add" style={{ fontSize: "24px" }} />
+                  إضافة وجبة جديدة
+                </button>
               </div>
             </>
           )}
         </>
       )}
 
-      {pickerSlot && (
+      {pickerMealId && (
         <SourcePicker
           sources={sources}
-          slotLabel={MEAL_SLOTS.find((s) => s.key === pickerSlot)?.label ?? ""}
-          onPick={(source) => handleAddItem(pickerSlot, source)}
-          onClose={() => setPickerSlot(null)}
+          slotLabel={activePlan?.meals.find(m => m.id === pickerMealId)?.name || "الوجبة"}
+          onPick={(source) => handleAddItem(pickerMealId, source)}
+          onClose={() => setPickerMealId(null)}
         />
       )}
     </div>
@@ -616,7 +671,11 @@ function SourcePicker({
                         padding: "4px",
                       }}
                     >
-                      <img src={badge.image} alt={s.name} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                      {/* Same as the library grid: the food's own photograph
+                          when it has one. Saved plan items below keep the
+                          category picture — a `MealItem` is a snapshot that
+                          deliberately does not carry the library's image. */}
+                      <img src={s.image_url || badge.image} alt={s.name} loading="lazy" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
                     </div>
                     <span className="dplan-picker-name" style={{ flex: 1, display: "flex", flexDirection: "column", gap: "4px" }}>
                       <strong style={{ fontSize: "1rem", color: "var(--text, #F0EDE8)", fontWeight: 800 }}>{s.name}</strong>

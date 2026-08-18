@@ -1,37 +1,51 @@
 import { NextResponse, type NextRequest } from "next/server";
-import puppeteer from "puppeteer";
+import { requireUser } from "@/lib/authGuard";
+import { SESSION_COOKIE } from "@/lib/sessionCookies";
+import { PdfBusyError, renderPagePdf, PDF_MAX_DURATION_SECONDS } from "@/lib/pdf";
 
 export const dynamic = "force-dynamic";
 
-// Renders the /export-workout page in a headless browser and prints it to a
-// real PDF (selectable text, vector graphics) via Chrome's own print engine,
-// instead of rasterizing the page into a single JPEG like html2pdf.js did.
+/* Next reads segment config statically, so this cannot be the imported
+   constant — it is repeated from PDF_MAX_DURATION_SECONDS, which the reference
+   below keeps honest. */
+export const maxDuration = 60;
+void (PDF_MAX_DURATION_SECONDS satisfies typeof maxDuration);
+
+/**
+ * Prints /export-workout to a real PDF — selectable text and vector graphics,
+ * via Chrome's own print engine.
+ *
+ * Everything that decides *what* is printed is decided by the page, which
+ * guards itself. What this route has to get right is that the browser it drives
+ * arrives as the caller: it forwards the session cookie, so the page renders
+ * the trainee's sheet. Without it the headless browser was an anonymous visitor,
+ * the guarded page redirected it to /login, and the returned "workout PDF" was
+ * a picture of the sign-in screen.
+ *
+ * `requireUser` here is the cheap refusal — no browser is launched for a caller
+ * who is not signed in at all. It is not the authorization: that is the page's,
+ * and it is the one that decides whose sheet this is.
+ */
 export async function GET(request: NextRequest) {
+  const auth = await requireUser();
+  if (!auth.ok) return auth.response;
+
   const { searchParams, origin } = request.nextUrl;
 
-  const pageUrl = new URL("/export-workout", origin);
+  /* Rebuilt from named keys, never passed through: the address being fetched
+     must not have an attacker-chosen part. */
+  const params: Record<string, string> = {};
   for (const key of ["courseId", "cycleId", "profileId"]) {
     const value = searchParams.get(key);
-    if (value) pageUrl.searchParams.set(key, value);
+    if (value) params[key] = value;
   }
 
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
-  });
-
   try {
-    const page = await browser.newPage();
-    await page.goto(pageUrl.toString(), { waitUntil: "networkidle0" });
-    await page.evaluateHandle("document.fonts.ready");
-
-    // The page's own `@page { size: A4; margin: 15mm }` rule (in
-    // ExportWorkoutClient's print styles) drives size and margins, so
-    // Chrome's print engine is told to defer to it via preferCSSPageSize
-    // instead of double-applying a separate Puppeteer margin on top.
-    const pdf = await page.pdf({
-      printBackground: true,
-      preferCSSPageSize: true,
+    const pdf = await renderPagePdf({
+      path: "/export-workout",
+      params,
+      origin,
+      sessionCookie: request.cookies.get(SESSION_COOKIE)?.value,
     });
 
     return new NextResponse(new Uint8Array(pdf), {
@@ -40,7 +54,14 @@ export async function GET(request: NextRequest) {
         "Cache-Control": "no-store",
       },
     });
-  } finally {
-    await browser.close();
+  } catch (error) {
+    if (error instanceof PdfBusyError) {
+      return NextResponse.json(
+        { error: "جارٍ تجهيز ملف آخر — حاول بعد لحظات" },
+        { status: 503, headers: { "Retry-After": "10" } }
+      );
+    }
+    console.error("Workout PDF render failed:", error);
+    return NextResponse.json({ error: "تعذّر إنشاء الملف" }, { status: 500 });
   }
 }

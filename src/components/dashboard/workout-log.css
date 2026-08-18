@@ -7,47 +7,50 @@
 
 .wl-days {
   display: flex;
-  gap: 8px;
+  gap: 12px;
   overflow-x: auto;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--border);
+  padding-top: 8px;
+  padding-bottom: 16px;
+  padding-inline-start: 4px;
+  padding-inline-end: 20px; /* Prevents clipping on scroll in RTL */
+  border-bottom: none;
+  scrollbar-width: none;
+}
+.wl-days::-webkit-scrollbar {
+  display: none;
 }
 
 .wl-day-btn {
   display: inline-flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
-  padding: 9px 16px;
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border-strong);
-  background: var(--bg3);
+  justify-content: center;
+  min-width: 100px;
+  gap: 6px;
+  padding: 12px 20px;
+  border-radius: var(--radius-xl); /* Better for 2 lines of text than pill */
+  border: 1px solid transparent;
+  background: var(--bg2);
   color: var(--text-secondary);
   font-family: inherit;
   font-size: var(--text-base);
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
-  transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), opacity var(--dur) var(--ease), transform var(--dur) var(--ease);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+  transition: all var(--dur) var(--ease);
 }
 
-.wl-day-btn small { font-size: var(--text-2xs); font-weight: 500; opacity: 0.8; }
+.wl-day-btn small { font-size: var(--text-xs); font-weight: 500; opacity: 0.8; }
 
-.wl-day-btn:hover { border-color: var(--border-primary); color: var(--text); }
+.wl-day-btn:hover { background: var(--bg3); color: var(--text); transform: translateY(-2px); box-shadow: var(--elev-1); }
 
 .wl-day-btn[aria-pressed="true"] {
   background: var(--primary);
-  border-color: var(--primary);
+  border-color: color-mix(in srgb, var(--primary) 80%, white);
   color: var(--text-inverse);
-}
-
-/* A filled dot marks the workouts the trainee has already recorded a date for. */
-.wl-day-btn[data-logged="true"]::after {
-  content: "";
-  width: 5px;
-  height: 5px;
-  border-radius: var(--radius-circle);
-  background: var(--success);
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--primary) 35%, transparent);
+  transform: translateY(-2px);
 }
 
 /* ─── Exercise card ─── */
@@ -56,6 +59,7 @@
   display: flex;
   flex-direction: column;
   gap: 14px;
+  margin-bottom: 15px;
   padding: 20px 22px;
   border-radius: var(--radius-xl);
   border: 1px solid var(--border);
@@ -105,6 +109,7 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 8px;
+  margin-bottom: 15px;
   padding: 12px 14px;
   border-radius: var(--radius-lg);
   border: 1px dashed var(--border-primary, var(--border));
@@ -354,83 +359,26 @@
 .wl-hint .app-icon { font-size: 17px; color: var(--primary-on-tint); flex-shrink: 0; }
 
 @media (max-width: 520px) {
+  .wl-exercise-table {
+    min-width: 0; /* Remove horizontal scroll */
+  }
   .wl-exercise-table th,
   .wl-exercise-table td {
-    padding: 10px 12px;
+    padding: 10px 4px; /* Compress padding */
+  }
+  .wl-set-badge {
+    padding: 2px 6px;
+    font-size: 11px;
+  }
+  .wl-reps-text {
+    font-size: 13px;
+    gap: 4px;
   }
   .wl-weight-input-wrap {
-    width: 130px;
+    width: 100%;
+    min-width: 100px;
+    max-width: 120px;
   }
-}
-
-/* ─── Training cycle ───────────────────────────────────────────────────────
-   A cycle is a count of workouts, never a span of dates: it ends when the last of
-   them is recorded, and the next schedule appears. Finished cycles stay readable
-   but locked. */
-
-.wl-cycles {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  padding-bottom: 14px;
-  margin-bottom: 4px;
-  border-bottom: 1px solid var(--border);
-}
-
-.wl-cycles-label {
-  font-size: var(--text-sm);
-  font-weight: 600;
-  color: var(--text-muted);
-}
-
-.wl-cycle-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 7px 14px;
-  border-radius: var(--radius-pill);
-  border: 1px solid var(--border-strong);
-  background: var(--bg3);
-  color: var(--text-secondary);
-  font-family: inherit;
-  font-size: var(--text-sm);
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), opacity var(--dur) var(--ease), transform var(--dur) var(--ease);
-}
-
-/* How many of the cycle's workouts are in — the tab's whole point. */
-.wl-cycle-btn small {
-  padding: 1px 6px;
-  border-radius: var(--radius-pill);
-  background: var(--bg2);
-  font-size: var(--text-2xs);
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
-
-.wl-cycle-btn[aria-pressed="true"] small {
-  background: color-mix(in srgb, var(--text-inverse) 20%, transparent);
-}
-
-.wl-cycle-btn:hover { border-color: var(--border-primary); color: var(--text); }
-
-.wl-cycle-btn[aria-pressed="true"] {
-  background: var(--primary);
-  border-color: var(--primary);
-  color: var(--text-inverse);
-}
-
-.wl-cycle-btn[data-current="true"]::before {
-  content: "● ";
-  color: var(--success-text);
-  font-size: 0.7em;
-}
-
-.wl-cycle-btn[aria-pressed="true"][data-current="true"]::before {
-  color: var(--text-inverse);
 }
 
 /* Banner shown while looking at a completed cycle. */
@@ -448,78 +396,6 @@
 }
 
 .wl-locked .app-icon { font-size: 17px; color: var(--warning-text); flex-shrink: 0; }
-
-/* Progress through the cycle — the count that decides when it ends. */
-
-.wl-progress {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 12px 14px;
-  border-radius: var(--radius-lg);
-  background: var(--bg3);
-  border: 1px solid var(--border);
-}
-
-.wl-progress-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 10px;
-  flex-wrap: wrap;
-  font-size: var(--text-sm);
-}
-
-.wl-progress-head strong { color: var(--primary-on-tint); font-weight: 700; }
-.wl-progress-head span { color: var(--text-secondary); font-variant-numeric: tabular-nums; }
-
-.wl-progress-bar {
-  block-size: 7px;
-  border-radius: var(--radius-pill);
-  background: var(--bg2);
-  overflow: hidden;
-}
-
-.wl-progress-bar > span {
-  display: block;
-  block-size: 100%;
-  border-radius: var(--radius-pill);
-  background: var(--primary);
-  transition: inline-size 0.35s ease;
-}
-
-/* Shown once, when the last workout of a cycle lands and the next one opens. */
-.wl-done {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 14px;
-  border-radius: var(--radius-lg);
-  background: var(--success-bg);
-  border: 1px solid color-mix(in srgb, var(--success) 40%, transparent);
-  color: var(--text);
-  font-size: var(--text-base);
-  font-weight: 600;
-  line-height: 1.6;
-}
-
-.wl-done > .app-icon { color: var(--success-text); flex-shrink: 0; }
-
-.wl-done button {
-  margin-inline-start: auto;
-  display: inline-grid;
-  place-items: center;
-  padding: 4px;
-  border: none;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: background 0.2s, color 0.2s;
-}
-
-.wl-done button:hover { background: var(--bg3); color: var(--text); }
-.wl-done button .app-icon { font-size: 18px; }
 
 /* ─── Recording when a workout was done ────────────────────────────────────
    No day is fixed in advance: the trainee names the day and date afterwards,
@@ -581,85 +457,6 @@
 .wl-record-state[data-state="saving"] { color: var(--text-secondary); }
 .wl-record-state[data-state="saved"]  { color: var(--success-text); }
 .wl-record-state[data-state="error"]  { color: var(--error-text); }
-
-/* ─── Rest days ────────────────────────────────────────────────────────────
-   No day is fixed for training, so none is fixed for resting: the trainee marks
-   their own out of the days their subscription covers. */
-
-.wl-rest-add {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 10px 14px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-primary);
-  background: var(--primary-dim);
-  color: var(--primary-on-tint);
-  font-family: inherit;
-  font-size: var(--text-sm);
-  font-weight: 700;
-  cursor: pointer;
-  transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), opacity var(--dur) var(--ease), transform var(--dur) var(--ease);
-}
-
-.wl-rest-add:hover:not(:disabled) {
-  background: var(--primary);
-  border-color: var(--primary);
-  color: var(--text-inverse);
-}
-
-.wl-rest-add:disabled { opacity: 0.5; cursor: not-allowed; }
-.wl-rest-add .app-icon { font-size: 18px; }
-
-.wl-rest-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.wl-rest-list li {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border-radius: var(--radius-md);
-  background: var(--bg3);
-  border: 1px solid var(--border);
-  font-size: var(--text-base);
-}
-
-.wl-rest-list li > .app-icon { font-size: 18px; color: var(--primary-on-tint); }
-.wl-rest-list strong { color: var(--text); font-weight: 600; }
-
-.wl-rest-list small {
-  padding: 1px 8px;
-  border-radius: var(--radius-pill);
-  background: var(--bg2);
-  color: var(--text-muted);
-  font-size: var(--text-xs);
-  font-weight: 600;
-}
-
-.wl-rest-list li > button {
-  margin-inline-start: auto;
-  display: inline-grid;
-  place-items: center;
-  padding: 4px;
-  border: none;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: background 0.2s, color 0.2s;
-}
-
-.wl-rest-list li > button:hover:not(:disabled) { background: var(--bg2); color: var(--error-text); }
-.wl-rest-list li > button:disabled { opacity: 0.5; cursor: not-allowed; }
-.wl-rest-list li > button .app-icon { font-size: 17px; }
 
 /* ─── Session notes ─── */
 
@@ -732,4 +529,26 @@
     opacity: 1;
     transform: translate(-50%, 0);
   }
+}
+
+/* Custom rows — a title plus up to four free-text columns the coach wrote.
+   They carry no sets, reps or rest, so they render as the written values
+   instead of the set-logging table. */
+.wl-custom-cols {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.wl-custom-col {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--bg3);
+  color: var(--text);
+  font-size: var(--text-base);
+  font-weight: 600;
+  overflow-wrap: anywhere;
 }

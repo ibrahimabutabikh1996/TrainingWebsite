@@ -18,6 +18,23 @@ import type { DietPlan } from "@/types/diet";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type JsonRecord = Record<string, any>;
 
+/**
+ * One entry in the landing page's testimonials list.
+ *
+ * Shared because both ends need the same shape: the content manager writes it
+ * into `site_settings.content_ar`, and the landing page reads it back out. Every
+ * field is optional — a testimonial is built up field by field in the editor, so
+ * a half-finished one is a normal thing to read.
+ */
+export interface Testimonial {
+  /** "text" | "image" | "audio" | "video" — decides which media element renders. */
+  type?: string;
+  text?: string;
+  author_name?: string;
+  author_role?: string;
+  media_url?: string;
+}
+
 export interface Meal {
   time: string;
   desc: string;
@@ -85,9 +102,6 @@ export interface UserProfile {
   created_at?: string;
   activation_date?: string | null;
   subscription_ends_at?: string | null;
-  completedWorkoutDays?: number;
-  completedCycles?: number;
-  workoutDates?: string[];
   /** Chronological subscription timeline of all months with their assigned workouts and diet plans */
   monthlyHistory?: MonthlyArchive[];
 }

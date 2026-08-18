@@ -1,29 +1,6 @@
 import type { NutritionSource } from "./admin";
 import type { IconName } from "@/components/Icon";
 
-/**
- * The five meal slots, in the order the trainee eats them.
- *
- * They are fixed by the plan's definition, not by data: every plan has exactly
- * these five, and an empty slot is simply one with no items. Order therefore
- * lives here rather than in a per-meal position field, and adding a sixth meal
- * is an edit to this array — no migration, since meals_data is jsonb.
- *
- * The two snacks are separate keys on purpose. They share a label root but not
- * their contents, and keying both as "snack" would silently merge them.
- */
-export const MEAL_SLOTS = [
-  { key: "breakfast", label: "وجبة الفطور", icon: "restaurant_menu" },
-  { key: "snack1", label: "وجبة السناك الأولى", icon: "restaurant_menu" },
-  { key: "lunch", label: "وجبة الغداء", icon: "restaurant_menu" },
-  { key: "snack2", label: "وجبة السناك الثانية", icon: "restaurant_menu" },
-  { key: "dinner", label: "وجبة العشاء", icon: "restaurant_menu" },
-] as const;
-
-export type MealSlotKey = (typeof MEAL_SLOTS)[number]["key"];
-
-export const MEAL_SLOT_KEYS = MEAL_SLOTS.map((s) => s.key) as MealSlotKey[];
-
 /** How many plans one trainee may hold — a training-day diet and a rest-day one. */
 export const MAX_PLANS_PER_TRAINEE = 2;
 
@@ -39,17 +16,6 @@ export function defaultPlanName(position: number) {
 
 /**
  * One prescribed food item inside a meal.
- *
- * `name`, `category`, `serving_size` and the four macro fields are COPIED from
- * the nutrition library the moment the coach adds the item — the same rule
- * DayExercise follows for exercise names. A plan is a point-in-time document:
- * editing a source's macros, or deleting it, must not rewrite plans already
- * handed to trainees. `refId` traces the origin only; it has no foreign key and
- * may point at a library row that no longer exists.
- *
- * Macros are stored PER ONE SERVING of `serving_size`. Multiply by `qty` to get
- * the prescribed amount — storing the multiplied value instead would compound
- * every time the coach edited the quantity.
  */
 export type MealItem = {
   id: string;
@@ -77,13 +43,15 @@ export function getServingBaseGrams(servingSize: string | null): number {
 }
 
 export type Meal = {
-  /** Free text — not every coach prescribes a clock time. */
+  id: string;
+  name: string;
   time: string;
+  startNote: string;
   note: string;
   items: MealItem[];
 };
 
-export type MealsData = Record<MealSlotKey, Meal>;
+export type MealsData = Meal[];
 
 export type DietPlan = {
   id: string;
@@ -100,16 +68,6 @@ export type Macros = {
 };
 
 export const ZERO_MACROS: Macros = { calories: 0, protein: 0, carbs: 0, fats: 0 };
-
-export function emptyMeal(): Meal {
-  return { time: "", note: "", items: [] };
-}
-
-export function emptyMeals(): MealsData {
-  return Object.fromEntries(
-    MEAL_SLOT_KEYS.map((k) => [k, emptyMeal()])
-  ) as MealsData;
-}
 
 /** Finite, non-negative, or null. Guards both hand-edited jsonb and form input. */
 function toNumberOrNull(raw: unknown): number | null {
@@ -152,32 +110,29 @@ function normalizeItem(raw: unknown): MealItem | null {
 }
 
 /**
- * Narrows a jsonb meals_data blob to the five slots.
- *
- * Tolerant by design: it fills in missing slots, drops unknown keys, and
- * discards malformed items rather than throwing. A plan that fails to parse
- * would otherwise take the whole trainee page down. Also used server-side to
- * sanitize what the browser submits — the client is not trusted to have kept
- * the shape.
+ * Narrows a jsonb meals_data blob to the dynamic meal array.
  */
 export function asMeals(raw: unknown): MealsData {
-  const source = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
-  const out = emptyMeals();
-
-  for (const key of MEAL_SLOT_KEYS) {
-    const slot = source[key];
-    if (!slot || typeof slot !== "object") continue;
+  if (!Array.isArray(raw)) return [];
+  
+  return raw.map((slot) => {
+    if (!slot || typeof slot !== "object") return null;
     const s = slot as Record<string, unknown>;
-    out[key] = {
+    
+    // name is required; fallback if missing for legacy
+    const mealName = toText(s.name).trim() || "وجبة";
+    
+    return {
+      id: toText(s.id) || crypto.randomUUID(),
+      name: mealName,
       time: toText(s.time).slice(0, 40),
+      startNote: toText(s.startNote).slice(0, 500),
       note: toText(s.note).slice(0, 500),
       items: Array.isArray(s.items)
         ? s.items.map(normalizeItem).filter((i): i is MealItem => i !== null)
         : [],
     };
-  }
-
-  return out;
+  }).filter((m): m is Meal => m !== null);
 }
 
 /** Macros for the prescribed amount of one item — calculated strictly by weight when > 0, otherwise by qty multiplier when > 0. */
@@ -208,10 +163,10 @@ export function mealTotals(meal: Meal): Macros {
   return meal.items.reduce((sum, item) => addMacros(sum, itemMacros(item)), { ...ZERO_MACROS });
 }
 
-/** Whole-day totals across the five slots. */
+/** Whole-day totals across all meals. */
 export function planTotals(meals: MealsData): Macros {
-  return MEAL_SLOT_KEYS.reduce(
-    (sum, key) => addMacros(sum, mealTotals(meals[key])),
+  return meals.reduce(
+    (sum, meal) => addMacros(sum, mealTotals(meal)),
     { ...ZERO_MACROS }
   );
 }
@@ -223,7 +178,7 @@ export function fmtMacro(value: number): string {
 }
 
 export function countItems(meals: MealsData): number {
-  return MEAL_SLOT_KEYS.reduce((n, key) => n + meals[key].items.length, 0);
+  return meals.reduce((n, meal) => n + meal.items.length, 0);
 }
 
 /** Snapshots a library source into a meal item. See MealItem on why it copies. */

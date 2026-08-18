@@ -5,6 +5,7 @@ import { Exercise } from "@/types/admin";
 import AdminModal from "../components/AdminModal";
 import { CATEGORIES, type ExerciseFormValues } from "./useExercises";
 import { Icon } from "@/components/Icon";
+import { CustomSelect } from "@/components/CustomSelect";
 import "./exercises.css";
 
 type ExerciseFormModalProps = {
@@ -184,15 +185,12 @@ export default function ExerciseFormModal({
         <div className="ex-form-row">
           <div className="ex-field">
             <label htmlFor="ex-category">النوع / التصنيف</label>
-            <select
+            <CustomSelect
               id="ex-category"
               value={formData.category}
-              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-            >
-              {CATEGORIES.map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
+              onChange={(category) => setFormData({ ...formData, category })}
+              options={CATEGORIES.map((c) => ({ value: c, label: c }))}
+            />
           </div>
 
           <div className="ex-field">

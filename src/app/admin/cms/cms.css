@@ -175,11 +175,6 @@
   transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), opacity var(--dur) var(--ease), transform var(--dur) var(--ease);
 }
 
-[data-theme="light"] .cms-input,
-[data-theme="light"] .cms-textarea {
-  background: rgba(0, 0, 0, 0.015);
-}
-
 .cms-input:hover, .cms-textarea:hover {
   border-color: rgba(var(--primary-rgb), 0.2);
 }
@@ -207,10 +202,6 @@
   position: relative;
   overflow: hidden;
   margin-bottom: 12px;
-}
-
-[data-theme="light"] .cms-upload-zone {
-  background: rgba(0, 0, 0, 0.005);
 }
 
 .cms-upload-zone:hover {

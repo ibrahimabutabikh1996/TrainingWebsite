@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { t } from "@/lib/translations";
-import { useTheme } from "@/contexts/ThemeContext";
+import { isAdminUsername, useCurrentUsername } from "@/lib/clientSession";
 import "./password.css";
 
 const MIN_LENGTH = 8;
@@ -37,35 +37,11 @@ function EyeIcon({ off }: { off: boolean }) {
   );
 }
 
-/* Local storage is an external store, so it's subscribed to rather than copied
-   into state inside an effect. The server snapshot is null, which keeps the
-   server render and the first client render in agreement. */
-const listeners = new Set<() => void>();
-
-const subscribeToStorage = (onChange: () => void) => {
-  listeners.add(onChange);
-  window.addEventListener("storage", onChange);
-  return () => {
-    listeners.delete(onChange);
-    window.removeEventListener("storage", onChange);
-  };
-};
-
-/* The `storage` event fires only in *other* tabs, so a write from this one has to
-   notify subscribers by hand or the screen keeps rendering the old value. */
-function clearStoredSession() {
-  localStorage.removeItem("loggedInUserId");
-  localStorage.removeItem("loggedInUsername");
-  listeners.forEach((notify) => notify());
-}
-
-function useStoredValue(key: string): string | null {
-  return useSyncExternalStore(
-    subscribeToStorage,
-    () => localStorage.getItem(key),
-    () => null
-  );
-}
+/* Who the browser thinks is signed in is used for drawing this page only — the
+   account whose password actually changes is the one in the session cookie,
+   decided on the server. This page used to read `loggedInUserId` out of
+   localStorage and send it as the account to change; no id is in the request
+   at all now. See `useCurrentUsername` in @/lib/clientSession. */
 
 function LockIcon() {
   return (
@@ -117,11 +93,10 @@ function PasswordField({ id, label, value, onChange, autoComplete, hint }: Field
 
 export default function ChangePasswordPage() {
 
-  const { toggleTheme } = useTheme();
   const router = useRouter();
 
-  const userId = useStoredValue("loggedInUserId");
-  const username = useStoredValue("loggedInUsername") ?? "";
+  const username = useCurrentUsername() ?? "";
+  const signedIn = username !== "";
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -136,7 +111,7 @@ export default function ChangePasswordPage() {
     e.preventDefault();
     setError(null);
 
-    if (!userId) return setError(t("pw_not_logged_in"));
+    if (!signedIn) return setError(t("pw_not_logged_in"));
     if (next.length < MIN_LENGTH) return setError(t("pw_too_short"));
     if (next !== confirm) return setError(t("pw_mismatch"));
     if (next === current) return setError(t("pw_same"));
@@ -146,15 +121,21 @@ export default function ChangePasswordPage() {
       const res = await fetch("/api/auth/change-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, currentPassword: current, newPassword: next }),
+        /* No account id: the server changes the password of whoever the session
+           cookie says is asking, and will not be told otherwise. */
+        body: JSON.stringify({ currentPassword: current, newPassword: next }),
       });
       const body = await res.json();
       if (!res.ok) {
-        /* 404 means the stored id names an account that no longer exists — after
-           the account-clearing script has run, for instance. Nothing the user
-           types can succeed while that id is held, so drop the dead session and
-           let the sign-in prompt take over. */
-        if (res.status === 404) clearStoredSession();
+        /* 401 means the session has run out or was never there; 404 means it
+           names an account that no longer exists — after the account-clearing
+           script has run, for instance. Nothing the user types can succeed in
+           either case, so hand them to the sign-in screen instead of leaving
+           them retyping into a form that cannot pass. */
+        if (res.status === 401 || res.status === 404) {
+          router.push("/login");
+          return;
+        }
         setError(body.error || "…");
         return;
       }
@@ -170,7 +151,7 @@ export default function ChangePasswordPage() {
     }
   };
 
-  const homeHref = (username === "admin" || username === "mkm94admin") ? "/admin" : "/dashboard";
+  const homeHref = isAdminUsername(username) ? "/admin" : "/dashboard";
 
   return (
     <div className="pw-page" lang="ar">
@@ -182,13 +163,6 @@ export default function ChangePasswordPage() {
           </svg>
           <span>{t("pw_back")}</span>
         </Link>
-        <div className="pw-topbar-actions">
-          <button onClick={toggleTheme} aria-label="تبديل المظهر">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-            </svg>
-          </button>
-        </div>
       </header>
 
       <main className="pw-main">
@@ -216,9 +190,9 @@ export default function ChangePasswordPage() {
                 </div>
               )}
 
-              {/* Without a stored id the submit button is disabled, so the page
+              {/* With nobody signed in the submit button is disabled, so the page
                   would otherwise dead-end here with no way forward. */}
-              {!userId && (
+              {!signedIn && (
                 <div className="pw-error" role="alert">
                   <span aria-hidden="true">⚠️</span>
                   <span>{t("pw_not_logged_in")}</span>
@@ -260,7 +234,7 @@ export default function ChangePasswordPage() {
                 autoComplete="new-password"
               />
 
-              <button type="submit" className="pw-submit" disabled={saving || !userId}>
+              <button type="submit" className="pw-submit" disabled={saving || !signedIn}>
                 {saving && <span className="pw-spinner" aria-hidden="true" />}
                 {saving ? t("pw_saving") : t("pw_submit")}
               </button>

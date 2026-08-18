@@ -176,6 +176,12 @@
   .promo-popup-card {
     border-radius: var(--radius-lg);
   }
+  /* The only way past this window on a phone, sitting over a photograph — worth
+     the four pixels that bring it to a comfortable thumb target. */
+  .promo-popup-close {
+    width: 40px;
+    height: 40px;
+  }
   .promo-popup-banner {
     height: 160px;
   }

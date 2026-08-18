@@ -46,6 +46,10 @@ next-env.d.ts
 
 /src/generated/prisma
 
+# Throwaway working files. Also listed in eslint.config.mjs — this keeps them out
+# of the repository, that keeps them out of the lint run.
+/scratch/
+
 # one-off scripts written at the terminal while recovering from the Aug 13 reset,
 # plus the exercise dumps they produced. Kept locally, not part of the app.
 /recover_*.py

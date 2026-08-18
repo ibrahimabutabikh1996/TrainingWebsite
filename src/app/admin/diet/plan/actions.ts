@@ -2,7 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
+import { requireAdminAction } from "@/lib/authGuard";
 import { asMeals, MAX_PLANS_PER_TRAINEE, type MealsData } from "@/types/diet";
+
+/* Prescribing food to a named trainee is the coach's act, so both actions ask
+   who is calling before they read the input. A server action is reachable on
+   its own, whatever page it was written for. */
+const DENIED = { success: false as const, error: "غير مصرح لك بهذا الإجراء" };
 
 /* traineeId arrives from a query string, so it can be any string. The column is
    uuid, and handing Postgres a non-uuid raises P2007 — caught below, but it
@@ -21,6 +27,8 @@ export async function saveDietPlanAction(input: {
   name: string;
   meals: unknown;
 }) {
+  if (!(await requireAdminAction())) return DENIED;
+
   const { traineeId, position } = input;
 
   if (!isValidUUID(traineeId)) {
@@ -30,7 +38,12 @@ export async function saveDietPlanAction(input: {
     return { success: false as const, error: "رقم النظام غير صالح" };
   }
 
-  const name = input.name.trim();
+  /* Checked for being a string before it is trimmed, and capped after.
+     `input.name` is typed `string`, but a server action is reached over HTTP and
+     receives whatever the request carries — a number here made `.trim()` throw a
+     TypeError from outside the try block below, which reaches the caller as an
+     unhandled server-action rejection rather than an error message. */
+  const name = typeof input.name === "string" ? input.name.trim().slice(0, 120) : "";
   if (!name) {
     return { success: false as const, error: "اسم النظام الغذائي مطلوب" };
   }
@@ -67,6 +80,8 @@ export async function saveDietPlanAction(input: {
 }
 
 export async function deleteDietPlanAction(input: { traineeId: string; position: number }) {
+  if (!(await requireAdminAction())) return DENIED;
+
   const { traineeId, position } = input;
 
   if (!isValidUUID(traineeId)) {

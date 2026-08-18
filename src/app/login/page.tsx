@@ -4,13 +4,11 @@ import type { JsonRecord } from "@/types";
 import Link from "next/link";
 import { useEffect, useState, Suspense } from "react";
 import { t } from "@/lib/translations";
-import { useTheme } from "@/contexts/ThemeContext";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { getLandingContent } from "../admin/cms/actions";
 import './login.css';
 
 export default function LoginPage() {
-  const { toggleTheme } = useTheme();
   const [cmsData, setCmsData] = useState<JsonRecord | null>(null);
 
   useEffect(() => {
@@ -60,7 +58,11 @@ export default function LoginPage() {
       {/* Top Glass Navbar */}
       <header className="top-bar">
         <Link href="/" className="image-logo" title="العودة للصفحة الرئيسية">
-          <div className="image-logo-mark" style={{ height: "48px", maxWidth: "280px" }}>
+          {/* `min(280px, 100%)` rather than a flat 280px: the flat cap is wider
+              than the space a phone leaves once the header's padding and the
+              register button are accounted for, and an inline style cannot be
+              narrowed by a media query. */}
+          <div className="image-logo-mark" style={{ height: "48px", maxWidth: "min(280px, 100%)" }}>
             <img src="/images/logo/hLogo.png" alt="Ibrahim Abutabikh Logo" style={{ maxHeight: "48px", height: "100%", width: "auto", objectFit: "contain", display: "block" }} />
           </div>
         </Link>
@@ -69,18 +71,6 @@ export default function LoginPage() {
           <Link href="/#membership" className="btn-nav-register">
             تسجيل جديد
           </Link>
-          <button 
-            className="theme-toggle" 
-            onClick={toggleTheme} 
-            aria-label="تبديل المظهر"
-          >
-            <svg className="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-            </svg>
-            <svg className="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-            </svg>
-          </button>
         </div>
       </header>
 

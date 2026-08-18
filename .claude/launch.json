@@ -6,6 +6,13 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
       "port": 3000
+    },
+    {
+      "//": "The built app, for anything where timing is the question. `dev` compiles each route on first request and ships an unminified bundle, so numbers taken from it say nothing about what a visitor gets. Run `npm run build` first.",
+      "name": "prod",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "start", "--", "--port", "3100"],
+      "port": 3100
     }
   ]
 }

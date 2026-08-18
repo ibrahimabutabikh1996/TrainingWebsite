@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { isAdminUsername } from "@/lib/adminUsernames";
+import { notifySessionChanged } from "@/lib/clientSession";
 
 export function useAuth() {
   const router = useRouter();
@@ -13,7 +15,10 @@ export function useAuth() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
+        /* `remember` goes to the server now: it decides the session cookie's
+           lifetime, so keeping it only in localStorage meant "remember me" had
+           no effect on how long the session actually lasted. */
+        body: JSON.stringify({ username, password, remember }),
       });
       const data = await res.json();
       
@@ -22,13 +27,17 @@ export function useAuth() {
         return false;
       }
       
-      if (remember) {
-        localStorage.setItem("remember", "true");
-      }
-      localStorage.setItem("loggedInUserId", data.userId);
-      localStorage.setItem("loggedInUsername", data.username);
-      
-      if (data.username === "admin" || data.username === "mkm94admin") {
+      /* Nothing about who is signed in is written here any more. It used to
+         keep `loggedInUserId` and `loggedInUsername` in localStorage and the
+         rest of the app read them as identity — values the visitor can edit.
+         The session cookie the server sets is the only record now, and the
+         readable half of it (`currentUsername`) is drawn from that. */
+      notifySessionChanged();
+
+      /* The server already decided this and put it in the session; trusting its
+         answer keeps the redirect and the proxy's admin check from ever
+         disagreeing about who the coach is. */
+      if (data.isAdmin ?? isAdminUsername(data.username)) {
         router.push("/admin");
       } else {
         router.push("/dashboard");
@@ -42,10 +51,22 @@ export function useAuth() {
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem("loggedInUserId");
-    localStorage.removeItem("loggedInUsername");
-    localStorage.removeItem("remember");
+  const logout = async () => {
+    /* The session cookie is httpOnly, so clearing localStorage no longer signs
+       anyone out — only the server can drop it. /api/auth/logout existed for
+       this and was never called; without it a "signed out" browser kept a
+       working session and could walk straight back into /dashboard. */
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch {
+      /* Network failure shouldn't strand the user on a page they asked to
+         leave: clear what we can and move on. The cookie's own TTL still
+         bounds the damage. */
+    }
+    /* Both cookies are cleared by the server above. This tells the screens
+       reading the username hint that it has gone, since a cookie fires no
+       event of its own. */
+    notifySessionChanged();
     router.push("/");
   };
 

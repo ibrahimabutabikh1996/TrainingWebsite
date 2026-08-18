@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import toast from "react-hot-toast";
 import AdminModal from "../components/AdminModal";
-import { uploadImageServer } from "../cms/actions";
+import { uploadMediaWithProgress } from "@/lib/mediaUpload";
 import type { NutritionSource } from "@/types/admin";
 import { Icon } from "@/components/Icon";
+import { CustomSelect } from "@/components/CustomSelect";
 
 interface NutritionFormModalProps {
   isOpen: boolean;
@@ -23,39 +24,21 @@ export default function NutritionFormModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
-  const [name, setName] = useState("");
-  const [category, setCategory] = useState("مصادر البروتين");
-  const [imageUrl, setImageUrl] = useState("");
-  const [servingSize, setServingSize] = useState("");
-  const [calories, setCalories] = useState("");
-  const [protein, setProtein] = useState("");
-  const [carbs, setCarbs] = useState("");
-  const [fats, setFats] = useState("");
-  const [notes, setNotes] = useState("");
-
-  useEffect(() => {
-    if (editingSource) {
-      setName(editingSource.name);
-      setCategory(editingSource.category);
-      setImageUrl(editingSource.image_url || "");
-      setServingSize(editingSource.serving_size || "");
-      setCalories(editingSource.calories?.toString() || "");
-      setProtein(editingSource.protein?.toString() || "");
-      setCarbs(editingSource.carbs?.toString() || "");
-      setFats(editingSource.fats?.toString() || "");
-      setNotes(editingSource.notes || "");
-    } else {
-      setName("");
-      setCategory("مصادر البروتين");
-      setImageUrl("");
-      setServingSize("");
-      setCalories("");
-      setProtein("");
-      setCarbs("");
-      setFats("");
-      setNotes("");
-    }
-  }, [editingSource]);
+  /* Nine fields, initialised from the source being edited — or empty for a new
+     one. This used to be an effect on `editingSource` that assigned all nine on
+     every change: a full extra render each time the modal opened, and a form
+     that briefly showed the previous item's values. The caller now passes a
+     `key` tied to the source's id, so React discards this component and builds
+     a fresh one instead — the reset React documents for exactly this. */
+  const [name, setName] = useState(editingSource?.name ?? "");
+  const [category, setCategory] = useState(editingSource?.category ?? "مصادر البروتين");
+  const [imageUrl, setImageUrl] = useState(editingSource?.image_url ?? "");
+  const [servingSize, setServingSize] = useState(editingSource?.serving_size ?? "");
+  const [calories, setCalories] = useState(editingSource?.calories?.toString() ?? "");
+  const [protein, setProtein] = useState(editingSource?.protein?.toString() ?? "");
+  const [carbs, setCarbs] = useState(editingSource?.carbs?.toString() ?? "");
+  const [fats, setFats] = useState(editingSource?.fats?.toString() ?? "");
+  const [notes, setNotes] = useState(editingSource?.notes ?? "");
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -63,17 +46,16 @@ export default function NutritionFormModal({
 
     setIsUploading(true);
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      const url = await uploadImageServer(formData);
+      /* Resized before it is sent, and reported into the upload window while it
+         goes. This used to post `e.target.files[0]` straight through — the
+         camera's own file, several thousand pixels wide, for a picture drawn in
+         a 56-pixel box — and said nothing at all until it was over. */
+      const url = await uploadMediaWithProgress(file);
       if (url) {
         setImageUrl(url);
         toast.success("تم رفع الصورة بنجاح");
-      } else {
-        toast.error("فشل رفع الصورة");
       }
-    } catch {
-      toast.error("حدث خطأ أثناء رفع الصورة");
+      /* A refusal is already named in the window, on the file it belongs to. */
     } finally {
       setIsUploading(false);
       e.target.value = "";
@@ -130,14 +112,15 @@ export default function NutritionFormModal({
           </div>
           <div className="diet-field">
             <label>التصنيف</label>
-            <select
+            <CustomSelect
               value={category}
-              onChange={(e) => setCategory(e.target.value)}
-            >
-              <option value="مصادر البروتين">مصادر البروتين</option>
-              <option value="مصادر الكاربوهيدرات">مصادر الكاربوهيدرات</option>
-              <option value="مصادر الدهون الصحية">مصادر الدهون الصحية</option>
-            </select>
+              onChange={setCategory}
+              options={[
+                { value: "مصادر البروتين", label: "مصادر البروتين" },
+                { value: "مصادر الكاربوهيدرات", label: "مصادر الكاربوهيدرات" },
+                { value: "مصادر الدهون الصحية", label: "مصادر الدهون الصحية" },
+              ]}
+            />
           </div>
         </div>
 

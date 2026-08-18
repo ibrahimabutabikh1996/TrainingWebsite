@@ -22,11 +22,28 @@ export function rotateSize(width: number, height: number, rotation: number) {
   };
 }
 
+/**
+ * Longest edge the cropped result may have, when the caller does not say.
+ *
+ * The crop used to be written out at the source photograph's own pixel scale:
+ * a 1:1 crop of a 6000×4000 camera file produced a 4000×4000 canvas, and that
+ * is what got uploaded. Nothing on the site displays an image anywhere near
+ * that — the membership cards are 460×200 and the coach's portrait is 462×400 —
+ * so every one of those pixels was downloaded by every visitor and thrown away
+ * by the browser on the way to the screen.
+ *
+ * 1600 is chosen against the largest surface that is not a full-bleed
+ * background, doubled for high-density screens. Backgrounds ask for more and
+ * pass their own value.
+ */
+export const DEFAULT_MAX_EDGE = 1600;
+
 export default async function getCroppedImg(
   imageSrc: string,
   pixelCrop: { x: number; y: number; width: number; height: number },
   rotation = 0,
-  flip = { horizontal: false, vertical: false }
+  flip = { horizontal: false, vertical: false },
+  maxEdge: number = DEFAULT_MAX_EDGE
 ): Promise<File | null> {
   const image = await createImage(imageSrc);
   const canvas = document.createElement('canvas');
@@ -65,11 +82,23 @@ export default async function getCroppedImg(
     return null;
   }
 
-  // Set the size of the cropped canvas
-  croppedCanvas.width = pixelCrop.width;
-  croppedCanvas.height = pixelCrop.height;
+  /* The crop is measured in the source image's pixels, which is what makes it
+     accurate — and what made the output enormous. Scale the destination down so
+     the longest edge lands on `maxEdge`, and never up: a small crop of a small
+     photograph stays exactly as it is rather than being stretched into a bigger
+     file that carries no more detail. */
+  const longest = Math.max(pixelCrop.width, pixelCrop.height);
+  const scale = longest > maxEdge ? maxEdge / longest : 1;
 
-  // Draw the cropped image onto the new canvas
+  croppedCanvas.width = Math.round(pixelCrop.width * scale);
+  croppedCanvas.height = Math.round(pixelCrop.height * scale);
+
+  /* Bilinear smoothing on the way down. Without it a large reduction in one
+     step aliases — thin lines and text in a photograph come out sparkling. */
+  croppedCtx.imageSmoothingEnabled = true;
+  croppedCtx.imageSmoothingQuality = "high";
+
+  // Draw the cropped region, resampled into the (possibly smaller) canvas
   croppedCtx.drawImage(
     canvas,
     pixelCrop.x,
@@ -78,11 +107,13 @@ export default async function getCroppedImg(
     pixelCrop.height,
     0,
     0,
-    pixelCrop.width,
-    pixelCrop.height
+    croppedCanvas.width,
+    croppedCanvas.height
   );
 
-  // As a blob
+  /* 0.85 rather than 0.95. Above roughly 0.85 a JPEG grows quickly while the
+     difference stops being visible at these sizes; it was a large part of why
+     the uploads were measured in megabytes. */
   return new Promise((resolve, reject) => {
     croppedCanvas.toBlob((file) => {
       if (file) {
@@ -92,6 +123,6 @@ export default async function getCroppedImg(
       } else {
         reject(new Error("Canvas is empty"));
       }
-    }, 'image/jpeg', 0.95);
+    }, 'image/jpeg', 0.85);
   });
 }

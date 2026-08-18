@@ -1,4 +1,3 @@
-// @ts-nocheck
 "use client";
 
 import { useState } from "react";
@@ -32,7 +31,7 @@ export default function DeleteSubscriberZone({ profileId }: { profileId: string 
       } else {
         toast.error(res.error || "حدث خطأ أثناء الحذف");
       }
-    } catch (error) {
+    } catch {
       toast.error("حدث خطأ في الاتصال بالخادم");
     } finally {
       setIsLoading(false);

@@ -72,81 +72,35 @@
 }
 
 /* ==========================================================================
-   Ultra-Premium SaaS Sidebar (Linear & Apple Pro Studio Architecture)
+   Ultra-Premium SaaS Bottom Navbar (Apple Pro Studio Architecture)
    ========================================================================== */
 
-/* Sidebar Glass Panel */
-.admin-sidebar-glass {
-  flex-shrink: 0;
+/* Bottom Navbar Glass Panel */
+.admin-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 72px;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: center;
   justify-content: space-between;
-  gap: 20px;
-  padding: 24px 0 20px;
-  width: 268px;
-  max-height: 100vh;
-  overflow-y: auto;
-  overflow-x: hidden;
-  position: relative;
+  padding: 0 24px;
   background: var(--nav-bg-glass, rgba(15, 15, 15, 0.75));
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  /* The border is what separates the rail from the canvas. A 40px drop shadow
-     on top of it just muddied the edge. Logical, so the rail's inner edge stays
-     correct if the layout is ever run LTR. */
-  border-inline-end: 1px solid var(--admin-card-border);
-  z-index: 40;
-  scrollbar-width: thin;
-  scrollbar-color: var(--border-strong) transparent;
-  transition: width var(--dur-slow) var(--ease-out), padding var(--dur-slow) var(--ease-out);
+  border-top: 1px solid var(--admin-card-border);
+  z-index: 100;
 }
 
-/* Collapsed State Rules */
-.admin-sidebar-glass.collapsed {
-  width: 92px;
-}
-
-/* ==========================================================================
-   Interactive Studio Toggle Button
-   ========================================================================== */
-.admin-collapse-btn {
-  width: 34px;
-  height: 34px;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  border: 1px solid var(--border);
-  color: var(--text-secondary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.admin-collapse-btn:hover {
-  background: var(--primary-dim);
-  color: var(--primary-on-tint);
-  border-color: var(--border-primary);
-}
-
-/* Brand Header Area */
+/* Brand Header Area (Logo on the right) */
 .admin-brand-header {
-  padding: 0 22px;
-  margin-bottom: 20px;
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 16px;
-  transition: padding 0.3s ease;
-}
-
-.admin-sidebar-glass.collapsed .admin-brand-header {
-  padding: 0 16px;
   align-items: center;
-  margin-bottom: 12px;
 }
 
-/* Collapsed Logo Tile Halo Effect */
+/* Logo Tile Halo Effect */
 .admin-collapsed-logo-tile {
   width: 52px;
   height: 52px;
@@ -156,7 +110,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto;
   transition: border-color var(--dur) var(--ease);
 }
 
@@ -164,90 +117,24 @@
   border-color: var(--primary);
 }
 
-.admin-hlogo-link {
-  display: block;
-  width: 100%;
-  max-width: 100%;
-  transition: opacity var(--dur) var(--ease);
-}
-
-.admin-hlogo-link:hover {
-  opacity: 0.8;
-}
-
-.admin-brand-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: var(--radius-sm);
-  background: var(--primary-dim);
-  border: 1px solid var(--border-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--primary-on-tint);
-  flex-shrink: 0;
-}
-
-.admin-brand-title {
-  font-family: var(--font-display);
-  font-size: var(--text-xl);
-  line-height: var(--leading-tight);
-  font-weight: var(--weight-bold);
-  color: var(--primary-on-tint);
-  letter-spacing: 0;
-  margin: 0;
-}
-
-.admin-brand-subtitle {
-  font-family: var(--font-primary);
-  font-size: var(--text-base);
-  font-weight: var(--weight-semibold);
-  color: var(--text-secondary);
-  margin: 0;
-}
-
 /* ==========================================================================
    Navigation Links & Containers
    ========================================================================== */
 .admin-nav-container {
-  padding: 0 16px;
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.admin-sidebar-glass.collapsed .admin-nav-container,
-.admin-sidebar-glass.collapsed .admin-bottom-actions {
-  padding-inline: 16px !important;
-  padding-top: 16px !important;
+  flex-direction: row;
   align-items: center;
+  gap: 12px;
 }
 
-.admin-nav-label {
-  padding: 0 10px;
-  font-size: var(--text-2xs);
-  font-weight: var(--weight-semibold);
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin-bottom: var(--space-2);
-}
-
-.admin-sidebar-glass.collapsed .admin-nav-label,
-.admin-sidebar-glass.collapsed .admin-nav-text {
-  display: none;
-}
-
-/* Navigation item.
-   Rest → hover → active is carried by fill and colour alone. The item used to
-   also slide 4px, scale its icon 1.15× and cast a tinted shadow; three signals
-   for one state change is what made the rail feel busy. */
-.admin-nav-link {
-  width: 100%;
+/* Navigation item */
+.admin-nav-link,
+.admin-logout-btn {
+  width: 52px;
+  height: 52px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: var(--space-3) var(--space-4);
+  justify-content: center;
   border-radius: var(--radius-md);
   transition:
     background-color var(--dur) var(--ease),
@@ -256,11 +143,13 @@
   border: 1px solid transparent;
   color: var(--text-secondary);
   text-decoration: none;
+  background-color: transparent;
+  cursor: pointer;
   position: relative;
-  overflow: hidden;
 }
 
-.admin-nav-link:hover:not(.active) {
+.admin-nav-link:hover:not(.active),
+.admin-logout-btn:hover {
   color: var(--text);
   background: color-mix(in srgb, var(--text) 6%, transparent);
 }
@@ -269,54 +158,25 @@
   background: var(--primary-dim);
   color: var(--primary-on-tint);
   border-color: var(--border-primary);
-  font-weight: var(--weight-bold);
 }
 
-/* Active marker. Sits on the inline-start edge so it follows RTL/LTR instead of
-   being pinned to the physical right. */
+/* Active marker (Top edge for bottom navbar) */
 .admin-nav-link.active::before {
   content: '';
   position: absolute;
-  top: 50%;
-  inset-inline-end: 5px;
-  transform: translateY(-50%);
-  width: 3px;
-  height: 20px;
+  top: -1px;
+  left: 50%;
+  transform: translateX(-50%);
+  height: 3px;
+  width: 20px;
   background: var(--primary);
   border-radius: var(--radius-pill);
-}
-
-.admin-nav-link-inner {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.admin-sidebar-glass.collapsed .admin-nav-link,
-.admin-sidebar-glass.collapsed .admin-logout-btn {
-  width: 52px;
-  height: 52px;
-  padding: 0;
-  justify-content: center;
-  border-radius: var(--radius-md);
-  margin-bottom: 2px;
-}
-
-.admin-sidebar-glass.collapsed .admin-nav-link-inner {
-  gap: 0;
-  justify-content: center;
-  width: 100%;
-}
-
-.admin-sidebar-glass.collapsed .admin-nav-link.active::before {
-  inset-inline-end: 3px;
-  height: 16px;
 }
 
 .admin-nav-link .app-icon,
 .admin-logout-btn .app-icon {
   transition: color var(--dur) var(--ease);
-  font-size: 20px;
+  font-size: 24px;
 }
 
 .admin-nav-link:hover .app-icon,
@@ -324,53 +184,14 @@
   color: var(--primary-on-tint);
 }
 
-.admin-nav-text {
-  font-weight: var(--weight-medium);
-  font-size: var(--text-base);
-  line-height: var(--leading-tight);
-  font-family: var(--font-primary);
-}
-
-.admin-nav-link.active .admin-nav-text {
-  font-weight: var(--weight-semibold);
-}
-
 /* ==========================================================================
-   Footer Actions & System Buttons
+   Footer Actions & System Buttons (Left side)
    ========================================================================== */
 .admin-bottom-actions {
-  padding: 0 var(--space-4);
   display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  border-top: 1px solid var(--border);
-  padding-top: var(--space-4);
-  margin-top: auto;
-}
-
-.admin-logout-btn {
-  width: 100%;
-  display: flex;
+  flex-direction: row;
   align-items: center;
-  justify-content: space-between;
-  padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-md);
-  transition:
-    background-color var(--dur) var(--ease),
-    color var(--dur) var(--ease),
-    border-color var(--dur) var(--ease);
-  border: 1px solid transparent;
-  background-color: transparent;
-  color: var(--text-secondary);
-  cursor: pointer;
-  font-family: var(--font-primary);
-  font-size: var(--text-base);
-  font-weight: var(--weight-medium);
-}
-
-.admin-logout-btn:hover {
-  color: var(--text);
-  background: color-mix(in srgb, var(--text) 6%, transparent);
+  gap: 8px;
 }
 
 .admin-logout-btn.danger-btn:hover {
@@ -385,6 +206,7 @@
   z-index: 2;
   overflow-y: auto;
   padding: var(--space-10);
+  padding-bottom: calc(var(--space-10) + 72px);
 }
 
 /* Keeps admin pages on a readable measure the way .dashboard-main does, while
@@ -406,9 +228,64 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
+.admin-logo-mobile {
+  display: none;
+}
+.admin-logo-desktop {
+  display: flex;
+  align-items: center;
+}
+.admin-hlogo-link {
+  display: block;
+  transition: opacity var(--dur) var(--ease);
+}
+.admin-hlogo-link:hover {
+  opacity: 0.8;
+}
+
 @media (max-width: 768px) {
   .admin-main-content {
-    padding: 24px 20px;
+    /* Maintain the top/side padding, but ensure the bottom padding clears the navbar */
+    padding: 24px 12px calc(24px + 64px);
+  }
+  
+  .admin-logo-desktop {
+    display: none;
+  }
+  
+  .admin-logo-mobile {
+    display: flex;
+  }
+  
+  
+  .admin-bottom-nav {
+    padding: 0 8px;
+    height: 64px;
+  }
+  
+  .admin-nav-container {
+    gap: 4px;
+  }
+  
+  .admin-nav-link,
+  .admin-logout-btn {
+    width: 44px;
+    height: 44px;
+  }
+  
+  .admin-nav-link .app-icon,
+  .admin-logout-btn .app-icon {
+    font-size: 20px;
+  }
+  
+  .admin-collapsed-logo-tile {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .admin-collapsed-logo-tile img {
+    width: 28px !important;
+    height: 28px !important;
   }
 }
 
@@ -489,4 +366,70 @@
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+/* ==========================================================================
+   Settings Dropdown Menu
+   ========================================================================== */
+.admin-settings-dropdown {
+  position: absolute;
+  bottom: 100%; /* Position above the navbar */
+  left: 0;      /* Align with the left edge of the settings button */
+  margin-bottom: 12px;
+  background: var(--admin-card-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--admin-card-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--elev-3);
+  display: flex;
+  flex-direction: column;
+  min-width: 200px;
+  padding: 8px;
+  z-index: 101;
+  animation: dropdownFade 0.2s ease-out forwards;
+}
+
+@keyframes dropdownFade {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.admin-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: var(--text-base);
+  font-weight: var(--weight-medium);
+  text-decoration: none;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  text-align: right;
+  transition: all 0.2s ease;
+  font-family: var(--font-primary);
+}
+
+.admin-dropdown-item:hover {
+  color: var(--text);
+  background: color-mix(in srgb, var(--text) 6%, transparent);
+}
+
+.admin-dropdown-item.danger {
+  color: var(--error);
+}
+
+.admin-dropdown-item.danger:hover {
+  color: var(--error-text);
+  background-color: color-mix(in srgb, var(--error) 12%, transparent);
+}
+
+.admin-dropdown-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 0;
 }

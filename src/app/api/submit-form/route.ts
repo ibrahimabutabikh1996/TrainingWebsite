@@ -7,6 +7,7 @@ import { hashPassword } from "@/lib/auth";
 import { getSession, sessionOwnsProfile } from "@/lib/authGuard";
 import { readIntakeData, withoutCredentials } from "@/lib/intakeData";
 import { attachSessionItems, confirmedPathsFor, openSession } from "@/lib/uploadSessions";
+import { clientAddress, consumeAttempt, SUBMIT_FORM_LIMIT } from "@/lib/rateLimit";
 import { subscriptionEndFrom } from "@/lib/subscription";
 import type { JsonRecord } from "@/types";
 
@@ -23,6 +24,26 @@ export const dynamic = "force-dynamic";
  */
 export async function POST(request: Request) {
   try {
+    /* The one public write endpoint, and the only one that had no ceiling.
+     *
+     * Every other anonymous path already counts: /api/auth/login by address and
+     * by username, /api/uploads/session and /api/uploads/create by address. This
+     * one creates an `accounts` row, a `profiles` row and sends a mail, and would
+     * do it as fast as the network allowed — enough to fill the table, exhaust
+     * the mail credentials and bury the coach's real registrations.
+     *
+     * Counted before the body is read, so a refused caller costs nothing but the
+     * counter itself. The window matches the sign-in one; the allowance is lower
+     * because filling this form takes minutes and nobody submits it six times. */
+    const address = clientAddress(request);
+    const limit = await consumeAttempt(`submit-form:${address}`, SUBMIT_FORM_LIMIT);
+    if (!limit.allowed) {
+      return NextResponse.json(
+        { error: "محاولات كثيرة جداً — انتظر قليلاً ثم أعد المحاولة" },
+        { status: 429, headers: { "Retry-After": String(limit.retryAfterSeconds) } }
+      );
+    }
+
     let body: {
       data?: unknown;
       profileId?: unknown;
@@ -118,6 +139,18 @@ export async function POST(request: Request) {
       uploadedFiles = await confirmedPathsFor(opened.session.id, keepItemIds);
     }
 
+    /* The form now opens on a payment gate: the fee is settled over WhatsApp and
+       the transfer slip attached before the first question. The gate only
+       disables a button, which is a courtesy and not a guarantee — this is the
+       check that decides whether an unpaid registration may be recorded.
+       Renewals never see that gate and are not held to it. */
+    if (!profileId && (uploadedFiles.payment_receipt?.length ?? 0) === 0) {
+      return NextResponse.json(
+        { error: "يجب إرفاق وصل الدفع قبل إرسال الاستمارة", details: ["missing required field: payment_receipt"] },
+        { status: 400 }
+      );
+    }
+
     if (jsonData.gender === "male" && (uploadedFiles.body_photos?.length ?? 0) === 0) {
       return NextResponse.json(
         { error: "بيانات الاستمارة غير صالحة", details: ["missing required field: body_photos"] },
@@ -208,6 +241,8 @@ export async function POST(request: Request) {
       const rawUsername = String(jsonData.username || "").trim();
       const rawPassword = String(jsonData.password || "").trim();
 
+      /* Checked here so the common case gets the sentence that tells the person
+         what to do about it. It is not the guarantee — see the catch below. */
       if (rawUsername && rawPassword) {
         const existingAccount = await prisma.accounts.findUnique({ where: { username: rawUsername } });
         if (existingAccount) {
@@ -217,29 +252,45 @@ export async function POST(request: Request) {
 
       const hashedPassword = rawUsername && rawPassword ? await hashPassword(rawPassword) : null;
 
-      profile = await prisma.$transaction(async (tx) => {
-        let accountId: string | undefined;
+      try {
+        profile = await prisma.$transaction(async (tx) => {
+          let accountId: string | undefined;
 
-        if (hashedPassword) {
-          const newAccount = await tx.accounts.create({
-            data: { username: rawUsername, password: hashedPassword },
+          if (hashedPassword) {
+            const newAccount = await tx.accounts.create({
+              data: { username: rawUsername, password: hashedPassword },
+            });
+            accountId = newAccount.id;
+          }
+
+          const created = await tx.profiles.create({
+            data: {
+              username: fullname || "مستخدم غير معروف",
+              user_id: accountId,
+              data: finalData as Prisma.InputJsonObject,
+            },
           });
-          accountId = newAccount.id;
-        }
 
-        const created = await tx.profiles.create({
-          data: {
-            username: fullname || "مستخدم غير معروف",
-            user_id: accountId,
-            data: finalData as Prisma.InputJsonObject,
-          },
+          if (uploadSessionId) {
+            await attachSessionItems(tx, uploadSessionId, created.id, keepItemIds);
+          }
+          return created;
         });
-
-        if (uploadSessionId) {
-          await attachSessionItems(tx, uploadSessionId, created.id, keepItemIds);
+      } catch (error) {
+        /* The look-up above and this insert are two statements, so two people
+           submitting the same name at the same time both pass the check and the
+           second one reaches the unique index. `accounts.username` being unique
+           is what actually prevents the duplicate; without this it surfaced as
+           the outer handler's 500 — "حدث خطأ" for something the person could
+           have fixed by typing a different name. */
+        if ((error as { code?: string })?.code === "P2002") {
+          return NextResponse.json(
+            { error: "اسم المستخدم محجوز، يرجى اختيار اسم آخر" },
+            { status: 400 }
+          );
         }
-        return created;
-      });
+        throw error;
+      }
     }
 
     // Send Email via Nodemailer
@@ -253,9 +304,9 @@ export async function POST(request: Request) {
           },
         });
 
-        const planName = jsonData.plan === "plan1" ? "خطط ذاتية التوجيه" :
-                         jsonData.plan === "plan2" ? "خطة شهرية (متابعة أسبوعية)" :
-                         jsonData.plan === "plan3" ? "خطة شهرية (متابعة يومية)" : jsonData.plan;
+        const planName = jsonData.plan === "plan1" ? "خطة ذاتية التوجيه" :
+                         jsonData.plan === "plan2" ? "خطة المتابعة الأسبوعية" :
+                         jsonData.plan === "plan3" ? "خطة المتابعة اليومية" : jsonData.plan;
 
         await transporter.sendMail({
           from: `"Ibrahim Abutabikh" <${process.env.EMAIL_USER}>`,
@@ -268,6 +319,7 @@ export async function POST(request: Request) {
               <p><strong>الخطة المطلوبة:</strong> ${planName}</p>
               <p><strong>رقم الهاتف:</strong> ${jsonData.phone || jsonData.mobile || 'غير محدد'}</p>
               <p><strong>العمر:</strong> ${jsonData.age}</p>
+              ${profileId ? "" : `<p><strong>وصل الدفع:</strong> مرفق — يُراجع من لوحة التحكم</p>`}
               <br/>
               <p>يرجى الدخول للوحة التحكم لمشاهدة التفاصيل كاملة.</p>
             </div>
@@ -283,8 +335,17 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, profileId: profile.id });
   } catch (error) {
+    /* The detail goes to the log, not to the response.
+     *
+     * This used to hand `error.message` back to the caller, and this is the one
+     * endpoint on the site that anyone can reach without signing in. A Prisma
+     * failure names the model, the column and the constraint it tripped on; a
+     * connection failure names the host. None of that is something a
+     * registration form should teach a stranger, and none of it helps the person
+     * actually filling it in — the validation errors they can act on are
+     * returned above, with their own 400. */
     console.error("Submit form error:", error);
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    return NextResponse.json({ error: errorMessage || "حدث خطأ في الخادم" }, { status: 500 });
+    return NextResponse.json({ error: "حدث خطأ في الخادم" }, { status: 500 });
   }
 }
+

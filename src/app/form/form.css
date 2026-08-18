@@ -2,11 +2,11 @@
    Everything is scoped under .form-page so it can live alongside landing.css
    (which the page also loads for the fixed navbar) without inheriting the
    landing page's hero-scale heading rules. Colours come from the global
-   tokens in globals.css — no hardcoded surfaces, so light mode follows. */
+   tokens in globals.css — no hardcoded surfaces. */
 
 .form-page {
-  /* --input-border resolves to the same colour as --input-bg in dark mode,
-     which leaves every field edgeless. Step it up inside the form only. */
+  /* --input-border resolves to the same colour as --input-bg, which leaves
+     every field edgeless. Step it up inside the form only. */
   --input-border: var(--border-strong);
   --field-gap: 20px;
 
@@ -831,6 +831,166 @@
 
 /* ─── Responsive ─── */
 
+/* ─── Step 0: the payment gate ─── */
+
+/* The gate and the closing screen are single-purpose cards rather than a form,
+   so they sit in the middle of the viewport instead of at the top of a long
+   scroll. */
+.form-page .form-shell--centered {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+}
+
+.form-page .gate-steps {
+  display: grid;
+  gap: 14px;
+  margin: 0 0 26px;
+  padding: 0;
+  list-style: none;
+}
+
+.form-page .gate-step {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--bg2);
+}
+
+.form-page .gate-step-num {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: var(--text-inverse);
+  font-weight: 800;
+  font-size: 0.9rem;
+}
+
+.form-page .gate-step-body b {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--text);
+  font-size: 0.98rem;
+}
+
+.form-page .gate-step-body p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+  line-height: 1.7;
+}
+
+.form-page .gate-plan-picker {
+  margin-bottom: 18px;
+}
+
+.form-page .gate-plan {
+  margin: 0 0 18px;
+  padding: 12px 16px;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  color: var(--text-secondary);
+  font-size: 0.92rem;
+}
+
+.form-page .gate-plan b {
+  color: var(--text);
+}
+
+/* WhatsApp's own green, the same one the landing page uses for it — the button
+   is recognised by colour before it is read. */
+.form-page .gate-wa {
+  width: 100%;
+  background: #25d366;
+  border: 1px solid #25d366;
+  color: #fff;
+  text-decoration: none;
+}
+
+.form-page .gate-wa:hover {
+  background: #1fb457;
+  border-color: #1fb457;
+}
+
+.form-page .gate-wa svg {
+  width: 22px;
+  height: 22px;
+}
+
+.form-page .gate-wa:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.form-page .gate-receipt {
+  margin-top: 22px;
+}
+
+.form-page .gate-actions {
+  margin-top: 26px;
+  padding-top: 22px;
+  border-top: 1px solid var(--border);
+}
+
+.form-page .gate-actions .form-btn--primary {
+  width: 100%;
+}
+
+.form-page .gate-actions .form-btn--primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.form-page .gate-note {
+  margin: 10px 0 0;
+  color: var(--text-muted, var(--text-secondary));
+  font-size: 0.82rem;
+  text-align: center;
+}
+
+/* ─── The screen that closes the form ─── */
+
+.form-page .done-sheet {
+  max-width: 480px;
+  padding: 40px 24px;
+  text-align: center;
+}
+
+.form-page .done-title {
+  margin: 0 0 16px;
+  color: var(--text);
+  font-size: 1.7rem;
+}
+
+.form-page .done-summary,
+.form-page .done-text {
+  margin: 0 0 16px;
+  color: var(--text-secondary);
+  font-size: 1.05rem;
+  line-height: 1.8;
+}
+
+.form-page .done-summary strong {
+  color: var(--text);
+}
+
+.form-page .done-text {
+  margin-bottom: 30px;
+}
+
+.form-page .done-sheet .form-btn {
+  width: 100%;
+}
+
 @media (max-width: 640px) {
   .form-page {
     --field-gap: 16px;
@@ -873,6 +1033,14 @@
 
   .form-page .form-actions {
     flex-direction: column-reverse;
+  }
+
+  .form-page .done-sheet {
+    padding: 32px 20px;
+  }
+
+  .form-page .gate-step {
+    padding: 12px 14px;
   }
 
   .form-page .form-btn,

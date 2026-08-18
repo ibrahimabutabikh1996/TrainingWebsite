@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { requireAdminPage } from "@/lib/authGuard";
 import AdminCoursesClient from "./AdminCoursesClient";
 import type { Course, CourseAssignments, TraineeOption } from "@/types/admin";
 
@@ -16,6 +17,12 @@ function parseData(raw: unknown): Record<string, unknown> {
 }
 
 export default async function AdminCoursesPage() {
+  /* The proxy already turned strangers away before this rendered — but a
+     matcher is a list of paths, and this page reads every subscriber it can
+     find. It proves the caller for itself rather than inheriting the answer.
+     See @/lib/authGuard. */
+  await requireAdminPage();
+
   let courses: Course[] = [];
   let trainees: TraineeOption[] = [];
   const assignments: CourseAssignments = {};

@@ -6,9 +6,9 @@ import { CustomSelect } from "@/components/CustomSelect";
 import type { StepProps, SubscriptionFormData } from "./types";
 import { t, type TranslationKey } from "@/lib/translations";
 
-const BREAKFAST: TranslationKey[] = ["opt_bf_1", "opt_bf_2", "opt_bf_3", "opt_bf_4"];
-const LUNCH: TranslationKey[] = ["opt_lh_1", "opt_lh_2", "opt_lh_3", "opt_lh_4", "opt_lh_5"];
-const DINNER: TranslationKey[] = ["opt_dn_1", "opt_dn_2", "opt_dn_3", "opt_dn_4", "opt_dn_5"];
+/* The three meal-option lists that used to sit here are gone: this step asks
+   for meal *times* as free text, and the option keys they held were left over
+   from a version that offered fixed choices. */
 
 const EXPERIENCE: TranslationKey[] = ["opt_exp_none", "opt_exp_1", "opt_exp_2", "opt_exp_more"];
 const EXP_TYPES: TranslationKey[] = [

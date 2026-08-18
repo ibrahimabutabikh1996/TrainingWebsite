@@ -1,20 +1,19 @@
 "use client";
 
-import { HeaderControls } from "@/components/HeaderControls";
 import { t } from "@/lib/translations";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
+import { isAdminUsername, useCurrentUsername } from "@/lib/clientSession";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { DietPlan } from "@/components/dashboard/DietPlan";
+
 import { TraineeProfileDetails } from "@/components/dashboard/TraineeProfileDetails";
 import { WorkoutPlan } from "@/components/dashboard/WorkoutPlan";
-import { SubscriptionCalendar } from "@/components/dashboard/SubscriptionCalendar";
-import { SubscriptionHistoryTimeline } from "@/components/dashboard/SubscriptionHistoryTimeline";
 import WeightLog from "@/components/dashboard/WeightLog";
 import "./dashboard.css";
 import Link from "next/link";
 import { Icon, type IconName } from "@/components/Icon";
+import { optimizedSrc, optimizedSrcSet } from "@/lib/imageOptim";
 
 type TabId = "settings" | "weight" | "workout" | "home" | "diet" | "history" | "profile";
 
@@ -31,12 +30,17 @@ export default function DashboardPage() {
 
   // Default active tab override (when null, defaults to profile if under review or home otherwise)
   const [activeTabOverride, setActiveTabOverride] = useState<TabId | null>(null);
+  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
 
+  /* The coach landing on the trainee dashboard is sent to their own panel.
+     Cosmetic routing only — /admin is guarded by the proxy and by every page
+     behind it. The username comes from the session hint cookie now; it used to
+     be read from localStorage and compared against two hard-coded names, a
+     second copy of the list in @/lib/adminUsernames. */
+  const username = useCurrentUsername();
   useEffect(() => {
-    if (localStorage.getItem("loggedInUsername") === "admin" || localStorage.getItem("loggedInUsername") === "mkm94admin") {
-      router.push("/admin");
-    }
-  }, [router]);
+    if (isAdminUsername(username)) router.push("/admin");
+  }, [username, router]);
 
   useEffect(() => {
     if (activeTabOverride === "home") {
@@ -48,7 +52,13 @@ export default function DashboardPage() {
     return (
       <div className="dashboard-page" style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh" }}>
         <div style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: "16px" }}>
-          <img src="/images/logo/vLogo.png" alt="Loading..." className="loading-vlogo" />
+          <img
+        src={optimizedSrc("/images/logo/vLogo.png", 384)}
+        srcSet={optimizedSrcSet("/images/logo/vLogo.png", [256, 384])}
+        sizes="180px"
+        alt="Loading..."
+        className="loading-vlogo"
+      />
           <p style={{ fontSize: "1.1rem", fontWeight: 500, color: "var(--muted2)", margin: 0 }}>{t("dash_checking_db")}</p>
         </div>
       </div>
@@ -77,13 +87,11 @@ export default function DashboardPage() {
   const activeTab: TabId = activeTabOverride ?? (isFullyUnderReview ? "profile" : "home");
   const setActiveTab = (tab: TabId) => setActiveTabOverride(tab);
 
-  /* Define the 6 tabs in exact order from Right to Left (in RTL mode) */
+  /* Define the 4 tabs in exact order from Right to Left (in RTL mode) */
   const tabs: TabConfig[] = [
-    { id: "settings", label: "الإعدادات", icon: "build" },
+    { id: "settings", label: "المزيد", icon: "settings" },
     { id: "workout", label: "البرنامج التدريبي", icon: "fitness_center" },
     { id: "home", label: "الرئيسية", icon: "home" },
-    { id: "diet", label: "النظام الغذائي", icon: "restaurant" },
-    { id: "history", label: "السجل التاريخي", icon: "calendar_month" },
     { id: "profile", label: "الملف الشخصي", icon: "person" },
   ];
 
@@ -140,38 +148,105 @@ export default function DashboardPage() {
 
   return (
     <div className="dashboard-page">
-      {/* Top Glass Navbar */}
-      <header className="top-bar">
-        <Link href="/" className="image-logo" title="العودة للصفحة الرئيسية">
-          <div className="image-logo-mark" style={{ height: "48px", maxWidth: "280px" }}>
-            <img 
-              src="/images/logo/hLogo.png" 
-              alt="Ibrahim Abutabikh Logo" 
-              style={{ maxHeight: "48px", height: "100%", width: "auto", maxWidth: "100%", objectFit: "contain" }} 
-            />
-          </div>
-        </Link>
-        <div className="nav-actions">
-          <HeaderControls />
-          <Link
-            href="/account/password"
-            className="logout-btn"
-            style={{ textDecoration: "none", display: "inline-flex", alignItems: "center" }}
-          >
-            {t("pw_title")}
-          </Link>
-          <button className="logout-btn" onClick={logout}>
-            {t("dash_logout")}
-          </button>
+      {/* Bottom Navbar */}
+      <nav className="dash-bottom-nav">
+
+        {/* Center Nav Links */}
+        <div className="dash-nav-container" style={{ width: "100%", justifyContent: "space-around", maxWidth: "500px", margin: "0 auto" }}>
+          {tabs.map((tab) => {
+            let isTabWaiting = false;
+            if (tab.id === "workout") isTabWaiting = isWorkoutUnderReview;
+            else if (tab.id === "diet") isTabWaiting = isDietUnderReview;
+            else if (tab.id === "history") isTabWaiting = isHistoryUnderReview;
+
+            const isActive = activeTab === tab.id || (tab.id === "settings" && isMoreMenuOpen);
+
+            if (tab.id === "settings") {
+              return (
+                <div key={tab.id} style={{ position: "relative" }}>
+                  <button
+                    onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
+                    title={tab.label}
+                    className={`dash-nav-link ${isActive ? "active" : ""}`}
+                  >
+                    <Icon name={tab.icon} />
+                  </button>
+                  {isMoreMenuOpen && (
+                    <>
+                      <div 
+                        onClick={() => setIsMoreMenuOpen(false)} 
+                        style={{ position: "fixed", inset: 0, zIndex: 90 }} 
+                      />
+                      <div 
+                        className="dash-more-menu"
+                        style={{
+                          position: "absolute",
+                          bottom: "100%",
+                          right: "50%",
+                          transform: "translateX(50%)",
+                          marginBottom: "12px",
+                          background: "var(--bg2)",
+                          border: "1px solid var(--border)",
+                          borderRadius: "var(--radius-lg)",
+                          padding: "8px",
+                          boxShadow: "var(--elev-3)",
+                          display: "flex",
+                          flexDirection: "column",
+                          minWidth: "180px",
+                          zIndex: 100,
+                          animation: "fadeUp 0.2s ease-out forwards"
+                        }}
+                      >
+                        <button onClick={() => { setActiveTab("weight"); setIsMoreMenuOpen(false); }} className="dash-more-item">
+                          <Icon name="monitor_weight" /> سجل الأوزان
+                        </button>
+                        <div style={{ height: "1px", background: "var(--border)", margin: "4px 0" }} />
+                        <Link href="/account/password" className="dash-more-item">
+                          <Icon name="lock" /> تغيير كلمة السر
+                        </Link>
+                        <button onClick={logout} className="dash-more-item danger">
+                          <Icon name="logout" /> تسجيل الخروج
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              );
+            }
+
+            return (
+              <button
+                key={tab.id}
+                onClick={() => {
+                  setActiveTab(tab.id);
+                  setIsMoreMenuOpen(false);
+                }}
+                title={tab.label}
+                className={`dash-nav-link ${isActive ? "active" : ""}`}
+              >
+                <Icon name={tab.icon} />
+                {isTabWaiting && (
+                  <span
+                    style={{
+                      position: "absolute",
+                      top: "10px",
+                      right: "10px",
+                      width: "8px",
+                      height: "8px",
+                      background: "var(--warning)",
+                      borderRadius: "50%",
+                      boxShadow: "0 0 0 2px var(--bg2)",
+                    }}
+                  />
+                )}
+              </button>
+            );
+          })}
         </div>
-      </header>
+      </nav>
 
       <main className="dashboard-main">
-        <header className="dashboard-header" style={{ marginBottom: 24 }}>
-          <div className="welcome-text">
-            <h1>{t("dash_welcome").split(' ')[0]} <span>{t("dash_welcome").split(' ').slice(1).join(' ')}</span></h1>
-          </div>
-        </header>
+
 
         {isSubscriptionExpired && (
           <div style={{
@@ -239,100 +314,12 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Horizontal 5-Tab Navigation Bar */}
-        <div className="dash-tabs-wrapper">
-          <nav className="dash-tabs-bar" role="tablist">
-            {tabs.map((tab) => {
-              let isTabWaiting = false;
-              if (tab.id === "workout") isTabWaiting = isWorkoutUnderReview;
-              else if (tab.id === "diet") isTabWaiting = isDietUnderReview;
-              else if (tab.id === "home") isTabWaiting = isHomeUnderReview;
-              else if (tab.id === "history") isTabWaiting = isHistoryUnderReview;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`dash-tab-btn ${activeTab === tab.id ? "active" : ""}`}
-                  role="tab"
-                  aria-selected={activeTab === tab.id}
-                  title={tab.label}
-                >
-                  <span className="dash-tab-icon"><Icon name={tab.icon} /></span>
-                  <span className="dash-tab-text">
-                    {tab.label}
-                    {isTabWaiting && (
-                      <span
-                        title="هذا القسم قيد المراجعة والتجهيز من قبل الكابتن إبراهيم"
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          background: "var(--primary-transparent, rgba(201,168,76,0.18))",
-                          color: "var(--primary, #C9A84C)",
-                          border: "1px solid var(--border-gold, rgba(201,168,76,0.30))",
-                          width: "26px",
-                          height: "26px",
-                          borderRadius: "50%",
-                          marginInlineStart: "8px",
-                          boxShadow: "0 0 10px rgba(201,168,76,0.25)",
-                        }}
-                      >
-                        <Icon name="hourglass" style={{ fontSize: "15px" }} />
-                      </span>
-                    )}
-                  </span>
-                </button>
-              );
-            })}
-          </nav>
-        </div>
 
-            {/* Tab 1: Settings (Right) */}
-            <div style={{ display: activeTab === "settings" ? "block" : "none" }}>
-              <div className="home-overview-container" style={{ maxWidth: 800 }}>
-                <div className="home-hero-banner">
-                  <div className="home-hero-text">
-                    <h2>إعدادات الحساب والأمان</h2>
-                    <p>إدارة الحساب الشخصي، تبديل المظهر العام والتفضيلات، أو التناوب على إدارة الجلسة.</p>
-                  </div>
-                  <Icon name="build" style={{ fontSize: "56px", color: "var(--primary)", flexShrink: 0 }} />
-                </div>
 
-                <div className="home-stat-card" style={{ padding: 32, gap: 24 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: 16, borderBottom: "1px solid var(--border)" }}>
-                    <div>
-                      <h3 style={{ margin: "0 0 4px 0", fontSize: "1.2rem", color: "var(--text)" }}>تعديل كلمة المرور</h3>
-                      <p style={{ margin: 0, fontSize: "0.9rem", color: "var(--muted)" }}>تحديث كلمة المرور الخاصة بحسابك للأمان والخصوصية</p>
-                    </div>
-                    <Link href="/account/password" className="hero-btn primary-btn" style={{ textDecoration: "none" }}>
-                      تغيير كلمة المرور
-                    </Link>
-                  </div>
-
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: 16, borderBottom: "1px solid var(--border)" }}>
-                    <div>
-                      <h3 style={{ margin: "0 0 4px 0", fontSize: "1.2rem", color: "var(--text)" }}>تفضيلات المظهر واللغة</h3>
-                      <p style={{ margin: 0, fontSize: "0.9rem", color: "var(--muted)" }}>التبديل بين الوضع الداكن والفاتح أو اختيار لغة الواجهة</p>
-                    </div>
-                    <HeaderControls />
-                  </div>
-
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <div>
-                      <h3 style={{ margin: "0 0 4px 0", fontSize: "1.2rem", color: "var(--error, #e53935)" }}>تسجيل الخروج من الجلسة</h3>
-                      <p style={{ margin: 0, fontSize: "0.9rem", color: "var(--muted)" }}>الخروج من الحساب الحالي على هذا المتصفح</p>
-                    </div>
-                    <button onClick={logout} className="logout-btn" style={{ padding: "12px 24px", fontSize: "1rem", borderColor: "var(--error, #e53935)", color: "var(--error, #e53935)" }}>
-                      تسجيل الخروج
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
 
         {/* Tab: Weight Log */}
         <div style={{ display: activeTab === "weight" ? "block" : "none" }}>
-          <WeightLog profile={profile} />
+          <WeightLog profile={profile} onSaveSuccess={reload} />
         </div>
 
         {/* Tab 2: Workout Program (Right) */}
@@ -347,47 +334,16 @@ export default function DashboardPage() {
         {/* Tab 3: Home / General Info & Stats (Center Default) */}
         <div style={{ display: activeTab === "home" ? "block" : "none" }}>
           {isHomeUnderReview ? renderProcessingCard("الرئيسية وملخص الإنجاز") : (
-            <div className="home-overview-container">
-                {/* Hero Greeting Banner */}
-                <div className="home-hero-banner">
-                  <div className="home-hero-text">
-                    <h2>هلا بيك كابتن، {profile.fullname}!</h2>
-                    <p>هنا تجد ملخص إنجازك البدني وحالة اشتراكك النشط في التدريب والمتابعة مع الكابتن إبراهيم. واصل الالتزام ببرنامجك الرياضي والغذائي لبلوغ هدفك!</p>
-                  </div>
-                  <div style={{ flexShrink: 0, opacity: 0.9 }}>
-                    <Icon name="workspace_premium" style={{ fontSize: "72px", color: "var(--primary)" }} />
-                  </div>
+              <div className="home-overview-container">
+                {/* Hero Greeting Text */}
+                <div style={{ marginBottom: "var(--space-8)" }}>
+                  <h2 style={{ fontSize: "1.8rem", margin: 0 }}>
+                    هلا بيك كابتن، <span style={{ color: "var(--primary)" }}>{profile.fullname}</span>!
+                  </h2>
                 </div>
 
                 {/* Main Stats Row: Workouts Counter & Subscription Timeline */}
                 <div className="home-stats-grid">
-                  {/* Workout Days Accomplished Card */}
-                  <div className="home-stat-card">
-                    <div>
-                      <div className="home-card-header">
-                        <h3 className="home-card-title">إنجازك الرياضي التراكمي</h3>
-                        <div className="home-card-icon"><Icon name="fitness_center" /></div>
-                      </div>
-                      <div className="home-workout-counter">
-                        <span className="num">{profile.completedCycles ?? profile.completedWorkoutDays ?? 0}</span>
-                        <span className="unit">دورة تدريبية مكتملة</span>
-                      </div>
-                      <p style={{ color: "var(--text-muted)", margin: "8px 0 0", fontSize: "0.92rem", lineHeight: "1.6" }}>
-                        هذا الرقم يمثل إجمالي الدورات التدريبية المكتملة في سجلك الرياضي بنجاح. كل دورة تنجزها تقربك أكثر من النسخة الأفضل لك!
-                      </p>
-                    </div>
-                    <div style={{ borderTop: "1px solid var(--border)", paddingTop: 16, marginTop: 8 }}>
-                      <button 
-                        onClick={() => setActiveTab("workout")} 
-                        className="dash-primary-btn" 
-                        style={{ width: "100%" }}
-                      >
-                        <Icon name="exercise" style={{ fontSize: "22px" }} />
-                        <span>الذهاب للبرنامج التدريبي ومتابعة دورتك الحالية</span>
-                      </button>
-                    </div>
-                  </div>
-
                   {/* Subscription Details & Progress Card */}
                   <div className="home-stat-card">
                     <div>
@@ -432,33 +388,10 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                {/* Monthly Commitment Calendar */}
-              <SubscriptionCalendar 
-                startDate={startDate} 
-                endDate={endDate} 
-                workoutDates={profile.workoutDates} 
-              />
             </div>
           )}
         </div>
 
-        {/* Tab 4: Diet Plan (Left) */}
-        <div style={{ display: activeTab === "diet" ? "block" : "none" }}>
-          {isDietUnderReview ? renderProcessingCard("النظام الغذائي") : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
-              <DietPlan profile={profile} />
-            </div>
-          )}
-        </div>
-
-        {/* Tab 5: Historical Record & Archive */}
-        <div style={{ display: activeTab === "history" ? "block" : "none" }}>
-          {isHistoryUnderReview ? renderProcessingCard("السجل التاريخي") : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
-              <SubscriptionHistoryTimeline profile={profile} />
-            </div>
-          )}
-        </div>
 
         {/* Tab 6: Profile & Answers (Left) */}
         <div style={{ display: activeTab === "profile" ? "block" : "none" }}>

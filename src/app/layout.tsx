@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { ThemeProvider } from "@/contexts/ThemeContext";
 import "./globals.css";
+import { UploadProgressWindow } from "@/components/upload/UploadProgressWindow";
 
 export const metadata: Metadata = {
   title: "Ibrahim Abutabikh",
@@ -18,9 +18,11 @@ export default function RootLayout({
   return (
     <html lang="ar" dir="rtl">
       <body>
-        <ThemeProvider>
-          {children}
-        </ThemeProvider>
+        {children}
+        {/* Every upload in the system reports into this one window, so it is
+            mounted once here rather than per screen. It renders nothing until a
+            file is actually on its way. */}
+        <UploadProgressWindow />
       </body>
     </html>
   );

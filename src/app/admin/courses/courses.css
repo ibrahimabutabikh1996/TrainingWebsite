@@ -440,7 +440,7 @@
   padding: var(--space-3) var(--space-4);
   font-weight: var(--weight-semibold);
   /* --text-secondary, not --text-muted: the header sits on --bg3, where muted
-     can't reach AA in the light theme. */
+     can't reach AA. */
   color: var(--text-secondary);
   font-size: var(--text-xs);
   text-align: start;
@@ -519,4 +519,26 @@
   font-weight: 600;
   color: var(--admin-on-surface);
   box-shadow: var(--elev-1);
+}
+
+/* Custom exercise rows — a title plus up to four free-text columns the coach
+   defined themselves. They carry no sets/reps/rest, so the row spans the three
+   numeric columns and lays the written values out the way the builder does. */
+.co-custom-cols {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.co-custom-col {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 4px 10px;
+  background: color-mix(in srgb, var(--admin-on-surface) 4%, transparent);
+  border: 1px solid color-mix(in srgb, var(--admin-on-surface) 8%, transparent);
+  border-radius: var(--admin-radius-sm);
+  font-size: var(--text-sm);
+  color: var(--admin-on-surface);
+  overflow-wrap: anywhere;
 }

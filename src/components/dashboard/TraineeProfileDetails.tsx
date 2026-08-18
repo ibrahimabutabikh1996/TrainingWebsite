@@ -39,7 +39,7 @@ function MetricCard({
 }: MetricCardProps) {
   let bgColor = "var(--bg3)";
   let borderColor = "var(--border)";
-  let textColor = "var(--text)";
+  const textColor = "var(--text)";
   let labelColor = "var(--text-muted)";
   let iconColor = "var(--primary)";
 
@@ -142,16 +142,22 @@ export function TraineeProfileDetails({ profile }: TraineeProfileDetailsProps) {
     return [];
   };
 
+  const paymentReceipts = getFiles(data.payment_receipt);
   const analysisFiles = getFiles(data.analysis_file);
   const supplementsPhotos = getFiles(data.supplements_photo);
   const dietHistoryFiles = getFiles(data.diet_history_file);
   const bodyPhotos = getFiles(data.body_photos);
 
-  const otherFiles = [
+  /* Typed at the list rather than cast at the point of use: the three icon
+     names are checked against IconName here, so a typo is an error on the line
+     that has it instead of an `as any` further down hiding it. */
+  const fileGroups: { label: string; icon: IconName; files: string[] }[] = [
+    { label: "وصل الدفع", icon: "payments", files: paymentReceipts },
     { label: "ملف التحاليل والفحوصات الطبية", icon: "science", files: analysisFiles },
     { label: "صور المكملات الغذائية", icon: "medication", files: supplementsPhotos },
     { label: "ملف النظام الغذائي والتدريبي السابق", icon: "receipt_long", files: dietHistoryFiles },
-  ].filter((group) => group.files.length > 0);
+  ];
+  const otherFiles = fileGroups.filter((group) => group.files.length > 0);
 
   const currentWeightNum = parseFloat(String(data.weight || profile.weight || "").replace(/[^0-9.]/g, ""));
   const targetWeightNum = parseFloat(String(data.target_weight || "").replace(/[^0-9.]/g, ""));
@@ -199,13 +205,7 @@ export function TraineeProfileDetails({ profile }: TraineeProfileDetailsProps) {
           <div style={{ flex: 1, minWidth: "240px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
               <h2 style={{ fontSize: "1.45rem", fontWeight: 800, color: "var(--text)", margin: 0 }}>بيانات الاشتراك والهدف التدريبي</h2>
-              <span style={{ background: "color-mix(in srgb, var(--primary) 15%, var(--bg3))", color: "var(--primary)", padding: "4px 12px", borderRadius: "var(--radius-pill)", fontSize: "0.82rem", fontWeight: 700, border: "1px solid color-mix(in srgb, var(--primary) 30%, transparent)" }}>
-                ملف معتمد
-              </span>
             </div>
-            <p style={{ fontSize: "0.92rem", color: "var(--text-muted)", margin: "6px 0 0" }}>
-              الملف الشامل للمعلومات والمؤشرات والأهداف الخاصة بك مع الكابتن إبراهيم
-            </p>
           </div>
         </div>
 
@@ -447,7 +447,7 @@ export function TraineeProfileDetails({ profile }: TraineeProfileDetailsProps) {
                     e.currentTarget.style.transform = "translateY(0)";
                   }}
                 >
-                  <Icon name={icon as any} style={{ fontSize: "22px", color: "var(--primary)" }} />
+                  <Icon name={icon} style={{ fontSize: "22px", color: "var(--primary)" }} />
                   <span>{label} {files.length > 1 ? `(${idx + 1})` : ""}</span>
                   <Icon name="open_in_new" style={{ fontSize: "18px", opacity: 0.7 }} />
                 </a>

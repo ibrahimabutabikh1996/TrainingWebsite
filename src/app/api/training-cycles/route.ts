@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { requireProfileAccess, requireUser, sessionOwnsProfile } from "@/lib/authGuard";
 import {
   ensureCurrentCycle,
   redateSessionLogs,
@@ -33,6 +34,9 @@ export async function GET(request: Request) {
     if (!profileId || !isValidUUID(profileId)) {
       return NextResponse.json({ error: "معرّف المشترك غير صالح" }, { status: 400 });
     }
+
+    const auth = await requireProfileAccess(profileId);
+    if (!auth.ok) return auth.response;
 
     const current = await ensureCurrentCycle(profileId);
 
@@ -132,6 +136,9 @@ export async function GET(request: Request) {
  */
 export async function PATCH(request: Request) {
   try {
+    const auth = await requireUser();
+    if (!auth.ok) return auth.response;
+
     const { sessionId, notes, performedOn } = await request.json();
 
     if (!sessionId || !isValidUUID(sessionId)) {
@@ -143,6 +150,13 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: access.error }, { status: access.status });
     }
     const { cycle, followingCycleId } = access;
+
+    /* The profile is not named in this request — it is reached through the
+       session id — so ownership is checked here, once the cycle says whose
+       workout this is. Without it, any id from any trainee's log was writable. */
+    if (!(await sessionOwnsProfile(auth.session, cycle.profile_id))) {
+      return NextResponse.json({ error: "غير مصرح لك بهذا الإجراء" }, { status: 403 });
+    }
 
     /* Reading history stays open; writing does not, whatever the screen allows. */
     const blocked = await subscriptionBlock(cycle.profile_id);
@@ -176,15 +190,8 @@ export async function PATCH(request: Request) {
     });
 
     /* Sets already typed in follow the date the trainee filed the workout under. */
-    let clearedRestDay = false;
     if (nextDate !== undefined && nextDate !== null) {
       await redateSessionLogs(cycle.profile_id, String(sessionId), toISODate(nextDate));
-      /* Training on a day that was marked as rest settles the matter: what
-         happened wins over what was planned, so the marking comes off. */
-      const removed = await prisma.rest_days.deleteMany({
-        where: { profile_id: cycle.profile_id, rest_on: nextDate },
-      });
-      clearedRestDay = removed.count > 0;
     }
 
     const state =
@@ -214,8 +221,6 @@ export async function PATCH(request: Request) {
       },
       /* True only on the change that ended the cycle, so the trainee is told once. */
       cycleCompleted: state.completed && state.changed,
-      /* The day had been marked as rest; the trainee should see it was dropped. */
-      clearedRestDay,
     });
   } catch (error) {
     console.error("Training cycles PATCH error:", error);

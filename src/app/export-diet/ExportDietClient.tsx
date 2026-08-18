@@ -1,32 +1,26 @@
-// @ts-nocheck
 "use client";
-
 import React, { useState } from "react";
-import type { DietPlan } from "@/types/diet";
-import { MEAL_SLOTS, fmtMacro } from "@/types/diet";
-import { Icon } from "@/components/Icon";
+import type { DietPlan, Meal, MealItem } from "@/types/diet";
 
-interface Props {
+interface ExportDietClientProps {
   traineeName: string;
-  planName: string;
+  startDate: string;
   weight: string;
   height: string;
   goal: string;
-  allergies: string;
   dietPlans: DietPlan[];
-  profileId?: string;
+  profileId?: string | null;
 }
 
 export default function ExportDietClient({
   traineeName,
-  planName,
+  startDate,
   weight,
   height,
   goal,
-  allergies,
   dietPlans,
   profileId,
-}: Props) {
+}: ExportDietClientProps) {
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloaded, setDownloaded] = useState(false);
 
@@ -57,15 +51,11 @@ export default function ExportDietClient({
     }
   };
 
-  {/* The logo, divider rules, watermark and contact icons are baked into
-      workout_template.jpg, which is laid over the full A4 page. */}
   const renderHeader = () => (
     <div className="pdf-header-info">
       <div className="pdf-header-row">
         <span>الاسم: <strong>{traineeName}</strong></span>
-        {allergies && allergies !== "لا توجد موانع أو حساسية" && (
-          <span>الموانع: <strong style={{ color: "#b91c1c" }}>{allergies}</strong></span>
-        )}
+        <span>تاريخ الاشتراك: <strong>{startDate}</strong></span>
       </div>
       <div className="pdf-header-row">
         <span>الوزن: <strong>{weight}</strong></span>
@@ -173,14 +163,9 @@ export default function ExportDietClient({
           width: 100%;
           border-collapse: collapse;
           table-layout: fixed;
-          margin-top: 3mm;
+          margin-top: 4mm;
           text-align: center;
           border-top: 0.45mm solid #0F4E79;
-          
-          --row-height: 9mm;
-          --cell-padding: 1.5mm;
-          --th-font: 3.8mm;
-          --td-font: 3.4mm;
         }
 
         .table-grid th,
@@ -188,100 +173,75 @@ export default function ExportDietClient({
           background: transparent;
           border: none;
           border-bottom: 0.3mm solid #0F4E79;
-          height: var(--row-height);
-          padding: var(--cell-padding);
+          height: 10mm;
+          padding: 1mm 1.5mm;
           vertical-align: middle;
         }
 
         .table-grid th {
           color: #0F4E79;
           font-weight: 800;
-          font-size: var(--th-font);
+          font-size: 4.1mm;
           white-space: nowrap;
         }
 
         .table-grid td {
           color: #1a1a1a;
           font-weight: 700;
-          font-size: var(--td-font);
-          overflow-wrap: anywhere;
+          font-size: 4mm;
+          line-height: 1.3;
+        }
+        
+        .meal-title-row td {
+          background: rgba(15, 78, 121, 0.05);
+          text-align: right;
+          padding-right: 4mm;
+          color: #0F4E79;
+          font-weight: 800;
+          font-size: 4.5mm;
+          border-bottom: 0.5mm solid #0F4E79;
         }
 
         @media print {
-          body, .pdf-export-wrapper {
-            background: transparent !important;
+          @page {
+            size: A4;
+            margin: 0 !important;
+          }
+          body, html {
+            background: none !important;
             margin: 0 !important;
             padding: 0 !important;
-            color: #000 !important;
+          }
+          .pdf-export-wrapper {
+            background: none !important;
+            padding: 0 !important;
+          }
+          .pdf-page-card {
+            box-shadow: none !important;
+            page-break-after: always;
+          }
+          .pdf-page-card:last-child {
+            page-break-after: auto;
           }
           .no-print {
             display: none !important;
           }
-          .pdf-page-card {
-            box-shadow: none !important;
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-          }
-          .pdf-page-break {
-            page-break-after: always !important;
-            break-after: page !important;
-          }
-          .table-grid tr {
-            page-break-inside: avoid !important;
-          }
-          @page {
-            size: A4 portrait;
-            margin: 0;
-          }
         }
-      ` }} />
+      `}} />
 
-      {/* Action Bar (Not included in PDF) */}
-      {/* The sheet below is a print artifact and keeps its own paper palette in
-          both themes; this toolbar is app UI, so it matches the document rather
-          than the black-and-gold of the retired brand. */}
-      <div className="no-print" style={{ maxWidth: "960px", margin: "0 auto 24px auto", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#FFFFFF", color: "#0F172A", padding: "16px 22px", borderRadius: "12px", border: "1px solid #CBD5E1", gap: "12px", flexWrap: "wrap" }}>
+      <div className="no-print" style={{ maxWidth: "960px", margin: "0 auto 24px auto", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#fff", padding: "16px 24px", borderRadius: "12px", boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}>
         <div>
-          <h2 style={{ margin: 0, fontSize: "1.25rem", fontWeight: 800, color: "#0F172A", fontFamily: "'Cairo', sans-serif", display: "flex", alignItems: "center", gap: "10px" }}>
-            <span>تصدير الجدول الغذائي وتحميل الـ PDF</span>
-            {isDownloading && (
-              <span style={{ fontSize: "0.82rem", padding: "3px 12px", background: "#FEF3C7", color: "#78350F", borderRadius: "20px", fontWeight: 800 }}>
-                ⏳ جاري التجهيز والتحميل المباشر...
-              </span>
-            )}
-            {downloaded && !isDownloading && (
-              <span style={{ fontSize: "0.82rem", padding: "3px 12px", background: "#DCFCE7", color: "#14532D", borderRadius: "20px", fontWeight: 800 }}>
-                ✅ تم تحميل الملف في مجلد التنزيلات
-              </span>
-            )}
-          </h2>
-          <p style={{ margin: "6px 0 0 0", fontSize: "0.9rem", color: "#475569" }}>
-            تم مطابقة فورم تصميم الجدول الغذائي بالكامل مع قالب النظام التدريبي (الكورس) بدقة فائقة.
-          </p>
+          <h1 style={{ margin: 0, fontSize: "1.25rem", fontWeight: 800, color: "#0f172a" }}>
+            النظام الغذائي - {traineeName}
+          </h1>
         </div>
-        <div style={{ display: "flex", gap: "12px" }}>
+        <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
           <button
             onClick={downloadPDF}
             disabled={isDownloading}
-            style={{
-              padding: "10px 24px",
-              background: isDownloading ? "#64748b" : "#0F4E79",
-              color: "#ffffff",
-              border: "none",
-              borderRadius: "8px",
-              fontWeight: 800,
-              cursor: isDownloading ? "not-allowed" : "pointer",
-              fontSize: "1.05rem",
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              boxShadow: isDownloading ? "none" : "0 4px 12px rgba(15, 78, 121, 0.35)",
-              fontFamily: "'Cairo', sans-serif"
-            }}
+            style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: downloaded ? "#10b981" : "#0F4E79", color: "#fff", border: "none", padding: "10px 20px", borderRadius: "8px", fontSize: "1rem", fontWeight: 700, cursor: isDownloading ? "wait" : "pointer", transition: "all 0.2s" }}
           >
-            <span>{isDownloading ? "⏳ جاري التحميل..." : downloaded ? "⬇️ إعادة تحميل الـ PDF" : "⬇️ تحميل ملف الـ PDF"}</span>
+            {isDownloading ? "جاري التجهيز..." : downloaded ? "تم التحميل" : "تحميل النظام الغذائي PDF"}
           </button>
           <button
             onClick={() => {
@@ -291,8 +251,8 @@ export default function ExportDietClient({
             style={{
               padding: "10px 18px",
               background: "transparent",
-              color: "#475569",
-              border: "1px solid #CBD5E1",
+              color: "#0F4E79",
+              border: "1px solid rgba(15, 78, 121, 0.4)",
               borderRadius: "8px",
               fontWeight: 700,
               cursor: "pointer",
@@ -305,132 +265,104 @@ export default function ExportDietClient({
         </div>
       </div>
 
-      {/* Document PDF Content Area - Multi-Page structure */}
       <div id="pdf-content-area" style={{ maxWidth: "960px", margin: "0 auto" }}>
         {dietPlans.length === 0 ? (
           <div className="pdf-page-card">
             {renderHeader()}
             <div style={{ textAlign: "center", padding: "60px", color: "#64748b", fontSize: "1.3rem", fontWeight: 700, flex: "1 0 auto" }}>
-              لا توجد خطط غذائية مسجلة لعرضها في هذا الجدول.
+              لا توجد بيانات نظام غذائي لعرضها في هذا الجدول.
             </div>
             {renderFooter()}
           </div>
         ) : (
-          dietPlans.map((plan, planIdx) => {
-            const totalRows = MEAL_SLOTS.reduce((acc, slot) => {
-              const meal = plan.meals[slot.key];
-              if (!meal || (meal.items.length === 0 && !meal.time)) return acc;
-              return acc + 1 + Math.max(1, meal.items.length);
-            }, 0);
-            
-            const maxRows = 17;
-            const tableZoom = totalRows > maxRows ? Math.max(0.5, maxRows / totalRows) : 1;
+          dietPlans.map((plan: DietPlan, planIdx: number) => {
+            const planTitle = plan.name || `النظام الغذائي ${planIdx + 1}`;
+            const meals = Array.isArray(plan.meals) ? plan.meals : [];
+            const totalItems = meals.reduce((sum, m) => sum + (m.items?.length || 0), 0);
+            const totalRows = meals.length + totalItems;
+
+            let rowHeight = "9.5mm";
+            let fontSize = "4.0mm";
+            let titleFontSize = "4.5mm";
+            let headerMarginBottom = "12px";
+            let stripPadding = "12px 20px";
+            let stripFontSize = "1.25rem";
+            let tableMarginTop = "4mm";
+
+            if (totalRows > 24) {
+              rowHeight = "6.5mm"; fontSize = "3.2mm"; titleFontSize = "3.6mm"; headerMarginBottom = "6px"; stripPadding = "8px 16px"; stripFontSize = "1.05rem"; tableMarginTop = "2mm";
+            } else if (totalRows > 20) {
+              rowHeight = "7.8mm"; fontSize = "3.5mm"; titleFontSize = "3.9mm"; headerMarginBottom = "8px"; stripPadding = "8px 16px"; stripFontSize = "1.1rem"; tableMarginTop = "2.5mm";
+            }
 
             return (
               <React.Fragment key={planIdx}>
                 <div className="pdf-page-card">
                   {renderHeader()}
-
-                  <div style={{ flex: "1 0 auto", paddingBottom: "16px" }}>
-                    {/* Plan Header Strip */}
-                    <div className="day-header-strip" style={{ background: "#f1f5f9", padding: "10px 18px", borderRadius: "6px", borderLeft: "6px solid #0F4E79", borderRight: "6px solid #0F4E79", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", marginBottom: "12px", borderTop: "1px solid #e2e8f0", borderBottom: "1px solid #e2e8f0" }}>
-                      <div style={{ fontSize: "1.2rem", fontWeight: 800, color: "#0f172a" }}>
-                        {plan.name === "النظام الأول" ? "النظام الغذائي الاختيار الأول" :
-                         plan.name === "النظام الثاني" ? "النظام الغذائي الاختيار الثاني" :
-                         plan.name === "النظام الثالث" ? "النظام الغذائي الاختيار الثالث" :
-                         plan.name || `الخطة الغذائية رقم ${planIdx + 1}`}
+                  <div style={{ flex: "1 1 auto", display: "flex", flexDirection: "column", paddingBottom: "0" }}>
+                    
+                    <div className="day-header-strip" style={{ background: "#f1f5f9", padding: stripPadding, borderRadius: "6px", borderLeft: "6px solid #0F4E79", borderRight: "6px solid #0F4E79", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", marginBottom: headerMarginBottom, borderTop: "1px solid #e2e8f0", borderBottom: "1px solid #e2e8f0", flexShrink: 0 }}>
+                      <div style={{ fontSize: stripFontSize, fontWeight: 800, color: "#0f172a" }}>
+                        {planTitle}
                       </div>
                     </div>
 
-                    {/* Rule-Only Table */}
-                    <table className="table-grid" style={{ 
-                      "--row-height": `${9 * tableZoom}mm`,
-                      "--cell-padding": `${1.5 * tableZoom}mm`,
-                      "--th-font": `${3.8 * tableZoom}mm`,
-                      "--td-font": `${3.4 * tableZoom}mm`,
-                      "--header-row": `${10 * tableZoom}mm`,
-                      "--meal-row": `${8.5 * tableZoom}mm`,
-                      "--meal-font": `${4.0 * tableZoom}mm`,
-                      "--meal-time-font": `${3.4 * tableZoom}mm`
-                    } as React.CSSProperties}>
+                    <table className="table-grid" style={{ marginTop: tableMarginTop, flex: "1 1 auto", height: "100%" }}>
                       <thead>
-                        <tr style={{ height: "var(--header-row)" }}>
-                          <th style={{ width: "12mm", padding: "var(--cell-padding) 1mm" }}>ت</th>
-                          <th style={{ textAlign: "right", padding: "var(--cell-padding)", width: "102mm" }}>الصنف الغذائي</th>
-                          <th style={{ width: "80mm", padding: "var(--cell-padding)" }}>الكمية / الوزن</th>
+                        <tr style={{ height: "11mm" }}>
+                          <th style={{ width: "10%", padding: "2mm 1mm" }}>ت</th>
+                          <th style={{ textAlign: "right", padding: "2mm 1.5mm", width: "45%" }}>اسم الصنف</th>
+                          <th style={{ width: "25%", padding: "2mm 1mm" }}>الفئة</th>
+                          <th style={{ width: "20%", padding: "2mm 1mm" }}>الكمية</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {MEAL_SLOTS.map((slot) => {
-                          const meal = plan.meals[slot.key];
-                          if (!meal || (meal.items.length === 0 && !meal.time)) return null;
-
-                          return (
-                            <React.Fragment key={slot.key}>
-                              {/* Meal Slot Group Header Row */}
-                              <tr style={{ backgroundColor: "rgba(15, 78, 121, 0.08)", borderTop: "0.45mm solid #0F4E79", borderBottom: "0.35mm solid #0F4E79", height: "var(--meal-row)" }}>
-                                <td colSpan={3} style={{ textAlign: "right", padding: "var(--cell-padding) 3mm", fontWeight: 900, color: "#0F4E79", fontSize: "var(--meal-font)", background: "rgba(15, 78, 121, 0.08)" }}>
-                                  <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", marginInlineEnd: "14px", fontWeight: 900 }}>
-                                    <Icon name={slot.icon as any || "restaurant_menu"} style={{ width: "4.5mm", height: "4.5mm", strokeWidth: 2.5 }} />
-                                    <span>{slot.label}</span>
-                                  </div>
-                                  {meal.time && (
-                                    <span style={{ color: "#334155", fontSize: "var(--meal-time-font)", fontWeight: 800 }}>
-                                      ⏰ الوقت الموصى به: {meal.time}
-                                    </span>
-                                  )}
+                        {meals.length === 0 ? (
+                          <tr>
+                            <td colSpan={4} style={{ padding: "28px", color: "#64748b", fontWeight: 600 }}>
+                              لا توجد وجبات مسجلة في هذا النظام
+                            </td>
+                          </tr>
+                        ) : (
+                          meals.map((meal: Meal) => (
+                            <React.Fragment key={meal.id}>
+                              <tr className="meal-title-row" style={{ height: rowHeight }}>
+                                <td colSpan={4} style={{ fontSize: titleFontSize }}>
+                                  {meal.name} {meal.time ? `(${meal.time})` : ""}
                                 </td>
                               </tr>
-
-                              {/* Food Items under this meal */}
-                              {meal.items.length === 0 ? (
-                                <tr>
-                                  <td colSpan={3} style={{ textAlign: "center", color: "#64748b", fontWeight: 600, padding: "3mm" }}>
-                                    حسب الرغبة أو إرشادات الكابتن
+                              {meal.startNote && (
+                                <tr style={{ height: rowHeight, backgroundColor: "#fafafa" }}>
+                                  <td colSpan={4} style={{ textAlign: "right", paddingRight: "4mm", color: "#555", fontSize: fontSize }}>
+                                    {meal.startNote}
                                   </td>
                                 </tr>
-                              ) : (
-                                meal.items.map((mItem, idx) => {
-                                  const weightVal = mItem.weight != null ? Math.round(mItem.weight * 10) / 10 : Math.round((mItem.qty || 1) * 100 * 10) / 10;
-                                  const qtyVal = mItem.qty != null ? mItem.qty : 1;
-                                  const unit = mItem.unit || "غرام";
-                                  const prefix = (unit === "غرام" || unit === "كغم") ? "الوزن" : "الكمية";
-                                  const unitSuffix = unit === "بدون وحدة قياس" ? "" : ` ${unit}`;
-                                  
-                                  const parts: string[] = [];
-                                  if (qtyVal > 0) parts.push(`العدد: ${fmtMacro(qtyVal)}`);
-                                  if (weightVal > 0) parts.push(`${prefix}: ${weightVal}${unitSuffix}`);
-                                  const portionText = parts.length > 0 ? parts.join(" | ") : "حسب الرغبة";
-
-                                  return (
-                                    <tr key={idx} style={{ height: "9mm" }}>
-                                      <td style={{ fontWeight: 800, color: "#475569" }}>{idx + 1}</td>
-                                      <td style={{ textAlign: "right", fontWeight: 800, color: "#000", fontSize: "3.7mm" }}>
-                                        {mItem.name || "صنف غذائي"}
-                                      </td>
-                                      <td style={{ fontWeight: 800, color: "#0F4E79", fontSize: "3.5mm" }}>
-                                        {portionText}
-                                      </td>
-                                    </tr>
-                                  );
-                                })
                               )}
+                              {meal.items.map((item: MealItem, itemIdx: number) => {
+                                const baseGrams = 100;
+                                const displayWeight = item.weight != null ? Math.round(item.weight * 10) / 10 : Math.round(item.qty * baseGrams * 10) / 10;
+                                const unit = item.unit || "غرام";
+                                const amountText = unit === "غرام" || unit === "مل" || unit === "لتر" || unit === "كغم" 
+                                  ? `${displayWeight} ${unit}`
+                                  : `${item.qty} ${unit} ${item.serving_size ? `(${item.serving_size})` : ""}`;
+
+                                return (
+                                  <tr key={item.id} style={{ height: rowHeight }}>
+                                    <td style={{ fontSize: fontSize }}>{itemIdx + 1}</td>
+                                    <td style={{ textAlign: "right", fontSize: fontSize }}>{item.name}</td>
+                                    <td style={{ fontSize: fontSize }}>{item.category}</td>
+                                    <td style={{ fontWeight: 800, color: "#0F4E79", fontSize: fontSize, direction: "ltr" }}>{amountText}</td>
+                                  </tr>
+                                );
+                              })}
                             </React.Fragment>
-                          );
-                        })}
+                          ))
+                        )}
                       </tbody>
                     </table>
                   </div>
-
                   {renderFooter()}
                 </div>
-
-                {planIdx < dietPlans.length - 1 && (
-                  <>
-                    <div className="no-print" style={{ height: "32px" }} />
-                    <div className="pdf-page-break" style={{ pageBreakAfter: "always", breakAfter: "page" }} />
-                  </>
-                )}
               </React.Fragment>
             );
           })

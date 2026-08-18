@@ -1,10 +1,17 @@
 import React from "react";
+import { optimizedSrc, optimizedSrcSet } from "@/lib/imageOptim";
 
 export default function Loading() {
   return (
     <div className="global-loading-container">
       <div className="loading-content">
-        <img src="/images/logo/vLogo.png" alt="Loading..." className="loading-vlogo" />
+        <img
+        src={optimizedSrc("/images/logo/vLogo.png", 384)}
+        srcSet={optimizedSrcSet("/images/logo/vLogo.png", [256, 384])}
+        sizes="180px"
+        alt="Loading..."
+        className="loading-vlogo"
+      />
         <h2 className="loading-text">جاري التحميل...</h2>
       </div>
 

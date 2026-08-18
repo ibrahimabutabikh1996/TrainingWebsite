@@ -10,6 +10,10 @@
  */
 
 export const INTAKE_UPLOAD_FIELDS = [
+  /* The payment receipt, collected before the questions rather than after them:
+     the form now opens on a gate where the trainee settles the fee over
+     WhatsApp and attaches the transfer slip. */
+  "payment_receipt",
   "analysis_file",
   "supplements_photo",
   "home_equipment_photo",

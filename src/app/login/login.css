@@ -68,6 +68,10 @@ body::before {
   transition: color 0.2s;
   position: relative;
   width: fit-content;
+  /* A flex item will not shrink below its content by default. Without this the
+     logo held the header open at its full width and pushed the register button
+     off the side of a phone. */
+  min-width: 0;
 }
 .image-logo:hover {
   color: var(--text); /* Primary Text */
@@ -89,6 +93,11 @@ body::before {
 }
 .image-logo-mark img {
   height: 100%; width: auto; max-height: 48px; object-fit: contain;
+  /* `width: auto` at a 48px height makes this image 301px wide — wider than the
+     280px box around it, which it then simply overflowed, because a max-width
+     on the parent does not constrain the child. That was the rest of the
+     sign-in page's horizontal scrollbar. */
+  max-width: 100%;
 }
 .image-logo:hover .image-logo-mark {
   transform: scale(1.05);
@@ -108,13 +117,25 @@ body::before {
   overflow-y: auto;
 }
 
-/* Subtle radial glow behind the card */
+/* Subtle radial glow behind the card.
+ *
+ * `max-width: 100%` is what keeps it from widening the whole document. At 600px
+ * fixed, centred with a -50% translate, it hung 112px past each edge of a 375px
+ * phone — and because nothing here clips, that reached the document and gave
+ * the sign-in screen a horizontal scrollbar, with the form starting off-screen
+ * in RTL. A pseudo-element is invisible to every "which element is too wide"
+ * check, which is why a purely decorative glow could break the layout of the
+ * first page anyone sees without ever being spotted.
+ *
+ * Capped rather than clipped: `overflow: hidden` on the panel would have taken
+ * the card's own shadow with it. */
 .panel-form::before {
   content: '';
   position: absolute;
   top: 50%; left: 50%;
   transform: translate(-50%, -50%);
   width: 600px; height: 600px;
+  max-width: 100%;
   background: radial-gradient(ellipse, color-mix(in srgb, var(--primary) 4%, transparent) 0%, transparent 70%);
   pointer-events: none;
 }
@@ -464,55 +485,6 @@ body::before {
   display: flex;
   gap: 8px;
 }
-
-.theme-toggle {
-  position: relative;
-  background: transparent;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-circle);
-  color: var(--text);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 42px;
-  height: 42px;
-  transition: background 0.3s, border-color 0.3s, transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  overflow: hidden;
-}
-.theme-toggle:hover {
-  background: var(--bg3);
-  border-color: var(--primary);
-  color: var(--primary-on-tint);
-  transform: scale(1.08);
-}
-.theme-toggle:active {
-  transform: scale(0.92);
-}
-.theme-toggle svg {
-  position: absolute;
-  width: 18px;
-  height: 18px;
-  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s ease;
-}
-.theme-toggle .sun-icon {
-  opacity: 1;
-  transform: rotate(0deg) scale(1);
-}
-.theme-toggle .moon-icon {
-  opacity: 0;
-  transform: rotate(-90deg) scale(0.5);
-}
-[data-theme="light"] .theme-toggle .sun-icon {
-  opacity: 0;
-  transform: rotate(90deg) scale(0.5);
-}
-[data-theme="light"] .theme-toggle .moon-icon {
-  opacity: 1;
-  transform: rotate(0deg) scale(1);
-}
-
-
 
 /* --- Register Navigation Button (Top Bar) --- */
 .btn-nav-register {

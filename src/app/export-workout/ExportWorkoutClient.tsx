@@ -1,5 +1,15 @@
 "use client";
 import React, { useState } from "react";
+import { isCustomExercise, type Day, type DayExercise } from "@/types/admin";
+
+/* `reps` is stored as an array, a bare string, or a number depending on which
+   version of the builder wrote the row — so it is read through this rather than
+   assumed to have a `.length`. A string has one too, and it counts characters. */
+function asReps(reps: DayExercise["reps"]): string[] {
+  if (Array.isArray(reps)) return reps;
+  if (reps === undefined || reps === null) return [];
+  return [String(reps)];
+}
 
 interface ExportWorkoutClientProps {
   title: string;
@@ -8,7 +18,7 @@ interface ExportWorkoutClientProps {
   weight: string;
   height: string;
   goal: string;
-  days: any[];
+  days: Day[];
   videoMap: Record<string, string>;
   muscleMap?: Record<string, string>;
   courseId?: string | null;
@@ -32,10 +42,10 @@ export default function ExportWorkoutClient({
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloaded, setDownloaded] = useState(false);
 
-  const getDayMuscles = (d: any) => {
+  const getDayMuscles = (d: Day) => {
     // If the coach explicitly selected muscles in the builder, they take absolute precedence.
     if (Array.isArray(d.muscles) && d.muscles.length > 0) {
-      const filtered = d.muscles.filter((m: any) => typeof m === "string" && m.trim() !== "" && m !== "الكل");
+      const filtered = d.muscles.filter((m) => typeof m === "string" && m.trim() !== "" && m !== "الكل");
       if (filtered.length > 0) return filtered.join("، ");
     }
 
@@ -43,7 +53,7 @@ export default function ExportWorkoutClient({
     const exercises = Array.isArray(d.exercises) ? d.exercises : [];
     
     // Auto-calculate from the actual exercises assigned to this day ONLY if no muscles were selected
-    exercises.forEach((ex: any) => {
+    exercises.forEach((ex: DayExercise) => {
       // Prioritize live DB muscle mapping over the JSON snapshot if available
       const mStr = muscleMap[ex.refId || ""] || muscleMap[ex.id || ""] || muscleMap[ex.name_ar || ""] || ex.target_muscle || "";
       if (mStr) {
@@ -92,7 +102,7 @@ export default function ExportWorkoutClient({
     }
   };
 
-  const formatRest = (ex: any) => {
+  const formatRest = (ex: DayExercise) => {
     if (ex.rest_from && ex.rest_to) {
       const mapUnit = (u?: string) => (u === "دقيقة" || u === "min" || u === "mins" || u === "دقائق" ? "min" : "sec");
       const fU = mapUnit(ex.rest_from_unit);
@@ -112,7 +122,7 @@ export default function ExportWorkoutClient({
 
   const maxSetsInAll = Math.max(
     1,
-    ...days.flatMap((d: any) => (Array.isArray(d.exercises) ? d.exercises.map((e: any) => e.sets ?? e.reps?.length ?? 3) : [3]))
+    ...days.flatMap((d) => (Array.isArray(d.exercises) ? d.exercises.map((e) => e.sets ?? asReps(e.reps).length ?? 3) : [3]))
   );
 
   {/* The logo, divider rules, watermark and contact icons are all baked into
@@ -316,46 +326,33 @@ export default function ExportWorkoutClient({
       ` }} />
 
       {/* Action Bar (Not included in PDF download) */}
-      <div className="no-print" style={{ maxWidth: "960px", margin: "0 auto 24px auto", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#1a1a1a", color: "#fff", padding: "16px 22px", borderRadius: "12px", border: "1px solid rgba(201, 168, 76, 0.4)", gap: "12px", flexWrap: "wrap" }}>
+      <div className="no-print" style={{ maxWidth: "960px", margin: "0 auto 24px auto", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#fff", padding: "16px 24px", borderRadius: "12px", boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}>
         <div>
-          <h2 style={{ margin: 0, fontSize: "1.25rem", fontWeight: 800, color: "#F0EDE8", fontFamily: "'Cairo', sans-serif", display: "flex", alignItems: "center", gap: "10px" }}>
-            <span>تصدير الجدول وتحميل الـ PDF</span>
-            {isDownloading && (
-              <span style={{ fontSize: "0.82rem", padding: "3px 12px", background: "#f59e0b", color: "#000", borderRadius: "20px", fontWeight: 800 }}>
-                ⏳ جاري التجهيز والتحميل المباشر...
-              </span>
-            )}
-            {downloaded && !isDownloading && (
-              <span style={{ fontSize: "0.82rem", padding: "3px 12px", background: "#10b981", color: "#fff", borderRadius: "20px", fontWeight: 800 }}>
-                ✅ تم تحميل الملف في مجلد التنزيلات
-              </span>
-            )}
-          </h2>
-          <p style={{ margin: "6px 0 0 0", fontSize: "0.9rem", color: "#9A9490" }}>
-            تم تقسيم كل يوم تدريبي في صفحة A4 مخصصة مع تكرار الترويسة والتذييل بدقة ومطابقة عالية.
-          </p>
+          <h1 style={{ margin: 0, fontSize: "1.25rem", fontWeight: 800, color: "#0f172a", fontFamily: "'Cairo', sans-serif" }}>
+            النظام التدريبي - {traineeName}
+          </h1>
         </div>
-        <div style={{ display: "flex", gap: "12px" }}>
+        <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
           <button
             onClick={downloadPDF}
             disabled={isDownloading}
             style={{
-              padding: "10px 24px",
-              background: isDownloading ? "#64748b" : "#0F4E79",
-              color: "#ffffff",
+              padding: "10px 20px",
+              background: isDownloading ? "#64748b" : downloaded ? "#10b981" : "#0F4E79",
+              color: "#fff",
               border: "none",
               borderRadius: "8px",
-              fontWeight: 800,
-              cursor: isDownloading ? "not-allowed" : "pointer",
-              fontSize: "1.05rem",
-              display: "flex",
+              fontWeight: 700,
+              cursor: isDownloading ? "wait" : "pointer",
+              fontSize: "1rem",
+              display: "inline-flex",
               alignItems: "center",
               gap: "8px",
-              boxShadow: isDownloading ? "none" : "0 4px 12px rgba(15, 78, 121, 0.35)",
+              transition: "all 0.2s",
               fontFamily: "'Cairo', sans-serif"
             }}
           >
-            <span>{isDownloading ? "⏳ جاري التحميل..." : downloaded ? "⬇️ إعادة تحميل الـ PDF" : "⬇️ تحميل ملف الـ PDF"}</span>
+            {isDownloading ? "جاري التجهيز..." : downloaded ? "تم التحميل" : "تحميل النظام التدريبي PDF"}
           </button>
           <button
             onClick={() => {
@@ -365,8 +362,8 @@ export default function ExportWorkoutClient({
             style={{
               padding: "10px 18px",
               background: "transparent",
-              color: "#F0EDE8",
-              border: "1px solid rgba(255,255,255,0.25)",
+              color: "#0F4E79",
+              border: "1px solid rgba(15, 78, 121, 0.4)",
               borderRadius: "8px",
               fontWeight: 700,
               cursor: "pointer",
@@ -390,11 +387,11 @@ export default function ExportWorkoutClient({
             {renderFooter()}
           </div>
         ) : (
-          days.map((d: any, dayIdx: number) => {
+          days.map((d, dayIdx) => {
             const dayTitle = d.title || `اليوم التدريبي ${dayIdx + 1}`;
             const muscles = getDayMuscles(d);
             const exercises = Array.isArray(d.exercises) ? d.exercises : [];
-            const dayMaxSets = Math.max(1, ...exercises.map((e: any) => e.sets ?? e.reps?.length ?? 3), maxSetsInAll);
+            const dayMaxSets = Math.max(1, ...exercises.map((e) => e.sets ?? asReps(e.reps).length ?? 3), maxSetsInAll);
 
             const count = exercises.length;
             let rowHeight = "17.5mm";
@@ -432,10 +429,10 @@ export default function ExportWorkoutClient({
                   {renderHeader()}
 
                   {/* Day Exercises & Content */}
-                  <div style={{ flex: "1 0 auto", paddingBottom: "24px" }}>
+                  <div style={{ flex: "1 1 auto", display: "flex", flexDirection: "column", paddingBottom: "0" }}>
                     
                     {/* Day Header Strip */}
-                    <div className="day-header-strip" style={{ background: "#f1f5f9", padding: stripPadding, borderRadius: "6px", borderLeft: "6px solid #0F4E79", borderRight: "6px solid #0F4E79", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", marginBottom: headerMarginBottom, borderTop: "1px solid #e2e8f0", borderBottom: "1px solid #e2e8f0" }}>
+                    <div className="day-header-strip" style={{ background: "#f1f5f9", padding: stripPadding, borderRadius: "6px", borderLeft: "6px solid #0F4E79", borderRight: "6px solid #0F4E79", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", marginBottom: headerMarginBottom, borderTop: "1px solid #e2e8f0", borderBottom: "1px solid #e2e8f0", flexShrink: 0 }}>
                       <div style={{ fontSize: stripFontSize, fontWeight: 800, color: "#0f172a" }}>
                         {dayTitle}
                       </div>
@@ -446,7 +443,7 @@ export default function ExportWorkoutClient({
                     </div>
 
                     {/* Workout Table */}
-                    <table className="table-grid" style={{ marginTop: tableMarginTop }}>
+                    <table className="table-grid" style={{ marginTop: tableMarginTop, flex: "1 1 auto", height: "100%" }}>
                       <thead>
                         <tr style={{ height: "11mm" }}>
                           <th style={{ width: "9mm", padding: "2mm 1mm" }}>ت</th>
@@ -468,7 +465,41 @@ export default function ExportWorkoutClient({
                             </td>
                           </tr>
                         ) : (
-                          exercises.map((ex: any, exIdx: number) => {
+                          exercises.map((ex, exIdx) => {
+                            /* Custom rows are a title plus four free-text
+                               columns. They have no sets, reps or rest, so the
+                               standard cells below printed a rep of "10", a
+                               row of dashes and a "60 - 90 sec" the coach never
+                               entered. Print what was written instead, across
+                               the columns those numbers would have filled. */
+                            if (isCustomExercise(ex)) {
+                              const cols = [ex.custom_col_1, ex.custom_col_2, ex.custom_col_3, ex.custom_col_4]
+                                .map((c: unknown) => String(c ?? "").trim())
+                                .filter(Boolean);
+                              return (
+                                <tr key={exIdx} style={{ height: rowHeight }}>
+                                  <td style={{ fontWeight: 800, color: "#475569", height: rowHeight, padding: cellPad, fontSize: fontSize }}>{exIdx + 1}</td>
+                                  <td style={{ textAlign: "right", fontWeight: 800, color: "#000", fontSize: titleFontSize, height: rowHeight, padding: cellPad }}>
+                                    {ex.name_ar || "تمرين غير مسمى"}
+                                  </td>
+                                  <td
+                                    colSpan={dayMaxSets + 2}
+                                    style={{ textAlign: "right", color: "#0f172a", fontWeight: 700, height: rowHeight, padding: cellPad, fontSize: fontSize }}
+                                  >
+                                    {cols.length > 0 ? (
+                                      <div style={{ display: "flex", gap: "3mm", flexWrap: "wrap", justifyContent: "flex-start" }}>
+                                        {cols.map((c: string, cIdx: number) => (
+                                          <span key={cIdx} style={{ flex: "1 1 0", minWidth: 0, overflowWrap: "anywhere" }}>{c}</span>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <span style={{ color: "#94a3b8" }}>—</span>
+                                    )}
+                                  </td>
+                                </tr>
+                              );
+                            }
+
                             const repsArr = Array.isArray(ex.reps)
                               ? ex.reps
                               : typeof (ex.reps as unknown) === "string"

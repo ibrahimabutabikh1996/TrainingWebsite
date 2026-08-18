@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { requireAdminPage } from "@/lib/authGuard";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Toaster } from "react-hot-toast";
@@ -6,16 +7,31 @@ import AccountManager from "@/components/admin/AccountManager";
 import ProfileDetailsTabs from "@/components/admin/ProfileDetailsTabs";
 import DeleteSubscriberZone from "@/components/admin/DeleteSubscriberZone";
 import WorkoutProgress from "@/components/admin/WorkoutProgress";
-import CycleHistory from "@/components/admin/CycleHistory";
 import AdminSubscriptionTimeline from "@/components/admin/AdminSubscriptionTimeline";
 import { activityLabel, planLabel } from "@/lib/formLabels";
 import "../../crm.css";
 import type { JsonRecord } from "@/types";
 import { Icon } from "@/components/Icon";
+import { formatTimestamp } from "@/lib/trainingDates";
+import WeightLog from "@/components/dashboard/WeightLog";
 
 export default async function ProfileDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+  /* The fullest view of one trainee there is — intake answers, health notes,
+     measurements, photos, and the controls that delete them. The proxy covers
+     /admin/*, but that is a list of paths and this is the page that would hurt
+     most to have off it. It asks for itself. See @/lib/authGuard. */
+  await requireAdminPage();
+
   const { id } = await params;
-  
+
+  /* The id is a path segment, so it is whatever was typed. The column is uuid,
+     and handing Postgres anything else raises P2007 — which on a page is an
+     unhandled error and a 500, where the honest answer is that there is no such
+     subscriber. */
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
+    notFound();
+  }
+
   const profile = await prisma.profiles.findUnique({
     where: { id }
   });
@@ -24,7 +40,9 @@ export default async function ProfileDetailsPage({ params }: { params: Promise<{
     notFound();
   }
 
-  let data = profile.data as JsonRecord;
+  /* `|| {}` — the column is nullable, and `data.phone` below reads straight off
+     it. */
+  let data = (profile.data as JsonRecord) || {};
   if (typeof data === "string") {
     try {
       data = JSON.parse(data);
@@ -33,8 +51,11 @@ export default async function ProfileDetailsPage({ params }: { params: Promise<{
     }
   }
 
+  /* Coerced before it is treated as text. The intake blob stores whatever the
+     form last wrote, so a phone number may arrive as a number — truthy, and
+     without a `.replace`. */
   const phone = data.phone || data.mobile;
-  const cleanPhone = phone ? phone.replace(/[^0-9]/g, "") : "";
+  const cleanPhone = phone ? String(phone).replace(/[^0-9]/g, "") : "";
 
   let existingAccount = null;
   if (profile.user_id) {
@@ -84,7 +105,7 @@ export default async function ProfileDetailsPage({ params }: { params: Promise<{
               </h2>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '10px' }}>
                 <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '0.95rem' }}>
-                  تاريخ التسجيل: <strong style={{ color: 'var(--text-secondary)' }}>{new Date(profile.created_at).toLocaleDateString("en-GB")}</strong>
+                  تاريخ التسجيل: <strong style={{ color: 'var(--text-secondary)' }}>{formatTimestamp(profile.created_at)}</strong>
                 </p>
                 {cleanPhone && (
                   <a 
@@ -151,14 +172,23 @@ export default async function ProfileDetailsPage({ params }: { params: Promise<{
           
           <AccountManager profileId={profile.id} existingAccount={existingAccount} />
           <AdminSubscriptionTimeline profileId={profile.id} />
+          
+          <div style={{ marginTop: "24px" }}>
+            <WeightLog 
+              profile={{
+                id: profile.id,
+                weightLogs: data.weightLogs,
+                weight: data.weight,
+                created_at: profile.created_at.toISOString()
+              }} 
+              readonly 
+            />
+          </div>
+
           {data.plan_type !== 'diet' && (
-            <>
-              <CycleHistory profileId={profile.id} />
-              <WorkoutProgress profileId={profile.id} />
-            </>
+            <WorkoutProgress profileId={profile.id} />
           )}
           <ProfileDetailsTabs currentData={data} profileId={profile.id} />
-          <DeleteSubscriberZone profileId={profile.id} />
           <DeleteSubscriberZone profileId={profile.id} />
 
         </div>

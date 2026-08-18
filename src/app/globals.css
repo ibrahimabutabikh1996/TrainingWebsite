@@ -10,21 +10,41 @@ body {
 }
 
 
-:root, [data-theme="dark"] {
-    /* --- Dark Mode Colors (Blue Monochromatic) --- */
+:root {
+    /* --- Colours (Blue Monochromatic) ---
+       The site is dark-only. There is no second palette and no theme
+       attribute to switch on, so these are simply *the* colours — every
+       stylesheet reads them from here. */
     --primary: #60A5FA; --primary-rgb: 96, 165, 250;
     --primary-hover: #3B82F6;
     --primary-light: #93C5FD;
     --primary-active: #2563EB;
     --primary-dim: rgba(var(--primary-rgb), 0.18);
     /* The brand colour when it is used as *text or an icon* rather than a fill.
-       On dark, --primary is a light blue on near-black surfaces and already
-       clears AA everywhere, so this is just an alias. */
+       --primary is a light blue on near-black surfaces and already clears AA
+       everywhere, so this is just an alias — kept as its own name because the
+       stylesheets are written against the distinction. */
     --primary-on-tint: var(--primary);
     --secondary: #93C5FD;
     --accent: #60A5FA;
 
-    /* Named semantic surfaces — same hue (210°) as the light-mode palette, inverted lightness */
+    /* Plan accents — one per membership tier. The landing page remaps
+       --primary to these inside each plan card, and the CRM tints its plan
+       tags with them, so they must always be defined: `--primary: var(--plan-1)`
+       with --plan-1 missing makes --primary itself resolve to nothing, which
+       silently strips the brand colour and the border off everything inside
+       the card. Cool range, one step either side of the brand blue, so the
+       three tiers read as a family rather than three unrelated colours. */
+    --plan-1: #820911; --plan-1-rgb: 130, 9, 17;
+    --plan-2: #FFD700; --plan-2-rgb: 255, 215, 0;
+    --plan-3: #370F75; --plan-3-rgb: 55, 15, 117;
+    /* Text laid *on* a plan fill. These fills are light on dark, so the
+       label has to go dark. */
+    --plan-1-text: #FFFFFF;
+    --plan-2-text: #000000;
+    --plan-3-text: #FFFFFF;
+
+    /* Named semantic surfaces — all one hue (210°), varying only in lightness */
     --background: #0A121A;
     --surface: #0A121A;
     --surface-secondary: #15212E;
@@ -56,9 +76,9 @@ body {
     --warning: #FBBF24;
     --error: #F87171;
     --info: #60A5FA;
-    /* Status — as text or an icon. On dark these are already light shapes on a
-       near-black page, so they alias the fills. See the light block for why the
-       split exists. */
+    /* Status — as text or an icon. These are already light shapes on a
+       near-black page, so they alias the fills. The separate names are kept so
+       components can say which role they mean. */
     --success-text: var(--success);
     --warning-text: var(--warning);
     --error-text: var(--error);
@@ -75,7 +95,7 @@ body {
     --shadow-primary: rgba(var(--primary-rgb), 0.25);
     --brand-gradient: linear-gradient(135deg, #1E3A8A 0%, #2563EB 35%, #3B82F6 70%, #60A5FA 100%);
 
-    /* Elevation — dark needs a deeper, more diffuse shadow to read at all.
+    /* Elevation — a near-black page needs a deep, diffuse shadow to read at all.
        See the scale's contract in the "Design tokens" block further down. */
     --elev-1: 0 1px 2px rgba(2, 6, 23, 0.40);
     --elev-2: 0 2px 8px rgba(2, 6, 23, 0.36);
@@ -99,86 +119,6 @@ body {
     --font-editorial: 'Baloo 2 Local', 'Baloo 2', sans-serif;
     --font-arabic: 'Cairo Local', 'Cairo', sans-serif;
     --font-ar: 'Cairo Local', 'Cairo', sans-serif;
-}
-
-[data-theme="light"] {
-    /* --- Light Mode Colors (Blue Monochromatic) --- */
-    --primary: #1A56DB; --primary-rgb: 26, 86, 219;
-    --primary-hover: #1546B5;
-    --primary-light: #3E77F1;
-    --primary-active: #10368C;
-    --primary-dim: rgba(var(--primary-rgb), 0.10);
-    /* Brand colour as text/icon. #2563EB is a fine *fill* (white on it is
-       5.2:1) but a poor foreground here: 4.2:1 on --bg2, 3.2:1 on --bg3 and
-       4.3:1 on a --primary-dim wash — all under AA. The deeper accent clears
-       every surface in this palette (7.1:1 on --bg2, 5.3:1 on --bg3) while
-       staying the same blue. Fills keep using --primary. */
-    --primary-on-tint: var(--primary-active);
-    --secondary: #3E77F1;
-    --accent: #1A56DB;
-
-    /* Named semantic surfaces */
-    --background: #F6F8FB;
-    --surface: #F6F8FB;
-    --surface-secondary: #EBF1F8;
-    --card: #EBF1F8;
-
-    /* Functional background scale — new light palette, lightest to darkest. */
-    --bg: #F6F8FB;
-    --bg2: #EBF1F8;
-    --bg3: #DBE5F0;
-    --bg4: #C3D2E3;
-
-    /* Text */
-    --text: #0F172A;
-    --text-primary: #0F172A;
-    --text-secondary: #475569;
-    /* Was #64748B. This theme's --bg2 is a saturated pale blue rather than
-       white, and #64748B only reached 3.9:1 on it — muted captions and card
-       subtitles were failing AA on every card in the product. #5B6779 clears
-       --bg (5.5:1) and --bg2 (4.7:1) while staying a visible step lighter than
-       --text-secondary. It is still too light for --bg3; use --text-secondary
-       there (see the shared table header recipe). */
-    --text-muted: #5B6779;
-    --text-inverse: #FFFFFF;
-    --muted: #5B6779;
-    --muted2: #475569;
-
-    /* Borders */
-    --border: #DBE5F0;
-    --border-strong: #C3D2E3;
-    --border-primary: rgba(var(--primary-rgb), 0.35);
-
-    /* Status — fills. Unchanged: white on these reads fine, and they are the
-       colours the product's badges and bars are recognised by. */
-    --success: #16A34A;
-    --warning: #F59E0B;
-    --error: #DC2626;
-    --info: #2563EB;
-    /* Status — as text or an icon. The fills are far too light to read as
-       foreground on this palette: on --bg2 the amber lands at 1.8:1 and the
-       green at 2.7:1. These keep the same hues at a legible depth. */
-    --success-text: #166534;
-    --warning-text: #92400E;
-    --error-text: #B91C1C;
-    --mono-icon-color: #000000;
-
-    --nav-bg: rgba(255, 255, 255, 0.98);
-    --nav-bg-glass: rgba(255, 255, 255, 0.85);
-    --nav-bg-scrolled: rgba(255, 255, 255, 0.98);
-    --watermark: rgba(37, 99, 235, 0.05);
-    --overlay-scrim: rgba(15, 23, 42, 0.45);
-
-    --shadow-color: rgba(15, 23, 42, 0.10);
-    --shadow-primary: rgba(var(--primary-rgb), 0.18);
-    --error-bg: rgba(220, 38, 38, 0.08);
-    --success-bg: rgba(22, 163, 74, 0.08);
-
-    /* Elevation — light mode reads shadows easily, so these stay barely there. */
-    --elev-1: 0 1px 2px rgba(15, 23, 42, 0.05);
-    --elev-2: 0 2px 8px rgba(15, 23, 42, 0.06);
-    --elev-3: 0 12px 32px rgba(15, 23, 42, 0.10);
-    --card-shadow: var(--elev-2);
 }
 
 /* ==========================================================================
@@ -219,7 +159,7 @@ body {
          1 → resting cards and inputs
          2 → raised/hovered surfaces, sticky bars
          3 → true overlays: modals, drawers, popovers
-       The values themselves are per-theme, above. */
+       The values themselves are defined with the palette, above. */
     --elev-0: none;
 
     /* --- Motion ---
@@ -325,11 +265,6 @@ body {
         transition-duration: 0.01ms !important;
         scroll-behavior: auto !important;
     }
-}
-
-[data-theme="light"] .brand-logo-img {
-    filter: invert(1) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
-    mix-blend-mode: multiply;
 }
 
 /* --- Global Typography System --- */
@@ -771,7 +706,10 @@ body[lang="ar"] .nav-item {
 .admin-nav-btn.active {
   background-color: var(--primary-glow);
   color: var(--primary-on-tint);
-  border-color: rgba(var(--primary-hue), 85%, 60%, 0.2);
+  /* Was an rgba() built on a --primary-hue token that is defined nowhere, and
+     written with percentage args (hsla syntax) besides — so the declaration
+     was dropped outright and the active nav item had no border at all. */
+  border-color: var(--border-primary);
 }
 
 .admin-main {

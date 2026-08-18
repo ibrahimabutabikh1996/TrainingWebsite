@@ -13,7 +13,18 @@ interface Props {
   profileId: string;
 }
 
-export default async function AdminSubscriptionTimeline({ profileId }: Props) {
+/**
+ * Everything the timeline needs, or null if it cannot be assembled.
+ *
+ * Split out from the component so the `try` covers the queries and the shaping
+ * — the things that can actually fail here — and not the JSX. Wrapping the
+ * markup too, as this file used to, catches nothing extra: a component throws
+ * while React renders it, long after this function has returned, so the `catch`
+ * never sees it. What it did instead was make the whole panel disappear on any
+ * database hiccup and claim, in the log line, that the timeline had failed to
+ * generate. Rendering failures belong to an error boundary; this belongs here.
+ */
+async function loadTimeline({ profileId }: Props) {
   try {
     const profile = await prisma.profiles.findUnique({
       where: { id: profileId },
@@ -139,49 +150,58 @@ export default async function AdminSubscriptionTimeline({ profileId }: Props) {
       monthlyHistory,
     } as unknown as UserProfile;
 
-    return (
-      <details
-        className="crm-modal-section"
-        style={{
-          background: "var(--bg2)",
-          padding: "24px",
-          borderRadius: "var(--radius-xl)",
-          border: "1px solid var(--border)",
-          boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
-        }}
-        open
-      >
-        <summary
-          className="crm-modal-section-title"
-          style={{
-            margin: 0,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: "12px",
-            cursor: "pointer",
-            listStyle: "none",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <Icon name="calendar_month" style={{ color: "var(--primary)", fontSize: "26px" }} />
-            <span style={{ fontSize: "1.3rem", color: "var(--text)", fontWeight: 800 }}>
-              السجل التاريخي (سجل الاشتراكات والأنظمة السابقة)
-            </span>
-            <span className="crm-tag primary-tag" style={{ fontSize: "0.85rem", padding: "2px 10px", borderRadius: "var(--radius-lg)" }}>
-              {monthlyHistory.length} أشهر مجدولة
-            </span>
-          </div>
-          <Icon name="expand_more" className="accordion-icon" style={{ color: "var(--text-muted)" }} />
-        </summary>
-
-        <div style={{ marginTop: "16px" }}>
-          <SubscriptionHistoryTimeline profile={mockProfile} isAdminView={true} />
-        </div>
-      </details>
-    );
+    return { mockProfile, monthCount: monthlyHistory.length };
   } catch (err) {
-    console.error("Error generating admin subscription timeline:", err);
+    console.error("Failed to load the admin subscription timeline:", err);
     return null;
   }
+}
+
+export default async function AdminSubscriptionTimeline({ profileId }: Props) {
+  const loaded = await loadTimeline({ profileId });
+  if (!loaded) return null;
+
+  const { mockProfile, monthCount } = loaded;
+
+  return (
+    <details
+      className="crm-modal-section"
+      style={{
+        background: "var(--bg2)",
+        padding: "24px",
+        borderRadius: "var(--radius-xl)",
+        border: "1px solid var(--border)",
+        boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+      }}
+      open
+    >
+      <summary
+        className="crm-modal-section-title"
+        style={{
+          margin: 0,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "12px",
+          cursor: "pointer",
+          listStyle: "none",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <Icon name="calendar_month" style={{ color: "var(--primary)", fontSize: "26px" }} />
+          <span style={{ fontSize: "1.3rem", color: "var(--text)", fontWeight: 800 }}>
+            السجل التاريخي (سجل الاشتراكات والأنظمة السابقة)
+          </span>
+          <span className="crm-tag primary-tag" style={{ fontSize: "0.85rem", padding: "2px 10px", borderRadius: "var(--radius-lg)" }}>
+            {monthCount} أشهر مجدولة
+          </span>
+        </div>
+        <Icon name="expand_more" className="accordion-icon" style={{ color: "var(--text-muted)" }} />
+      </summary>
+
+      <div style={{ marginTop: "16px" }}>
+        <SubscriptionHistoryTimeline profile={mockProfile} isAdminView={true} />
+      </div>
+    </details>
+  );
 }

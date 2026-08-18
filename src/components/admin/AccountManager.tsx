@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { toast } from "react-hot-toast";
 import { isSubscriptionExpired, daysRemaining } from "@/lib/subscription";
 import { Icon } from "@/components/Icon";
+import { formatTimestamp } from "@/lib/trainingDates";
 
 interface AccountManagerProps {
   profileId: string;
@@ -21,13 +22,22 @@ export default function AccountManager({ profileId, existingAccount: initialAcco
   const [account, setAccount] = useState(initialAccount);
   const [isCreating, setIsCreating] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  /* Read straight off the props initially, but hold isSuspended in state so we can toggle it */
   const renewals = initialAccount?.renewals ?? [];
-  const [isSuspended, setIsSuspended] = useState(initialAccount?.is_suspended ?? false);
-  
-  useEffect(() => {
-    setIsSuspended(initialAccount?.is_suspended ?? false);
-  }, [initialAccount?.is_suspended]);
+
+  /* Held in state so the toggle can flip it straight away rather than waiting
+     for the server round trip, but it still has to follow the prop when the
+     page revalidates. React's recipe for state that follows a prop: remember
+     the prop this was derived from, and adjust during the render that brings a
+     new one. It used to be an effect, which showed the stale badge for a render
+     first. */
+  const suspendedProp = initialAccount?.is_suspended ?? false;
+  const [isSuspended, setIsSuspended] = useState(suspendedProp);
+  const [syncedWith, setSyncedWith] = useState(suspendedProp);
+
+  if (suspendedProp !== syncedWith) {
+    setSyncedWith(suspendedProp);
+    setIsSuspended(suspendedProp);
+  }
 
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [newPassword, setNewPassword] = useState("");
@@ -122,6 +132,7 @@ export default function AccountManager({ profileId, existingAccount: initialAcco
 
       toast.success("تم إنشاء الحساب بنجاح!");
       setAccount({ username: data.username });
+      setIsSuspended(true);
       setIsCreating(false);
     } catch {
       toast.error("حدث خطأ في الاتصال بالخادم");
@@ -152,9 +163,9 @@ export default function AccountManager({ profileId, existingAccount: initialAcco
     const statusIcon = isSuspended ? "block" : isExpired ? "warning" : "verified_user";
 
     const activationDateFormatted = account.activation_date
-      ? new Date(account.activation_date).toLocaleDateString("en-GB")
+      ? formatTimestamp(account.activation_date)
       : account.created_at
-      ? new Date(account.created_at).toLocaleDateString("en-GB")
+      ? formatTimestamp(account.created_at)
       : "--";
 
     return (
@@ -225,9 +236,6 @@ export default function AccountManager({ profileId, existingAccount: initialAcco
                   {statusText}
                 </span>
               </div>
-              <p style={{ margin: "4px 0 0 0", fontSize: "0.92rem", color: "var(--text-muted)" }}>
-                التحكم ببيانات وصول المشترك لبوابته وتتبّع صلاحيات وتواريخ تجديد اشتراكه
-              </p>
             </div>
           </div>
 
@@ -368,7 +376,6 @@ export default function AccountManager({ profileId, existingAccount: initialAcco
               </div>
               <div>
                 <h4 style={{ margin: 0, fontSize: "1.05rem", fontWeight: 800, color: "var(--text)" }}>بيانات الدخول (اسم المستخدم)</h4>
-                <span style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>مُعرّف الدخول الخاص ببوابة المتدربين</span>
               </div>
             </div>
 
@@ -410,7 +417,6 @@ export default function AccountManager({ profileId, existingAccount: initialAcco
               </div>
               <div>
                 <h4 style={{ margin: 0, fontSize: "1.05rem", fontWeight: 800, color: "var(--text)" }}>صلاحية والوقت المتبقي للاشتراك</h4>
-                <span style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>دورة الـ 30 يوماً التدريبية</span>
               </div>
             </div>
 
@@ -437,8 +443,8 @@ export default function AccountManager({ profileId, existingAccount: initialAcco
                   }}
                 >
                   {isExpired
-                    ? `انتهى في ${new Date(effectiveEndsAt).toLocaleDateString("en-GB")}`
-                    : `ينتهي في ${new Date(effectiveEndsAt).toLocaleDateString("en-GB")}${
+                    ? `انتهى في ${formatTimestamp(effectiveEndsAt)}`
+                    : `ينتهي في ${formatTimestamp(effectiveEndsAt)}${
                         remaining !== null ? ` (${remaining} يوماً متبقي)` : ""
                       }`}
                 </span>
@@ -519,7 +525,7 @@ export default function AccountManager({ profileId, existingAccount: initialAcco
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginInlineStart: "28px" }}>
                   <span style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>التاريخ:</span>
                   <span style={{ fontWeight: 800, color: "var(--text)", fontSize: "1rem", letterSpacing: "0.5px" }}>
-                    {new Date(r.date).toLocaleDateString("en-GB")}
+                    {formatTimestamp(r.date)}
                   </span>
                 </div>
               </div>

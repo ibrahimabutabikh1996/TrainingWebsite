@@ -1,5 +1,6 @@
 import React from "react";
 import { prisma } from "@/lib/db";
+import { formatTimestamp, isISODate, weekdayName } from "@/lib/trainingDates";
 
 export async function AdminWeightLogs({ profileId }: { profileId: string }) {
   const profile = await prisma.profiles.findUnique({
@@ -41,7 +42,9 @@ export async function AdminWeightLogs({ profileId }: { profileId: string }) {
                 gap: "var(--space-2)"
               }}>
                 <div style={{ color: "var(--text-secondary)", fontSize: "var(--text-sm)" }}>
-                  {new Date(log.date).toLocaleDateString("ar-EG", { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' })}
+                  {/* The weekday stays — it is not a month name — but the date
+                      itself joins the one format the rest of the site uses. */}
+                  {isISODate(log.date) ? `${weekdayName(log.date)} ` : ""}{formatTimestamp(log.date)}
                 </div>
                 <div style={{ fontSize: "var(--text-xl)", fontWeight: "var(--weight-bold)", color: "var(--text)" }}>
                   {log.weight} كجم

@@ -6,9 +6,6 @@ import type { StepProps } from "./types";
 
 export function StepFourHealthAttachments({ formData, update }: StepProps) {
 
-  /* Single-file dropzones store one File (or null); the multi one stores a list. */
-  const single = (files: File[]) => files[0] ?? null;
-
   return (
     <>
       <FormSection title={t("sec_health")}>
@@ -92,30 +89,6 @@ export function StepFourHealthAttachments({ formData, update }: StepProps) {
         </FormSection>
       )}
 
-      {/* Asked of everyone: what someone already takes is independent of whether
-          they could buy more later, and gating this on buy_supp meant a trainee
-          who takes supplements but answered "no" was never asked about them. */}
-      <FormSection title={t("sec_supplements")}>
-        <FormGrid>
-          <TextArea
-            label={t("lbl_supplements_list")}
-            value={formData.supplements_list}
-            onChange={(supplements_list) => update({ supplements_list })}
-            placeholder={t("ph_supplements")}
-            rows={2}
-            optional
-          />
-          <Dropzone
-            prompt={t("lbl_upload_supp_img")}
-            files={Array.isArray(formData.supplements_photo) ? formData.supplements_photo : (formData.supplements_photo ? [formData.supplements_photo as unknown as File] : [])}
-            onFiles={(files) => update({ supplements_photo: files })}
-            accept="image/*"
-            multiple
-            preview
-            optional
-          />
-        </FormGrid>
-      </FormSection>
 
       <FormSection title={t("sec_diet_history")} hint={t("lbl_diet_history_hint")}>
         <FormGrid>
@@ -154,27 +127,6 @@ export function StepFourHealthAttachments({ formData, update }: StepProps) {
         </FormGrid>
       </FormSection>
 
-      <FormSection title={t("sec_account")}>
-        <FormGrid tight>
-          <TextInput
-            label={t("lbl_username")}
-            value={formData.username || ""}
-            onChange={(username) => update({ username: username.toLowerCase().replace(/[^a-z0-9_]/g, '') })}
-            placeholder={t("ph_username")}
-            autoComplete="username"
-          />
-          <TextInput
-            label={t("lbl_password")}
-            type="password"
-            value={formData.password || ""}
-            onChange={(password) => update({ password })}
-            placeholder={t("ph_password")}
-            autoComplete="new-password"
-            pattern="(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9]).{8,}"
-            title={`${t("rule_length")} - ${t("rule_upper")} - ${t("rule_number")} - ${t("rule_special")}`}
-          />
-        </FormGrid>
-      </FormSection>
     </>
   );
 }

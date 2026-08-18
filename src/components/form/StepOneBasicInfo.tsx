@@ -11,7 +11,7 @@ const ACTIVITY_OPTIONS = [
   { value: "4", key: "opt_act_4" },
 ] as const;
 
-export function StepOneBasicInfo({ formData, update }: StepProps) {
+export function StepOneBasicInfo({ formData, update, planLocked }: StepProps) {
 
   return (
     <FormGrid>
@@ -32,7 +32,16 @@ export function StepOneBasicInfo({ formData, update }: StepProps) {
         required
       />
 
-      {/* Locked: the plan comes from the ?plan= link the member arrived on. */}
+      {/* Locked only when the plan came in on the `?plan=` link the member
+          followed from the landing page — that is the normal way in, and the
+          choice has already been made by then.
+
+          It used to be locked unconditionally. Reaching /form without a plan —
+          a bookmark, a shared link, or just typing the address — then left a
+          required field greyed out and empty with no way to fill it: every
+          other answer could be given, and the submission was still refused by
+          the server, which requires `plan`. A dead end with nothing on screen
+          to explain it. */}
       <SelectField
         label={t("lbl_plan")}
         value={formData.plan}
@@ -43,7 +52,7 @@ export function StepOneBasicInfo({ formData, update }: StepProps) {
           { value: "plan3", label: t("card3_badge") },
         ]}
         required
-        disabled
+        disabled={planLocked}
         full
       />
 

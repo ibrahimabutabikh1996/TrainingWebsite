@@ -1,9 +1,8 @@
-// @ts-nocheck
 "use client";
 
 import React, { useState } from "react";
-import type { UserProfile, MonthlyArchive } from "@/types";
-import type { Day } from "@/types/admin";
+import type { JsonRecord, UserProfile, MonthlyArchive } from "@/types";
+import type { MealItem } from "@/types/diet";
 import { Icon } from "@/components/Icon";
 import {
   planLabel,
@@ -30,13 +29,6 @@ const getPlanTextColor = (plan: string | undefined | null) => {
   if (plan === 'plan3') return 'var(--plan-3-text)';
   return 'var(--text-inverse)';
 };
-const getPlanRgb = (plan: string | undefined | null) => {
-  if (plan === 'plan1') return 'var(--plan-1-rgb)';
-  if (plan === 'plan2') return 'var(--plan-2-rgb)';
-  if (plan === 'plan3') return 'var(--plan-3-rgb)';
-  return 'var(--primary-rgb)';
-};
-
 interface Props {
   profile: UserProfile;
   isAdminView?: boolean;
@@ -57,11 +49,10 @@ export function SubscriptionHistoryTimeline({
   );
   const [openMonths, setOpenMonths] = useState<Record<number, boolean>>({});
 
-  const raw = (profile.raw_answers || {}) as Record<string, any>;
-  const meas = (profile.measurements || raw.measurements || {}) as Record<
-    string,
-    any
-  >;
+  /* The intake blob and the measurements inside it. JsonRecord is the project's
+     one documented escape hatch for a shape the form decides — see @/types. */
+  const raw = (profile.raw_answers || {}) as JsonRecord;
+  const meas = (profile.measurements || raw.measurements || {}) as JsonRecord;
   const isFemale = (profile.gender || raw.gender) === "female";
   const history: MonthlyArchive[] = profile.monthlyHistory || [];
   const totalMonths = history.length || 1;
@@ -1067,15 +1058,16 @@ export function SubscriptionHistoryTimeline({
                     </div>
 
                     {/* Comprehensive Data & Measurements Box */}
-                    <div
-                      className="timeline-card"
-                      style={{
-                        padding: "22px",
-                        borderRadius: "var(--radius-xl)",
-                        background: "var(--bg3)",
-                        border: isInfoOpen
-                          ? `1px solid var(--error-text)`
-                          : "1px solid var(--border)",
+                    {item.monthNumber === 1 && (
+                      <div
+                        className="timeline-card"
+                        style={{
+                          padding: "22px",
+                          borderRadius: "var(--radius-xl)",
+                          background: "var(--bg3)",
+                          border: isInfoOpen
+                            ? `1px solid var(--error-text)`
+                            : "1px solid var(--border)",
                         display: "flex",
                         flexDirection: "column",
                         justifyContent: "space-between",
@@ -1230,6 +1222,7 @@ export function SubscriptionHistoryTimeline({
                         </a>
                       </div>
                     </div>
+                    )}
                   </div>
 
                   {/* Expandable Workout Schedule Details */}
@@ -1458,12 +1451,17 @@ export function SubscriptionHistoryTimeline({
                                   }}
                                 >
                                   {day.exercises.map((ex, exIdx) => {
-                                    const videoUrl = (ex as any).video_url;
+                                    /* All of these are declared on DayExercise
+                                       — the casts were reaching past a type
+                                       that already had them. The one that was
+                                       not, `.rest`, has never been written by
+                                       any version of the builder, so dropping
+                                       it changes nothing that was reachable. */
+                                    const videoUrl = ex.video_url;
                                     const restVal =
-                                      (ex as any).rest_time ||
-                                      (ex as any).rest ||
-                                      ((ex as any).rest_from
-                                        ? `${(ex as any).rest_from} - ${(ex as any).rest_to} ${(ex as any).rest_to_unit || "sec"}`
+                                      ex.rest_time ||
+                                      (ex.rest_from
+                                        ? `${ex.rest_from} - ${ex.rest_to} ${ex.rest_to_unit || "sec"}`
                                         : "60 - 90 sec");
 
                                     return (
@@ -1948,7 +1946,11 @@ export function SubscriptionHistoryTimeline({
                                             >
                                               {slotData.items.map(
                                                 (
-                                                  mItem: any,
+                                                  /* `label` is what the field
+                                                     was called before it became
+                                                     `name`; archived months can
+                                                     still hold either. */
+                                                  mItem: MealItem & { label?: string },
                                                   itemIdx: number,
                                                 ) => {
                                                   const weightVal =

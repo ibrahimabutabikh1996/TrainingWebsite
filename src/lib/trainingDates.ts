@@ -9,7 +9,11 @@
 
    Formatting is done by hand rather than through `toLocaleDateString`: the
    `ar-SA` locale resolves to the Umm al-Qura calendar, which would print Hijri
-   dates for days the trainee entered as Gregorian ones. */
+   dates for days the trainee entered as Gregorian ones.
+
+   `formatTimestamp` below extends that to the rest of the site. Everything that
+   shows a date goes through these, so there is one format — `26/7/2026`, plain
+   digits, no month names — instead of a locale chosen per call site. */
 
 export const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -86,21 +90,52 @@ export function formatShortDate(iso: string): string {
   return `${d.getUTCDate()}/${d.getUTCMonth() + 1}`;
 }
 
+/**
+ * `26/7/2026` for anything that carries a date — a `Date`, a full ISO instant,
+ * a `YYYY-MM-DD` day, or the milliseconds.
+ *
+ * The one date format in the project. Every screen used to call
+ * `toLocaleDateString` and pick its own locale, so the panel showed three
+ * different things: `16/08/2026` under `en-GB`, `١٦/٨/٢٠٢٦` under `ar-EG`, and
+ * `١٦ يوليو ٢٠٢٦` wherever `month: 'short'` had been passed. `ar-SA` was in
+ * there too, which on some browser builds resolves to the Umm al-Qura calendar
+ * and prints a Hijri date for a Gregorian day — the reason the helpers above
+ * were already written by hand.
+ *
+ * ── Which accessors ─────────────────────────────────────────────────────────
+ *
+ * A bare `YYYY-MM-DD` is a calendar day, and `new Date("2026-07-16")` parses it
+ * as midnight *UTC*. Reading that back with local accessors west of Greenwich
+ * hands back the 15th. So a day string is read in UTC, and an instant — which
+ * genuinely happened at a moment in time — is read in the reader's own zone.
+ * Getting this wrong is a silent off-by-one that only appears for some readers.
+ */
+export function formatTimestamp(value: string | number | Date | null | undefined): string {
+  if (value === null || value === undefined || value === "") return "—";
+
+  /* A calendar day, not an instant: keep it in UTC and reuse the day formatter. */
+  if (typeof value === "string" && isISODate(value)) return formatDate(value);
+
+  const d = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(d.getTime())) return "—";
+
+  return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+}
+
+/** `26/7` — the same rules, without the year. */
+export function formatTimestampShort(value: string | number | Date | null | undefined): string {
+  if (value === null || value === undefined || value === "") return "—";
+  if (typeof value === "string" && isISODate(value)) return formatShortDate(value);
+
+  const d = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(d.getTime())) return "—";
+
+  return `${d.getDate()}/${d.getMonth() + 1}`;
+}
+
 /** `السبت 26/7` */
 export function formatDayAndDate(iso: string): string {
   return `${weekdayName(iso)} ${formatShortDate(iso)}`;
-}
-
-/**
- * The span a set of recorded workouts covers, e.g. `26/7 — 1/8`.
- * Null when nothing has been recorded yet: a cycle has no dates until it is lived.
- */
-export function dateRangeLabel(dates: (string | null)[]): string | null {
-  const days = dates.filter(isISODate).sort();
-  if (days.length === 0) return null;
-  const first = formatShortDate(days[0]);
-  const last = formatShortDate(days[days.length - 1]);
-  return first === last ? first : `${first} — ${last}`;
 }
 
 /**
@@ -124,11 +159,6 @@ export function isRecordableDate(iso: unknown, todayISO: string): iso is string 
   if (!isISODate(iso)) return false;
   const ahead = daysBetween(todayISO, iso);
   return ahead <= 1 && ahead >= -MAX_BACKDATE_DAYS;
-}
-
-/** Arabic title for a cycle, e.g. "الدورة 3". */
-export function cycleTitle(cycleNumber: number): string {
-  return `الدورة ${cycleNumber}`;
 }
 
 /** Relative wording for the recent days, so the picker reads like speech. */

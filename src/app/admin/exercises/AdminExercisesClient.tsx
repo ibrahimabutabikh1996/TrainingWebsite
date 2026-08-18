@@ -230,16 +230,23 @@ export default function AdminExercisesClient({ initialExercises }: { initialExer
         icon="play_circle"
         maxWidth={800}
       >
-        {videoUrl && (
+        {/* `getEmbedUrl` now answers null for an address a browser should not be
+            pointed at, which is what a row stored before the API validated this
+            field may still hold. Nothing is framed in that case. */}
+        {videoUrl && getEmbedUrl(videoUrl) ? (
           <div style={{ position: "relative", width: "100%", aspectRatio: "16 / 9", background: "#000" }}>
             <iframe
-              src={getEmbedUrl(videoUrl)}
+              src={getEmbedUrl(videoUrl)!}
               allow="autoplay; encrypted-media; picture-in-picture"
               allowFullScreen
               style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none" }}
             />
           </div>
-        )}
+        ) : videoUrl ? (
+          <p style={{ padding: "var(--space-6)", textAlign: "center", color: "var(--text-muted)" }}>
+            رابط الفيديو غير صالح — عدّله من نموذج التمرين.
+          </p>
+        ) : null}
       </AdminModal>
     </div>
   );

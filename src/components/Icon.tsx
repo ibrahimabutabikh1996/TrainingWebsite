@@ -1,6 +1,6 @@
 import type { CSSProperties, ReactNode } from "react";
 import {
-  Apple, AtSign, Award, BadgeCheck, Ban, BellRing, BookOpen, BookOpenText, Calendar,
+  Apple, AtSign, Award, BadgeCheck, Ban, BellRing, BookOpen, Calendar,
   CalendarCheck, CalendarCog, CalendarDays, Camera, Captions, ChartLine, Check,
   ChevronDown, ChevronUp, ChevronLeft, ChevronRight, CircleAlert, CircleCheck, CirclePlay,
   CirclePlus, CircleQuestionMark, Clock, CloudCheck, CloudUpload, Copy, CreditCard,
@@ -8,13 +8,14 @@ import {
   FolderX, FunnelX, GanttChart, Globe, Heading, House, IdCard, Image, Images, Info,
   LockKeyhole, Lock, LogIn, LogOut, Mail, Medal, MessageCircle, Moon, NotebookPen,
   Package, Pencil, Phone, Pill, PersonStanding, Plus, Quote, ReceiptText, Sandwich,
-  Save, Scale, Search, SearchX, ShieldCheck, SquareMousePointer, StickyNote, Sun, Tag,
+  Save, Search, SearchX, ShieldCheck, SquareMousePointer, StickyNote, Sun, Tag,
   CircleMinus,
   Trash, Trash2, TriangleAlert, Trophy, Upload, User, UserPlus, UserSearch, UserX,
   Users, Utensils, UtensilsCrossed, Wrench, X, Zap, ZoomIn,
   BriefcaseMedical, Activity, Gauge, Ruler, Hourglass, Timer,
   History, KeyRound, Power, RefreshCw, RotateCcw, Layers, Repeat,
-  Drumstick, Wheat, Nut, Salad, GripVertical, Sheet, TrendingUp, TrendingDown,
+  Drumstick, Wheat, Nut, Salad, GripVertical, Sheet, TrendingUp, TrendingDown, Settings,
+  BicepsFlexed,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -64,7 +65,7 @@ export type IconName =
   | "activity" | "gauge" | "ruler" | "hourglass" | "timer"
   | "history" | "key" | "account_box" | "power_settings_new" | "event_note" | "update" | "restore" | "layers" | "repeat"
   | "food_protein" | "food_carbs" | "food_fats" | "food_veggies" | "food_fruit" | "drag_indicator" | "excel"
-  | "trending_up" | "trending_down";
+  | "trending_up" | "trending_down" | "settings" | "biceps_flexed";
 
 const LUCIDE: Partial<Record<IconName, LucideIcon>> = {
   alternate_email: AtSign,
@@ -191,6 +192,8 @@ const LUCIDE: Partial<Record<IconName, LucideIcon>> = {
   excel: Sheet,
   trending_up: TrendingUp,
   trending_down: TrendingDown,
+  settings: Settings,
+  biceps_flexed: BicepsFlexed,
 };
 
 /**

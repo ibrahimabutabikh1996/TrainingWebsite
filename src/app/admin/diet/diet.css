@@ -253,8 +253,8 @@
 }
 
 /* The count badge used `color-mix(currentColor 16%, transparent)` as its fill,
-   which means the text and its own background were always the same hue — 3.25:1
-   on the light theme. It now sits on a real surface that contrasts with the
+   which means the text and its own background were always the same hue, and it
+   only reached 3.25:1. It now sits on a real surface that contrasts with the
    inherited text colour, in both segment states. */
 .diet-segment-count {
   display: inline-flex;

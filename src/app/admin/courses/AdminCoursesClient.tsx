@@ -10,12 +10,15 @@ import {
   asDays,
   countDays,
   countExercises,
+  isCustomExercise,
 } from "@/types/admin";
 import AdminModal from "../components/AdminModal";
-import { deleteCourseAction, assignCourseAction } from "../builder/actions";
+import { deleteCourseAction, assignCourseAction, duplicateCourseAction } from "../builder/actions";
 import { arabicCount, DAY, EXERCISE, TRAINEE } from "@/lib/arabicCount";
 import { toast, Toaster } from "react-hot-toast";
 import { Icon } from "@/components/Icon";
+import { CustomSelect } from "@/components/CustomSelect";
+import { formatTimestamp } from "@/lib/trainingDates";
 import "../crm.css";
 import "./courses.css";
 
@@ -114,15 +117,40 @@ export default function AdminCoursesClient({
     }
   };
 
+  /* Copying is deliberately not behind a confirmation. It creates something and
+     destroys nothing, and the copy is one press of the delete button away. */
+  const handleDuplicateCourse = async (courseId: string) => {
+    setIsActionLoading(true);
+    const toastId = toast.loading("جاري نسخ الكورس...");
+
+    try {
+      const result = await duplicateCourseAction(courseId);
+      if (result.success) {
+        toast.success(`تم إنشاء «${result.name}» — نسخة مستقلة يمكن تعديلها وإسنادها.`, {
+          id: toastId,
+          duration: 5000,
+        });
+        router.refresh();
+      } else {
+        toast.error(result.error || "فشل نسخ الكورس.", { id: toastId });
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("حدث خطأ غير متوقع أثناء نسخ الكورس.", { id: toastId });
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
   const handleAssignCourse = async () => {
     if (!showAssignModal || !selectedTraineeId) return;
     setIsActionLoading(true);
-    const toastId = toast.loading("جاري تعيين الكورس للمشترك...");
+    const toastId = toast.loading("جاري تجهيز نسخة المشترك...");
 
     try {
       const result = await assignCourseAction(showAssignModal, selectedTraineeId);
       if (result.success) {
-        toast.success("تم تعيين الكورس بنجاح!", { id: toastId });
+        toast.success("تم التعيين — للمشترك الآن نسخته الخاصة من الكورس.", { id: toastId });
         setShowAssignModal(null);
         setSelectedTraineeId("");
         router.refresh();
@@ -304,10 +332,26 @@ export default function AdminCoursesClient({
                     <div className="co-card-foot">
                       <span className="co-card-date">
                         <Icon name="calendar_today" />
-                        {new Date(course.created_at).toLocaleDateString("ar-SA")}
+                        {formatTimestamp(course.created_at)}
                       </span>
 
                       <div className="co-actions">
+                        {/* The card's own action, as a real control.
+                            Opening a course was an `onClick` on the <article>,
+                            which a keyboard cannot reach — and the article could
+                            not simply be given `role="button"` because these
+                            three controls live inside it, and a button inside a
+                            button is not a thing a screen reader can present.
+                            So the action joins the row where the other three
+                            already are. */}
+                        <button
+                          className="co-icon-btn"
+                          onClick={(e) => { e.stopPropagation(); setSelectedCourseId(course.id); }}
+                          title="عرض التفاصيل"
+                          aria-label={`عرض تفاصيل ${course.name}`}
+                        >
+                          <Icon name="visibility" />
+                        </button>
                         <button
                           className="co-icon-btn"
                           onClick={(e) => { e.stopPropagation(); setShowAssignModal(course.id); }}
@@ -315,6 +359,15 @@ export default function AdminCoursesClient({
                           aria-label={`تعيين ${course.name} لمشترك`}
                         >
                           <Icon name="person_add" />
+                        </button>
+                        <button
+                          className="co-icon-btn"
+                          onClick={(e) => { e.stopPropagation(); handleDuplicateCourse(course.id); }}
+                          disabled={isActionLoading}
+                          title="نسخ الكورس"
+                          aria-label={`إنشاء نسخة من ${course.name}`}
+                        >
+                          <Icon name="content_copy" />
                         </button>
                         <Link
                           className="co-icon-btn"
@@ -363,6 +416,15 @@ export default function AdminCoursesClient({
                   <span>تحميل النظام التدريبي PDF</span>
                 </a>
                 <button
+                  onClick={() => { handleDuplicateCourse(selectedCourse.id); setSelectedCourseId(null); }}
+                  disabled={isActionLoading}
+                  className="crm-btn-secondary"
+                  style={{ padding: "10px 18px", fontSize: "0.9rem", display: "flex", alignItems: "center", gap: "6px", cursor: "pointer" }}
+                >
+                  <Icon name="content_copy" style={{ fontSize: 18 }} />
+                  <span>نسخ الكورس</span>
+                </button>
+                <button
                   onClick={() => { setShowAssignModal(selectedCourse.id); setSelectedCourseId(null); }}
                   className="crm-btn-secondary"
                   style={{ padding: "10px 18px", fontSize: "0.9rem", display: "flex", alignItems: "center", gap: "6px", cursor: "pointer" }}
@@ -389,7 +451,7 @@ export default function AdminCoursesClient({
                   </p>
                 )}
                 <p style={{ margin: "0 0 14px 0", color: "var(--admin-outline)", fontSize: "0.9rem" }}>
-                  تم الإنشاء في: {new Date(selectedCourse.created_at).toLocaleDateString("ar-SA")}
+                  تم الإنشاء في: {formatTimestamp(selectedCourse.created_at)}
                 </p>
 
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
@@ -460,6 +522,42 @@ export default function AdminCoursesClient({
                               </thead>
                               <tbody>
                                 {day.exercises.map((ex, exIndex) => {
+                                  /* A custom row is a title plus four free-text
+                                     columns the coach wrote. It has no sets,
+                                     reps or rest, so rendering it through the
+                                     standard cells below invented a 3×10 and a
+                                     60–90s rest that were never entered. Show
+                                     what was actually typed instead, laid out
+                                     like the four inputs in the builder. */
+                                  if (isCustomExercise(ex)) {
+                                    const cols = [ex.custom_col_1, ex.custom_col_2, ex.custom_col_3, ex.custom_col_4]
+                                      .map((c) => (c || "").trim())
+                                      .filter(Boolean);
+                                    return (
+                                      <tr key={ex.id || exIndex}>
+                                        <td style={{ textAlign: "start" }}>
+                                          <div className="co-exercise-cell">
+                                            <div className="co-exercise-title">
+                                              <span className="co-exercise-num">{exIndex + 1}.</span>
+                                              <span>{ex.name_ar || "تمرين غير مسمى"}</span>
+                                            </div>
+                                          </div>
+                                        </td>
+                                        <td colSpan={3} style={{ textAlign: "start" }}>
+                                          {cols.length > 0 ? (
+                                            <div className="co-custom-cols">
+                                              {cols.map((c, cIdx) => (
+                                                <span key={cIdx} className="co-custom-col">{c}</span>
+                                              ))}
+                                            </div>
+                                          ) : (
+                                            <span style={{ color: "var(--text-muted)" }}>—</span>
+                                          )}
+                                        </td>
+                                      </tr>
+                                    );
+                                  }
+
                                   const repItems = Array.isArray(ex.reps)
                                     ? ex.reps
                                     : (typeof (ex.reps as unknown) === "string" ? String(ex.reps).split(/\s*[-–,،]\s*/).filter(Boolean) : [String(ex.reps || "10")]);
@@ -539,19 +637,27 @@ export default function AdminCoursesClient({
             <label style={{ display: "block", fontSize: "0.95rem", color: "var(--admin-on-surface)", marginBottom: 12, fontWeight: 500 }}>
               اختر المشترك الذي ترغب في تعيين الكورس له:
             </label>
-            <select 
-              value={selectedTraineeId}
-              onChange={(e) => setSelectedTraineeId(e.target.value)}
-              className="crm-filter-select"
-              style={{ width: "100%", marginBottom: 24 }}
-            >
-              <option value="">-- اختر مشترك --</option>
-              {trainees.map(t => (
-                <option key={t.id} value={t.id}>
-                  {t.name}{t.username && t.username !== t.name ? ` (@${t.username})` : ""}
-                </option>
-              ))}
-            </select>
+            {/* The coach is choosing from a library of templates, and what they
+                get is a copy. Saying so here is the difference between "I edited
+                Ahmad's programme" and "I edited everyone's". */}
+            <p style={{ margin: "0 0 12px 0", fontSize: "0.82rem", color: "var(--admin-outline)", lineHeight: 1.7 }}>
+              سيحصل المشترك على <strong style={{ color: "var(--admin-on-surface)" }}>نسخة خاصة به</strong> من هذا الكورس،
+              فأي تعديل عليها لاحقاً يخصّه وحده ولا يمسّ الكورس الأصلي ولا بقية المشتركين.
+            </p>
+            <div style={{ marginBottom: 24 }}>
+              <CustomSelect
+                value={selectedTraineeId}
+                onChange={setSelectedTraineeId}
+                placeholder="-- اختر مشترك --"
+                options={[
+                  { value: "", label: "-- اختر مشترك --" },
+                  ...trainees.map((t) => ({
+                    value: t.id,
+                    label: `${t.name}${t.username && t.username !== t.name ? ` (@${t.username})` : ""}`,
+                  })),
+                ]}
+              />
+            </div>
             <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
               <button 
                 onClick={() => { setShowAssignModal(null); setSelectedTraineeId(""); }} 

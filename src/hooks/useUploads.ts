@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { IntakeUploadField } from "@/lib/uploadFields";
+import { uploadToSignedUrlWithProgress } from "@/lib/signedUpload";
+import { beginUpload } from "@/lib/uploadProgress";
 
 /* Sending the attachments to storage as they are chosen, rather than all at once
  * at the end.
@@ -87,6 +89,11 @@ export function useUploads({ scope, profileId }: UseUploadsOptions) {
           [field]: (prev[field] ?? []).map((r) => (r.key === key ? { ...r, ...update } : r)),
         }));
 
+      /* The same window the coach's uploads report into, mounted once in the
+         root layout. The person filling the form watches their photographs
+         travel instead of watching a form that has stopped responding. */
+      const task = beginUpload(file.name, file.size);
+
       try {
         const uploadSessionId = await ensureSession();
 
@@ -109,20 +116,16 @@ export function useUploads({ scope, profileId }: UseUploadsOptions) {
           throw new Error(`حجم الملف يتجاوز ${Math.round(slot.maxBytes / (1024 * 1024))} ميغابايت`);
         }
 
-        const { createClient } = await import("@supabase/supabase-js");
-        const supabase = createClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
-          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ""
-        );
-
-        const { error: uploadError } = await supabase.storage
-          .from("uploads")
-          .uploadToSignedUrl(slot.path, slot.token, file, {
-            /* Declared honestly from the browser's own reading of the file. The
-               server compares it with the bytes and refuses a disagreement. */
-            contentType: file.type || "application/octet-stream",
-          });
-        if (uploadError) throw new Error("تعذّر رفع الملف");
+        /* Straight to storage, and measured on the way — see
+           `@/lib/signedUpload`. The token is bound to the path the server chose
+           above; this call cannot write anywhere else. */
+        await uploadToSignedUrlWithProgress({
+          bucket: "uploads",
+          path: slot.path,
+          token: slot.token,
+          file,
+          onProgress: (percent) => task.uploading(percent),
+        });
 
         const confirmRes = await fetch("/api/uploads/confirm", {
           method: "POST",
@@ -135,8 +138,11 @@ export function useUploads({ scope, profileId }: UseUploadsOptions) {
         }
 
         patch({ itemId: slot.itemId, state: "done" });
+        task.done();
       } catch (error) {
-        patch({ state: "error", error: error instanceof Error ? error.message : "تعذّر الرفع" });
+        const message = error instanceof Error ? error.message : "تعذّر الرفع";
+        patch({ state: "error", error: message });
+        task.fail(message);
       }
     },
     [ensureSession]

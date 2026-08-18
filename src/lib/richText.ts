@@ -107,7 +107,14 @@ export function safeMediaUrl(value: unknown): string | null {
   if (trimmed.startsWith("/") && !trimmed.startsWith("//")) return trimmed;
 
   try {
-    const parsed = new URL(trimmed, window.location.origin);
+    /* The base is only consulted for a relative input, and those returned on the
+       line above — so it needs to be a valid absolute URL and nothing more. It
+       used to be `window.location.origin`, which made this function return null
+       for every address during server rendering: the landing page is a client
+       component, and a client component still renders once on the server. The
+       hero background would have been absent from the server's HTML and appeared
+       on hydration. */
+    const parsed = new URL(trimmed, "https://placeholder.invalid");
     return parsed.protocol === "https:" || parsed.protocol === "http:" ? trimmed : null;
   } catch {
     return null;

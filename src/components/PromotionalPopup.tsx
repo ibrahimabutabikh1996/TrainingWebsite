@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { optimizedSrc, optimizedSrcSet } from "@/lib/imageOptim";
 import "./PromotionalPopup.css";
 
 interface PromotionalPopupProps {
@@ -12,8 +13,6 @@ interface PromotionalPopupProps {
   ctaText: string;
   ctaLink: string;
   endDate?: string;
-  sessionKey?: string;
-  durationHours?: number;
 }
 
 export const PromotionalPopup: React.FC<PromotionalPopupProps> = ({
@@ -24,32 +23,36 @@ export const PromotionalPopup: React.FC<PromotionalPopupProps> = ({
   ctaText,
   ctaLink,
   endDate,
-  sessionKey = "promo_popup_closed",
-  durationHours = 24,
 }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [timeLeft, setTimeLeft] = useState<{ d: number; h: number; m: number; s: number } | null>(null);
   const [isExpired, setIsExpired] = useState(false);
 
   useEffect(() => {
-    // Check if popup should be shown
-    const closedTime = localStorage.getItem(sessionKey);
-    if (closedTime) {
-      const now = new Date().getTime();
-      const hideDurationMs = durationHours * 60 * 60 * 1000;
-      if (now - parseInt(closedTime, 10) < hideDurationMs) {
-        return; // Still hiding
-      }
-    }
-    
-    // Add a slight delay for better UX
+    /* Shown on every load of the page, with nothing remembered between them.
+     *
+     * Closing it used to write the time into `sessionStorage` and the window
+     * stayed away for twenty-four hours after that. The offers it announces are
+     * the point of turning the section on, so it is meant to be seen on each
+     * visit; whether it appears at all is decided by the coach's switch in the
+     * content manager, not by whether this browser has met it before.
+     *
+     * A short delay before it appears, so the page is drawn behind it rather
+     * than a modal being the first thing to land. */
     const timer = setTimeout(() => {
       setIsVisible(true);
       document.body.style.overflow = "hidden";
     }, 1500);
 
-    return () => clearTimeout(timer);
-  }, [sessionKey, durationHours]);
+    /* Scrolling is locked while this is open, so it has to be released if the
+       window goes away without being closed — the coach turning the switch off
+       in a live preview unmounts it exactly like that, and the page underneath
+       would be left frozen. */
+    return () => {
+      clearTimeout(timer);
+      document.body.style.overflow = "";
+    };
+  }, []);
 
   useEffect(() => {
     if (!endDate) return;
@@ -86,7 +89,6 @@ export const PromotionalPopup: React.FC<PromotionalPopupProps> = ({
   const handleClose = () => {
     setIsVisible(false);
     document.body.style.overflow = "";
-    localStorage.setItem(sessionKey, new Date().getTime().toString());
   };
 
   const handleBackdropClick = (e: React.MouseEvent) => {
@@ -110,7 +112,16 @@ export const PromotionalPopup: React.FC<PromotionalPopupProps> = ({
         
         {imageUrl && (
           <div className="promo-popup-banner">
-            <img src={imageUrl} alt="عرض خاص" loading="lazy" />
+            {/* The window covers the screen on arrival, so its picture is on the
+                critical path — it goes through the optimiser rather than
+                arriving as whatever came off the camera. Not lazy for the same
+                reason: it is the first thing on screen, not the last. */}
+            <img
+              src={optimizedSrc(imageUrl, 828)}
+              srcSet={optimizedSrcSet(imageUrl, [384, 640, 828])}
+              sizes="(max-width: 480px) 92vw, 420px"
+              alt="عرض خاص"
+            />
           </div>
         )}
 

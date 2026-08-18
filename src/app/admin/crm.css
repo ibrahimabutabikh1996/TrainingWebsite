@@ -252,44 +252,69 @@
 .crm-toolbar-filters {
   display: flex;
   gap: 12px;
-  /* The two selects are natural-width and were pushing themselves off the
-     inline-start edge on a phone. Wrapping lets them stack instead. */
-  flex-wrap: wrap;
+  flex-wrap: wrap; /* wrap on mobile */
 }
 
-.crm-toolbar-filters > * {
+.crm-toolbar-filters .custom-select-container {
   flex: 1 1 auto;
-  min-width: 0;
+  min-width: 140px;
 }
 
-.crm-filter-select {
+.crm-export-btn {
+  white-space: nowrap;
+  flex: 1 1 auto;
+}
+
+@media (min-width: 768px) {
+  .crm-toolbar-filters {
+    flex-wrap: nowrap;
+  }
+  .crm-toolbar-filters .custom-select-container {
+    width: 180px;
+    flex: 0 0 auto;
+  }
+  .crm-export-btn {
+    flex: 0 0 auto;
+  }
+}
+
+/* `.crm-filter-select` stood here: the trigger style for this panel's own
+   dropdown, plus an `option` rule that only a native <select> could use. Both
+   are gone with the last <select> in the project — every dropdown is now
+   @/components/CustomSelect, which brings its own styling. */
+
+/* Excel Export Button */
+.crm-export-btn {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  text-align: start;
-  background-color: var(--admin-bg-2);
-  border: 1px solid color-mix(in srgb, var(--admin-on-surface) 10%, transparent);
-  color: var(--admin-on-surface);
+  justify-content: center;
+  gap: 8px;
+  background-color: #107C41; /* Excel green */
+  color: #FFFFFF;
+  border: 1px solid #107C41;
   padding: 10px 16px;
   border-radius: var(--admin-radius);
-  font-family: inherit;
+  font-family: var(--font-primary);
   font-size: var(--text-sm);
-  font-weight: 500;
-  outline: none;
+  font-weight: var(--weight-semibold);
   cursor: pointer;
   transition: all var(--dur) var(--ease);
+  box-shadow: 0 2px 6px rgba(16, 124, 65, 0.3);
+  white-space: nowrap;
 }
 
-.crm-filter-select:hover,
-.crm-filter-select:focus {
-  border-color: var(--primary);
-  background-color: var(--admin-bg-3);
+.crm-export-btn:hover,
+.crm-export-btn:focus {
+  background-color: #185C37; /* Darker green for hover */
+  border-color: #185C37;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(16, 124, 65, 0.4);
+  outline: none;
 }
 
-.crm-filter-select option {
-  background-color: var(--admin-bg-2);
-  color: var(--admin-on-surface);
+.crm-export-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 3px rgba(16, 124, 65, 0.3);
 }
 
 /* List Cards */

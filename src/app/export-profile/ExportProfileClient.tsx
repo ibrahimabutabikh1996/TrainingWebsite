@@ -2,8 +2,9 @@
 
 import React from "react";
 import { Icon } from "@/components/Icon";
-import type { MonthlyArchive } from "@/types";
+import type { JsonRecord, MonthlyArchive } from "@/types";
 import { answerLabel, answerList } from "@/lib/formLabels";
+import { formatTimestamp } from "@/lib/trainingDates";
 
 interface Props {
   traineeName: string;
@@ -23,9 +24,13 @@ interface Props {
   waterIntake: string;
   stressLevel: string;
   experience: string;
-  measurements: Record<string, any>;
+  /* Body measurements, read straight out of the intake blob — the values are
+     whatever the form wrote, so numbers arrive as numbers or as strings. */
+  measurements: Record<string, string | number | null | undefined>;
   monthlyHistory: MonthlyArchive[];
-  raw?: Record<string, any>;
+  /* The rest of the intake answers, read by key. JsonRecord is the project's
+     one documented escape hatch for a blob whose shape the form decides. */
+  raw?: JsonRecord;
 }
 
 export default function ExportProfileClient({
@@ -97,8 +102,8 @@ export default function ExportProfileClient({
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          /* The report sheet keeps its printed palette in both themes; the
-             toolbar is app UI and follows the document, not the retired brand. */
+          /* The report sheet keeps its own printed palette; the toolbar is app
+             UI and follows the document, not the retired brand. */
           background: "#FFFFFF",
           padding: "16px 24px",
           borderRadius: "16px",
@@ -191,7 +196,7 @@ export default function ExportProfileClient({
           </div>
           <div style={{ textAlign: "left", fontSize: "0.92rem", color: "#524F4B", background: "#F5F2ED", padding: "14px 20px", borderRadius: "14px", border: "1px solid rgba(0,0,0,0.06)" }}>
             <div style={{ fontWeight: 800, color: "#96701A", fontSize: "1.2rem", marginBottom: "4px" }}>IBRAHIM GYM</div>
-            <div>تاريخ الإصدار: {new Date().toLocaleDateString("en-GB")}</div>
+            <div>تاريخ الإصدار: {formatTimestamp(new Date())}</div>
             <div>تاريخ التسجيل بالرحلة: {regDate}</div>
             <div style={{ fontWeight: 700, color: "#050505", marginTop: "4px" }}>إجمالي الأشهر: {monthlyHistory.length || 1} أشهر</div>
           </div>
@@ -388,6 +393,17 @@ export default function ExportProfileClient({
                 <div style={{ color: "#524F4B", fontWeight: 800, fontSize: "0.9rem", marginBottom: "4px" }}>سبب فشل أو تعثر الدايت الأخير:</div>
                 <div style={{ color: "#050505", fontWeight: 700, fontSize: "1.05rem" }}>{raw.last_diet_fail || "لا يوجد"}</div>
               </div>
+              {/* Both of these are read from the intake answers in page.tsx and
+                  handed down as props, but no card printed them — so the sheet
+                  quietly dropped two of the trainee's answers. */}
+              <div style={{ padding: "16px", background: "#F5F2ED", borderRadius: "14px", border: "1px solid rgba(0,0,0,0.05)" }}>
+                <div style={{ color: "#524F4B", fontWeight: 800, fontSize: "0.9rem", marginBottom: "4px" }}>الأطعمة المفضلة أو غير المرغوبة:</div>
+                <div style={{ color: "#050505", fontWeight: 700, fontSize: "1.05rem" }}>{dislikedFood}</div>
+              </div>
+              <div style={{ padding: "16px", background: "#F5F2ED", borderRadius: "14px", border: "1px solid rgba(0,0,0,0.05)" }}>
+                <div style={{ color: "#524F4B", fontWeight: 800, fontSize: "0.9rem", marginBottom: "4px" }}>مستوى التوتر والضغط النفسي:</div>
+                <div style={{ color: "#050505", fontWeight: 700, fontSize: "1.05rem" }}>{stressLevel}</div>
+              </div>
               <div style={{ padding: "16px", background: "#F5F2ED", borderRadius: "14px", border: "1px solid rgba(0,0,0,0.05)", gridColumn: "1 / -1" }}>
                 <div style={{ color: "#524F4B", fontWeight: 800, fontSize: "0.9rem", marginBottom: "4px" }}>أسباب ودوافع تناول الطعام:</div>
                 <div style={{ color: "#050505", fontWeight: 700, fontSize: "1.05rem" }}>{raw.eating_reason || "لا يوجد"}</div>
@@ -415,7 +431,7 @@ export default function ExportProfileClient({
                   <th style={{ padding: "14px 16px" }}>الفترة الزمنية</th>
                   <th style={{ padding: "14px 16px" }}>النظام التدريبي</th>
                   <th style={{ padding: "14px 16px" }}>النظام الغذائي</th>
-                  <th style={{ padding: "14px 16px", borderTopLeftRadius: "12px" }}>حالة الدورة</th>
+                  <th style={{ padding: "14px 16px", borderTopLeftRadius: "12px" }}>حالة الجدول</th>
                 </tr>
               </thead>
               <tbody>

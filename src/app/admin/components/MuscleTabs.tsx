@@ -15,9 +15,9 @@ const getMuscleImage = (muscle: string) => {
   switch (muscle) {
     case "صدر": return "/photos/musclesPhotos/20 - Pectorals - Chest عضلات الصدر - البنج.png";
     case "ظهر": return "/photos/musclesPhotos/07 - Latissimus Dorsi - Lats العضلة الظهرية العريضة - المجنص.png";
-    case "أكتاف": return "/photos/musclesPhotos/04 - Deltoids عضلات الكتف - العضلة الدالية.png";
+    case "اكتاف": return "/photos/musclesPhotos/04 - Deltoids عضلات الكتف - العضلة الدالية.png";
     case "ذراعين": return "/photos/musclesPhotos/17 - Biceps العضلة ذات الرأسين - البايسبس.png";
-    case "أرجل": return "/photos/musclesPhotos/14 - Quadriceps عضلات الفخذ الأمامية - الرباعية.png";
+    case "ارجل": return "/photos/musclesPhotos/14 - Quadriceps عضلات الفخذ الأمامية - الرباعية.png";
     case "بطن": return "/photos/musclesPhotos/23 - Rectus Abdominis العضلة المستقيمة البطنية - عضلات البطن كاملة.png";
     case "فيديوهات توضيحية": return "/photos/musclesPhotos/25 - VIdeos فديوهات توضيحية.png";
     case "منزلي بدون معدات": return "/photos/musclesPhotos/24 - Home Workout منزلي بدون معدات.png";

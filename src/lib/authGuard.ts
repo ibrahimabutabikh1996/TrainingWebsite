@@ -60,10 +60,92 @@ function forbidden(): NextResponse {
   return NextResponse.json({ error: "غير مصرح لك بهذا الإجراء" }, { status: 403 });
 }
 
-/** Any signed-in account. Call it as the first line of the handler, before the try block. */
+function suspended(): NextResponse {
+  return NextResponse.json(
+    { error: "الحساب متوقف يرجى التواصل مع الادارة" },
+    { status: 403 }
+  );
+}
+
+/* ------------------------------------------------------------------ *
+ * Revocation
+ * ------------------------------------------------------------------ */
+
+/**
+ * Why this session should be refused despite carrying a valid signature, or
+ * null if it should not be.
+ *
+ * A signed token proves only what was true when it was minted. Two things can
+ * stop being true afterwards, and neither was noticed until this existed:
+ *
+ *   "suspended"  the coach suspended the trainee. `is_suspended` was read at the
+ *                door only — /api/auth/login refuses on it — which left the case
+ *                the switch actually exists for uncovered. Someone already
+ *                signed in kept their session for its full life: a week, or a
+ *                month with "remember me". The coach pressed the button and
+ *                nothing happened.
+ *
+ *   "stale"      the password changed after this token was issued. The reason
+ *                people change a password is that somebody else has it, and
+ *                until now that somebody kept their session regardless. The
+ *                token cannot be revoked — it is a signature, not a row — so it
+ *                is disowned instead, by comparing when it was minted against
+ *                `accounts.password_changed_at`.
+ *
+ * One query answers both. The account row is where the password timestamp lives
+ * and the trainee's profile hangs off it, so the suspension flag comes back on
+ * the same round trip rather than a second one — which matters, because this
+ * runs on every guarded request and the whole point of a signed token was to
+ * avoid the database entirely.
+ *
+ * A missing account is refused too: the row was deleted while the cookie lived.
+ *
+ * Suspension is checked only for trainees. The coach cannot be suspended —
+ * membership is a username in `@/lib/adminUsernames`, not a column — but their
+ * password change counts the same as anyone's.
+ */
+async function sessionRefusal(session: Session): Promise<"suspended" | "stale" | null> {
+  const account = await prisma.accounts.findUnique({
+    where: { id: session.userId },
+    select: {
+      password_changed_at: true,
+      /* Newest first, matching /api/auth/login and /api/profile: that is the
+         profile the dashboard loads, so it is the one whose flag governs. */
+      profiles: {
+        orderBy: { created_at: "desc" },
+        take: 1,
+        select: { is_suspended: true },
+      },
+    },
+  });
+
+  if (!account) return "stale";
+
+  /* Seconds, because that is the resolution the token records. `>` and not
+     `>=`: a change landing in the same second as the sign-in that follows it is
+     the re-issue in /api/auth/change-password, and refusing that would log
+     someone out for changing their own password successfully. */
+  if (account.password_changed_at) {
+    const changedAt = Math.floor(account.password_changed_at.getTime() / 1000);
+    if (changedAt > session.issuedAt) return "stale";
+  }
+
+  if (!session.isAdmin && account.profiles[0]?.is_suspended === true) return "suspended";
+
+  return null;
+}
+
+/** Any signed-in account whose session is still good. Call it as the first line of the handler, before the try block. */
 export async function requireUser(): Promise<ApiGuard> {
   const session = await getSession();
   if (!session) return { ok: false, response: unauthorized() };
+
+  const refusal = await sessionRefusal(session);
+  if (refusal === "suspended") return { ok: false, response: suspended() };
+  /* A stale token is answered as "not signed in", because that is what it now
+     is: the credential it was issued against no longer exists. */
+  if (refusal) return { ok: false, response: unauthorized() };
+
   return { ok: true, session };
 }
 
@@ -85,7 +167,12 @@ export async function requireAdmin(): Promise<ApiGuard> {
  * returns its own error shape rather than a shared one.
  */
 export async function requireUserAction(): Promise<Session | null> {
-  return getSession();
+  const session = await getSession();
+  if (!session) return null;
+  /* A suspended trainee, or one holding a token from before their password
+     changed, is refused here exactly as an unauthenticated one is — the action's
+     own error shape says so, and nothing downstream has to know which it was. */
+  return (await sessionRefusal(session)) ? null : session;
 }
 
 export async function requireAdminAction(): Promise<Session | null> {
@@ -105,6 +192,12 @@ export async function requireAdminAction(): Promise<Session | null> {
 export async function requireUserPage(): Promise<Session> {
   const session = await getSession();
   if (!session) redirect("/login");
+  /* Back to the sign-in screen, which is where the refusal is spelled out:
+     signing in again is what the person will try, and /api/auth/login answers a
+     suspended account with "الحساب متوقف" and a changed password with the
+     ordinary prompt. /login is outside the proxy's matcher and does not send a
+     signed-in visitor anywhere, so this cannot loop. */
+  if (await sessionRefusal(session)) redirect("/login");
   return session;
 }
 
@@ -180,9 +273,23 @@ export async function ownProfileId(session: Session): Promise<string | null> {
  */
 export async function startSession(
   account: { id: string; username: string },
-  remember = false
+  remember = false,
+  /**
+   * Overrides the lifetime `remember` would choose. For re-issuing a session
+   * that already exists — /api/auth/change-password replaces the caller's token
+   * so that changing your own password does not sign you out, and the
+   * replacement has to keep the lifetime the original was granted rather than
+   * silently demoting a month to a week. Clamped, so a computed value from an
+   * old token cannot mint something longer than the maximum.
+   */
+  ttlSecondsOverride?: number
 ): Promise<Session> {
-  const ttl = remember ? SESSION_TTL_REMEMBER_SECONDS : SESSION_TTL_SECONDS;
+  const ttl =
+    ttlSecondsOverride !== undefined && Number.isFinite(ttlSecondsOverride)
+      ? Math.min(Math.max(Math.floor(ttlSecondsOverride), 60), SESSION_TTL_REMEMBER_SECONDS)
+      : remember
+        ? SESSION_TTL_REMEMBER_SECONDS
+        : SESSION_TTL_SECONDS;
   const { token, expiresAt } = await createSessionToken(account, ttl);
   const store = await cookies();
 
@@ -208,11 +315,29 @@ export async function startSession(
     username: account.username,
     isAdmin: isAdminUsername(account.username),
     expiresAt,
+    issuedAt: expiresAt - ttl,
   };
 }
 
 export async function endSession(): Promise<void> {
   const store = await cookies();
-  store.delete(SESSION_COOKIE);
-  store.delete(USER_HINT_COOKIE);
+
+  /* Cleared by writing an empty, already-expired cookie with the same
+     attributes it was created with, rather than `store.delete(name)`.
+     `delete` emits only the name, path and expiry; a browser keys a cookie on
+     name, domain and path, so that is usually enough — but "usually" is doing
+     work there. A `Secure` cookie cannot be overwritten by a non-`Secure` one
+     from an insecure origin, and a signed-out browser that keeps a valid
+     session cookie is the failure this must not have. Writing the same shape
+     back leaves nothing to differ over. */
+  const cleared = {
+    value: "",
+    path: "/",
+    maxAge: 0,
+    sameSite: "lax" as const,
+    secure: process.env.NODE_ENV === "production",
+  };
+
+  store.set({ name: SESSION_COOKIE, httpOnly: true, ...cleared });
+  store.set({ name: USER_HINT_COOKIE, httpOnly: false, ...cleared });
 }

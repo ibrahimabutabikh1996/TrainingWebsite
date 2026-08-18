@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { requireProfileAccess } from "@/lib/authGuard";
 import { resolveSessionAccess, sessionDateFor, subscriptionBlock } from "@/lib/trainingCycle";
 import { todayISODate } from "@/lib/trainingDates";
 
@@ -26,6 +27,9 @@ export async function GET(request: Request) {
     if (!profileId || !isValidUUID(profileId)) {
       return NextResponse.json({ error: "معرّف المشترك غير صالح" }, { status: 400 });
     }
+
+    const auth = await requireProfileAccess(profileId);
+    if (!auth.ok) return auth.response;
 
     const logs = await prisma.workout_logs.findMany({
       where: {
@@ -77,6 +81,10 @@ export async function POST(request: Request) {
     if (!profileId || !isValidUUID(profileId)) {
       return NextResponse.json({ error: "معرّف المشترك غير صالح" }, { status: 400 });
     }
+
+    const auth = await requireProfileAccess(profileId);
+    if (!auth.ok) return auth.response;
+
     if (!dayId || !exerciseId || !exerciseName) {
       return NextResponse.json({ error: "بيانات التمرين ناقصة" }, { status: 400 });
     }

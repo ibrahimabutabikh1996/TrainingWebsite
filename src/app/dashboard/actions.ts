@@ -4,6 +4,12 @@ import { prisma } from "@/lib/db";
 import { requireUserAction, sessionOwnsProfile } from "@/lib/authGuard";
 import { revalidatePath } from "next/cache";
 
+/** One row of `profiles.data.weightLogs` — the shape the dashboard chart reads. */
+interface WeightLogEntry {
+  date: string;
+  weight: number;
+}
+
 export async function saveWeightLog(
   profileId: string,
   date: string,
@@ -30,13 +36,13 @@ export async function saveWeightLog(
     const weightLogs = currentData.weightLogs || [];
 
     // Check if a log for this date already exists and update it, or add a new one
-    const existingIndex = weightLogs.findIndex((log: any) => log.date === date);
+    const existingIndex = weightLogs.findIndex((log: WeightLogEntry) => log.date === date);
     if (existingIndex >= 0) {
       weightLogs[existingIndex].weight = weight;
     } else {
       weightLogs.push({ date, weight });
       // Sort by date ascending
-      weightLogs.sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      weightLogs.sort((a: WeightLogEntry, b: WeightLogEntry) => new Date(a.date).getTime() - new Date(b.date).getTime());
     }
 
     const newData = { ...currentData, weightLogs };

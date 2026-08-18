@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "@/components/Icon";
 
 const PREDEFINED_MUSCLES = [
@@ -24,11 +24,9 @@ const PREDEFINED_MUSCLES = [
  */
 export default function DayMusclePicker({
   selected,
-  options,
   onChange,
 }: {
   selected: string[];
-  options?: string[];
   onChange: (muscles: string[]) => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -37,19 +35,26 @@ export default function DayMusclePicker({
   const rootRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  /* Closing the menu also clears the half-typed custom muscle in it. That used
+     to happen in the effect below, as a setState fired because `open` had
+     already become false — a second render to undo what the first one did.
+     Closing is an event, so the clearing belongs to the event. */
+  const close = useCallback(() => {
+    setOpen(false);
+    setShowCustomInput(false);
+    setCustom("");
+  }, []);
+
   useEffect(() => {
-    if (!open) {
-      setShowCustomInput(false);
-      setCustom("");
-      return;
-    }
+    if (!open) return;
+
     const onDown = (e: MouseEvent) => {
       if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
-        setOpen(false);
+        close();
       }
     };
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") close();
     };
     document.addEventListener("mousedown", onDown);
     document.addEventListener("keydown", onKey);
@@ -57,7 +62,7 @@ export default function DayMusclePicker({
       document.removeEventListener("mousedown", onDown);
       document.removeEventListener("keydown", onKey);
     };
-  }, [open]);
+  }, [open, close]);
 
   useEffect(() => {
     if (showCustomInput && inputRef.current) {
@@ -112,7 +117,7 @@ export default function DayMusclePicker({
         <button
           type="button"
           className="dmp-add"
-          onClick={() => setOpen((o) => !o)}
+          onClick={() => (open ? close() : setOpen(true))}
           aria-expanded={open}
         >
           <Icon name="add" style={{ fontSize: 16 }} />

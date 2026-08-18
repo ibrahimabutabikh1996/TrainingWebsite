@@ -3,15 +3,14 @@
 import { useState } from "react";
 import { t } from "@/lib/translations";
 import { useAuth } from "@/hooks/useAuth";
-import { useSearchParams } from "next/navigation";
+
 import Link from "next/link";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, CheckCircle2 } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 
 export function LoginForm() {
   const { login, isLoading, error } = useAuth();
-  const searchParams = useSearchParams();
-  const registered = searchParams.get("registered") === "true";
+
   
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -30,13 +29,7 @@ export function LoginForm() {
       <div className="form-divider"></div>
 
       <form onSubmit={handleSubmit} noValidate>
-        {registered && !error && (
-          <Alert variant="success" style={{ marginBottom: 20 }}>
-            <CheckCircle2 />
-            <AlertTitle>تم بنجاح</AlertTitle>
-            <AlertDescription>{t("form_success_msg")}</AlertDescription>
-          </Alert>
-        )}
+
         {error && (
           <Alert variant="destructive" style={{ marginBottom: 20 }}>
             <AlertCircle />

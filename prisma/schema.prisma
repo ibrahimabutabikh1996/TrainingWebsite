@@ -498,11 +498,15 @@ model webauthn_credentials {
 }
 
 model accounts {
-  id              String            @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  username        String            @unique
-  password        String
-  created_at      DateTime?         @default(now()) @db.Timestamptz(6)
-  courses         courses[]
+  id       String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  username String @unique
+  password String
+  /// When the password was last deliberately changed. A session token issued
+  /// before this is refused — see `sessionRefusal` in @/lib/authGuard. Null on
+  /// accounts whose password has not changed since the column existed.
+  password_changed_at DateTime?         @db.Timestamptz(6)
+  created_at          DateTime?         @default(now()) @db.Timestamptz(6)
+  courses             courses[]
   profiles        profiles[]
   upload_sessions upload_sessions[]
 
@@ -541,6 +545,21 @@ model courses {
   @@schema("public")
 }
 
+/// Sign-in and upload attempt counters — see src/lib/rateLimit.ts, which reads
+/// and writes it with raw SQL rather than through the client. It is declared
+/// here anyway because this file is what Prisma compares the database against:
+/// a table that exists in Postgres and not in the schema is one that the next
+/// `db push` or migration diff would offer to drop.
+model login_attempts {
+  /// "ip:<address>" or "user:<username>" — both are counted, separately.
+  key          String   @id
+  attempts     Int      @default(0)
+  window_start DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([window_start], map: "idx_login_attempts_window")
+  @@schema("public")
+}
+
 model exercises {
   id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name_ar       String
@@ -550,6 +569,8 @@ model exercises {
   created_at    DateTime? @default(now()) @db.Timestamptz(6)
   category      String?   @default("مقاومة")
 
+  @@index([created_at(sort: Desc)], map: "idx_exercises_created")
+  @@index([target_muscle], map: "idx_exercises_target_muscle")
   @@schema("public")
 }
 
@@ -566,7 +587,6 @@ model profiles {
   courses              courses?          @relation(fields: [current_course_id], references: [id], onUpdate: NoAction)
   accounts             accounts?         @relation(fields: [user_id], references: [id], onUpdate: NoAction)
   diet_plans           diet_plans[]
-  rest_days            rest_days[]
   training_cycles      training_cycles[]
   upload_sessions      upload_sessions[]
   workout_logs         workout_logs[]
@@ -612,21 +632,6 @@ model workout_logs {
   @@index([profile_id, exercise_id], map: "idx_workout_logs_exercise")
   @@index([profile_id, session_date(sort: Desc)], map: "idx_workout_logs_profile_date")
   @@index([session_id], map: "idx_workout_logs_session")
-  @@schema("public")
-}
-
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model rest_days {
-  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  profile_id String   @db.Uuid
-  /// The day the trainee took off. A rest day counts towards no cycle.
-  rest_on    DateTime @db.Date
-  note       String?
-  created_at DateTime @default(now()) @db.Timestamptz(6)
-  profiles   profiles @relation(fields: [profile_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-
-  @@unique([profile_id, rest_on], map: "uq_rest_days_profile_date")
-  @@index([profile_id, rest_on(sort: Desc)], map: "idx_rest_days_profile")
   @@schema("public")
 }
 
@@ -837,5 +842,7 @@ model nutrition_sources {
   notes        String?
   created_at   DateTime? @default(now()) @db.Timestamptz(6)
 
+  @@index([created_at(sort: Desc)], map: "idx_nutrition_sources_created")
+  @@index([category], map: "idx_nutrition_sources_category")
   @@schema("public")
 }
