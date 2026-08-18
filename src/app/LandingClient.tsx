@@ -1524,15 +1524,13 @@ export default function LandingClient({
                     <li data-i18n="off_card1_f2">نظام غذائي متكامل</li>
                     <li data-i18n="off_card1_f3">متابعة على مدار اليوم</li>
                   </ul>
-                  <a
-                    href="https://wa.me/9647877511605"
+                  <Link
+                    href="/form?plan=offer1"
                     className="btn-card plan1-btn"
-                    target="_blank"
-                    rel="noopener noreferrer"
                     data-i18n="off_card_btn"
                   >
                     اشترك الآن
-                  </a>
+                  </Link>
                 </div>
               </div>
               {/* Card 2 */}
@@ -1621,15 +1619,13 @@ export default function LandingClient({
                     <li data-i18n="off_card2_f2">تمارين احترافية</li>
                     <li data-i18n="off_card2_f3">متابعة يومية دقيقة</li>
                   </ul>
-                  <a
-                    href="https://wa.me/9647877511605"
+                  <Link
+                    href="/form?plan=offer2"
                     className="btn-card plan2-btn"
-                    target="_blank"
-                    rel="noopener noreferrer"
                     data-i18n="off_card_btn"
                   >
                     اشترك الآن
-                  </a>
+                  </Link>
                 </div>
               </div>
               {/* Card 3 */}
@@ -1703,15 +1699,13 @@ export default function LandingClient({
                     <li data-i18n="off_card3_f2">برمجة يومية</li>
                     <li data-i18n="off_card3_f3">أنظمة تجهيز لمراحل متقدمة</li>
                   </ul>
-                  <a
-                    href="https://wa.me/9647877511605"
+                  <Link
+                    href="/form?plan=offer3"
                     className="btn-card plan3-btn"
-                    target="_blank"
-                    rel="noopener noreferrer"
                     data-i18n="off_card_btn"
                   >
                     اشترك الآن
-                  </a>
+                  </Link>
                 </div>
               </div>
             </div>

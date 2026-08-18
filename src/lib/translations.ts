@@ -131,6 +131,21 @@ export const translations = {
     card1_badge: "خطة ذاتية التوجيه",
     card2_badge: "خطة المتابعة الأسبوعية",
     card3_badge: "خطة المتابعة اليومية",
+    /* The offers, which reach the form the same way the three plans above do —
+       a card on the landing page links to `/form?plan=…` with the choice
+       already made. They are separate products with their own names, not
+       discounted versions of the plans, so they are recorded under their own
+       keys rather than borrowing one.
+
+       These names are stated twice, here and in `defaultContent` in
+       LandingClient: the landing page's copy is editable in the content
+       manager and this dictionary is not. The three plans above have always
+       had that split, and renaming an offer in the panel will change the card
+       but not the label the form shows — worth fixing for all six at once, but
+       not by making these six the exception. */
+    off_card1_badge: "باقة الانطلاقة الذكية",
+    off_card2_badge: "باقة المحترفين المتكاملة",
+    off_card3_badge: "باقة التجهيز للبطولات",
     lbl_fullname: "الاسم الكامل",
     lbl_gender: "الجنس",
     opt_gender_male: "ذكر",

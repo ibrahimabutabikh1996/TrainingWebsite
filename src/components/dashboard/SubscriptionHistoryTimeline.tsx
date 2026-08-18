@@ -16,18 +16,20 @@ import {
   deleteEntireHistoryAction,
   restoreHistoryAction,
 } from "@/app/admin/profile/actions";
+import { PLAN_COLOUR_SLOT } from "@/lib/formLabels";
 
+/* These were two `if` chains over plan1..plan3, which meant a subscriber who
+   came through the offers section fell through to the default colour and lost
+   the visual grouping the timeline exists to give. The mapping is shared now —
+   see PLAN_COLOUR_SLOT — so a new product is coloured everywhere at once or
+   nowhere at all, rather than in whichever screen was remembered. */
 const getPlanColor = (plan: string | undefined | null) => {
-  if (plan === 'plan1') return 'var(--plan-1)';
-  if (plan === 'plan2') return 'var(--plan-2)';
-  if (plan === 'plan3') return 'var(--plan-3)';
-  return 'var(--primary)';
+  const slot = PLAN_COLOUR_SLOT[String(plan)];
+  return slot ? `var(--plan-${slot})` : 'var(--primary)';
 };
 const getPlanTextColor = (plan: string | undefined | null) => {
-  if (plan === 'plan1') return 'var(--plan-1-text)';
-  if (plan === 'plan2') return 'var(--plan-2-text)';
-  if (plan === 'plan3') return 'var(--plan-3-text)';
-  return 'var(--text-inverse)';
+  const slot = PLAN_COLOUR_SLOT[String(plan)];
+  return slot ? `var(--plan-${slot}-text)` : 'var(--text-inverse)';
 };
 interface Props {
   profile: UserProfile;

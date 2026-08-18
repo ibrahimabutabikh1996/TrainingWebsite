@@ -4,7 +4,7 @@ import type { JsonRecord } from "@/types";
 import { useEffect, useState } from "react";
 import { Profile } from "@/types/admin";
 import { Toaster, toast } from "react-hot-toast";
-import { planLabel } from "@/lib/formLabels";
+import { planLabel, PLAN_COLOUR_SLOT, PLAN_VALUES } from "@/lib/formLabels";
 import { Icon } from "@/components/Icon";
 import { CustomSelect } from "@/components/CustomSelect";
 import { useNow } from "@/hooks/useNow";
@@ -199,10 +199,12 @@ export default function AdminCRMClient({ initialProfiles }: { initialProfiles: P
         /* Stored as the plan key from the landing-page link ("plan1".."plan3"),
            never as Arabic text — the old substring matching never matched, so
            every filter returned an empty list. */
-        const plan = String(data.plan || "");
-        if (filterPlan === "bronze") return plan === "plan1";
-        if (filterPlan === "silver") return plan === "plan2";
-        if (filterPlan === "primary") return plan === "plan3";
+        /* The dropdown's values are the stored plan keys themselves now. They
+           used to be "bronze"/"silver"/"primary", translated back to plan1..3
+           by the three lines that stood here — a second naming scheme that
+           existed only so this comparison could undo it, and that had nowhere
+           to put the offers. */
+        return String(data.plan || "") === filterPlan;
       }
       return true;
     })
@@ -341,12 +343,13 @@ export default function AdminCRMClient({ initialProfiles }: { initialProfiles: P
               <CustomSelect 
                 value={filterPlan} 
                 onChange={setFilterPlan} 
+                /* Listed from the same table the form offers and the tag is
+                   coloured from, so the coach can filter by an offer the day it
+                   goes live rather than the day someone remembers this file. */
                 options={[
                   { value: "all", label: "جميع الخطط" },
-                  { value: "bronze", label: "خطة ذاتية التوجيه" },
-                  { value: "silver", label: "خطة المتابعة الأسبوعية" },
-                  { value: "primary", label: "خطة المتابعة اليومية" }
-                ]} 
+                  ...PLAN_VALUES.map((value) => ({ value, label: planLabel(value) })),
+                ]}
               />
               <CustomSelect 
                 value={sortBy} 
@@ -417,11 +420,13 @@ export default function AdminCRMClient({ initialProfiles }: { initialProfiles: P
                     </div>
 
                     <div className="crm-card-meta">
+                      {/* The third copy of the plan-to-colour chain, which had
+                          no arm for the offers. Shared now, so the tag is
+                          coloured from the same table the timeline reads. */}
                       <span className={`crm-tag ${
-                        data.plan === 'plan1' ? 'plan-1' : 
-                        data.plan === 'plan2' ? 'plan-2' : 
-                        data.plan === 'plan3' ? 'plan-3' : 
-                        data.plan ? 'primary-tag' : ''
+                        PLAN_COLOUR_SLOT[String(data.plan)]
+                          ? `plan-${PLAN_COLOUR_SLOT[String(data.plan)]}`
+                          : data.plan ? 'primary-tag' : ''
                       }`}>
                         {planLabel(data.plan, "غير محدد")}
                       </span>

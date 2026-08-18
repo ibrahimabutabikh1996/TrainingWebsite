@@ -1,8 +1,19 @@
 "use client";
 
 import { t } from "@/lib/translations";
+import { PLAN_KEYS, PLANS_NEEDING_TYPE } from "@/lib/formLabels";
 import { FormGrid, SelectField, TextInput } from "./Fields";
 import type { StepProps } from "./types";
+
+/* Built from PLAN_KEYS rather than written out, so the selector cannot fall
+   behind the set of things a landing-page card is able to link to. That is
+   exactly what happened when the offers section was pointed at this form: its
+   three cards had no entry here, and someone arriving without `?plan=` — a
+   bookmark, a shared link — could not have picked one. */
+const PLAN_OPTIONS = Object.entries(PLAN_KEYS).map(([value, key]) => ({
+  value,
+  label: t(key),
+}));
 
 const ACTIVITY_OPTIONS = [
   { value: "1", key: "opt_act_1" },
@@ -46,17 +57,13 @@ export function StepOneBasicInfo({ formData, update, planLocked }: StepProps) {
         label={t("lbl_plan")}
         value={formData.plan}
         onChange={(plan) => update({ plan })}
-        options={[
-          { value: "plan1", label: t("card1_badge") },
-          { value: "plan2", label: t("card2_badge") },
-          { value: "plan3", label: t("card3_badge") },
-        ]}
+        options={PLAN_OPTIONS}
         required
         disabled={planLocked}
         full
       />
 
-      {formData.plan === "plan1" && (
+      {PLANS_NEEDING_TYPE.has(formData.plan) && (
         <SelectField
           label="نوع الاشتراك المطلوب"
           value={formData.plan_type}

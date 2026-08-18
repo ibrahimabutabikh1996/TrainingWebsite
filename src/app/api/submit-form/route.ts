@@ -9,6 +9,7 @@ import { readIntakeData, withoutCredentials } from "@/lib/intakeData";
 import { attachSessionItems, confirmedPathsFor, openSession } from "@/lib/uploadSessions";
 import { clientAddress, consumeAttempt, SUBMIT_FORM_LIMIT } from "@/lib/rateLimit";
 import { subscriptionEndFrom } from "@/lib/subscription";
+import { planLabel } from "@/lib/formLabels";
 import type { JsonRecord } from "@/types";
 
 export const dynamic = "force-dynamic";
@@ -304,9 +305,12 @@ export async function POST(request: Request) {
           },
         });
 
-        const planName = jsonData.plan === "plan1" ? "خطة ذاتية التوجيه" :
-                         jsonData.plan === "plan2" ? "خطة المتابعة الأسبوعية" :
-                         jsonData.plan === "plan3" ? "خطة المتابعة اليومية" : jsonData.plan;
+        /* Was a three-armed ternary with the plan names written out again. It
+           had no arm for the offers, so a subscriber who came through the
+           offers section put the raw key — "offer2" — in the coach's email.
+           `planLabel` is the same lookup every other screen uses, and it still
+           falls through to the raw value for anything it does not recognise. */
+        const planName = planLabel(jsonData.plan, String(jsonData.plan ?? ""));
 
         await transporter.sendMail({
           from: `"Ibrahim Abutabikh" <${process.env.EMAIL_USER}>`,

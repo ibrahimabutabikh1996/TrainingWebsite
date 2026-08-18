@@ -5,6 +5,8 @@
    `meal_work_bf`) sat broken without anything failing. Validating at the write
    boundary makes that class of mistake loud and immediate. */
 
+import { PLANS_NEEDING_TYPE } from "@/lib/formLabels";
+
 /** Every key the form is allowed to submit. */
 const ALLOWED_KEYS = [
   // step 1
@@ -109,7 +111,13 @@ export function validateSubmission(input: unknown): ValidationResult {
     }
   }
 
-  if (data.plan === "plan1") {
+  /* Not `data.plan === "plan1"` any more. The offers section links into this
+     form the same way the plans do, and the first offer quotes three prices —
+     combined, diet only, training only — which are the three `plan_type`
+     options. It has to be asked the same follow-up question, and refused the
+     same way when it arrives without an answer. The set is shared with the form
+     so the two cannot disagree about which products need it. */
+  if (PLANS_NEEDING_TYPE.has(String(data.plan))) {
     const v = data.plan_type;
     if (v === undefined || v === null || (typeof v === "string" && v.trim() === "")) {
       errors.push("missing required field: plan_type");
