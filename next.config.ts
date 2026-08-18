@@ -83,6 +83,30 @@ const nextConfig: NextConfig = {
     /* Both are markedly smaller than JPEG at the same quality; the browser is
        served whichever it says it accepts, and the original otherwise. */
     formats: ["image/avif", "image/webp"],
+
+    /* The quality values the optimiser will serve. Next 16 refuses any `q` not
+       listed here and defaults the list to `[75]` alone — so this key being
+       absent was not a missing optimisation, it was every image on the site
+       failing to load. `/_next/image?...&q=70` answered
+       `"q" parameter (quality) of 70 is not allowed` with a 400, for remote
+       photographs and for the logo in `public/` alike, and each `<img>` fell
+       back to its alt text.
+     *
+     * 70 is what `src/lib/imageOptim.ts` asks for, deliberately — see
+     * DEFAULT_QUALITY there, and the note in that file's header saying to keep
+     * it and this config in step. This is that step.
+     *
+     * 75 is Next's own default, and it is listed even though nothing requests
+     * it today. The app builds every optimiser URL by hand and uses none of
+     * next/image's component, so the first person to reach for `<Image>` would
+     * ask at 75 and walk into this exact wall. A quality only becomes a cache
+     * variant once something actually asks for it, so carrying it costs nothing.
+     *
+     * Changing DEFAULT_QUALITY to a third value without adding it here breaks
+     * every image again — silently, and only in a way a production build
+     * shows. `next dev` is the more forgiving of the two, which is how this
+     * went unnoticed. */
+    qualities: [70, 75],
     /* These are photographs of a coach and a gym, not a feed — a month is a
        reasonable floor before the optimiser re-fetches an original. */
     minimumCacheTTL: 60 * 60 * 24 * 30,
