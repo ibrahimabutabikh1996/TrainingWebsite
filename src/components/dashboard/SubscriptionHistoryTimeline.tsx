@@ -5,7 +5,6 @@ import type { JsonRecord, UserProfile, MonthlyArchive } from "@/types";
 import type { MealItem } from "@/types/diet";
 import { Icon } from "@/components/Icon";
 import {
-  planLabel,
   activityLabel,
   answerLabel,
   answerList,
@@ -17,6 +16,7 @@ import {
   restoreHistoryAction,
 } from "@/app/admin/profile/actions";
 import { PLAN_COLOUR_SLOT } from "@/lib/formLabels";
+import { planNameFrom, DEFAULT_PLAN_NAMES, type PlanNames } from "@/lib/planNames";
 
 /* These were two `if` chains over plan1..plan3, which meant a subscriber who
    came through the offers section fell through to the default colour and lost
@@ -34,10 +34,15 @@ const getPlanTextColor = (plan: string | undefined | null) => {
 interface Props {
   profile: UserProfile;
   isAdminView?: boolean;
+  /* The coach's names for the packages. Optional with the dictionary as the
+     default, because this renders inside two different trees and only the one
+     with a server component above it can supply them. */
+  planNames?: PlanNames;
 }
 
 export function SubscriptionHistoryTimeline({
   profile,
+  planNames = DEFAULT_PLAN_NAMES,
   isAdminView = false,
 }: Props) {
   const [selectedWorkoutMonth, setSelectedWorkoutMonth] = useState<
@@ -2190,7 +2195,8 @@ export function SubscriptionHistoryTimeline({
                                   marginTop: "6px",
                                 }}
                               >
-                                {planLabel(
+                                {planNameFrom(
+                                  planNames,
                                   profile.plan || raw.plan,
                                   "خطة تدريب وتغذية",
                                 )}

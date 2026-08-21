@@ -8,9 +8,10 @@ import {
   answerLabel,
   answerList,
   genderLabel,
-  planLabel,
   withUnit,
 } from "@/lib/formLabels";
+import { planNameFrom } from "@/lib/planNames";
+import { usePlanNames } from "@/hooks/usePlanNames";
 
 interface TraineeProfileDetailsProps {
   profile: UserProfile;
@@ -130,6 +131,9 @@ function MetricCard({
 }
 
 export function TraineeProfileDetails({ profile }: TraineeProfileDetailsProps) {
+  /* The coach's names for the packages — see the hook for why this screen asks
+     for them rather than being handed them. */
+  const planNames = usePlanNames();
   const data = profile.raw_answers || {};
 
   const getFiles = (val: unknown): string[] => {
@@ -231,7 +235,7 @@ export function TraineeProfileDetails({ profile }: TraineeProfileDetailsProps) {
             <span style={{ fontSize: "0.9rem", color: "var(--text-muted)", fontWeight: 700 }}>الخطة المشترك بها</span>
             <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
               <Icon name="workspace_premium" style={{ color: "var(--primary)", fontSize: "28px" }} />
-              <span style={{ fontSize: "1.3rem", fontWeight: 800, color: "var(--primary)" }}>{planLabel(data.plan || profile.plan, "خطة التدريب والمتابعة")}</span>
+              <span style={{ fontSize: "1.3rem", fontWeight: 800, color: "var(--primary)" }}>{planNameFrom(planNames, data.plan || profile.plan, "خطة التدريب والمتابعة")}</span>
             </div>
           </div>
           <MetricCard

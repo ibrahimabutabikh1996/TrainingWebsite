@@ -4,7 +4,8 @@ import type { JsonRecord } from "@/types";
 import { useEffect, useState } from "react";
 import { Profile } from "@/types/admin";
 import { Toaster, toast } from "react-hot-toast";
-import { planLabel, PLAN_COLOUR_SLOT, PLAN_VALUES } from "@/lib/formLabels";
+import { PLAN_COLOUR_SLOT, PLAN_VALUES } from "@/lib/formLabels";
+import { planNameFrom, type PlanNames } from "@/lib/planNames";
 import { Icon } from "@/components/Icon";
 import { CustomSelect } from "@/components/CustomSelect";
 import { useNow } from "@/hooks/useNow";
@@ -42,7 +43,13 @@ function getProfileData(p: Profile): JsonRecord {
    dashboard went the same way, so there is one dropdown in the project and one
    place to style it. */
 
-export default function AdminCRMClient({ initialProfiles }: { initialProfiles: Profile[] }) {
+export default function AdminCRMClient({
+  initialProfiles,
+  planNames,
+}: {
+  initialProfiles: Profile[];
+  planNames: PlanNames;
+}) {
   /* The notification counts below are "how many 30-day cycles since this
      trainee started", so they need the clock. Read through the hook rather
      than calling Date.now() in the body: a render that answers differently
@@ -70,7 +77,7 @@ export default function AdminCRMClient({ initialProfiles }: { initialProfiles: P
             </div>
             <div>
               قام <strong>{data.fullname || p.username}</strong> للتو بطلب {data.is_renewal ? 'تجديد الاشتراك' : 'التسجيل'} واختار: 
-              <br/> <span style={{ color: 'var(--primary)' }}>{planLabel(data.plan, "غير محدد")}</span>
+              <br/> <span style={{ color: 'var(--primary)' }}>{planNameFrom(planNames, data.plan, "غير محدد")}</span>
             </div>
           </div>
         ), {
@@ -147,7 +154,7 @@ export default function AdminCRMClient({ initialProfiles }: { initialProfiles: P
       const data = getProfileData(p);
       const fullname = data.fullname || "";
       const phone = data.phone || "";
-      const plan = planLabel(data.plan, "غير محدد");
+      const plan = planNameFrom(planNames, data.plan, "غير محدد");
       const dateObj = new Date(p.created_at);
       const dateStr = formatTimestamp(dateObj);
 
@@ -348,7 +355,7 @@ export default function AdminCRMClient({ initialProfiles }: { initialProfiles: P
                    goes live rather than the day someone remembers this file. */
                 options={[
                   { value: "all", label: "جميع الخطط" },
-                  ...PLAN_VALUES.map((value) => ({ value, label: planLabel(value) })),
+                  ...PLAN_VALUES.map((value) => ({ value, label: planNameFrom(planNames, value) })),
                 ]}
               />
               <CustomSelect 
@@ -411,7 +418,15 @@ export default function AdminCRMClient({ initialProfiles }: { initialProfiles: P
                           same visual corner in an interface that is entirely
                           right-to-left. */}
                       {data.is_new && (
-                        <div style={{ position: 'absolute', top: -2, insetInlineEnd: -2, width: 12, height: 12, background: 'var(--error)', borderRadius: '50%', border: '2px solid var(--bg2)' }} title="مشترك جديد"></div>
+                        /* The dot means "unread", and the two things it can be
+                           unread about are not the same event. Its tooltip said
+                           "مشترك جديد" for both, so a renewal announced itself
+                           as a stranger — which is the one thing this flow must
+                           never do. */
+                        <div
+                          style={{ position: 'absolute', top: -2, insetInlineEnd: -2, width: 12, height: 12, background: data.is_renewal ? '#F59E0B' : 'var(--error)', borderRadius: '50%', border: '2px solid var(--bg2)' }}
+                          title={data.is_renewal ? "طلب تجديد اشتراك" : "مشترك جديد"}
+                        ></div>
                       )}
                     </div>
                     
@@ -420,6 +435,20 @@ export default function AdminCRMClient({ initialProfiles }: { initialProfiles: P
                     </div>
 
                     <div className="crm-card-meta">
+                      {/* Survives the row being marked read, unlike the dot
+                          beside it: `is_new` is cleared the moment the coach
+                          opens the trainee, but the month is still ungranted
+                          until they decide. This is the state that has to stay
+                          visible from the list until it is acted on. */}
+                      {data.renewal_pending === true && (
+                        <span
+                          className="crm-tag"
+                          style={{ background: "color-mix(in srgb, #F59E0B 20%, var(--bg3))", color: "#F59E0B", border: "1px solid color-mix(in srgb, #F59E0B 45%, var(--border))", fontWeight: 800 }}
+                          title="أرسل طلب تجديد وينتظر موافقتك"
+                        >
+                          تجديد بانتظار المراجعة
+                        </span>
+                      )}
                       {/* The third copy of the plan-to-colour chain, which had
                           no arm for the offers. Shared now, so the tag is
                           coloured from the same table the timeline reads. */}
@@ -428,7 +457,7 @@ export default function AdminCRMClient({ initialProfiles }: { initialProfiles: P
                           ? `plan-${PLAN_COLOUR_SLOT[String(data.plan)]}`
                           : data.plan ? 'primary-tag' : ''
                       }`}>
-                        {planLabel(data.plan, "غير محدد")}
+                        {planNameFrom(planNames, data.plan, "غير محدد")}
                       </span>
                       {data.plan_type && (
                         <span className="crm-tag" style={{ background: "var(--bg3)", color: "var(--text-secondary)", border: "1px solid var(--border)" }}>

@@ -20,6 +20,33 @@ export function subscriptionEndFrom(from: Date = new Date()): Date {
   return new Date(from.getTime() + SUBSCRIPTION_DAYS * DAY_MS);
 }
 
+/**
+ * End of the period after adding a month to what is already there.
+ *
+ * The renewal paths called `subscriptionEndFrom()` with no argument, which is
+ * "thirty days from now" — so renewing on day 20 of 30 threw away the ten days
+ * still owed. Someone who paid early was silently charged for the overlap.
+ *
+ * A month is added to whichever is later: the current end date, or now. Later
+ * matters in both directions — an expired subscription must not renew from the
+ * date it lapsed (that would hand over a month already spent), and a live one
+ * must not renew from today (that is the ten lost days).
+ *
+ * A null or unparseable end date means the subscription was never activated, so
+ * there is nothing to extend and the month starts now.
+ */
+export function subscriptionExtendFrom(
+  currentEnd: Date | string | null | undefined,
+  now: Date = new Date()
+): Date {
+  if (!currentEnd) return subscriptionEndFrom(now);
+
+  const end = currentEnd instanceof Date ? currentEnd : new Date(currentEnd);
+  if (Number.isNaN(end.getTime())) return subscriptionEndFrom(now);
+
+  return subscriptionEndFrom(end.getTime() > now.getTime() ? end : now);
+}
+
 /* `SubscriptionWindow` and `subscriptionWindow` stood here: the subscription
    period expressed as a first and last calendar day. Their only readers were the
    rest-days route and the coach's rest-days panel, which computed which days a

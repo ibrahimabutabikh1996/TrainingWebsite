@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useState, Suspense } from "react";
 import { t } from "@/lib/translations";
 import { LoginForm } from "@/components/auth/LoginForm";
+import { safeMediaUrl } from "@/lib/richText";
 import { getLandingContent } from "../admin/cms/actions";
 import './login.css';
 
@@ -12,14 +13,32 @@ export default function LoginPage() {
   const [cmsData, setCmsData] = useState<JsonRecord | null>(null);
 
   useEffect(() => {
+    /* Draft content is for the preview window and nowhere else.
+     *
+     * The content manager opens this page as `/login?preview=true` — see
+     * `openPreview` in @/app/admin/cms/AdminCMSClient — so that flag is what
+     * separates a coach looking at an unsaved draft from an ordinary visitor
+     * signing in. It was not being checked here: every visitor read
+     * `cms_preview_data` and rendered whatever it held. The landing page has
+     * gated both its draft sources on this from the start; this page is the copy
+     * that did not.
+     *
+     * Read from `window.location` rather than `useSearchParams` deliberately:
+     * this runs in an effect, on the client, where the location is already
+     * known — and the hook would drag the whole page under a Suspense boundary
+     * to answer the same question. */
+    const isPreview = new URLSearchParams(window.location.search).get("preview") === "true";
+
     async function loadCMS() {
-      const previewData = localStorage.getItem("cms_preview_data");
-      if (previewData) {
-        try {
-          const parsed = JSON.parse(previewData);
-          setCmsData(parsed.payload);
-          return;
-        } catch {}
+      if (isPreview) {
+        const previewData = localStorage.getItem("cms_preview_data");
+        if (previewData) {
+          try {
+            const parsed = JSON.parse(previewData);
+            setCmsData(parsed.payload);
+            return;
+          } catch {}
+        }
       }
 
       const res = await getLandingContent();
@@ -34,7 +53,22 @@ export default function LoginPage() {
     }
     loadCMS();
 
+    /* Outside the preview there is no draft to receive, so there is nothing to
+       listen for. Not attaching the listener at all is a smaller surface than
+       attaching one that filters. */
+    if (!isPreview) return;
+
     const handleMessage = (e: MessageEvent) => {
+      /* The origin, checked.
+       *
+       * `X-Frame-Options: DENY` stops this page being framed, but it does not
+       * stop `window.open` — and a window handle is all `postMessage` needs. Any
+       * page that opened this one could post a payload and have it rendered as
+       * the coach's own draft, on the screen where passwords are typed. The
+       * sender already addresses a specific origin (AdminCMSClient posts to
+       * `window.location.origin` rather than "*"); this is the other half of
+       * that, and the landing page has had it all along. */
+      if (e.origin !== window.location.origin) return;
       if (e.data?.type === "CMS_PREVIEW") {
         setCmsData(e.data.payload);
       }
@@ -43,9 +77,23 @@ export default function LoginPage() {
     return () => window.removeEventListener("message", handleMessage);
   }, []);
 
-  const bgStyle = cmsData?.login_bg_url ? { 
-    background: `linear-gradient(135deg, color-mix(in srgb, var(--bg) 60%, transparent) 0%, color-mix(in srgb, var(--bg) 20%, transparent) 60%, color-mix(in srgb, var(--bg) 75%, transparent) 100%), url("${cmsData.login_bg_url}") center/cover no-repeat` 
-  } : {};
+  /* Interpolated into a CSS `url(...)`, so it goes through `safeMediaUrl` first.
+   *
+   * This was the one place in the project that built a `url()` out of stored
+   * content without it. A value carrying a quote and a paren closes the `url()`
+   * early and keeps writing inside the same declaration — which was reachable
+   * from another origin through the unchecked listener above, and demonstrated
+   * to make this page fetch an address of the sender's choosing.
+   *
+   * `safeMediaUrl` refuses quotes, parens, backslashes, whitespace and control
+   * characters, and allows only http(s) or a same-origin path. Anything else
+   * comes back null and the panel keeps its own background. */
+  const safeBg = safeMediaUrl(cmsData?.login_bg_url);
+  const bgStyle = safeBg
+    ? {
+        background: `linear-gradient(135deg, color-mix(in srgb, var(--bg) 60%, transparent) 0%, color-mix(in srgb, var(--bg) 20%, transparent) 60%, color-mix(in srgb, var(--bg) 75%, transparent) 100%), url("${safeBg}") center/cover no-repeat`,
+      }
+    : {};
 
   return (
     <div className="page">

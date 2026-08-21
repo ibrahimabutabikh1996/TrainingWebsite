@@ -1,0 +1,125 @@
+{
+  "takenAt": "2026-08-21T13:30:58.255Z",
+  "bucket": {
+    "id": "uploads",
+    "name": "uploads",
+    "public": true,
+    "file_size_limit": null
+  },
+  "storagePolicies": [
+    {
+      "policyname": "Allow public deletes",
+      "cmd": "DELETE",
+      "roles": "{public}",
+      "qual": "(bucket_id = 'uploads'::text)",
+      "with_check": null
+    },
+    {
+      "policyname": "Allow public read",
+      "cmd": "SELECT",
+      "roles": "{public}",
+      "qual": "(bucket_id = 'uploads'::text)",
+      "with_check": null
+    },
+    {
+      "policyname": "Allow public updates",
+      "cmd": "UPDATE",
+      "roles": "{public}",
+      "qual": "(bucket_id = 'uploads'::text)",
+      "with_check": null
+    },
+    {
+      "policyname": "Allow public uploads",
+      "cmd": "INSERT",
+      "roles": "{public}",
+      "qual": null,
+      "with_check": "(bucket_id = 'uploads'::text)"
+    }
+  ],
+  "rls": [
+    {
+      "t": "accounts",
+      "rls": true,
+      "pols": 0
+    },
+    {
+      "t": "client_courses",
+      "rls": true,
+      "pols": 0
+    },
+    {
+      "t": "courses",
+      "rls": true,
+      "pols": 0
+    },
+    {
+      "t": "diet_plans",
+      "rls": true,
+      "pols": 0
+    },
+    {
+      "t": "exercises",
+      "rls": true,
+      "pols": 0
+    },
+    {
+      "t": "login_attempts",
+      "rls": false,
+      "pols": 0
+    },
+    {
+      "t": "nutrition_sources",
+      "rls": false,
+      "pols": 0
+    },
+    {
+      "t": "profiles",
+      "rls": true,
+      "pols": 0
+    },
+    {
+      "t": "site_settings",
+      "rls": true,
+      "pols": 0
+    },
+    {
+      "t": "training_cycles",
+      "rls": true,
+      "pols": 0
+    },
+    {
+      "t": "training_sessions",
+      "rls": true,
+      "pols": 0
+    },
+    {
+      "t": "upload_items",
+      "rls": false,
+      "pols": 0
+    },
+    {
+      "t": "upload_sessions",
+      "rls": false,
+      "pols": 0
+    },
+    {
+      "t": "workout_logs",
+      "rls": true,
+      "pols": 0
+    }
+  ],
+  "anonBefore": {
+    "upload_items": 26,
+    "upload_sessions": 10,
+    "login_attempts": 75,
+    "nutrition_sources": 109
+  },
+  "counts": {
+    "accounts": 5,
+    "profiles": 4,
+    "upload_sessions": 10,
+    "upload_items": 26,
+    "login_attempts": 75,
+    "nutrition_sources": 109
+  }
+}

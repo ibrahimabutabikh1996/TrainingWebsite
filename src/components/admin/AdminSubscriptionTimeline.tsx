@@ -3,7 +3,9 @@ import { prisma } from "@/lib/db";
 import { asMeals, type DietPlan } from "@/types/diet";
 import { readIntakeData } from "@/lib/intakeData";
 import { toISODate } from "@/lib/trainingCycle";
-import { planLabel, activityLabel, answerLabel, answerList } from "@/lib/formLabels";
+import { activityLabel, answerLabel, answerList } from "@/lib/formLabels";
+import { planNameFrom, type PlanNames } from "@/lib/planNames";
+import { buildSubscriptionMonths } from "@/lib/subscriptionMonths";
 import type { MonthlyArchive, UserProfile, JsonRecord } from "@/types";
 import type { Day } from "@/types/admin";
 import { SubscriptionHistoryTimeline } from "@/components/dashboard/SubscriptionHistoryTimeline";
@@ -11,6 +13,7 @@ import { Icon } from "@/components/Icon";
 
 interface Props {
   profileId: string;
+  planNames: PlanNames;
 }
 
 /**
@@ -24,7 +27,7 @@ interface Props {
  * database hiccup and claim, in the log line, that the timeline had failed to
  * generate. Rendering failures belong to an error boundary; this belongs here.
  */
-async function loadTimeline({ profileId }: Props) {
+async function loadTimeline({ profileId, planNames }: Props) {
   try {
     const profile = await prisma.profiles.findUnique({
       where: { id: profileId },
@@ -66,65 +69,77 @@ async function loadTimeline({ profileId }: Props) {
     const defaultWorkouts: Day[] = Array.isArray(courseData) ? courseData : (courseData?.workouts || []);
     const defaultCourseName = profile.courses?.name || "البرنامج التدريبي المخصص للمتدرب";
 
-    const regDateStr = data.activation_date || (profile.created_at ? profile.created_at.toISOString() : null);
-    const regDate = regDateStr ? new Date(regDateStr) : new Date();
-    const now = new Date();
+    /* The months the subscription actually had, from the renewals that created
+       them. This used to be arithmetic on the calendar — one month per thirty
+       days since registration — which disagreed with the details tabs below,
+       where a month has always meant a renewal. Two panels on one page, two
+       answers to how long somebody had been subscribed. See
+       @/lib/subscriptionMonths. */
+    const months = buildSubscriptionMonths(data, profile.created_at);
 
-    const diffMs = now.getTime() - regDate.getTime();
-    const totalDays = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
-    const totalMonths = Math.max(1, Math.floor(totalDays / 30) + 1);
-
-    const monthNamesAr = ["الأول", "الثاني", "الثالث", "الرابع", "الخامس", "السادس", "السابع", "الثامن", "التاسع", "العاشر", "الحادي عشر", "الثاني عشر"];
-    const monthlyHistory: MonthlyArchive[] = [];
     const deletedMonths = Array.isArray(data.deleted_months) ? (data.deleted_months as number[]) : [];
     const deleteAllHistory = Boolean(data.delete_all_history);
 
-    for (let m = 1; m <= totalMonths; m++) {
-      if (deleteAllHistory || deletedMonths.includes(m)) {
+    /* Newest first, so "the course in effect on that date" is the first match. */
+    const coursesNewestFirst = [...clientCourses].reverse();
+
+    const monthlyHistory: MonthlyArchive[] = [];
+
+    for (const month of months) {
+      if (deleteAllHistory || deletedMonths.includes(month.monthNumber)) {
         continue;
       }
-      const start = new Date(regDate.getTime() + (m - 1) * 30 * 86400000);
-      const end = new Date(regDate.getTime() + m * 30 * 86400000);
-      const isCurrent = m === totalMonths;
 
-      const arabicIdx = m - 1;
-      const monthTitle = arabicIdx < monthNamesAr.length
-        ? `الشهر ${monthNamesAr[arabicIdx]}`
-        : `الشهر رقم ${m}`;
+      /* The course the trainee was on during that month: the last one assigned
+         at or before it ended.
+       *
+         The rule this replaces fell back to `clientCourses[m - 1]` — the m-th
+         course for the m-th month — whenever no course had been assigned inside
+         the month's own window. That pairing is invented. It put the second
+         course in the second month however long the first had actually run, and
+         a trainee kept on one course for a year was shown a different programme
+         every month. A course stays in effect until another replaces it, so
+         that is what is looked up. */
+      const asOf = month.endDate ? new Date(month.endDate) : new Date();
+      const inEffect = coursesNewestFirst.find(
+        (cc) => new Date(cc.assigned_at).getTime() <= asOf.getTime(),
+      );
 
-      let matchedCourseName = defaultCourseName;
-      let matchedDays: Day[] = defaultWorkouts;
-      let matchedCourseId = profile.courses?.id;
+      let courseName = defaultCourseName;
+      let days: Day[] = month.isCurrent ? defaultWorkouts : [];
+      let courseId = profile.courses?.id;
 
-      if (clientCourses.length > 0) {
-        const matched = clientCourses.find(cc => {
-          const assignedTime = new Date(cc.assigned_at).getTime();
-          return assignedTime <= end.getTime() && assignedTime >= start.getTime();
-        }) || (m <= clientCourses.length ? clientCourses[m - 1] : clientCourses[clientCourses.length - 1]);
-
-        if (matched && matched.courses) {
-          matchedCourseId = matched.courses.id;
-          matchedCourseName = matched.courses.name;
-          const parsedDays = typeof matched.courses.days_data === "string"
-            ? JSON.parse(matched.courses.days_data)
-            : (matched.courses.days_data || null);
-          matchedDays = Array.isArray(parsedDays) ? parsedDays : (parsedDays?.workouts || []);
-        }
+      if (inEffect?.courses) {
+        courseId = inEffect.courses.id;
+        courseName = inEffect.courses.name;
+        const parsedDays = typeof inEffect.courses.days_data === "string"
+          ? JSON.parse(inEffect.courses.days_data)
+          : (inEffect.courses.days_data || null);
+        days = Array.isArray(parsedDays) ? parsedDays : (parsedDays?.workouts || []);
       }
 
       monthlyHistory.push({
-        monthNumber: m,
-        monthName: monthTitle,
-        startDate: toISODate(start),
-        endDate: toISODate(end),
-        status: isCurrent ? "current" : "completed",
-        workout: matchedDays.length > 0 ? {
-          courseId: matchedCourseId,
-          courseName: matchedCourseName,
-          daysCount: matchedDays.length,
-          daysData: matchedDays,
+        monthNumber: month.monthNumber,
+        monthName: month.label,
+        startDate: month.startDate ? toISODate(new Date(month.startDate)) : "",
+        endDate: month.endDate ? toISODate(new Date(month.endDate)) : "",
+        status: month.isCurrent ? "current" : "completed",
+        workout: days.length > 0 ? {
+          courseId,
+          courseName,
+          daysCount: days.length,
+          daysData: days,
         } : null,
-        diet: dietPlans.length > 0 ? {
+        /* Only the month still running.
+         *
+           Every month used to be handed the same `dietPlans` array — the diets
+           that exist right now — which read as a record of what the trainee ate
+           in each of them. It is not one. `diet_plans` has no assignment
+           history: there is one set of plans per trainee, edited in place, and
+           nothing anywhere says which of them was in force last March. Showing
+           today's diet under a month that closed before it was written is not a
+           duplicate of a fact, it is a fact the database does not hold. */
+        diet: month.isCurrent && dietPlans.length > 0 ? {
           name: dietPlans[0].name || "النظام الغذائي المخصص",
           mealsData: dietPlans,
         } : null,
@@ -134,7 +149,7 @@ async function loadTimeline({ profileId }: Props) {
     const mockProfile = {
       id: profile.id,
       fullname: data.fullname || profile.username || "المشترك",
-      plan: planLabel(data.plan, "خطة تدريب وتغذية"),
+      plan: planNameFrom(planNames, data.plan, "خطة تدريب وتغذية"),
       age: data.age || "غير محدد",
       weight: data.weight || "غير محدد",
       height: data.height || "غير محدد",
@@ -157,8 +172,8 @@ async function loadTimeline({ profileId }: Props) {
   }
 }
 
-export default async function AdminSubscriptionTimeline({ profileId }: Props) {
-  const loaded = await loadTimeline({ profileId });
+export default async function AdminSubscriptionTimeline({ profileId, planNames }: Props) {
+  const loaded = await loadTimeline({ profileId, planNames });
   if (!loaded) return null;
 
   const { mockProfile, monthCount } = loaded;
@@ -200,7 +215,7 @@ export default async function AdminSubscriptionTimeline({ profileId }: Props) {
       </summary>
 
       <div style={{ marginTop: "16px" }}>
-        <SubscriptionHistoryTimeline profile={mockProfile} isAdminView={true} />
+        <SubscriptionHistoryTimeline profile={mockProfile} isAdminView={true} planNames={planNames} />
       </div>
     </details>
   );

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { getSession } from "@/lib/authGuard";
+import { getVerifiedSession } from "@/lib/authGuard";
+import { clientAddress, consumeAttempt, UPLOAD_CONFIRM_LIMIT } from "@/lib/rateLimit";
 import { confirmItem, openSession } from "@/lib/uploadSessions";
 
 export const dynamic = "force-dynamic";
@@ -28,9 +29,39 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "طلب غير صالح" }, { status: 400 });
   }
 
-  const opened = await openSession(body.uploadSessionId, await getSession());
+  const opened = await openSession(body.uploadSessionId, await getVerifiedSession());
   if (!opened.ok) {
     return NextResponse.json({ error: opened.error }, { status: opened.status });
+  }
+
+  /* A ceiling, which this was the only endpoint in the upload chain to lack.
+   *
+   * Every call downloads the object from storage to inspect it, so an unbounded
+   * caller could make the server fetch the same object as fast as the network
+   * allowed. Counted against the session id — minted here, checked just above by
+   * `openSession`, and not the caller's to rotate — and against the address as
+   * well, matching the two-dimension shape the other upload endpoints use.
+   *
+   * Consumed after `openSession` so naming a stranger's session cannot spend
+   * their allowance; the ceiling is generous because a session may legitimately
+   * hold up to `MAX_ITEMS_PER_SESSION` files, each confirmed once. */
+  const address = clientAddress(request);
+  const [byAddress, bySession] = await Promise.all([
+    consumeAttempt(`upload-confirm:${address}`, UPLOAD_CONFIRM_LIMIT),
+    consumeAttempt(`upload-confirm:session:${opened.session.id}`, UPLOAD_CONFIRM_LIMIT),
+  ]);
+  if (!byAddress.allowed || !bySession.allowed) {
+    return NextResponse.json(
+      { error: "محاولات كثيرة جداً. يرجى المحاولة بعد قليل." },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(
+            Math.max(byAddress.retryAfterSeconds, bySession.retryAfterSeconds)
+          ),
+        },
+      }
+    );
   }
 
   const result = await confirmItem(opened.session, body.itemId);

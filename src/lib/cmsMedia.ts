@@ -1,5 +1,5 @@
 import "server-only";
-import { supabaseAdmin, UPLOADS_BUCKET } from "@/lib/supabaseAdmin";
+import { supabaseAdmin, PUBLIC_MEDIA_BUCKET } from "@/lib/supabaseAdmin";
 import { checkUpload, CMS_MEDIA_RULE, storageFilename } from "@/lib/uploads";
 
 /**
@@ -48,7 +48,7 @@ export async function storeCmsMedia(file: File): Promise<StoredMedia> {
     const filePath = `images/${storageFilename("cms", checked.file)}`;
 
     const { error } = await supabaseAdmin.storage
-      .from(UPLOADS_BUCKET)
+      .from(PUBLIC_MEDIA_BUCKET)
       .upload(filePath, checked.bytes, {
         /* An hour was the old value and it is short for content addressed by a
            unique name: the name changes when the file does, so the object at
@@ -65,7 +65,7 @@ export async function storeCmsMedia(file: File): Promise<StoredMedia> {
     }
 
     const { data: publicUrlData } = supabaseAdmin.storage
-      .from(UPLOADS_BUCKET)
+      .from(PUBLIC_MEDIA_BUCKET)
       .getPublicUrl(filePath);
 
     return { ok: true, url: publicUrlData.publicUrl };

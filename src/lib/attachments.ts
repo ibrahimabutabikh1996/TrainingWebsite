@@ -19,11 +19,19 @@
  * Shared by client and server, so nothing server-only may be imported here.
  */
 
-/** The one bucket this project writes to. */
+/** Trainee uploads. Private — reached only through `/api/attachments`. */
 export const UPLOADS_BUCKET_NAME = "uploads";
 
-/** Marks a public address for that bucket. */
-export const STORAGE_PUBLIC_MARKER = `/storage/v1/object/public/${UPLOADS_BUCKET_NAME}/`;
+/** Page imagery the content manager writes. Public, and read at its own address. */
+export const PUBLIC_MEDIA_BUCKET_NAME = "public-media";
+
+/** Marks a public address for the media bucket. */
+export const STORAGE_PUBLIC_MARKER = `/storage/v1/object/public/${PUBLIC_MEDIA_BUCKET_NAME}/`;
+
+/* The shape written before the two buckets were split. Recognised so a value
+   stored then still resolves — `attachmentSrc` and `storagePathFromPublicUrl`
+   both accept it. */
+export const LEGACY_PUBLIC_MARKER = `/storage/v1/object/public/${UPLOADS_BUCKET_NAME}/`;
 
 /** Where private, trainee-owned files live. */
 export const PRIVATE_PREFIX = "usersData/";
@@ -76,9 +84,13 @@ export function attachmentSrc(value: unknown): string | null {
     return `/api/attachments?path=${encodeURIComponent(trimmed)}`;
   }
 
-  /* Legacy: a public address for this project's own bucket, and nothing else —
-     a stored string pointing somewhere unexpected is not something to render. */
-  if (trimmed.includes(STORAGE_PUBLIC_MARKER) && /^https:\/\//i.test(trimmed)) {
+  /* A public address for this project's own media, and nothing else — a stored
+     string pointing somewhere unexpected is not something to render. Both
+     shapes are accepted: the media bucket's current address, and the one used
+     before the buckets were split. */
+  const isOwnPublicUrl =
+    trimmed.includes(STORAGE_PUBLIC_MARKER) || trimmed.includes(LEGACY_PUBLIC_MARKER);
+  if (isOwnPublicUrl && /^https:\/\//i.test(trimmed)) {
     return trimmed;
   }
 

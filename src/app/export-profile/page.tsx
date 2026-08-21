@@ -4,7 +4,9 @@ import { requireUserPage, sessionOwnsProfile } from "@/lib/authGuard";
 import { readIntakeData } from "@/lib/intakeData";
 import { asMeals, type DietPlan } from "@/types/diet";
 import { toISODate } from "@/lib/trainingCycle";
-import { planLabel, activityLabel, answerLabel, answerList } from "@/lib/formLabels";
+import { activityLabel, answerLabel, answerList } from "@/lib/formLabels";
+import { planNameFrom, resolvePlanNames } from "@/lib/planNames";
+import { getLandingContent } from "@/app/admin/cms/actions";
 import ExportProfileClient from "./ExportProfileClient";
 import { notFound } from "next/navigation";
 import type { MonthlyArchive, JsonRecord } from "@/types";
@@ -131,7 +133,11 @@ export default async function ExportProfilePage({
   }
 
   const traineeName = String(data.fullname || profile.username || "المشترك");
-  const plan = planLabel(data.plan, "خطة تدريب وتغذية");
+  /* From the panel, so an exported PDF names the package the way the site does. */
+  const planNames = resolvePlanNames(
+    (await getLandingContent())?.content_ar as JsonRecord | undefined
+  );
+  const plan = planNameFrom(planNames, data.plan, "خطة تدريب وتغذية");
   const goal = answerLabel(data.sub_goal || data.goal, "تطوير البنية العضلية وتحسين اللياقة");
   const age = data.age ? `${data.age} سنة` : "غير محدد";
   const weight = data.weight ? `${data.weight} كجم` : "غير محدد";

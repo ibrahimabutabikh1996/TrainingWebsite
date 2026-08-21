@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
-import { getSession } from "@/lib/authGuard";
-import { clientAddress, consumeAttempt, UPLOAD_SLOT_LIMIT } from "@/lib/rateLimit";
+import { getVerifiedSession } from "@/lib/authGuard";
+import {
+  clientAddress,
+  consumeAttempt,
+  UPLOAD_SLOT_LIMIT,
+  UPLOAD_SLOT_SESSION_LIMIT,
+} from "@/lib/rateLimit";
 import { issueSlot, openSession } from "@/lib/uploadSessions";
 
 export const dynamic = "force-dynamic";
@@ -17,13 +22,10 @@ export const runtime = "nodejs";
 export async function POST(request: Request) {
   const address = clientAddress(request);
 
-  const limit = await consumeAttempt(`upload-slot:${address}`, UPLOAD_SLOT_LIMIT);
-  if (!limit.allowed) {
-    return NextResponse.json(
-      { error: "محاولات كثيرة جداً. يرجى المحاولة بعد قليل." },
-      { status: 429, headers: { "Retry-After": String(limit.retryAfterSeconds) } }
-    );
-  }
+  /* The address ceiling, kept and no longer alone — the address is a header the
+     caller writes, so counting only that is a limit that can be rotated out of.
+     The second key is applied once the session is open, below. */
+  const byAddress = await consumeAttempt(`upload-slot:${address}`, UPLOAD_SLOT_LIMIT);
 
   let body: { uploadSessionId?: unknown; field?: unknown };
   try {
@@ -36,9 +38,37 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "طلب غير صالح" }, { status: 400 });
   }
 
-  const opened = await openSession(body.uploadSessionId, await getSession());
+  const opened = await openSession(body.uploadSessionId, await getVerifiedSession());
   if (!opened.ok) {
     return NextResponse.json({ error: opened.error }, { status: opened.status });
+  }
+
+  /* Counted against the session as well as the address.
+   *
+   * The id was minted by this server and `openSession` has just checked that the
+   * caller may use it, so unlike the address it is not the caller's to invent.
+   * Consumed after that check, so naming somebody else's session cannot spend
+   * their budget.
+   *
+   * `issueSlot` already caps how many items a session may hold; this caps how
+   * many times it may ask, which is the part a rotated address was getting for
+   * free. */
+  const bySession = await consumeAttempt(
+    `upload-slot:session:${opened.session.id}`,
+    UPLOAD_SLOT_SESSION_LIMIT
+  );
+  if (!byAddress.allowed || !bySession.allowed) {
+    return NextResponse.json(
+      { error: "محاولات كثيرة جداً. يرجى المحاولة بعد قليل." },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(
+            Math.max(byAddress.retryAfterSeconds, bySession.retryAfterSeconds)
+          ),
+        },
+      }
+    );
   }
 
   const slot = await issueSlot(opened.session, body.field);

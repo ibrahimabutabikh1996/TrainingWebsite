@@ -86,6 +86,12 @@ export const translations = {
     form_done_name: "الاسم",
     form_done_plan: "الخطة المختارة",
     form_done_text: "سيراجع الكابتن بياناتك ويجهّز برنامجك الخاص، وسيتم إبلاغك عند جاهزيته.",
+    /* Renewals get their own sentence. Submitting the form no longer extends the
+       subscription — the coach checks the transfer slip and approves it — so the
+       screen has to say that plainly rather than let the trainee assume their
+       month has already started. */
+    form_done_renew_text:
+      "سيراجع الكابتن وصل الدفع ويؤكّد تجديد اشتراكك. لن تُحتسب مدة الاشتراك الجديدة قبل تأكيده.",
     form_done_login: "الانتقال إلى تسجيل الدخول",
     unit_kg: "كغم",
     unit_cm: "سم",
@@ -133,9 +139,17 @@ export const translations = {
     card3_badge: "خطة المتابعة اليومية",
     /* The offers, which reach the form the same way the three plans above do —
        a card on the landing page links to `/form?plan=…` with the choice
-       already made. They are separate products with their own names, not
-       discounted versions of the plans, so they are recorded under their own
-       keys rather than borrowing one.
+       already made. They are separate products — their own prices, their own
+       descriptions — recorded under their own keys, which is what keeps an
+       `offer2` subscription distinguishable from a `plan2` one in a stored
+       profile.
+
+       The three names below are deliberately the same as the three above. That
+       was asked for, and it costs something worth stating: the landing page now
+       shows six cards under three names, and while the code never confuses the
+       two — the keys still differ — anything that shows a person the name alone
+       cannot tell them apart. The subscriber list, the WhatsApp message and the
+       exported PDF all do exactly that. Renaming one side is the way back.
 
        These names are stated twice, here and in `defaultContent` in
        LandingClient: the landing page's copy is editable in the content
@@ -143,9 +157,9 @@ export const translations = {
        had that split, and renaming an offer in the panel will change the card
        but not the label the form shows — worth fixing for all six at once, but
        not by making these six the exception. */
-    off_card1_badge: "باقة الانطلاقة الذكية",
-    off_card2_badge: "باقة المحترفين المتكاملة",
-    off_card3_badge: "باقة التجهيز للبطولات",
+    off_card1_badge: "خطة ذاتية التوجيه",
+    off_card2_badge: "خطة المتابعة الأسبوعية",
+    off_card3_badge: "خطة المتابعة اليومية",
     lbl_fullname: "الاسم الكامل",
     lbl_gender: "الجنس",
     opt_gender_male: "ذكر",

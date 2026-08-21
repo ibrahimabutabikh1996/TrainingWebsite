@@ -1,10 +1,18 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { subscriptionEndFrom } from "@/lib/subscription";
+import { subscriptionExtendFrom } from "@/lib/subscription";
 import type { JsonRecord } from "@/types";
 import { requireAdmin } from "@/lib/authGuard";
 
-/* Hands out a paid month. Only the coach decides that. */
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/* Hands out a paid month. Only the coach decides that.
+ *
+ * This is the approval end of the renewal flow, and until now nothing in the
+ * panel called it: the trainee's request was recorded, the coach was notified,
+ * and there was no button anywhere that granted the month. See
+ * `PendingRenewalCard`, which is the caller. */
 export async function POST(request: Request) {
   const auth = await requireAdmin();
   if (!auth.ok) return auth.response;
@@ -15,6 +23,17 @@ export async function POST(request: Request) {
     if (!profileId) {
       return NextResponse.json(
         { error: "معرف المشترك مطلوب" },
+        { status: 400 }
+      );
+    }
+
+    /* The column is uuid, and Prisma raises P2007 on anything else — an
+       unhandled throw that came back as the catch-all 500 below, "حدث خطأ أثناء
+       تجديد الاشتراك", for a request that was simply malformed. Same check the
+       profile page and the delete action already make. */
+    if (typeof profileId !== "string" || !UUID_PATTERN.test(profileId)) {
+      return NextResponse.json(
+        { error: "معرّف المشترك غير صالح" },
         { status: 400 }
       );
     }
@@ -58,13 +77,25 @@ export async function POST(request: Request) {
     renewals.push(newRenewal);
     data.renewals = renewals;
 
-    /* A renewal restarts the period. Storing the end date here means readers
-       no longer have to dig the last element out of data.renewals. */
+    /* This is the approval. Whatever the trainee submitted through the intake
+       form was a request — /api/submit-form records `renewal_pending` and grants
+       nothing — and clearing the flags here is what closes it. Cleared
+       unconditionally, because the coach may also renew an account that never
+       filed a request, and a stale flag would leave the panel showing a pending
+       review for a month already granted. */
+    delete data.renewal_pending;
+    delete data.renewal_requested_at;
+    delete data.renewal_requested_month;
+
+    /* Added to what is already there, not measured from today.
+       `subscriptionEndFrom()` with no argument meant a trainee renewing on day
+       20 of 30 lost the ten days they had already paid for. See
+       `subscriptionExtendFrom`. */
     await prisma.profiles.update({
       where: { id: profileId },
       data: {
         data: data,
-        subscription_ends_at: subscriptionEndFrom(),
+        subscription_ends_at: subscriptionExtendFrom(profile.subscription_ends_at),
       },
     });
 

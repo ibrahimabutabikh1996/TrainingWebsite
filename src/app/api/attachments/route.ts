@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { requireUser, sessionOwnsProfile } from "@/lib/authGuard";
 import { isPrivatePath, isStoragePath, PUBLIC_PREFIX } from "@/lib/attachments";
 import { prisma } from "@/lib/db";
-import { supabaseAdmin, UPLOADS_BUCKET } from "@/lib/supabaseAdmin";
+import { supabaseAdmin, PUBLIC_MEDIA_BUCKET, UPLOADS_BUCKET } from "@/lib/supabaseAdmin";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -99,8 +99,16 @@ async function profileReferencesPath(accountId: string, path: string): Promise<b
 }
 
 async function redirectToSigned(path: string): Promise<NextResponse> {
+  /* Which bucket the path lives in follows its prefix, because the two kinds of
+     file now live apart: `usersData/` in the private bucket this route exists to
+     guard, `images/` in the public one the landing page reads directly. Page
+     imagery does not normally arrive here at all — it is rendered from its own
+     public address — but the prefix is still accepted, and it has to be signed
+     against the bucket that actually holds it. */
+  const bucket = isPrivatePath(path) ? UPLOADS_BUCKET : PUBLIC_MEDIA_BUCKET;
+
   const { data, error } = await supabaseAdmin.storage
-    .from(UPLOADS_BUCKET)
+    .from(bucket)
     .createSignedUrl(path, SIGNED_URL_SECONDS);
 
   if (error || !data?.signedUrl) {

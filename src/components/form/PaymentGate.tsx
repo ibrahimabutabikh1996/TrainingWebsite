@@ -7,21 +7,24 @@
  * put every unpaid enquiry through the whole intake. It now comes first — settle
  * the fee over WhatsApp, attach the transfer slip, and the questions open after.
  *
- * Renewals skip this entirely; they arrive already paying members. See
- * `src/app/form/page.tsx`.
+ * Renewals see it too. They used to skip it, on the reasoning that a renewing
+ * trainee is already a paying member — but a renewal is a new month and so a
+ * new transfer, and the slip is the only thing the coach can check it against.
+ * `/api/submit-form` requires the receipt on both paths, so this screen is what
+ * lets a renewal be submitted at all.
  */
 
 import toast from "react-hot-toast";
 
 import { t } from "@/lib/translations";
-import { PLAN_KEYS, planLabel } from "@/lib/formLabels";
+import { PLAN_VALUES } from "@/lib/formLabels";
+import { planNameFrom, type PlanNames } from "@/lib/planNames";
 import { Dropzone, SelectField } from "./Fields";
 
 /* Also written into src/app/LandingClient.tsx in several places. Named here
    rather than inlined so the one the form sends people to is greppable. */
 const COACH_WHATSAPP = "9647877511605";
 
-const PLAN_VALUES = Object.keys(PLAN_KEYS);
 
 function IconWhatsApp() {
   return (
@@ -38,6 +41,8 @@ const GATE_STEPS = [
 ] as const;
 
 interface PaymentGateProps {
+  /* The coach's names for the six packages, from the content manager. */
+  planNames: PlanNames;
   plan: string;
   /* True when the plan arrived on the `?plan=` link — then it is only shown.
      Without it the trainee picks here, so the WhatsApp message can name it. */
@@ -51,6 +56,7 @@ interface PaymentGateProps {
 }
 
 export function PaymentGate({
+  planNames,
   plan,
   planLocked,
   onPlan,
@@ -62,7 +68,7 @@ export function PaymentGate({
 }: PaymentGateProps) {
   /* No name yet — it is asked for in step 1, which this screen stands in front
      of. The coach sees the sender's number in WhatsApp either way. */
-  const waText = encodeURIComponent(`${t("form_gate_wa_msg_1")}${planLabel(plan, "")}${t("form_gate_wa_msg_2")}`);
+  const waText = encodeURIComponent(`${t("form_gate_wa_msg_1")}${planNameFrom(planNames, plan)}${t("form_gate_wa_msg_2")}`);
   const waLink = `https://wa.me/${COACH_WHATSAPP}?text=${waText}`;
 
   const uploaded = receipt.length > 0;
@@ -102,7 +108,7 @@ export function PaymentGate({
 
           {planLocked ? (
             <p className="gate-plan">
-              {t("form_gate_plan_chosen")}: <b>{planLabel(plan)}</b>
+              {t("form_gate_plan_chosen")}: <b>{planNameFrom(planNames, plan)}</b>
             </p>
           ) : (
             <div className="gate-plan-picker">
@@ -110,7 +116,7 @@ export function PaymentGate({
                 label={t("lbl_plan")}
                 value={plan}
                 onChange={onPlan}
-                options={PLAN_VALUES.map((value) => ({ value, label: planLabel(value) }))}
+                options={PLAN_VALUES.map((value) => ({ value, label: planNameFrom(planNames, value) }))}
                 required
                 full
               />

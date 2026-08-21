@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { comparePassword, hashPassword } from "@/lib/auth";
+import { comparePassword, hashPassword, isBcryptHash } from "@/lib/auth";
 import { requireUser, startSession } from "@/lib/authGuard";
 
 export const dynamic = "force-dynamic";
@@ -53,9 +53,15 @@ export async function POST(request: Request) {
     }
 
     let matches = false;
-    // Safe legacy password check: only compare as plaintext if the DB password is NOT a bcrypt hash.
-    // This prevents the hash-as-password vulnerability while still allowing legacy accounts to change their passwords.
-    if (account.password.startsWith("$2a$") || account.password.startsWith("$2b$")) {
+    /* Only compare as plaintext if the stored value is not a bcrypt hash at all,
+       so a stolen hash cannot be replayed as the password itself.
+
+       This used to test `$2a$` and `$2b$` by hand and missed `$2y$` — which the
+       sign-in path already accepted. A `$2y$` row therefore reached the
+       plaintext comparison below, where the stored hash *is* the accepted
+       password: anyone holding it could set a new one. Shared with the other two
+       call sites now, so the three cannot drift apart again. */
+    if (isBcryptHash(account.password)) {
       /* A thrown bcrypt error is a server fault, not a wrong password. Folding it
          into `false` would answer "current password is incorrect" for a password
          that is actually correct, sending the user to chase a problem they cannot

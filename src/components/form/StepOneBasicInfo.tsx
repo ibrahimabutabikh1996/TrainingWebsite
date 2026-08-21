@@ -1,19 +1,11 @@
 "use client";
 
 import { t } from "@/lib/translations";
-import { PLAN_KEYS, PLANS_NEEDING_TYPE } from "@/lib/formLabels";
+import { PLAN_VALUES, PLANS_NEEDING_TYPE } from "@/lib/formLabels";
+import { planNameFrom } from "@/lib/planNames";
 import { FormGrid, SelectField, TextInput } from "./Fields";
 import type { StepProps } from "./types";
 
-/* Built from PLAN_KEYS rather than written out, so the selector cannot fall
-   behind the set of things a landing-page card is able to link to. That is
-   exactly what happened when the offers section was pointed at this form: its
-   three cards had no entry here, and someone arriving without `?plan=` — a
-   bookmark, a shared link — could not have picked one. */
-const PLAN_OPTIONS = Object.entries(PLAN_KEYS).map(([value, key]) => ({
-  value,
-  label: t(key),
-}));
 
 const ACTIVITY_OPTIONS = [
   { value: "1", key: "opt_act_1" },
@@ -22,7 +14,17 @@ const ACTIVITY_OPTIONS = [
   { value: "4", key: "opt_act_4" },
 ] as const;
 
-export function StepOneBasicInfo({ formData, update, planLocked }: StepProps) {
+export function StepOneBasicInfo({ formData, update, planLocked, planNames }: StepProps) {
+  /* Built from the shared list rather than written out, so the selector cannot
+     fall behind the set of things a landing-page card can link to — which is
+     exactly what happened when the offers were pointed at this form: its three
+     cards had no entry here, and someone arriving without `?plan=` could not
+     have picked one. The labels are the coach's own, from the content manager. */
+  const planOptions = PLAN_VALUES.map((value) => ({
+    value,
+    label: planNameFrom(planNames, value),
+  }));
+
 
   return (
     <FormGrid>
@@ -57,7 +59,7 @@ export function StepOneBasicInfo({ formData, update, planLocked }: StepProps) {
         label={t("lbl_plan")}
         value={formData.plan}
         onChange={(plan) => update({ plan })}
-        options={PLAN_OPTIONS}
+        options={planOptions}
         required
         disabled={planLocked}
         full

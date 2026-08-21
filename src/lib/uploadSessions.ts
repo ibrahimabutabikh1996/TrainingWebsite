@@ -128,11 +128,34 @@ export async function openSession(
     return { ok: false, status: 410, error: "انتهت صلاحية جلسة الرفع، يرجى إعادة اختيار الملفات" };
   }
 
-  /* Owned sessions require the owner. Registration sessions have no owner to
-     check against, by construction. */
+  /* Owned sessions require the owner — the owner, and nobody else. Registration
+     sessions have no owner to check against, by construction, and are unchanged
+     by this: `account_id` is null there, so this block does not run.
+     *
+     * The coach used to pass too, on `viewer.isAdmin`. Two things were wrong with
+     * that. The smaller one is that `viewer` reaches here from a bare
+     * `getSession()` — no `sessionRefusal` — so the exemption was granted on a
+     * token that may already have been withdrawn, which is the one credential
+     * that should not still work.
+     *
+     * The larger one is that nothing needed the exemption. Every upload session
+     * is created with `accountId: viewer.userId` (see /api/uploads/session), so
+     * the person entitled to a session is always its creator and always passes
+     * the ownership test on its own — including the coach opening one for a
+     * trainee, because that session is recorded against the coach. The panel
+     * never calls these endpoints at all: content-manager uploads go through
+     * /api/admin/media and `storeCmsMedia`, which does not mint a session. The
+     * branch could therefore only ever fire for a coach acting on a session
+     * belonging to somebody else, which no screen does.
+     *
+     * So it is removed rather than guarded. What remains is a test of identity —
+     * "is this your session" — and a withdrawn token does not turn its holder
+     * into a different person, so there is nothing left here for revocation to
+     * decide and no query to pay for. If acting on another account's session
+     * ever becomes a real feature, it should arrive with its own guard and a
+     * session that has been checked, not inherit a blanket exemption. */
   if (session.account_id) {
-    if (!viewer) return { ok: false, status: 403, error: "غير مصرح لك بهذا الإجراء" };
-    if (!viewer.isAdmin && viewer.userId !== session.account_id) {
+    if (!viewer || viewer.userId !== session.account_id) {
       return { ok: false, status: 403, error: "غير مصرح لك بهذا الإجراء" };
     }
   }

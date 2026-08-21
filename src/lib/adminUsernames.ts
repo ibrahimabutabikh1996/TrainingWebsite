@@ -11,7 +11,12 @@
  * first of those is a decision — see `@/lib/clientSession`.
  */
 
-const ADMIN_USERNAMES: readonly string[] = ["admin", "mkm94admin"];
+/* Exported so `isReservedUsername` in `@/lib/auth` can refuse these at account
+   creation. Membership here decides what a session may do, so a stranger must
+   never be able to claim one of these names through the public intake form —
+   the only thing that stood between them and the coach's panel was whether the
+   row happened to exist already. */
+export const ADMIN_USERNAMES: readonly string[] = ["admin", "mkm94admin"];
 
 export function isAdminUsername(username: string | null | undefined): boolean {
   return typeof username === "string" && ADMIN_USERNAMES.includes(username);

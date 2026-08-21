@@ -40,6 +40,29 @@ export async function getSession(): Promise<Session | null> {
   return verifySessionToken(store.get(SESSION_COOKIE)?.value);
 }
 
+/**
+ * The signed-in account, or null — where a withdrawn session also counts as
+ * null rather than as itself.
+ *
+ * For the handlers that legitimately serve both signed-in and anonymous callers
+ * and so cannot use `requireUser`: the upload endpoints, which have to keep
+ * working for a stranger filling in the registration form. They read the
+ * session with `getSession`, which checks the signature and the expiry and asks
+ * the database nothing — so a trainee whose account had been suspended, or
+ * whose token predated a password change, still acted as themselves there.
+ *
+ * Returning null instead is what "anonymous" already means to those handlers,
+ * and it is the honest answer: the credential has been disowned. The practical
+ * effect is narrow and correct — an unowned registration session stays usable,
+ * because it takes no owner, while an owned one is refused, because the caller
+ * can no longer prove they are its owner.
+ */
+export async function getVerifiedSession(): Promise<Session | null> {
+  const session = await getSession();
+  if (!session) return null;
+  return (await sessionRefusal(session)) ? null : session;
+}
+
 /* ------------------------------------------------------------------ *
  * Route handlers
  * ------------------------------------------------------------------ */
@@ -149,11 +172,32 @@ export async function requireUser(): Promise<ApiGuard> {
   return { ok: true, session };
 }
 
-/** The coach only. */
+/**
+ * The coach only.
+ *
+ * `sessionRefusal` is checked here for the same reason it is checked in
+ * `requireUser`, and it was not. The three admin guards read the signature and
+ * the expiry and nothing else — no database at all — so a token stayed good for
+ * its whole life whatever happened to the account behind it. Changing the
+ * coach's password did not sign the old sessions out of the panel, though it did
+ * sign a trainee out of the dashboard; deleting the account did not either. The
+ * one credential in this system that can read every trainee's file was the one
+ * that could not be withdrawn.
+ *
+ * Ordered so `isAdmin` is settled first: a trainee who wanders in is refused on
+ * the token alone and never costs a query.
+ */
 export async function requireAdmin(): Promise<ApiGuard> {
   const session = await getSession();
   if (!session) return { ok: false, response: unauthorized() };
   if (!session.isAdmin) return { ok: false, response: forbidden() };
+
+  /* Answered as "not signed in", matching `requireUser`: the credential this
+     token was issued against no longer exists. Suspension cannot arise here —
+     `sessionRefusal` only reads that flag for non-admins — so the only refusal
+     this can return is "stale". */
+  if (await sessionRefusal(session)) return { ok: false, response: unauthorized() };
+
   return { ok: true, session };
 }
 
@@ -177,7 +221,11 @@ export async function requireUserAction(): Promise<Session | null> {
 
 export async function requireAdminAction(): Promise<Session | null> {
   const session = await getSession();
-  return session?.isAdmin ? session : null;
+  if (!session?.isAdmin) return null;
+  /* Same revocation check as `requireAdmin` — see the note there. A server
+     action is a public endpoint, so the eighteen of them behind this guard were
+     reachable with a withdrawn token exactly as the route handlers were. */
+  return (await sessionRefusal(session)) ? null : session;
 }
 
 /* ------------------------------------------------------------------ *
@@ -207,6 +255,10 @@ export async function requireAdminPage(): Promise<Session> {
   /* A signed-in trainee who wanders into the panel goes back to their own
      dashboard rather than to the sign-in screen they just came from. */
   if (!session.isAdmin) redirect("/dashboard");
+  /* Same revocation check as `requireAdmin` — see the note there. To /login
+     rather than /dashboard: a token whose account is gone or whose password has
+     changed is not a trainee in the wrong place, it is nobody. */
+  if (await sessionRefusal(session)) redirect("/login");
   return session;
 }
 

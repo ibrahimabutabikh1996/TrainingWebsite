@@ -75,6 +75,7 @@ const MAX_SHORT_ANSWER_LENGTH = 200;
    Imported rather than restated: /api/admin/create-account makes accounts too,
    and the two rules must not drift apart. */
 import {
+  isReservedUsername,
   MAX_PASSWORD_LENGTH,
   MIN_PASSWORD_LENGTH,
   USERNAME_PATTERN,
@@ -193,6 +194,14 @@ export function validateSubmission(input: unknown): ValidationResult {
   if (typeof username === "string" && username !== "") {
     if (!USERNAME_PATTERN.test(username)) {
       errors.push("username must be 3-32 characters of letters, digits, dot, underscore or hyphen");
+    }
+    /* This form is open to the public and lets the visitor name their own
+       account. `isAdminUsername` reads that same name to decide whether a
+       session may open the coach's panel, so a reserved name claimed here would
+       be a privilege escalation, not a naming collision. Refused server-side —
+       the browser is never asked. */
+    if (isReservedUsername(username)) {
+      errors.push("username is reserved");
     }
     if (typeof password !== "string" || password === "") {
       errors.push("password is required when a username is given");

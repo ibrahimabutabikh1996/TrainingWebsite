@@ -1,3 +1,5 @@
+import type { PlanNames } from "@/lib/planNames";
+
 /* Shape of the subscription form state, shared by the page and its steps.
    Previously each step took `formData: any`, so a typo in a field name failed
    silently at runtime instead of at compile time. */
@@ -74,4 +76,9 @@ export interface StepProps {
      decided and the field only displays it. False when they reached /form with
      no plan named — then they have to be able to pick one. */
   planLocked?: boolean;
+  /* What each plan and offer is called, read from the content manager by the
+     server component above this one. Passed down rather than looked up here:
+     these are the coach's own words and they live in the database, so a client
+     component cannot know them on its own. See @/lib/planNames. */
+  planNames: PlanNames;
 }

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { comparePassword, hashPassword } from "@/lib/auth";
+import { comparePassword, hashPassword, isBcryptHash } from "@/lib/auth";
 import { startSession } from "@/lib/authGuard";
 import { clearAttempts, clientAddress, consumeAttempt } from "@/lib/rateLimit";
 
@@ -83,13 +83,10 @@ export async function POST(request: Request) {
     /* Only compare as plaintext if the stored value is not a bcrypt hash at all,
        so a stolen hash cannot be replayed as the password itself.
      *
-     * `$2y$` belongs in this list. It is what PHP's crypt writes and what plenty
-     * of import tools emit, it is the same algorithm as `$2b$`, and bcrypt
-     * verifies it — but it was missing here, so such a row fell through to the
-     * comparison below and was tested against the literal string "$2y$...". That
-     * never matches, which made it a lockout rather than a hole; it is a bug
-     * either way. */
-    const isBcrypt = /^\$2[aby]\$/.test(account.password);
+     * The test itself now lives in `@/lib/auth`. It was written out here and at
+     * two other call sites, and the three had drifted: this one covered `$2y$`
+     * and the other two did not. One definition, so they cannot disagree again. */
+    const isBcrypt = isBcryptHash(account.password);
 
     if (isBcrypt) {
       /* Matches the handling in /api/auth/change-password: a bcrypt fault must not

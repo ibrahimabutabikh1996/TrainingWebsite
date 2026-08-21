@@ -14,6 +14,7 @@ import "./dashboard.css";
 import Link from "next/link";
 import { Icon, type IconName } from "@/components/Icon";
 import { optimizedSrc, optimizedSrcSet } from "@/lib/imageOptim";
+import type { JsonRecord } from "@/types";
 
 type TabId = "settings" | "weight" | "workout" | "home" | "diet" | "history" | "profile";
 
@@ -130,6 +131,20 @@ export default function DashboardPage() {
   const startDate = profile.activation_date ? new Date(profile.activation_date) : (profile.created_at ? new Date(profile.created_at) : new Date());
   const endDate = profile.subscription_ends_at ? new Date(profile.subscription_ends_at) : new Date(startDate.getTime() + 30 * 86400000);
   const isSubscriptionExpired = Boolean(profile.isExpired || (profile.subscription_ends_at && new Date(profile.subscription_ends_at).getTime() <= now.getTime()));
+
+  /* A renewal already asked for and not yet decided.
+   *
+   * The trainee submitted the form, the server recorded the request, and their
+   * dashboard went on showing the same "renew" button as before — so the only
+   * honest reading available to them was that nothing had happened. The server
+   * now refuses a second submission while one is open, which without this
+   * would be a dead end they could not see the reason for.
+   *
+   * Read from `raw_answers`, which /api/profile already returns whole; the flag
+   * is written by /api/submit-form and cleared by the coach's decision either
+   * way. */
+  const renewalPending = (profile.raw_answers as JsonRecord | undefined)?.renewal_pending === true;
+  const renewalRequestedMonth = (profile.raw_answers as JsonRecord | undefined)?.renewal_requested_month;
   const totalDays = Math.max(30, Math.round((endDate.getTime() - startDate.getTime()) / 86400000));
   const elapsedDays = Math.max(0, Math.min(totalDays, Math.round((now.getTime() - startDate.getTime()) / 86400000)));
   const remainingDays = isSubscriptionExpired ? 0 : Math.max(0, Math.round((endDate.getTime() - now.getTime()) / 86400000));
@@ -247,7 +262,60 @@ export default function DashboardPage() {
 
       <main className="dashboard-main">
 
+        {/* Shown whether or not the subscription has run out, because a renewal
+            asked for on day 25 is just as pending as one asked for on day 31 —
+            and in both cases the trainee needs to know their form arrived. */}
+        {renewalPending && (
+          <div style={{
+            background: "linear-gradient(135deg, color-mix(in srgb, #F59E0B 16%, var(--bg2)), var(--bg2))",
+            border: "1px solid color-mix(in srgb, #F59E0B 45%, var(--border))",
+            borderInlineStart: "5px solid #F59E0B",
+            borderRadius: "var(--radius-xl)",
+            padding: "24px 28px",
+            marginBottom: "28px",
+            boxShadow: "0 8px 32px color-mix(in srgb, #F59E0B 12%, rgba(0, 0, 0, 0.35))",
+            display: "flex",
+            alignItems: "flex-start",
+            gap: "18px",
+            flexWrap: "wrap"
+          }}>
+            <div style={{
+              width: "52px",
+              height: "52px",
+              borderRadius: "var(--radius-xl)",
+              background: "color-mix(in srgb, #F59E0B 20%, var(--bg3))",
+              color: "#F59E0B",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "28px",
+              flexShrink: 0
+            }}>
+              <Icon name="hourglass" />
+            </div>
+            <div style={{ flex: "1 1 320px", minWidth: 0 }}>
+              <h3 style={{ margin: "0 0 8px 0", fontSize: "1.3rem", fontWeight: 800, color: "var(--text)", display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+                <span>طلب التجديد قيد المراجعة</span>
+                {typeof renewalRequestedMonth === "number" && (
+                  <span style={{ fontSize: "0.78rem", background: "#F59E0B", color: "#1a1a1a", padding: "3px 10px", borderRadius: "var(--radius-pill)", fontWeight: 800 }}>
+                    الشهر {renewalRequestedMonth}
+                  </span>
+                )}
+              </h3>
+              <p style={{ margin: 0, fontSize: "0.98rem", color: "var(--text-muted)", lineHeight: 1.65 }}>
+                وصلت استمارتك ووصل الدفع إلى الكابتن إبراهيم، وهو الآن يراجعها. بمجرد الموافقة
+                ستُضاف أيام الشهر الجديد إلى اشتراكك تلقائياً ويبدأ تجهيز برنامجك التدريبي
+                والغذائي للشهر الجديد. <b>لا حاجة لإعادة إرسال الاستمارة.</b>
+              </p>
+            </div>
+          </div>
+        )}
 
+        {/* Kept even while a request is pending: the amber card above explains
+            what is happening next, this one explains what is true now — that
+            the dashboard is read-only until the month is granted. Only the
+            button inside it stands down, because the server refuses a second
+            submission and a button that cannot work is worse than no button. */}
         {isSubscriptionExpired && (
           <div style={{
             background: "linear-gradient(135deg, color-mix(in srgb, #EF4444 16%, var(--bg2)), var(--bg2))",
@@ -290,6 +358,23 @@ export default function DashboardPage() {
               </div>
             </div>
             <div>
+              {renewalPending ? (
+                <span style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  padding: "14px 24px",
+                  borderRadius: "var(--radius-lg)",
+                  background: "var(--bg3)",
+                  border: "1px dashed color-mix(in srgb, #F59E0B 55%, var(--border))",
+                  color: "#F59E0B",
+                  fontWeight: 800,
+                  fontSize: "0.98rem"
+                }}>
+                  <Icon name="hourglass" style={{ fontSize: "22px" }} />
+                  <span>طلبك مُرسل — بانتظار موافقة الكابتن</span>
+                </span>
+              ) : (
               <Link
                 href={`/form?renew=true&profileId=${profile.id}`}
                 className="dash-primary-btn"
@@ -310,6 +395,7 @@ export default function DashboardPage() {
                 <Icon name="lock_reset" style={{ fontSize: "24px" }} />
                 <span>تجديد الاشتراك وتحديث البيانات</span>
               </Link>
+              )}
             </div>
           </div>
         )}

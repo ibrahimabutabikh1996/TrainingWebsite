@@ -65,6 +65,81 @@ export const UPLOAD_SLOT_LIMIT: RateLimitOptions = { max: 60, windowMinutes: 15 
    registering together — without leaving the table open to being filled. */
 export const SUBMIT_FORM_LIMIT: RateLimitOptions = { max: 5, windowMinutes: 15 };
 
+/* ------------------------------------------------------------------ *
+ * The second dimension
+ * ------------------------------------------------------------------ *
+ *
+ * Every limit above is keyed on `clientAddress`, and that address comes from
+ * `x-forwarded-for` — a header the caller writes. Behind a proxy that overwrites
+ * it the value is trustworthy; reached directly it is whatever the sender typed.
+ * Rotating it was demonstrated to walk straight through all three ceilings, so
+ * an address-only limit is a limit an attacker opts out of.
+ *
+ * The address stays — it is the right key for the ordinary case, and taking it
+ * away would punish everyone behind one NAT. What changes is that it is no
+ * longer *alone*: each endpoint also counts against something the caller cannot
+ * choose, and both have to allow the request. `/api/auth/login` has always done
+ * this (address AND submitted username); these are the endpoints that did not.
+ *
+ * What each one has to count against:
+ *
+ *   renewal            `profiles.id`, after the session has been verified and
+ *                      ownership checked. Server-derived; unforgeable.
+ *
+ *   registration       `upload_sessions.id`. A registration cannot succeed
+ *                      without a payment receipt, a receipt cannot exist without
+ *                      a confirmed upload item, and that item cannot exist
+ *                      without a session the server minted. So the anonymous
+ *                      caller does have a server-issued identity by the time it
+ *                      reaches the form — it just was not being counted.
+ *
+ *   opening a session  nothing. This is the one place with no identity yet, by
+ *                      construction, and inventing a stable one for an anonymous
+ *                      visitor is not possible without fingerprinting them. It
+ *                      gets a process-wide ceiling instead — see below.
+ */
+
+/** Per profile, for a renewal. Generous: a genuine retry after a validation error. */
+export const SUBMIT_FORM_RENEWAL_LIMIT: RateLimitOptions = { max: 5, windowMinutes: 15 };
+
+/** Per upload session, for a registration. A session is single-use anyway. */
+export const SUBMIT_FORM_SESSION_LIMIT: RateLimitOptions = { max: 5, windowMinutes: 15 };
+
+/** Per upload session. `issueSlot` already caps items per session; this caps the asking. */
+export const UPLOAD_SLOT_SESSION_LIMIT: RateLimitOptions = { max: 60, windowMinutes: 15 };
+
+/**
+ * Confirming an uploaded object.
+ *
+ * The only endpoint in the upload chain that had no ceiling at all, and the one
+ * that does the most work per call: it downloads the stored object to read its
+ * real size and leading bytes. Generous, because a session may hold up to
+ * `MAX_ITEMS_PER_SESSION` files and each is confirmed once — this is a ceiling
+ * on repetition, not on ordinary use.
+ */
+export const UPLOAD_CONFIRM_LIMIT: RateLimitOptions = { max: 60, windowMinutes: 15 };
+
+/**
+ * The backstop for opening an anonymous upload session — counted across every
+ * caller at once, not per address.
+ *
+ * This is the only ceiling here that a rotating address cannot slip under,
+ * because it does not look at the address at all. It is deliberately far above
+ * any real traffic this site sees: a registration needs one session, and two
+ * hundred registrations in a quarter of an hour is not something that happens.
+ *
+ * The cost is real and worth stating plainly: an attacker who burns this budget
+ * denies new registrations to everyone until the window rolls. That is a worse
+ * failure than throttling one address and a much better one than the alternative
+ * it replaces, which was no effective ceiling at all — sessions minted until the
+ * table or the bucket gave out. A fifteen-minute outage of sign-ups is
+ * recoverable; an exhausted project is not. See finding N-10.
+ */
+export const UPLOAD_SESSION_GLOBAL_LIMIT: RateLimitOptions = { max: 200, windowMinutes: 15 };
+
+/** The key that backstop counts against. Fixed on purpose — it is process-wide. */
+export const UPLOAD_SESSION_GLOBAL_KEY = "upload-session:global";
+
 /** Greppable in logs, stable across refactors — alert on this string. */
 const DEGRADED_MARKER = "[rateLimit][DEGRADED]";
 
@@ -210,6 +285,41 @@ export async function consumeAttempt(
     }
     return consumeLocally(key, max, windowMinutes);
   }
+}
+
+/**
+ * Counts one attempt against several keys at once and answers with the strictest
+ * of them.
+ *
+ * Every key is consumed, not just up to the first refusal: these are independent
+ * ceilings, and a request that is over the per-profile limit still happened from
+ * an address and should count there too. Otherwise the cheaper key becomes a way
+ * to avoid incrementing the expensive one.
+ *
+ * `/api/auth/login` has done this by hand since it was written — address AND
+ * username, both consumed, worst answer wins. This is that shape, named, so the
+ * endpoints that were counting only an address can adopt it without each
+ * growing its own copy.
+ */
+export async function consumeAttempts(
+  entries: Array<{ key: string; options?: RateLimitOptions }>
+): Promise<RateLimitResult> {
+  if (entries.length === 0) {
+    return { allowed: true, retryAfterSeconds: 0, degraded: false };
+  }
+
+  const results = await Promise.all(
+    entries.map((e) => consumeAttempt(e.key, e.options ?? {}))
+  );
+
+  const refused = results.filter((r) => !r.allowed);
+  return {
+    allowed: refused.length === 0,
+    /* The longest wait among the ceilings that refused — telling the caller to
+       come back before the strictest one has reset is telling them to fail. */
+    retryAfterSeconds: refused.reduce((max, r) => Math.max(max, r.retryAfterSeconds), 0),
+    degraded: results.some((r) => r.degraded),
+  };
 }
 
 /** Clears the counters for a successful sign-in, so one typo costs nothing later. */

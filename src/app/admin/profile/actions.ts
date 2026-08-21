@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
-import { comparePassword } from "@/lib/auth";
+import { comparePassword, isBcryptHash } from "@/lib/auth";
 import { requireAdminAction } from "@/lib/authGuard";
 import { storagePathOf, supabaseAdmin, UPLOADS_BUCKET } from "@/lib/supabaseAdmin";
 import type { JsonRecord } from "@/types";
@@ -232,6 +232,12 @@ export async function deleteAllAttachmentsAction(
  * sign-in path still allows for. Same rule as /api/auth/login: a value that is
  * not a bcrypt hash is compared as plaintext, and a bcrypt fault is an error
  * rather than a silent "wrong password".
+ *
+ * "Same rule as /api/auth/login" is now true rather than aspirational. This
+ * tested `$2a$` and `$2b$` by hand and missed `$2y$`, so on such a row the
+ * stored hash itself would have been accepted as the confirmation password —
+ * on the action that deletes a subscriber irreversibly. The test is shared with
+ * the sign-in and change-password paths now.
  */
 async function passwordMatches(accountId: string, submitted: string): Promise<boolean> {
   const account = await prisma.accounts.findUnique({
@@ -240,7 +246,7 @@ async function passwordMatches(accountId: string, submitted: string): Promise<bo
   });
   if (!account) return false;
 
-  if (account.password.startsWith("$2a$") || account.password.startsWith("$2b$")) {
+  if (isBcryptHash(account.password)) {
     return comparePassword(submitted, account.password);
   }
   return submitted === account.password;
@@ -394,6 +400,41 @@ export async function deleteEntireHistoryAction(
   } catch (error) {
     console.error("Failed to hide the subscription history:", error);
     return { success: false, error: "حدث خطأ أثناء حذف السجل" };
+  }
+}
+
+/**
+ * Turns down a pending renewal request.
+ *
+ * The counterpart to /api/admin/renew-account, and deliberately the smaller
+ * half: approving grants a month, this grants nothing and takes nothing away.
+ * It clears the three flags /api/submit-form raised, which closes the request
+ * and lets the trainee submit a corrected one — an unreadable transfer slip,
+ * the wrong plan, a month asked for twice.
+ *
+ * Nothing about the subscription is touched. `subscription_ends_at` is not
+ * shortened and `renewals` is not edited: a rejected *request* is not a
+ * revoked month, and a trainee who still has paid days must keep them. The
+ * answers they submitted stay too — they are this month's answers whether or
+ * not the next month was granted.
+ *
+ * Written through `updateBlob`, so it goes through `requireAdminAction` and the
+ * same id check as the history actions. A trainee must not be able to reach
+ * this: clearing the flag is what unblocks the next submission, and self-service
+ * on that would hand back the unlimited re-submission the flag exists to stop.
+ */
+export async function rejectRenewalAction(
+  profileId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    return await updateBlob(profileId, (blob) => {
+      delete blob.renewal_pending;
+      delete blob.renewal_requested_at;
+      delete blob.renewal_requested_month;
+    });
+  } catch (error) {
+    console.error("Failed to reject the renewal request:", error);
+    return { success: false, error: "حدث خطأ أثناء رفض الطلب" };
   }
 }
 

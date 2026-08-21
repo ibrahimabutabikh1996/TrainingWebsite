@@ -2,6 +2,8 @@ import { prisma } from "@/lib/db";
 import { requireAdminPage } from "@/lib/authGuard";
 import AdminCRMClient from "./AdminCRMClient";
 import type { JsonRecord } from "@/types";
+import { getLandingContent } from "./cms/actions";
+import { resolvePlanNames } from "@/lib/planNames";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +28,10 @@ const LIST_FIELDS = [
   "plan_type",
   "is_new",
   "is_renewal",
+  /* One boolean, so the list can mark who is waiting on a decision. Without it
+     a pending renewal was visible only after opening the trainee, which for a
+     request that blocks a paid month is the wrong way round. */
+  "renewal_pending",
   "activation_date",
 ] as const;
 
@@ -97,5 +103,11 @@ export default async function AdminDashboardPage() {
     is_suspended: p.is_suspended,
   }));
 
-  return <AdminCRMClient initialProfiles={serializedProfiles} />;
+  /* The packages as the coach named them, so the subscriber list, its filter
+     and the CSV it exports all say what the panel says. */
+  const planNames = resolvePlanNames(
+    (await getLandingContent())?.content_ar as JsonRecord | undefined
+  );
+
+  return <AdminCRMClient initialProfiles={serializedProfiles} planNames={planNames} />;
 }

@@ -5,7 +5,7 @@ import type { JsonRecord } from "@/types";
 import { prisma } from "@/lib/db";
 import { requireAdminAction } from "@/lib/authGuard";
 import { revalidatePath } from "next/cache";
-import { supabaseAdmin, UPLOADS_BUCKET } from "@/lib/supabaseAdmin";
+import { supabaseAdmin, PUBLIC_MEDIA_BUCKET, storagePathOf } from "@/lib/supabaseAdmin";
 import { storeCmsMedia } from "@/lib/cmsMedia";
 
 /* These run against the service-role Supabase client, which is above every
@@ -121,7 +121,7 @@ export async function listImagesServer(): Promise<MediaListing> {
        invisible on this screen. Asked for one more than the limit so the caller
        can tell the difference between "that is all of them" and "there are
        more", and report it rather than quietly truncating. */
-    const { data, error } = await supabaseAdmin.storage.from(UPLOADS_BUCKET).list('images', {
+    const { data, error } = await supabaseAdmin.storage.from(PUBLIC_MEDIA_BUCKET).list('images', {
       limit: MEDIA_PAGE_SIZE + 1,
       offset: 0,
       sortBy: { column: 'created_at', order: 'desc' },
@@ -138,7 +138,7 @@ export async function listImagesServer(): Promise<MediaListing> {
 
     /* Ask the client for the address rather than assembling it from the project
        URL by hand — the same call the upload path already uses. */
-    const publicUrlBase = supabaseAdmin.storage.from(UPLOADS_BUCKET).getPublicUrl("images/").data.publicUrl;
+    const publicUrlBase = supabaseAdmin.storage.from(PUBLIC_MEDIA_BUCKET).getPublicUrl("images/").data.publicUrl;
 
     const images = data
       .slice(0, MEDIA_PAGE_SIZE)
@@ -159,17 +159,14 @@ export async function deleteImageServer(publicUrl: string): Promise<boolean> {
   if (!(await requireAdminAction())) return false;
 
   try {
-    if (!publicUrl.includes('/storage/v1/object/public/uploads/')) {
-      return false;
-    }
-    
-    const pathParts = publicUrl.split('/storage/v1/object/public/uploads/');
-    const filePath = pathParts[1];
-    
+    /* Resolved through `storagePathOf`, which understands both the current
+       public-media address and the one the CMS wrote before the buckets were
+       split — so a row stored under the old shape still deletes. */
+    const filePath = storagePathOf(publicUrl);
     if (!filePath) return false;
 
     const { error } = await supabaseAdmin.storage
-      .from('uploads')
+      .from(PUBLIC_MEDIA_BUCKET)
       .remove([filePath]);
 
     if (error) {

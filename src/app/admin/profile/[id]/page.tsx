@@ -4,11 +4,14 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Toaster } from "react-hot-toast";
 import AccountManager from "@/components/admin/AccountManager";
-import ProfileDetailsTabs from "@/components/admin/ProfileDetailsTabs";
+import PendingRenewalCard from "@/components/admin/PendingRenewalCard";
+import ProfileMonthlyRecord from "@/components/admin/ProfileMonthlyRecord";
 import DeleteSubscriberZone from "@/components/admin/DeleteSubscriberZone";
 import WorkoutProgress from "@/components/admin/WorkoutProgress";
 import AdminSubscriptionTimeline from "@/components/admin/AdminSubscriptionTimeline";
-import { activityLabel, planLabel } from "@/lib/formLabels";
+import { activityLabel, PLAN_COLOUR_SLOT } from "@/lib/formLabels";
+import { planNameFrom, resolvePlanNames } from "@/lib/planNames";
+import { getLandingContent } from "@/app/admin/cms/actions";
 import "../../crm.css";
 import type { JsonRecord } from "@/types";
 import { Icon } from "@/components/Icon";
@@ -39,6 +42,12 @@ export default async function ProfileDetailsPage({ params }: { params: Promise<{
   if (!profile) {
     notFound();
   }
+
+  /* What the packages are called, from the panel rather than from a fixed copy
+     in the code — the same names the card, the form and the sign-up email use. */
+  const planNames = resolvePlanNames(
+    (await getLandingContent())?.content_ar as JsonRecord | undefined
+  );
 
   /* `|| {}` — the column is nullable, and `data.phone` below reads straight off
      it. */
@@ -123,7 +132,10 @@ export default async function ProfileDetailsPage({ params }: { params: Promise<{
                 )}
               </div>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {data.plan && <span className={`crm-tag ${data.plan.replace('plan', 'plan-')}`} style={{ padding: '6px 14px', fontSize: '0.85rem' }}>{planLabel(data.plan)}</span>}
+                {/* The class was built by string surgery on the value — `"plan1".replace("plan", "plan-")`.
+                    It produced the right class for exactly the three values it was written for and
+                    left "offer1" untouched, naming a class that has no rules. */}
+                {data.plan && <span className={`crm-tag ${PLAN_COLOUR_SLOT[String(data.plan)] ? `plan-${PLAN_COLOUR_SLOT[String(data.plan)]}` : ''}`} style={{ padding: '6px 14px', fontSize: '0.85rem' }}>{planNameFrom(planNames, data.plan)}</span>}
                 {data.activity && <span className="crm-tag" style={{ padding: '6px 14px', fontSize: '0.85rem' }}>{activityLabel(data.activity)}</span>}
               </div>
             </div>
@@ -170,8 +182,13 @@ export default async function ProfileDetailsPage({ params }: { params: Promise<{
         {/* Details Grid */}
         <div className="crm-modal-grid-new" style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
           
+          {/* First in the column, above the account card, because it is the one
+              thing on this page that is waiting on a decision. It renders
+              nothing at all when no request is open. */}
+          <PendingRenewalCard profileId={profile.id} data={data} planNames={planNames} />
+
           <AccountManager profileId={profile.id} existingAccount={existingAccount} />
-          <AdminSubscriptionTimeline profileId={profile.id} />
+          <AdminSubscriptionTimeline profileId={profile.id} planNames={planNames} />
           
           <div style={{ marginTop: "24px" }}>
             <WeightLog 
@@ -188,7 +205,12 @@ export default async function ProfileDetailsPage({ params }: { params: Promise<{
           {data.plan_type !== 'diet' && (
             <WorkoutProgress profileId={profile.id} />
           )}
-          <ProfileDetailsTabs currentData={data} profileId={profile.id} />
+          <ProfileMonthlyRecord
+            currentData={data}
+            profileId={profile.id}
+            createdAt={profile.created_at.toISOString()}
+            planNames={planNames}
+          />
           <DeleteSubscriberZone profileId={profile.id} />
 
         </div>

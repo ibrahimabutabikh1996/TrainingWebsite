@@ -9,6 +9,7 @@ import { useCurrentUsername } from "@/lib/clientSession";
 import { RICH_TEXT_KEYS, safeMediaUrl, setRichText, setText } from "@/lib/richText";
 import { optimizedCssUrl, optimizedSrc, optimizedSrcSet } from "@/lib/imageOptim";
 import { useParallax } from "@/hooks/useParallax";
+import { normalizeLegacyName } from "@/lib/planNames";
 import { PromotionalPopup } from "@/components/PromotionalPopup";
 
 /* Baseline copy. Anything the coach edits in the CMS overrides these at runtime
@@ -93,7 +94,7 @@ const defaultContent: JsonRecord = {
   off_eyebrow: "اكتشف العروض",
   off_title: "العروض الخاصة",
   off_card1_alt: "عرض خطة ذاتية التوجيه",
-  off_card1_badge: "باقة الانطلاقة الذكية",
+  off_card1_badge: "خطة ذاتية التوجيه",
   off_card1_desc:
     "برنامج تدريبي للمبتدئين يركز أساسيات بناء القوة وتوجيهك خطوة بخطوة في رحلتك الرياضية الأولى.",
   off_card1_p1_label: "نظام غذائي ورياضي + خطة المتابعة اليومية",
@@ -107,7 +108,7 @@ const defaultContent: JsonRecord = {
   off_card1_f3: "متابعة على مدار اليوم",
   off_card_btn: "اشترك الآن",
   off_card2_alt: "عرض المتابعة الأسبوعية",
-  off_card2_badge: "باقة المحترفين المتكاملة",
+  off_card2_badge: "خطة المتابعة الأسبوعية",
   off_card2_desc:
     "برنامج تدريبي مكثف مصمم خصيصاً لمن يطمحون للوصول إلى أعلى مستويات اللياقة البدنية وبناء كتل عضلية.",
   off_card2_p1_label: "المبلغ كامل",
@@ -120,7 +121,7 @@ const defaultContent: JsonRecord = {
   off_card2_f2: "تمارين احترافية",
   off_card2_f3: "متابعة يومية دقيقة",
   off_card3_alt: "عرض المتابعة اليومية",
-  off_card3_badge: "باقة التجهيز للبطولات",
+  off_card3_badge: "خطة المتابعة اليومية",
   off_card3_desc:
     "لمن هم مستعدون لصعود المسرح والمنافسة على الألقاب. تدريبات وبرامج تغذية مصممة خصيصاً للوصول لأفضل نتيجة في وقت قياسي والتفوق بالمرحلة.",
   off_card3_p1_label: "نظام غذائي وتدريب ومتابعة لمدة ٣ شهور",
@@ -439,21 +440,16 @@ export default function LandingClient({
     };
   }, []);
 
+  /* The rules themselves moved to @/lib/planNames. They were written out here
+     when this page was the only thing reading those fields; the form, the
+     WhatsApp message, the subscriber list and the PDF export read them too now,
+     and a second copy of the table is how one of them starts showing a name the
+     others stopped using. */
   const normalizeContent = (data: JsonRecord): JsonRecord => {
     const updated = { ...data };
     for (const key in updated) {
-      if (
-        updated[key] === "متابعة شهرية" ||
-        updated[key] === "خطط ذاتية التوجيه"
-      ) {
-        updated[key] = "خطة ذاتية التوجيه";
-      }
-      if (updated[key] === "متابعة اسبوعية") {
-        updated[key] = "خطة المتابعة الاسبوعية";
-      }
-      if (updated[key] === "متابعة يومية") {
-        updated[key] = "خطة المتابعة اليومية";
-      }
+      const value = updated[key];
+      if (typeof value === "string") updated[key] = normalizeLegacyName(value);
     }
     return updated;
   };
@@ -1453,7 +1449,7 @@ export default function LandingClient({
                 </div>
                 <div className="membership-card-body">
                   <div className="membership-badge" data-i18n="off_card1_badge">
-                    باقة الانطلاقة الذكية
+                    خطة ذاتية التوجيه
                   </div>
                   <p className="membership-desc" data-i18n="off_card1_desc">
                     برنامج تدريبي للمبتدئين يركز أساسيات بناء القوة وتوجيهك خطوة
@@ -1541,13 +1537,13 @@ export default function LandingClient({
                     className="membership-card-img" data-parallax="0.06" data-parallax-max="20"
                     loading="lazy"
                     src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=500&q=80&fit=crop"
-                    alt="باقة المحترفين المتكاملة"
+                    alt="خطة المتابعة الأسبوعية"
                     data-i18n-alt="off_card2_alt"
                   />
                 </div>
                 <div className="membership-card-body">
                   <div className="membership-badge" data-i18n="off_card2_badge">
-                    باقة المحترفين المتكاملة
+                    خطة المتابعة الأسبوعية
                   </div>
                   <p className="membership-desc" data-i18n="off_card2_desc">
                     برنامج تدريبي مكثف مصمم خصيصاً لمن يطمحون للوصول إلى أعلى
@@ -1636,13 +1632,13 @@ export default function LandingClient({
                     className="membership-card-img" data-parallax="0.06" data-parallax-max="20"
                     loading="lazy"
                     src="https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?w=500&q=80&fit=crop"
-                    alt="باقة التجهيز للبطولات"
+                    alt="خطة المتابعة اليومية"
                     data-i18n-alt="off_card3_alt"
                   />
                 </div>
                 <div className="membership-card-body">
                   <div className="membership-badge" data-i18n="off_card3_badge">
-                    باقة التجهيز للبطولات
+                    خطة المتابعة اليومية
                   </div>
                   <p className="membership-desc" data-i18n="off_card3_desc">
                     لمن هم مستعدون لصعود المسرح والمنافسة على الألقاب. تدريبات
