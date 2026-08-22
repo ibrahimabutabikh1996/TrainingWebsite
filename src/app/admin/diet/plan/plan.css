@@ -422,13 +422,20 @@
 
 /* ---- Source picker ---- */
 
+/* Stops 72px short of the bottom, the way `AdminModal` does, and for the same
+   reason: that strip belongs to the admin nav bar. `inset: 0` put this over it,
+   and the nav wins the paint — so the last rows of the list were not merely
+   crowded, they were behind an opaque bar and could not be clicked.
+   Same 32px of breathing room top and bottom as the dialogs elsewhere. */
 .dplan-picker-backdrop {
   position: fixed;
-  inset: 0;
+  top: 0;
+  inset-inline: 0;
+  bottom: 72px;
   z-index: 1000;
   display: grid;
   place-items: center;
-  padding: 24px;
+  padding: 32px 24px;
   background: var(--overlay-scrim);
   backdrop-filter: blur(3px);
 }
@@ -436,8 +443,14 @@
 .dplan-picker {
   display: flex;
   flex-direction: column;
-  width: min(560px, 100%);
-  max-height: min(640px, 90vh);
+  width: min(760px, 100%);
+  /* A percentage of the backdrop, not a viewport unit. Centred in the whole
+     screen, `min(640px, 90vh)` reached past the nav bar on anything shorter
+     than about 784px — 42px of overlap on a 586px window. Measured against the
+     box it actually sits in, it cannot.
+     `.dplan-picker-list` is the scroller, so what gives way here is the number
+     of rows on show; the search field and the heading stay put. */
+  max-height: 100%;
   border-radius: var(--radius-xl);
   border: 1px solid var(--border);
   background: var(--bg2);
