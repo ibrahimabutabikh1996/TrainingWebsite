@@ -286,10 +286,27 @@
   overflow-wrap: anywhere;
 }
 
+/* The same foot `.co-card-foot` gives a course card: a rule, then everything
+   the card can be asked to do on one line. `margin-top: auto` pins it to the
+   bottom, so cards in a row end level however much sits above. */
+.ex-card-foot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+/* Pinned to the end rather than left to `space-between`, which would have
+   swung the buttons across to the other side on the cards that carry no video
+   and leave nothing for them to be spaced against. */
 .ex-card-actions {
   display: flex;
   gap: 4px;
   flex-shrink: 0;
+  margin-inline-start: auto;
 }
 
 .ex-icon-btn {
@@ -381,12 +398,12 @@
   margin-top: 2px;
 }
 
+/* Placement is the foot's job now — this used to push itself to the bottom of
+   the card with `margin-top: auto` and sit alone on a row of its own. */
 .ex-video {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  align-self: flex-start;
-  margin-top: auto;
   padding: 7px 13px;
   border-radius: var(--admin-radius-sm);
   border: 1px solid var(--border-primary);

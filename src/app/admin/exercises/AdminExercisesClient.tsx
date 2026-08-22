@@ -163,10 +163,41 @@ export default function AdminExercisesClient({ initialExercises }: { initialExer
 
             return (
               <article key={ex.id} className="ex-card">
+                {/* The title has the row to itself. The two icon buttons used
+                    to sit beside it and took about 78px off a name that wraps
+                    to three lines on a narrow column. */}
                 <div className="ex-card-head">
                   <div className="ex-card-title">
                     <h3>{ex.name_ar}</h3>
                   </div>
+                </div>
+
+                <div className="ex-chips">
+                  <span className="ex-chip ex-chip--cat" data-cat={category}>{category}</span>
+                  {muscles.map((m, i) => (
+                    <span key={i} className="ex-chip">{m}</span>
+                  ))}
+                </div>
+
+                {ex.notes && (
+                  <div className="ex-notes">
+                    <Icon name="sticky_note_2" />
+                    <span>{ex.notes}</span>
+                  </div>
+                )}
+
+                {/* Everything this card can be asked to do, on one line under a
+                    rule — the shape `.co-card-foot` already gives the course
+                    library. The video keeps its wording; it is the only one of
+                    the three a coach opens to look at something rather than to
+                    change it, and it is the reason most of these cards exist. */}
+                <div className="ex-card-foot">
+                  {ex.video_url && (
+                    <button className="ex-video" onClick={() => setVideoUrl(ex.video_url)}>
+                      <Icon name="play_circle" />
+                      مشاهدة الفيديو
+                    </button>
+                  )}
                   <div className="ex-card-actions">
                     <button
                       className="ex-icon-btn"
@@ -186,27 +217,6 @@ export default function AdminExercisesClient({ initialExercises }: { initialExer
                     </button>
                   </div>
                 </div>
-
-                <div className="ex-chips">
-                  <span className="ex-chip ex-chip--cat" data-cat={category}>{category}</span>
-                  {muscles.map((m, i) => (
-                    <span key={i} className="ex-chip">{m}</span>
-                  ))}
-                </div>
-
-                {ex.notes && (
-                  <div className="ex-notes">
-                    <Icon name="sticky_note_2" />
-                    <span>{ex.notes}</span>
-                  </div>
-                )}
-
-                {ex.video_url && (
-                  <button className="ex-video" onClick={() => setVideoUrl(ex.video_url)}>
-                    <Icon name="play_circle" />
-                    مشاهدة الفيديو
-                  </button>
-                )}
               </article>
             );
           })
