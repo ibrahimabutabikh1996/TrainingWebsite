@@ -371,21 +371,28 @@
 /* ==========================================================================
    Settings Dropdown Menu
    ========================================================================== */
+/* The panel is `.custom-select-dropdown` — same ground, same border, same
+   radius, same shadow, same 4px of padding and 2px between rows. One drawing
+   of "a list that dropped out of a control", wherever it drops from.
+   Opaque, and the blur is gone with the translucency: the select this now
+   matches has never been see-through, and a menu of two commands reading
+   through the table behind it was the loudest thing about the old one.
+   The entrance animation stays — that is behaviour, not the look of the
+   panel, and nothing was asked about it. */
 .admin-settings-dropdown {
   position: absolute;
   bottom: 100%; /* Position above the navbar */
   left: 0;      /* Align with the left edge of the settings button */
   margin-bottom: 12px;
-  background: var(--admin-card-bg);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--admin-card-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--elev-3);
+  background-color: var(--bg2);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  box-shadow: var(--elev-2);
   display: flex;
   flex-direction: column;
+  gap: 2px;
   min-width: 200px;
-  padding: 8px;
+  padding: 4px;
   z-index: 101;
   animation: dropdownFade 0.2s ease-out forwards;
 }
@@ -395,13 +402,17 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* Matches `.custom-select-option` — radius, colour, hover ground and the 12px
+   of horizontal padding. The vertical padding does not follow it down to 10px:
+   these are commands pressed with a thumb, not options being read, and 12px is
+   what keeps the row at a comfortable target. */
 .admin-dropdown-item {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 16px;
-  border-radius: var(--radius-md);
-  color: var(--text-secondary);
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  color: var(--text);
   font-size: var(--text-base);
   font-weight: var(--weight-medium);
   text-decoration: none;
@@ -416,7 +427,7 @@
 
 .admin-dropdown-item:hover {
   color: var(--text);
-  background: color-mix(in srgb, var(--text) 6%, transparent);
+  background-color: var(--bg3);
 }
 
 .admin-dropdown-item.danger {

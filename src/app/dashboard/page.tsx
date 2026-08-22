@@ -194,6 +194,10 @@ export default function DashboardPage() {
                       />
                       <div 
                         className="dash-more-menu"
+                        /* The panel is `.custom-select-dropdown`, to the value:
+                           same border, radius, shadow, 4px of padding and 2px
+                           between rows. Every list that drops out of a control
+                           in this product is drawn the same way. */
                         style={{
                           position: "absolute",
                           bottom: "100%",
@@ -201,12 +205,13 @@ export default function DashboardPage() {
                           transform: "translateX(50%)",
                           marginBottom: "12px",
                           background: "var(--bg2)",
-                          border: "1px solid var(--border)",
-                          borderRadius: "var(--radius-lg)",
-                          padding: "8px",
-                          boxShadow: "var(--elev-3)",
+                          border: "1px solid var(--border-strong)",
+                          borderRadius: "var(--radius-md)",
+                          padding: "4px",
+                          boxShadow: "var(--elev-2)",
                           display: "flex",
                           flexDirection: "column",
+                          gap: "2px",
                           minWidth: "180px",
                           zIndex: 100,
                           animation: "fadeUp 0.2s ease-out forwards"

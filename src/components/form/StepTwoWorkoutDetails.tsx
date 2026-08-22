@@ -72,8 +72,12 @@ function TimeInput({ label, value, onChange, placeholder, required }: TimeInputP
           onChange={(e) => handleTimeChange(e.target.value)}
         />
         <span className="time-period">
+          {/* Not `.form-input`. That class lands on the container, which
+              already holds a trigger carrying its own border, padding and
+              ground — a box drawn inside a box, and the one dropdown in the
+              product that did not look like the others. */}
           <CustomSelect
-            className="form-input time-period-select"
+            className="time-period-select"
             value={periodPart}
             onChange={handlePeriodChange}
             options={[

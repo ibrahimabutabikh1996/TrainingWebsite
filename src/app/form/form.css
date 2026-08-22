@@ -439,30 +439,17 @@
   padding-inline-end: 40px;
 }
 
-.form-page .control--select::after {
-  content: "";
-  position: absolute;
-  inset-inline-end: 14px;
-  top: 50%;
-  width: 16px;
-  height: 16px;
-  transform: translateY(-50%);
-  background-color: var(--text-muted);
-  clip-path: polygon(
-    12% 30%,
-    50% 68%,
-    88% 30%,
-    100% 42%,
-    50% 92%,
-    0% 42%
-  );
-  pointer-events: none;
-  transition: background-color 0.25s;
-}
-
-.form-page .control--select:focus-within::after {
-  background-color: var(--primary);
-}
+/* The caret this used to draw is gone, and with it the second arrow the form's
+   dropdowns were wearing.
+ *
+ * `.control--select` wrapped a native <select> once, and `appearance: none`
+ * left that with no arrow of its own — hence a pseudo-element to put one back.
+ * The native select was replaced by `CustomSelect`, which renders its own
+ * `expand_more` icon inside the trigger, and nobody removed the stand-in. Two
+ * chevrons stacked on every select on this page ever since.
+ *
+ * Nothing replaces it: the icon belongs to the component now, so it turns with
+ * the panel and follows the focus colour without a rule here. */
 
 /* ─── Choice chips (replaces the bare checkbox row) ─── */
 
