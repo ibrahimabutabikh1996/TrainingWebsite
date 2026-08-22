@@ -31,14 +31,8 @@
   color: var(--admin-on-surface);
 }
 
-.ex-header-text p {
-  margin: 0;
-  font-size: var(--text-base);
-  line-height: 1.7;
-  color: var(--admin-outline);
-  max-width: 60ch;
-}
-
+/* The standfirst this styled is gone, and nothing else inside .ex-header-text
+   is a paragraph — the heading is followed straight by the counts. */
 .ex-stats {
   display: flex;
   gap: 10px;

@@ -66,7 +66,6 @@ export default function AdminExercisesClient({ initialExercises }: { initialExer
       <header className="ex-header">
         <div className="ex-header-text">
           <h1>مكتبة التمارين</h1>
-          <p>إدارة قاعدة بيانات التمارين الشاملة التي يعتمد عليها صانع الكورسات.</p>
           <div className="ex-stats">
             <span className="ex-stat"><b>{exercises.length}</b> تمرين</span>
             {CATEGORIES.map((c) => (
