@@ -10,16 +10,35 @@
   padding-bottom: 48px;
 }
 
+/* Part of the page, not a bar riding on top of it.
+ *
+ * This was `position: sticky; top: 0`, and it followed the coach down every one
+ * of the three screens that wear it. The background it carried only covered its
+ * own box, which starts 40px below the top of `.admin-main-content` — so cards
+ * scrolling past showed through the strip above it and slid under its lower
+ * edge. Measured on the course builder: 400px of content behind the heading
+ * after a 420px scroll.
+ *
+ * No background of its own, either. `background-color: var(--bg)` was the band
+ * the sticky bar needed to hide what passed beneath it, and it looked harmless
+ * once the sticking was gone — `--bg` being the page's own colour. It was not:
+ * the admin shell is three layers, not one. `.admin-layout-wrapper` lays down
+ * `--bg`, its `::before` puts a radial glow of 8% primary over that from the
+ * top centre, and its `::after` adds noise; `.admin-main-content` sits above
+ * both at `z-index: 2` and is transparent, so the page a coach sees is all
+ * three together. A flat `--bg` fill painted here punched an opaque rectangle
+ * through the glow — right at the top of the page, where the glow is at its
+ * strongest.
+ *
+ * The padding and the negative margin that cancels it are left as they were:
+ * leftovers of the same bar, but removing them lifts everything below by 16px
+ * on all three screens, which is not what anyone asked for. */
 .diet-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 24px;
   flex-wrap: wrap;
-  position: sticky;
-  top: 0;
-  z-index: 20;
-  background-color: var(--bg);
   padding: 16px 0 16px 0;
   margin-top: -16px;
 }

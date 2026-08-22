@@ -244,7 +244,10 @@ export default function AdminBuilderClient({
 
       <header className="diet-header">
         <div className="diet-header-text">
-          <h1>{initialCourse ? "تعديل الكورس التدريبي" : "تصميم الكورس التدريبي"}</h1>
+          {/* "النظام التدريبي" is what the rest of the product calls this — the
+              PDF button in the library, the export page, the trainee's
+              timeline. This screen was the last one still saying "الكورس". */}
+          <h1>{initialCourse ? "تعديل النظام التدريبي" : "إنشاء النظام التدريبي"}</h1>
           {/* Said once, where the coach is about to press save: this is a new
               course, and the one it was copied from is not being edited. */}
           {startedFrom && (
