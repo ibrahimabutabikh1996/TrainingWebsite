@@ -113,7 +113,6 @@ export default function AdminDietClient({ initialSources }: { initialSources: Nu
       <header className="diet-header">
         <div className="diet-header-text">
           <h1>النظام الغذائي</h1>
-          <p>إدارة مصادر التغذية لتوفير خيارات صحية للمشتركين عند تصميم الأنظمة الغذائية.</p>
         </div>
 
         <div style={{ display: 'flex', gap: '12px' }}>
