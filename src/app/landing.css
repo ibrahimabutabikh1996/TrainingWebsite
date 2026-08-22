@@ -247,11 +247,16 @@ body::before {
 .nav-logo:hover {
   color: var(--primary-on-tint);
 }
-.nav-logo-text {
-  white-space: nowrap;
-}
+/* The horizontal lockup, about 6.3 times as wide as it is tall — so height is
+   the only number set here and the width follows it. 46px puts it at ~288px
+   across, narrower than the mark-plus-wordmark pair it replaced (~360px), and
+   leaves 11px of air inside a 68px bar.
+   `flex-shrink` with `object-fit: contain` is the floor under all of it: where
+   the row runs out of room the picture scales down whole rather than
+   overflowing or squashing. The breakpoints further down are about how it
+   should look, not about whether it fits. */
 .nav-logo-mark {
-  height: 48px;
+  height: 46px;
   width: auto;
   max-width: 100%;
   min-width: 0;
@@ -265,7 +270,9 @@ body::before {
   height: 100%;
   width: auto;
   max-width: 100%;
-  max-height: 48px;
+  /* Tracks the container rather than restating a number — every breakpoint
+     below only has to move one value. */
+  max-height: 100%;
   object-fit: contain;
 }
 .nav-logo:hover .nav-logo-mark {
@@ -1692,9 +1699,16 @@ a.contact-item:hover p {
   gap: 12px;
   margin-bottom: 14px;
 }
+/* The same horizontal lockup as the nav, one size up: 56px tall is ~351px
+   across, which the 1064px content column takes without comment.
+   `max-width` on both is not decoration — a 351px picture inside a footer whose
+   padding leaves 327px on a 375px phone would otherwise push the column wider
+   than the screen. With `object-fit: contain` it scales down instead. */
 .footer-brand-mark {
   height: 56px;
   width: auto;
+  max-width: 100%;
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1702,7 +1716,8 @@ a.contact-item:hover p {
 .footer-brand-mark img {
   height: 100%;
   width: auto;
-  max-height: 56px;
+  max-width: 100%;
+  max-height: 100%;
   object-fit: contain;
 }
 .footer-tagline {
@@ -1832,19 +1847,15 @@ a.contact-item:hover p {
   }
 }
 
-/* The nav row runs out of space here — before the drawer breakpoint takes
-         over. Drop to the mark only, but keep the name for screen readers so the
-         logo link still has an accessible name. */
+/* The tightest the bar ever gets: the link row is still on screen and the
+   drawer has not taken over yet, so six links, a button and a 288px lockup are
+   asked to share 1080px. The logo gives up the difference — it is the one
+   element here that still reads at two thirds the size.
+   Held off the intake form, which wears the same logo in a bar carrying a
+   single button and has no reason to shrink it. */
 @media (max-width: 1080px) {
-  .nav-logo-text {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    border: 0;
+  .landing-wrapper:not(.form-page) .nav-logo-mark {
+    height: 34px;
   }
 }
 
@@ -2358,5 +2369,51 @@ body.offers-active .nav-links a[href="#offers"]::after {
   }
   .coach-stats li span {
     letter-spacing: 0;
+  }
+}
+
+/* ─── LOGO LOCKUP, THE NARROW END ────────────────────────────────────────────
+ *
+ * Deliberately last, for the reason the block above gives: these widths are
+ * already answered earlier in the file and this is where the answer is meant to
+ * be overridden.
+ *
+ * The nav logo climbs back up at 900px rather than carrying on down. That is
+ * not a mistake — the link row becomes a drawer at exactly that width, and the
+ * space six links were using goes back to the logo. Below it the only
+ * neighbour left is the burger, so what governs is the phone's own width. These
+ * steps do apply to the intake form: its bar is roomy at 1080px, not on a
+ * 375px screen.
+ *
+ * Three classes in each selector, and none of them idle. The 1080px rule above
+ * needs `:not(.form-page)` to skip the form, which puts it at three classes of
+ * weight; a two-class selector here would lose to it at every width below 1080
+ * no matter how far down the file it sits. `.nav-logo` makes up the difference
+ * so plain source order decides, which is what this section is for.
+ */
+
+@media (max-width: 900px) {
+  .landing-wrapper .nav-logo .nav-logo-mark {
+    height: 42px;
+  }
+}
+
+@media (max-width: 680px) {
+  /* 226px across, against roughly 300px left over on a 375px screen once the
+     16px bar padding and the burger have taken theirs. */
+  .landing-wrapper .nav-logo .nav-logo-mark {
+    height: 36px;
+  }
+  .footer-brand-mark {
+    height: 46px;
+  }
+}
+
+@media (max-width: 380px) {
+  .landing-wrapper .nav-logo .nav-logo-mark {
+    height: 30px;
+  }
+  .footer-brand-mark {
+    height: 40px;
   }
 }

@@ -831,21 +831,23 @@ export default function LandingClient({
 
       {/* NAV */}
       <nav id="navbar">
-        {/* The mark is structure, not copy — only the wordmark is translatable.
-          Feeding the whole logo through data-i18n let a malformed CMS string
-          wipe out the icon and the brand name. */}
+        {/* One picture where there used to be two things: the mark and a
+          wordmark typeset beside it. `hLogo` is the horizontal lockup — icon
+          and name drawn together, already used by the intake form and the
+          admin sidebar — so the brand name can no longer disagree with the
+          image it sits next to.
+          The mark is no longer aria-hidden: with the wordmark gone the alt
+          text is the only accessible name this link has, and hidden it would
+          announce as a link with nothing in it. */}
         <a href="#home" className="nav-logo">
-          <span className="nav-logo-mark" aria-hidden="true">
-            {/* 2048px wide as a file, 119 on screen. */}
+          <span className="nav-logo-mark">
+            {/* 5170px wide as a file, 288 on screen. */}
             <img
-              src={optimizedSrc("/images/logo/mainLogo.png", 384)}
-              srcSet={optimizedSrcSet("/images/logo/mainLogo.png", [256, 384, 640])}
-              sizes="160px"
+              src={optimizedSrc("/images/logo/hLogo.png", 384)}
+              srcSet={optimizedSrcSet("/images/logo/hLogo.png", [384, 640, 828])}
+              sizes="288px"
               alt="Ibrahim Abutabikh Logo"
             />
-          </span>
-          <span className="nav-logo-text" data-i18n="nav_logo_text">
-            Ibrahim Abutabikh
           </span>
         </a>
         <ul
@@ -1832,16 +1834,19 @@ export default function LandingClient({
         <div className="footer-inner">
           <div className="footer-top reveal">
             <div>
+              {/* The same horizontal lockup the nav carries, for the same
+                  reason — one drawing of the brand rather than a mark and a
+                  wordmark that have to be kept in agreement. Not aria-hidden
+                  now that the text beside it is gone. */}
               <div className="footer-brand">
-                <span className="footer-brand-mark" aria-hidden="true">
+                <span className="footer-brand-mark">
                   <img
-                    src={optimizedSrc("/images/logo/mainLogo.png", 384)}
-                    srcSet={optimizedSrcSet("/images/logo/mainLogo.png", [256, 384, 640])}
-                    sizes="160px"
+                    src={optimizedSrc("/images/logo/hLogo.png", 384)}
+                    srcSet={optimizedSrcSet("/images/logo/hLogo.png", [384, 640, 828])}
+                    sizes="350px"
                     alt="Ibrahim Abutabikh Logo"
                   />
                 </span>
-                <span data-i18n="footer_brand_text">Ibrahim Abutabikh</span>
               </div>
               <p className="footer-tagline" data-i18n="footer_tagline">
                 شعاري بالدايت بأن ما اخلي يستمر لأكثر من 3 اشهر
