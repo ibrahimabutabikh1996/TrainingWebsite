@@ -201,11 +201,16 @@
   color: var(--text-inverse);
 }
 
+/* The margin here was -6px, and the muscle strip below adds 8px of its own
+   padding — which left the label's box and the first tile's border overlapping
+   by 2px. Measured: 17px of air above the label, minus two below it. 8px puts
+   the gap at 12px, a little tighter than the space above so the label still
+   reads as belonging to the tiles rather than floating between them. */
 .ex-filter-label {
   font-size: var(--text-sm);
   font-weight: 600;
   color: var(--text-muted);
-  margin-bottom: -6px;
+  margin-bottom: 8px;
 }
 
 /* ─── Result count ─── */
