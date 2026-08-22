@@ -88,13 +88,18 @@ export default function ExerciseFormModal({
   const videoLooksWrong =
     formData.video_url.trim() !== "" && !/^https?:\/\//i.test(formData.video_url.trim());
 
+  /* 760px matches the source picker, so the dialogs read as one system. The
+     muscle chips are a wrapping grid and 620 broke them across more rows than
+     the form needed. Height is untouched by the change: `AdminModal` caps at
+     the space between the browser and the nav bar, and this form already fills
+     it. */
   return (
     <AdminModal
       isOpen={isOpen}
       onClose={onClose}
       title={editingEx ? "تعديل التمرين" : "إضافة تمرين جديد"}
       icon={editingEx ? "edit" : "add_circle"}
-      maxWidth={620}
+      maxWidth={760}
       footer={
         <>
           <button onClick={onClose} className="ex-modal-btn ex-modal-btn--ghost">
