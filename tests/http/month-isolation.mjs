@@ -159,6 +159,25 @@ try {
   check("A.4 the info card appears in both months, not only the first",
     infoButtons === 2, `found ${infoButtons}`);
 
+  /* Where the open info panel is, without leaning on a decorative heading.
+   *
+   * It used to be found through an <h4> reading "معلومات المشترك (الشهر ...)",
+   * which also supplied the month's name. That row is gone — it repeated the
+   * card above it, whose own button both names the month and closes the panel —
+   * so the anchors are product data now: the panel is the parent of the tabs it
+   * holds, and the month is named by the record tab's own label. Both come from
+   * `month.label` and the components' real titles, so nothing decorative can
+   * take them away again.
+   *
+   * Only one panel is open at a time: `selectedInfoMonth` holds a single number.
+   */
+  const PANEL_FINDER = `(() => {
+    const weighIn = [...document.querySelectorAll("details > summary")].find(
+      (s) => s.innerText.includes("سجل الوزن الأسبوعي")
+    );
+    return weighIn ? weighIn.closest("details").parentElement : null;
+  })()`;
+
   /* Opens each info card in turn and returns {monthName: panelText}.
    *
    * Driven by the buttons rather than by walking up the DOM from a month
@@ -188,17 +207,15 @@ try {
         { timeout: 15000 }
       ).catch(() => {});
 
-      const entry = await page.evaluate(() => {
-        const heading = [...document.querySelectorAll("h4")].find((h) =>
-          h.innerText.includes("معلومات المشترك (")
-        );
-        if (!heading) return null;
-        const panel = heading.parentElement?.parentElement;
+      const entry = await page.evaluate((finder) => {
+        const panel = eval(finder);
         if (!panel) return null;
         panel.querySelectorAll("details").forEach((d) => (d.open = true));
-        const name = (heading.innerText.match(/\(([^)]+)\)/) || [])[1] ?? "?";
+        /* The month's own label, off the record tab that carries it. */
+        const first = panel.querySelector("details > summary");
+        const name = first ? first.innerText.split("\n")[0].trim() : "?";
         return { name, text: panel.innerText };
-      });
+      }, PANEL_FINDER);
       if (entry) out[entry.name] = entry.text;
 
       await page.evaluate(() => {
@@ -266,11 +283,8 @@ try {
     { timeout: 15000 }
   ).catch(() => {});
 
-  const tabs = await page.evaluate(() => {
-    const heading = [...document.querySelectorAll("h4")].find((h) =>
-      h.innerText.includes("معلومات المشترك (")
-    );
-    const panel = heading?.parentElement?.parentElement;
+  const tabs = await page.evaluate((finder) => {
+    const panel = eval(finder);
     if (!panel) return null;
     /* Only the section's own containers, not the <details> nested inside a
        month's attachment list. */
@@ -286,7 +300,7 @@ try {
         hasChevron: Boolean(d.querySelector("summary .accordion-icon")),
       };
     });
-  });
+  }, PANEL_FINDER);
 
   check("E.1 the month holds exactly three collapsible sections",
     Array.isArray(tabs) && tabs.length === 3,
@@ -311,13 +325,9 @@ try {
        visible outline. `--border-strong` is #22334D. Asserted as a distance
        from the background rather than as a hex value, so the check survives a
        change of palette and still means "visible". */
-    const seen = await page.evaluate(() => {
-      const heading = [...document.querySelectorAll("h4")].find((h) =>
-        h.innerText.includes("معلومات المشترك (")
-      );
-      const d = [...(heading?.parentElement?.parentElement?.children ?? [])].find(
-        (c) => c.tagName === "DETAILS"
-      );
+    const seen = await page.evaluate((finder) => {
+      const panel = eval(finder);
+      const d = [...(panel?.children ?? [])].find((c) => c.tagName === "DETAILS");
       if (!d) return null;
       const cs = getComputedStyle(d);
       const rgb = (v) => (v.match(/\d+/g) || []).slice(0, 3).map(Number);
@@ -329,7 +339,7 @@ try {
         background: cs.backgroundColor,
         distance: Math.max(...b.map((v, i) => Math.abs(v - g[i]))),
       };
-    });
+    }, PANEL_FINDER);
     check("E.8 the border stands out from the box it outlines",
       Boolean(seen) && seen.distance >= 20,
       seen ? `${seen.border} on ${seen.background} — max channel gap ${seen.distance}` : "not measured");
@@ -337,6 +347,36 @@ try {
       new Set(tabs.map((t) => t.background)).size === 1,
       tabs.map((t) => t.background).join(" | "));
   }
+
+  /* =============================== G — the duplicate close row is gone === */
+
+  console.log("\nG — the panel no longer repeats the card above it");
+
+  const bodyOpen = await page.evaluate(() => document.body.innerText);
+  check("G.1 the panel has no heading of its own",
+    !bodyOpen.includes("معلومات المشترك ("),
+    bodyOpen.includes("معلومات المشترك (") ? "still present" : "");
+
+  /* The reason the row could go: the card's button already does this. Removing
+     a close control is only safe if a way to close survives, so that is what is
+     asserted — not merely that the row disappeared. */
+  const closed = await page.evaluate(() => {
+    const b = [...document.querySelectorAll("button")].find((el) =>
+      el.innerText.trim().includes("إخفاء المعلومات")
+    );
+    if (!b) return "NO BUTTON";
+    b.click();
+    return "clicked";
+  });
+  check("G.2 the card still offers 'إخفاء المعلومات'", closed === "clicked", closed);
+  await page.waitForFunction(
+    () => !document.body.innerText.includes("إخفاء المعلومات"),
+    { timeout: 15000 }
+  ).catch(() => {});
+  const afterClose = await page.evaluate(() => document.body.innerText);
+  check("G.3 — and it still closes the panel",
+    !afterClose.includes("سجل الوزن الأسبوعي") &&
+      afterClose.includes("عرض المعلومات"));
 
   /* ====================================== F — the trainee is untouched === */
 

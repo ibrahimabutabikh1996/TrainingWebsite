@@ -1,9 +1,24 @@
 /* === Admin CRM & Dashboard Styles - Ultra Premium Redesign === */
 
+/* Height is the page's, not the viewport's.
+ *
+ * This was `height: calc(100vh - 80px)`, which put two vertical scrollbars on
+ * every admin page. The box claimed the viewport less a header — but it sits
+ * inside `.admin-main-content`, which adds its own padding: `--space-10` on top
+ * and `--space-10 + 72px` beneath, 152px in all. So the box asked for nearly the
+ * whole viewport and the shell's padding then pushed it 72px past the bottom.
+ * That overflow was arithmetic, not content: measured across four admin pages it
+ * was 72px on every one of them, whatever they held. `.crm-main-area` scrolling
+ * inside that fixed height was the second bar.
+ *
+ * The shell is the scroller, which is what it was already built to be — its
+ * deep bottom padding is there to clear the floating nav. Nothing here needs a
+ * height of its own, so nothing here states one; the alternative was to subtract
+ * the shell's padding here too, which would hard-code one file's spacing into
+ * another and break the day it changed. */
 .crm-dashboard {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 80px);
   overflow: visible;
 }
 
@@ -11,7 +26,8 @@
 .crm-split-layout {
   display: flex;
   gap: 24px;
-  height: 100%;
+  /* `height: 100%` stood here and would have restored the pinned height its
+     parent just gave up. */
   width: 100%;
   overflow: visible;
   transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), opacity var(--dur) var(--ease), transform var(--dur) var(--ease);
@@ -34,32 +50,28 @@
 }
 
 
+/* No longer a scroll container, so nothing here is about scrolling.
+ *
+ * Gone with `overflow-y: auto`: the `height: 100%` it scrolled within, the
+ * negative-margin bleed buffer that kept a card's hover lift from being clipped
+ * at the container's edge, and the inline-end padding that left a gutter for the
+ * bar. A hover lift has nothing to be clipped by now, and there is no gutter to
+ * leave. */
 .crm-main-area {
   flex: 1;
   display: flex;
   flex-direction: column;
-  height: 100%;
-  overflow-y: auto;
   transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), opacity var(--dur) var(--ease), transform var(--dur) var(--ease);
-  /* Bleed buffer so a card's hover lift isn't clipped by the scroll container.
-     It used to bleed 22px horizontally too, from when cards cast wide tinted
-     glows; those are gone, and on a phone-width column the extra 44px was
-     enough to give the whole pane a horizontal scrollbar. Vertical only now. */
-  margin-block: -16px -24px;
-  padding-block: 16px 24px;
-  padding-inline-end: 16px; /* Gap between scrollbar and content */
 }
 
-/* Custom Scrollbar */
-.crm-main-area::-webkit-scrollbar,
+/* Custom Scrollbar — for the drawer, which is the only one of these that still
+   scrolls on its own. */
 .crm-drawer-scroll-area::-webkit-scrollbar {
   width: 4px;
 }
-.crm-main-area::-webkit-scrollbar-track,
 .crm-drawer-scroll-area::-webkit-scrollbar-track {
   background: transparent;
 }
-.crm-main-area::-webkit-scrollbar-thumb,
 .crm-drawer-scroll-area::-webkit-scrollbar-thumb {
   background: var(--admin-outline);
   border-radius: var(--radius-xs);

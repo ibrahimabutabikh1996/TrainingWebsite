@@ -11,6 +11,7 @@ import NutritionFormModal from "./NutritionFormModal";
 import { addNutritionSource, updateNutritionSource, deleteNutritionSource } from "./actions";
 import { Icon } from "@/components/Icon";
 import "./diet.css";
+import { normalizeArabic, arabicIncludes } from "@/lib/arabicSearch";
 
 const CATEGORIES = ["مصادر البروتين", "مصادر الكاربوهيدرات", "مصادر الدهون الصحية", "الخضراوات", "الفواكه"];
 
@@ -88,9 +89,9 @@ export default function AdminDietClient({ initialSources }: { initialSources: Nu
     }
   };
   const inCategory = sources.filter((s) => normalizeCat(s.category) === selectedCategory);
-  const q = query.trim().toLowerCase();
+  const q = normalizeArabic(query);
   const filteredSources = q
-    ? inCategory.filter((s) => s.name.toLowerCase().includes(q))
+    ? inCategory.filter((s) => arabicIncludes(s.name, q))
     : inCategory;
 
   return (

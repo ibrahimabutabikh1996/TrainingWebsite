@@ -18,6 +18,7 @@ import "../diet/diet.css";
 import "../diet/plan/plan.css";
 import "./day-muscle-picker.css";
 import "./builder.css";
+import { normalizeArabic, arabicIncludes } from "@/lib/arabicSearch";
 
 /* Reps are stored as an array but older rows may hold a bare string/number. */
 function repList(reps: DayExercise["reps"]): string[] {
@@ -98,15 +99,15 @@ export default function AdminBuilderClient({
 
   const nameFilled = courseName.trim().length > 0;
 
-  const templateQ = templateQuery.trim().toLowerCase();
+  const templateQ = normalizeArabic(templateQuery);
   const filteredTemplates = useMemo(
     () =>
       !templateQ
         ? initialTemplates
         : initialTemplates.filter(
             (t) =>
-              t.name.toLowerCase().includes(templateQ) ||
-              t.description.toLowerCase().includes(templateQ)
+              arabicIncludes(t.name, templateQ) ||
+              arabicIncludes(t.description, templateQ)
           ),
     [initialTemplates, templateQ]
   );
@@ -784,10 +785,10 @@ function ExercisePicker({
   );
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    const q = normalizeArabic(query);
     return exercises.filter((e) => {
       if (muscle && e.target_muscle !== muscle) return false;
-      if (q && !e.name_ar.toLowerCase().includes(q)) return false;
+      if (q && !arabicIncludes(e.name_ar, q)) return false;
       return true;
     });
   }, [exercises, query, muscle]);

@@ -21,6 +21,7 @@ import { CustomSelect } from "@/components/CustomSelect";
 import { formatTimestamp } from "@/lib/trainingDates";
 import "../crm.css";
 import "./courses.css";
+import { normalizeArabic, arabicIncludes } from "@/lib/arabicSearch";
 
 const SORTS: [string, string][] = [
   ["newest", "الأحدث"],
@@ -28,23 +29,14 @@ const SORTS: [string, string][] = [
   ["name", "الاسم"],
 ];
 
-const ASSIGN_FILTERS: [string, string][] = [
-  ["all", "الكل"],
-  ["assigned", "مُعيَّنة"],
-  ["unassigned", "غير مُعيَّنة"],
-];
-
 export default function AdminCoursesClient({
   initialCourses,
   initialTrainees = [],
   initialAssignments = {},
-  recentCourses = 0
 }: {
   initialCourses: Course[],
   initialTrainees?: TraineeOption[],
   initialAssignments?: CourseAssignments,
-  /** Courses created in the last 30 days, counted server-side. */
-  recentCourses?: number
 }) {
   const router = useRouter();
   /* Only the id is held in state. Keeping the whole course object meant the
@@ -61,9 +53,6 @@ export default function AdminCoursesClient({
   const assignments = initialAssignments || {};
   const [searchTerm, setSearchTerm] = useState("");
   const [activeFilter, setActiveFilter] = useState("newest");
-  /* "Which courses are actually in use?" was only answerable by reading every
-     card, so assignment state is now a filter of its own. */
-  const [assignFilter, setAssignFilter] = useState("all");
 
   /* Derived from the latest props, so it can never go stale. Also self-heals if
      the course is deleted from under the drawer. */
@@ -71,20 +60,17 @@ export default function AdminCoursesClient({
 
   const assignedTo = (courseId: string) => assignments[courseId] ?? [];
 
-  const query = searchTerm.trim().toLowerCase();
+  /* Folded, so a coach typing "اضخم" finds a course stored as "أضخم" — see
+     `normalizeArabic`. Both sides go through it. */
+  const query = normalizeArabic(searchTerm);
   const filteredCourses = courses
     .filter((c) => {
       const matchesQuery =
         !query ||
-        c.name.toLowerCase().includes(query) ||
-        (c.description ?? "").toLowerCase().includes(query) ||
-        assignedTo(c.id).some((n) => n.toLowerCase().includes(query));
-      if (!matchesQuery) return false;
-
-      const isAssigned = assignedTo(c.id).length > 0;
-      if (assignFilter === "assigned") return isAssigned;
-      if (assignFilter === "unassigned") return !isAssigned;
-      return true;
+        arabicIncludes(c.name, query) ||
+        arabicIncludes(c.description, query) ||
+        assignedTo(c.id).some((n) => arabicIncludes(n, query));
+      return matchesQuery;
     })
     .sort((a, b) => {
       const at = new Date(a.created_at).getTime();
@@ -167,11 +153,6 @@ export default function AdminCoursesClient({
 
   // Stats
   const totalCourses = courses.length;
-  /* recentCourses arrives from the server: deriving it here meant reading the
-     clock during render, which is impure and can shift between re-renders. */
-  /* How many courses are actually in a trainee's hands right now — more useful
-     than repeating the total under a different label. */
-  const assignedCourses = courses.filter((c) => assignedTo(c.id).length > 0).length;
 
   return (
     <div className="crm-dashboard">
@@ -199,11 +180,12 @@ export default function AdminCoursesClient({
           <header className="co-header">
             <div className="co-header-text">
               <h1>مكتبة الكورسات</h1>
-              <p>إدارة الخطط التدريبية وتعيينها للمشتركين.</p>
+              {/* The strapline and two of the three pills — how many courses are
+                  assigned, and how many were made in the last thirty days — are
+                  gone at the coach's request. The count that stayed is the one
+                  the list itself is about. */}
               <div className="co-stats">
                 <span className="co-stat"><b>{totalCourses}</b> كورس</span>
-                <span className="co-stat"><b>{assignedCourses}</b> مُعيَّن</span>
-                <span className="co-stat"><b>{recentCourses}</b> خلال ٣٠ يوماً</span>
               </div>
             </div>
 
@@ -240,17 +222,6 @@ export default function AdminCoursesClient({
                 ))}
               </div>
             </div>
-
-            <div className="co-toolbar-row">
-              <span className="co-filter-label">حالة التعيين</span>
-              <div className="co-segment" role="group" aria-label="حالة التعيين">
-                {ASSIGN_FILTERS.map(([v, label]) => (
-                  <button key={v} onClick={() => setAssignFilter(v)} aria-pressed={assignFilter === v}>
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
           </div>
 
           <p className="co-count">
@@ -275,7 +246,7 @@ export default function AdminCoursesClient({
                 ) : (
                   <button
                     className="co-add-btn"
-                    onClick={() => { setSearchTerm(""); setAssignFilter("all"); }}
+                    onClick={() => setSearchTerm("")}
                   >
                     <Icon name="filter_alt_off" style={{ fontSize: 20 }} />
                     <span>إزالة التصفية</span>

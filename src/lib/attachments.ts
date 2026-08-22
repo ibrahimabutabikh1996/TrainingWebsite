@@ -84,17 +84,60 @@ export function attachmentSrc(value: unknown): string | null {
     return `/api/attachments?path=${encodeURIComponent(trimmed)}`;
   }
 
-  /* A public address for this project's own media, and nothing else — a stored
-     string pointing somewhere unexpected is not something to render. Both
-     shapes are accepted: the media bucket's current address, and the one used
-     before the buckets were split. */
-  const isOwnPublicUrl =
-    trimmed.includes(STORAGE_PUBLIC_MARKER) || trimmed.includes(LEGACY_PUBLIC_MARKER);
-  if (isOwnPublicUrl && /^https:\/\//i.test(trimmed)) {
+  /* A public address for the media bucket — page imagery the content manager
+     wrote — is returned as it stands, because that bucket really is public. */
+  if (trimmed.includes(STORAGE_PUBLIC_MARKER) && /^https:\/\//i.test(trimmed)) {
     return trimmed;
   }
 
+  /* A public address for the *uploads* bucket is a different case, and this
+     used to be returned unchanged alongside the one above, on a comment that
+     said such values "still resolve while the bucket is public". The bucket is
+     not public any more, so the address is dead while the path inside it is
+     still perfectly good. Read the path out and ask the reader for it, exactly
+     as a stored path would.
+
+     No row holds one of these today — the normalisation pass rewrote them all,
+     and the database was checked. This is here so that a value restored from an
+     older backup renders instead of breaking. */
+  if (trimmed.includes(LEGACY_PUBLIC_MARKER) && /^https:\/\//i.test(trimmed)) {
+    const path = pathAfterMarker(trimmed, LEGACY_PUBLIC_MARKER);
+    return path ? `/api/attachments?path=${encodeURIComponent(path)}` : null;
+  }
+
   return null;
+}
+
+/**
+ * The storage path following `marker` in a URL, or null.
+ *
+ * Validated rather than sliced: the address has to parse, and what follows the
+ * marker has to survive `isStoragePath` once decoded — which is where a `..` or
+ * an encoded slash is caught, before the value is handed to anything.
+ */
+function pathAfterMarker(value: string, marker: string): string | null {
+  let parsed: URL;
+  try {
+    parsed = new URL(value);
+  } catch {
+    return null;
+  }
+  if (parsed.protocol !== "https:") return null;
+
+  const index = parsed.pathname.indexOf(marker);
+  if (index === -1) return null;
+
+  const raw = parsed.pathname.slice(index + marker.length);
+  if (!raw) return null;
+
+  let decoded: string;
+  try {
+    decoded = decodeURIComponent(raw);
+  } catch {
+    return null;
+  }
+
+  return isStoragePath(decoded) ? decoded : null;
 }
 
 /**

@@ -11,6 +11,7 @@ import { CustomSelect } from "@/components/CustomSelect";
 import { useNow } from "@/hooks/useNow";
 import { formatTimestamp } from "@/lib/trainingDates";
 import "./crm.css";
+import { normalizeArabic, arabicIncludes } from "@/lib/arabicSearch";
 
 /* The intake blob, parsed. Older rows stored it as a string, newer ones as JSON.
    Lives outside the component: it reads nothing but its argument, and an effect
@@ -189,7 +190,7 @@ export default function AdminCRMClient({
   const filteredProfiles = profiles
     .filter((p) => {
       const data = getProfileData(p);
-      const term = search.toLowerCase();
+      const term = normalizeArabic(search);
       /* Coerced, not optional-chained. `?.` guards null and undefined and
          nothing else, and this blob holds whatever the intake form last wrote —
          the codebase's own note on `ProfileData` says a value that should be a
@@ -197,9 +198,9 @@ export default function AdminCRMClient({
          that is not a string has no `.toLowerCase`, and the exception from here
          takes the entire subscriber list down: a value typed into the public
          registration form, ending the coach's page. */
-      const name = String(data.fullname ?? "").toLowerCase();
-      const username = String(p.username ?? "").toLowerCase();
-      const matchesSearch = name.includes(term) || username.includes(term);
+      const matchesSearch =
+        arabicIncludes(data.fullname ?? "", term) ||
+        arabicIncludes(p.username ?? "", term);
       
       if (!matchesSearch) return false;
       if (filterPlan !== "all") {

@@ -3,6 +3,7 @@
 import React from "react";
 import type { UserProfile } from "@/types";
 import { Icon, type IconName } from "@/components/Icon";
+import { attachmentSrc } from "@/lib/attachments";
 import {
   activityLabel,
   answerLabel,
@@ -422,7 +423,11 @@ export function TraineeProfileDetails({ profile }: TraineeProfileDetailsProps) {
               files.map((url, idx) => (
                 <a
                   key={url}
-                  href={url}
+                  /* The stored value is a path inside a private bucket, not an
+                     address: put straight into `href` a browser resolves it
+                     against the current page and lands on a 404. `attachmentSrc`
+                     points it at the reader that authorises and signs. */
+                  href={attachmentSrc(url) ?? undefined}
                   target="_blank"
                   rel="noreferrer"
                   style={{
@@ -483,7 +488,7 @@ export function TraineeProfileDetails({ profile }: TraineeProfileDetailsProps) {
             {bodyPhotos.map((url, idx) => (
               <a
                 key={url}
-                href={url}
+                href={attachmentSrc(url) ?? undefined}
                 target="_blank"
                 rel="noreferrer"
                 style={{
@@ -509,7 +514,7 @@ export function TraineeProfileDetails({ profile }: TraineeProfileDetailsProps) {
                 }}
               >
                 <img
-                  src={url}
+                  src={attachmentSrc(url) ?? undefined}
                   alt={`صورة التطور ${idx + 1}`}
                   loading="lazy"
                   style={{ width: "100%", height: "100%", objectFit: "cover" }}

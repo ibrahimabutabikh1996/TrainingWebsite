@@ -26,6 +26,7 @@ import {
   NON_ANSWER_KEYS,
 } from "@/lib/subscriptionMonths";
 import type { JsonRecord } from "@/types";
+import { normalizeArabic, arabicIncludes } from "@/lib/arabicSearch";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -319,5 +320,81 @@ describe("renewal carries the trainee's accumulated record forward", () => {
     assert.equal("renewal_requested_at" in snapshot, false);
     assert.equal("renewal_requested_month" in snapshot, false);
     assert.equal("weightLogs" in snapshot, false);
+  });
+});
+
+
+/* ------------------------------------------------------------------ *
+ * Arabic search — folding spellings without merging words
+ * ------------------------------------------------------------------ *
+ *
+ * Every search box compared characters exactly, so a coach typing "اضخم" found
+ * nothing while the row said "أضخم". Folding fixes that and introduces the
+ * opposite risk: fold too hard and every query matches everything, which reads
+ * as a working search until you notice it never says no. Both directions are
+ * asserted, and the negative cases are the ones that matter.
+ */
+
+describe("normalizeArabic — the same word, however it is typed", () => {
+  test("the alif is one letter", () => {
+    for (const v of ["أضخم", "إضخم", "آضخم", "اضخم"]) {
+      assert.equal(normalizeArabic(v), "اضخم", v);
+    }
+  });
+
+  test("taa marbuta and haa fold together", () => {
+    assert.equal(normalizeArabic("الرشاقة"), normalizeArabic("الرشاقه"));
+  });
+
+  test("alif maqsura and yaa fold together", () => {
+    assert.equal(normalizeArabic("الكبرى"), normalizeArabic("الكبري"));
+  });
+
+  test("harakat and tatweel are not part of the word", () => {
+    assert.equal(normalizeArabic("مُعيَّن"), normalizeArabic("معين"));
+    assert.equal(normalizeArabic("كــورس"), normalizeArabic("كورس"));
+  });
+
+  test("Arabic-Indic digits read as digits", () => {
+    assert.equal(normalizeArabic("٣٠ يوم"), "30 يوم");
+  });
+
+  test("whitespace is collapsed and Latin is lower-cased", () => {
+    assert.equal(normalizeArabic("  Plan   A  "), "plan a");
+  });
+
+  test("a non-string does not throw", () => {
+    /* The intake blob holds whatever the form last wrote — a name may arrive as
+       a number, and the coach's whole list used to go down on that. */
+    assert.equal(normalizeArabic(null), "");
+    assert.equal(normalizeArabic(undefined), "");
+    assert.equal(normalizeArabic(42), "42");
+  });
+});
+
+describe("arabicIncludes — still discriminating", () => {
+  const course = "أضخم عضلة";
+
+  test("finds the word however it is spelled", () => {
+    for (const q of ["أضخم", "اضخم", "عضله", "عضلة"]) {
+      assert.equal(arabicIncludes(course, normalizeArabic(q)), true, q);
+    }
+  });
+
+  test("does NOT find a word that is not there", () => {
+    /* The failure that looks like success. Every one of these shares letters
+       with the course and none of them is in it. */
+    for (const q of ["سباحه", "زززز", "أضخمم", "عضلات ظهر"]) {
+      assert.equal(arabicIncludes(course, normalizeArabic(q)), false, q);
+    }
+  });
+
+  test("distinct words stay distinct", () => {
+    assert.notEqual(normalizeArabic("عضلة"), normalizeArabic("عجلة"));
+    assert.notEqual(normalizeArabic("قوة"), normalizeArabic("قوت"));
+  });
+
+  test("an empty query matches everything, as an empty box means", () => {
+    assert.equal(arabicIncludes(course, ""), true);
   });
 });

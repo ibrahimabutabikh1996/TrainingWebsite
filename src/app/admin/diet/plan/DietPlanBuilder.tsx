@@ -19,6 +19,7 @@ import { saveDietPlanAction, deleteDietPlanAction } from "./actions";
 import { Icon } from "@/components/Icon";
 import "../diet.css";
 import "./plan.css";
+import { normalizeArabic, arabicIncludes } from "@/lib/arabicSearch";
 
 /* A plan the coach has started but not yet saved has no database id. Everything
    else about it behaves like a saved one, so the id is simply optional rather
@@ -589,10 +590,10 @@ function SourcePicker({
   );
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    const q = normalizeArabic(query);
     return normalizedSources.filter((s) => {
       if (category && s.category !== category) return false;
-      if (q && !s.name.toLowerCase().includes(q)) return false;
+      if (q && !arabicIncludes(s.name, q)) return false;
       return true;
     });
   }, [normalizedSources, query, category]);

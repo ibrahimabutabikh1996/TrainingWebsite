@@ -1148,43 +1148,12 @@ export function SubscriptionHistoryTimeline({
                         gap: "24px",
                       }}
                     >
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          gap: "12px",
-                        }}
-                      >
-                        <h4
-                          style={{
-                            fontSize: "1.25rem",
-                            fontWeight: 800,
-                            color: "var(--error-text)",
-                            margin: 0,
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "10px",
-                          }}
-                        >
-                          <Icon name="description" style={{ fontSize: "24px" }} />
-                          <span>معلومات المشترك ({item.monthName})</span>
-                        </h4>
-                        <button
-                          onClick={() => setSelectedInfoMonth(null)}
-                          style={{
-                            background: "transparent",
-                            border: "none",
-                            color: "var(--text-secondary)",
-                            cursor: "pointer",
-                            fontSize: "1.6rem",
-                            lineHeight: 1,
-                          }}
-                          title="إغلاق"
-                        >
-                          ×
-                        </button>
-                      </div>
+                      {/* No heading and no close button of its own.
+                          Both repeated what was already directly above: the card
+                          that opens this panel names the month, and its button
+                          reads "إخفاء المعلومات" and calls the same
+                          `setSelectedInfoMonth(null)` this one did. The month is
+                          still named — the first tab below carries its label. */}
 
                       {/* The month's answers and files — the very component the
                           standalone "سجل الأشهر" panel was built from, so the two

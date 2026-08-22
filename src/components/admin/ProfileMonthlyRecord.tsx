@@ -16,6 +16,7 @@ import {
   type SubscriptionMonth,
 } from "@/lib/subscriptionMonths";
 import { Icon, type IconName } from "@/components/Icon";
+import { attachmentSrc } from "@/lib/attachments";
 
 /* Ask, then do — deletion here is permanent, so no single click performs one.
    Defined at module level: nested inside the component it would be a new
@@ -279,7 +280,15 @@ export function MonthSection({
                     }}
                   >
                     <a
-                      href={url}
+                      /* Never the stored string. It is a path inside a private
+                         bucket — `usersData/<session>/…` — and a browser reads
+                         a value with no scheme and no leading slash as relative
+                         to the current page, so this asked for
+                         /admin/profile/<id>/usersData/… and got a 404.
+                         `attachmentSrc` turns it into a request the attachments
+                         route authorises and answers with a short-lived signed
+                         URL. */
+                      href={attachmentSrc(url) ?? undefined}
                       target="_blank"
                       rel="noreferrer"
                       className="crm-btn-primary"
@@ -333,11 +342,20 @@ export function MonthSection({
               <span style={{ fontSize: "1.02rem", color: "var(--text)", fontWeight: 700 }}>صور التطور الجسدي</span>
             </div>
             <div className="crm-gallery-scroll" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "20px" }}>
-              {bodyPhotos.map((url, idx) => (
+              {bodyPhotos.map((url, idx) => {
+                /* Rendered only once the stored value resolves to an address we
+                   recognise: a path becomes a request to the authorising
+                   reader, and anything else becomes null and is not drawn at
+                   all, rather than becoming a broken image pointing wherever
+                   the string happened to say. */
+                const src = attachmentSrc(url);
+                return (
                 <div key={url} className="crm-gallery-item" style={{ width: "100%", position: "relative" }}>
-                  <a href={url} target="_blank" rel="noreferrer">
-                    <img src={url} alt={`صورة ${idx + 1}`} loading="lazy" style={{ width: "100%", height: "280px", objectFit: "cover", borderRadius: "12px", border: "1px solid var(--border)" }} />
-                  </a>
+                  {src && (
+                    <a href={src} target="_blank" rel="noreferrer">
+                      <img src={src} alt={`صورة ${idx + 1}`} loading="lazy" style={{ width: "100%", height: "280px", objectFit: "cover", borderRadius: "12px", border: "1px solid var(--border)" }} />
+                    </a>
+                  )}
                   {/* Sits over the photo it deletes, so there is no chance of the
                       coach confirming against the wrong one. */}
                   <div
@@ -363,7 +381,8 @@ export function MonthSection({
                     />
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}

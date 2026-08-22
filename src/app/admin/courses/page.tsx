@@ -26,7 +26,6 @@ export default async function AdminCoursesPage() {
   let courses: Course[] = [];
   let trainees: TraineeOption[] = [];
   const assignments: CourseAssignments = {};
-  let recentCourses = 0;
 
   try {
     const courseRows = await prisma.courses.findMany({
@@ -41,14 +40,6 @@ export default async function AdminCoursesPage() {
       days_data: c.days_data ?? [],
       created_at: c.created_at.toISOString(),
     }));
-
-    /* Counted here rather than in the client, which would mean reading the clock
-       during render. A future-dated row no longer counts as "recent". */
-    const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
-    recentCourses = courseRows.filter((c) => {
-      const t = c.created_at.getTime();
-      return t <= Date.now() && t >= cutoff;
-    }).length;
 
     /* Only id + display name reach the browser — the intake `data` blob (phone,
        health history, body-photo URLs) has no business in a dropdown. */
@@ -78,7 +69,6 @@ export default async function AdminCoursesPage() {
       initialCourses={courses}
       initialTrainees={trainees}
       initialAssignments={assignments}
-      recentCourses={recentCourses}
     />
   );
 }
