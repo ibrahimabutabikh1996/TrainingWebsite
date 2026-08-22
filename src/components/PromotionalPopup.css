@@ -9,7 +9,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  animation: promoFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: promoFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   padding: 16px;
 }
 
@@ -22,7 +22,7 @@
   box-shadow: var(--elev-3);
   border: 1px solid var(--border-strong);
   overflow: hidden;
-  animation: promoScaleUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: promoScaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   display: flex;
   flex-direction: column;
 }

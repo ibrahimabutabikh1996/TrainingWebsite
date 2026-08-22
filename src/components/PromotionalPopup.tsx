@@ -37,12 +37,13 @@ export const PromotionalPopup: React.FC<PromotionalPopupProps> = ({
      * visit; whether it appears at all is decided by the coach's switch in the
      * content manager, not by whether this browser has met it before.
      *
-     * A short delay before it appears, so the page is drawn behind it rather
-     * than a modal being the first thing to land. */
+     * A short delay before it appears, so the first paint of the page lands
+     * behind it rather than a modal being the first thing on screen. Long
+     * enough for that, short enough that it does not read as a wait. */
     const timer = setTimeout(() => {
       setIsVisible(true);
       document.body.style.overflow = "hidden";
-    }, 1500);
+    }, 300);
 
     /* Scrolling is locked while this is open, so it has to be released if the
        window goes away without being closed — the coach turning the switch off
