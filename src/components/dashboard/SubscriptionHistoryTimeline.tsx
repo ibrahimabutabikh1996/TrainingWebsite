@@ -2,38 +2,42 @@
 
 import React, { useState } from "react";
 import type { JsonRecord, UserProfile, MonthlyArchive } from "@/types";
-import type { MealItem } from "@/types/diet";
 import { Icon } from "@/components/Icon";
-import {
-  activityLabel,
-  answerLabel,
-  answerList,
-} from "@/lib/formLabels";
 import toast from "react-hot-toast";
 import {
   deleteMonthHistoryAction,
   deleteEntireHistoryAction,
   restoreHistoryAction,
 } from "@/app/admin/profile/actions";
-import { PLAN_COLOUR_SLOT } from "@/lib/formLabels";
-import { planNameFrom, DEFAULT_PLAN_NAMES, type PlanNames } from "@/lib/planNames";
+import { DEFAULT_PLAN_NAMES, type PlanNames } from "@/lib/planNames";
+import { buildSubscriptionMonths } from "@/lib/subscriptionMonths";
+import { MonthSection } from "@/components/admin/ProfileMonthlyRecord";
+import WorkoutProgress, { type WorkoutLogRow } from "@/components/admin/WorkoutProgress";
+import WeightLog from "@/components/dashboard/WeightLog";
 
-/* These were two `if` chains over plan1..plan3, which meant a subscriber who
-   came through the offers section fell through to the default colour and lost
-   the visual grouping the timeline exists to give. The mapping is shared now —
-   see PLAN_COLOUR_SLOT — so a new product is coloured everywhere at once or
-   nowhere at all, rather than in whichever screen was remembered. */
-const getPlanColor = (plan: string | undefined | null) => {
-  const slot = PLAN_COLOUR_SLOT[String(plan)];
-  return slot ? `var(--plan-${slot})` : 'var(--primary)';
+/* Whether an ISO date falls inside a month of the subscription.
+ *
+ * The bounds are `YYYY-MM-DD` strings and so is every date being tested, so this
+ * is a string comparison — no Date parsing, no timezone to get wrong. An open
+ * end means the month still running, which has no upper bound yet.
+ *
+ * This is what makes a month readable on its own: the weights and the weigh-ins
+ * shown under it are the ones recorded during it, not a running total that
+ * happens to be displayed there. */
+const withinMonth = (date: string, start: string, end: string) => {
+  if (!date) return false;
+  if (start && date < start) return false;
+  if (end && date > end) return false;
+  return true;
 };
-const getPlanTextColor = (plan: string | undefined | null) => {
-  const slot = PLAN_COLOUR_SLOT[String(plan)];
-  return slot ? `var(--plan-${slot}-text)` : 'var(--text-inverse)';
-};
+
 interface Props {
   profile: UserProfile;
   isAdminView?: boolean;
+  /* Every weight the trainee logged, read by the server component above and
+     split per month here. Absent on any tree that does not supply it, which
+     simply means no weights are shown. */
+  workoutLogs?: WorkoutLogRow[];
   /* The coach's names for the packages. Optional with the dictionary as the
      default, because this renders inside two different trees and only the one
      with a server component above it can supply them. */
@@ -44,13 +48,13 @@ export function SubscriptionHistoryTimeline({
   profile,
   planNames = DEFAULT_PLAN_NAMES,
   isAdminView = false,
+  workoutLogs = [],
 }: Props) {
-  const [selectedWorkoutMonth, setSelectedWorkoutMonth] = useState<
-    number | null
-  >(null);
-  const [selectedDietMonth, setSelectedDietMonth] = useState<number | null>(
-    null,
-  );
+  /* Only the subscriber's own details still open in place. The training sheet
+     and the diet used to expand here too, each behind its own "view" button
+     beside a "download" one; both cards now carry a single button that opens
+     the page the sheet is actually printed from, so the two panels and the
+     state that drove them are gone. */
   const [selectedInfoMonth, setSelectedInfoMonth] = useState<number | null>(
     null,
   );
@@ -59,8 +63,6 @@ export function SubscriptionHistoryTimeline({
   /* The intake blob and the measurements inside it. JsonRecord is the project's
      one documented escape hatch for a shape the form decides — see @/types. */
   const raw = (profile.raw_answers || {}) as JsonRecord;
-  const meas = (profile.measurements || raw.measurements || {}) as JsonRecord;
-  const isFemale = (profile.gender || raw.gender) === "female";
   const history: MonthlyArchive[] = profile.monthlyHistory || [];
   const totalMonths = history.length || 1;
 
@@ -146,6 +148,20 @@ export function SubscriptionHistoryTimeline({
 
   const firstMonth = history[0];
 
+  /* The same month list `ProfileMonthlyRecord` builds, from the same function
+     and the same blob — so the record shown inside a month here is the record
+     that panel showed for it, not a second reading of the archive. Matched to
+     the timeline's own months by number, because the timeline's list omits the
+     months the coach has hidden and this one does not. */
+  const recordMonths = buildSubscriptionMonths(raw, profile.created_at ?? null);
+
+  /* Every weigh-in the trainee recorded, as the chart component wants them. */
+  const allWeightLogs = Array.isArray(raw.weightLogs)
+    ? (raw.weightLogs as { date: string; weight: number }[]).filter(
+        (l) => l && typeof l.date === "string" && typeof l.weight === "number",
+      )
+    : [];
+
   return (
     <section
       className="dashboard-card"
@@ -213,18 +229,11 @@ export function SubscriptionHistoryTimeline({
             >
               سجل الاشتراك التاريخي والأنظمة السابقة
             </h2>
-            <p
-              style={{
-                margin: 0,
-                fontSize: "0.95rem",
-                color: "var(--text-secondary)",
-                lineHeight: "1.6",
-              }}
-            >
-              {isAdminView
-                ? "أرشيف رحلة المتدرب الرياضية والغذائية مقسمة حسب أشهر الاشتراك التراكمية. يمكنك كمدرب مراجعة أو تحميل جداول الأشهر السابقة الخاصة بالمتدرب بكل سرعة وسلاسة."
-                : "أرشيف رحلتك البدنية والتغذوية مع الكابتن إبراهيم. يمكنك مراجعة واستعراض أو تحميل أي نظام تدريبي أو غذائي من كافة أشهر اشتراكك التراكمية."}
-            </p>
+            {/* The strapline under the heading is gone — both arms of it. The
+                second was the non-admin wording, and this component is only ever
+                rendered with `isAdminView` set: the trainee's dashboard draws
+                TraineeProfileDetails instead. Deleting only the arm that shows
+                would have left a paragraph that renders nothing. */}
           </div>
         </div>
 
@@ -313,30 +322,6 @@ export function SubscriptionHistoryTimeline({
             </div>
           </div>
 
-          <a
-            href={`/export-profile?profileId=${profile.id}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              padding: "11px 20px",
-              borderRadius: "var(--radius-lg)",
-              background: "var(--primary)",
-              color: "var(--text-inverse)",
-              textDecoration: "none",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "8px",
-              fontWeight: 800,
-              fontSize: "0.95rem",
-              boxShadow: "var(--elev-1)",
-              transition:
-                "background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease), box-shadow var(--dur) var(--ease)",
-            }}
-            title="تحميل التقرير الشامل للأرشيف وكافة معلومات وقياسات المتدرب"
-          >
-            <Icon name="file_download" style={{ fontSize: "22px" }} />
-            <span>تحميل التقرير الشامل PDF</span>
-          </a>
         </div>
       </div>
 
@@ -366,16 +351,6 @@ export function SubscriptionHistoryTimeline({
                 }}
               >
                 إدارة التحكم بالسجل التاريخي للمدرب
-              </div>
-              <div
-                style={{
-                  fontSize: "0.85rem",
-                  color: "var(--text-secondary)",
-                  marginTop: "4px",
-                }}
-              >
-                تمنحك هذه الصلاحية التحكم الكامل بحذف السجل بالكامل، أو جزء منه،
-                أو الإبقاء عليه دون حذف.
               </div>
             </div>
           </div>
@@ -473,9 +448,35 @@ export function SubscriptionHistoryTimeline({
       {/* Months Timeline Cards */}
       <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
         {history.map((item) => {
-          const isWorkoutOpen = selectedWorkoutMonth === item.monthNumber;
-          const isDietOpen = selectedDietMonth === item.monthNumber;
           const isInfoOpen = selectedInfoMonth === item.monthNumber;
+
+          /* This month's own three slices.
+           *
+             `monthIndex` is the position in `history` that the delete actions
+             edit — the month still running has no entry there, hence null. */
+          const recordIndex = recordMonths.findIndex(
+            (m) => m.monthNumber === item.monthNumber,
+          );
+          const recordMonth = recordIndex >= 0 ? recordMonths[recordIndex] : null;
+          const monthRecord = recordMonth
+            ? {
+                month: recordMonth,
+                index: recordMonth.isCurrent ? null : recordIndex,
+              }
+            : null;
+
+          const monthWorkoutRows = workoutLogs.filter((r) =>
+            withinMonth(r.session_date, item.startDate, item.endDate),
+          );
+          const monthWeightLogs = allWeightLogs.filter((l) =>
+            withinMonth(l.date, item.startDate, item.endDate),
+          );
+          /* The weight the trainee reported when this month began — the answer
+             on that month's own form, not their first ever. */
+          const monthStartWeight = recordMonth?.data?.weight as
+            | string
+            | number
+            | undefined;
           const isCurrentMonth = item.status === "current";
           const isMonthOpen =
             openMonths[item.monthNumber] !== undefined
@@ -717,9 +718,7 @@ export function SubscriptionHistoryTimeline({
                         padding: "22px",
                         borderRadius: "var(--radius-xl)",
                         background: "var(--bg3)",
-                        border: isWorkoutOpen
-                          ? "1px solid var(--primary)"
-                          : "1px solid var(--border)",
+                        border: "1px solid var(--border)",
                         display: "flex",
                         flexDirection: "column",
                         justifyContent: "space-between",
@@ -760,7 +759,7 @@ export function SubscriptionHistoryTimeline({
                                 fontSize: "1.15rem",
                               }}
                             >
-                              النظام التدريبي للشهر
+                              النظام التدريبي
                             </span>
                           </div>
                           <span
@@ -792,17 +791,6 @@ export function SubscriptionHistoryTimeline({
                           {item.workout?.courseName ||
                             "جدول التمارين المخصص من الكابتن إبراهيم"}
                         </p>
-                        <p
-                          style={{
-                            margin: "8px 0 0",
-                            fontSize: "0.88rem",
-                            color: "var(--text-secondary)",
-                            lineHeight: "1.6",
-                          }}
-                        >
-                          يحتوي على تفاصيل التمارين، الجلسات، التكرارات
-                          والملاحظات التدريبية المعتمدة لهذا الشهر.
-                        </p>
                       </div>
 
                       <div
@@ -814,78 +802,77 @@ export function SubscriptionHistoryTimeline({
                           flexWrap: "nowrap",
                         }}
                       >
-                        <button
-                          onClick={() => {
-                            setSelectedWorkoutMonth(
-                              isWorkoutOpen ? null : item.monthNumber,
-                            );
-                            if (!isWorkoutOpen) setSelectedDietMonth(null);
-                          }}
-                          className="timeline-card-btn"
-                          style={{
-                            flex: 1,
-                            height: "46px",
-                            padding: "0 16px",
-                            borderRadius: "var(--radius-lg)",
-                            background: "color-mix(in srgb, var(--primary) 12%, var(--bg2))",
-                            color: "var(--primary-on-tint)",
-                            border: "1px solid color-mix(in srgb, var(--primary) 40%, transparent)",
-                            fontWeight: 800,
-                            fontSize: "0.94rem",
-                            cursor: "pointer",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            gap: "8px",
-                            whiteSpace: "nowrap",
-                            transition:
-                              "background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), transform var(--dur-fast) var(--ease)",
-                            "--t-color-idle": "var(--primary)",
-                          } as React.CSSProperties}
-                          title={isWorkoutOpen ? "إخفاء التمارين" : "استعراض التمارين"}
-                        >
-                          <Icon
-                            name={isWorkoutOpen ? "close" : "fitness_center"}
-                            style={{ fontSize: "24px" }}
-                          />
-                        </button>
-                        <a
-                          href={
-                            item.workout?.courseId
-                              ? `/export-workout?courseId=${item.workout.courseId}`
-                              : `/export-profile?profileId=${profile.id}`
-                          }
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{
-                            flex: "0 0 auto",
-                            minWidth: "95px",
-                            height: "46px",
-                            padding: "0 16px",
-                            borderRadius: "var(--radius-lg)",
-                            background: "var(--bg4)",
-                            color: "var(--text)",
-                            border: "1px solid var(--border)",
-                            textDecoration: "none",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            gap: "6px",
-                            fontSize: "0.9rem",
-                            fontWeight: 800,
-                            transition:
-                              "background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease), box-shadow var(--dur) var(--ease)",
-                          }}
-                          title="تحميل جدول التمارين PDF"
-                        >
-                          <Icon
-                            name="file_download"
+                        {/* No course assigned to this month means there is no
+                            training sheet to print. This used to fall back to
+                            /export-profile — the trainee's measurements and
+                            questionnaire, which is not a training programme and
+                            is not what the button says it is. Saying so plainly
+                            is better than opening the wrong page. */}
+                        {item.workout?.courseId ? (
+                          /* Both keys, not just the course.
+                             The sheet prints "الاسم / تاريخ الاشتراك / الوزن /
+                             الطول / الهدف" across the top, and the page fills
+                             those from the profile — so a link carrying only the
+                             course produced a correct programme under a header
+                             that read "المشترك" and three dashes. Passing the
+                             profile too is what puts the subscriber on their own
+                             sheet. `traineeMayPrint` now checks every key it is
+                             given, so naming the profile here cannot widen what
+                             the caller may print. */
+                          <a
+                            href={`/export-workout?courseId=${item.workout.courseId}&profileId=${profile.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="timeline-card-btn"
                             style={{
-                              fontSize: "20px",
+                              flex: 1,
+                              height: "46px",
+                              padding: "0 16px",
+                              borderRadius: "var(--radius-lg)",
+                              background: "color-mix(in srgb, var(--primary) 12%, var(--bg2))",
                               color: "var(--primary-on-tint)",
+                              border: "1px solid color-mix(in srgb, var(--primary) 40%, transparent)",
+                              fontWeight: 800,
+                              fontSize: "0.94rem",
+                              textDecoration: "none",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              gap: "8px",
+                              whiteSpace: "nowrap",
+                              transition:
+                                "background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), transform var(--dur-fast) var(--ease)",
+                              "--t-color-idle": "var(--primary)",
+                            } as React.CSSProperties}
+                            title="فتح صفحة تحميل النظام التدريبي"
+                          >
+                            <Icon name="fitness_center" style={{ fontSize: "22px" }} />
+                            <span>فتح صفحة التحميل</span>
+                          </a>
+                        ) : (
+                          <span
+                            style={{
+                              flex: 1,
+                              height: "46px",
+                              padding: "0 16px",
+                              borderRadius: "var(--radius-lg)",
+                              background: "var(--bg2)",
+                              color: "var(--text-secondary)",
+                              border: "1px dashed var(--border)",
+                              fontWeight: 700,
+                              fontSize: "0.9rem",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              gap: "8px",
+                              whiteSpace: "nowrap",
                             }}
-                          />
-                        </a>
+                            title="لا يوجد كورس مُسنَد لهذا الشهر"
+                          >
+                            <Icon name="fitness_center" style={{ fontSize: "20px" }} />
+                            <span>لم يُسند كورس لهذا الشهر</span>
+                          </span>
+                        )}
                       </div>
                     </div>
 
@@ -896,9 +883,7 @@ export function SubscriptionHistoryTimeline({
                         padding: "22px",
                         borderRadius: "var(--radius-xl)",
                         background: "var(--bg3)",
-                        border: isDietOpen
-                          ? "1px solid var(--success)"
-                          : "1px solid var(--border)",
+                        border: "1px solid var(--border)",
                         display: "flex",
                         flexDirection: "column",
                         justifyContent: "space-between",
@@ -939,7 +924,7 @@ export function SubscriptionHistoryTimeline({
                                 fontSize: "1.15rem",
                               }}
                             >
-                              النظام الغذائي للشهر
+                              النظام الغذائي
                             </span>
                           </div>
                           <span
@@ -972,16 +957,6 @@ export function SubscriptionHistoryTimeline({
                             ? "نظامين للتغذية"
                             : item.diet?.name || "نظامين للتغذية"}
                         </p>
-                        <p
-                          style={{
-                            margin: "8px 0 0",
-                            fontSize: "0.88rem",
-                            color: "var(--text-secondary)",
-                            lineHeight: "1.6",
-                          }}
-                        >
-                          يحتوي على تقسيم الوجبات اليومية والاحتياج التغذوي الكامل.
-                        </p>
                       </div>
 
                       <div
@@ -993,13 +968,10 @@ export function SubscriptionHistoryTimeline({
                           flexWrap: "nowrap",
                         }}
                       >
-                        <button
-                          onClick={() => {
-                            setSelectedDietMonth(
-                              isDietOpen ? null : item.monthNumber,
-                            );
-                            if (!isDietOpen) setSelectedWorkoutMonth(null);
-                          }}
+                        <a
+                          href={`/export-diet?profileId=${profile.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
                           className="timeline-card-btn"
                           style={{
                             flex: 1,
@@ -1011,7 +983,7 @@ export function SubscriptionHistoryTimeline({
                             border: "1px solid color-mix(in srgb, var(--success) 40%, transparent)",
                             fontWeight: 800,
                             fontSize: "0.94rem",
-                            cursor: "pointer",
+                            textDecoration: "none",
                             display: "inline-flex",
                             alignItems: "center",
                             justifyContent: "center",
@@ -1021,51 +993,20 @@ export function SubscriptionHistoryTimeline({
                               "background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), transform var(--dur-fast) var(--ease)",
                             "--t-color-idle": "var(--success-text)",
                           } as React.CSSProperties}
-                          title={isDietOpen ? "إخفاء النظام الغذائي" : "استعراض النظام الغذائي"}
+                          title="فتح صفحة تحميل النظام الغذائي"
                         >
-                          <Icon
-                            name={isDietOpen ? "close" : "restaurant"}
-                            style={{ fontSize: "24px" }}
-                          />
-                        </button>
-                        <a
-                          href={`/export-diet?profileId=${profile.id}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{
-                            flex: "0 0 auto",
-                            minWidth: "95px",
-                            height: "46px",
-                            padding: "0 16px",
-                            borderRadius: "var(--radius-lg)",
-                            background: "var(--bg4)",
-                            color: "var(--text)",
-                            border: "1px solid var(--border)",
-                            textDecoration: "none",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            gap: "6px",
-                            fontSize: "0.9rem",
-                            fontWeight: 800,
-                            transition:
-                              "background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease), box-shadow var(--dur) var(--ease)",
-                          }}
-                          title="تحميل التغذية كجدول PDF"
-                        >
-                          <Icon
-                            name="file_download"
-                            style={{
-                              fontSize: "20px",
-                              color: "var(--success-text)",
-                            }}
-                          />
+                          <Icon name="restaurant" style={{ fontSize: "22px" }} />
+                          <span>فتح صفحة التحميل</span>
                         </a>
                       </div>
                     </div>
 
                     {/* Comprehensive Data & Measurements Box */}
-                    {item.monthNumber === 1 && (
+                    {/* Shown in every month, not only the first.
+                        It was restricted to month one while it held a single
+                        profile-wide dump of the intake answers — one copy of
+                        which was enough. It now holds that month's own record,
+                        so every month has one. */}
                       <div
                         className="timeline-card"
                         style={{
@@ -1112,7 +1053,7 @@ export function SubscriptionHistoryTimeline({
                                 fontSize: "1.15rem",
                               }}
                             >
-                              البيانات الشاملة والقياسات
+                              معلومات المشترك
                             </span>
                           </div>
                           <span
@@ -1139,17 +1080,6 @@ export function SubscriptionHistoryTimeline({
                         >
                           المعلومات الهيكلية، القياسات الجسدية والاستبيان
                         </p>
-                        <p
-                          style={{
-                            margin: "8px 0 0",
-                            fontSize: "0.88rem",
-                            color: "var(--text-secondary)",
-                            lineHeight: "1.6",
-                          }}
-                        >
-                          يحتوي على كافة قياسات الجسم، الوزن، الطول، الأهداف
-                          الرياضية، والبيانات الصحية ونمط الحياة المعتمد.
-                        </p>
                       </div>
 
                       <div
@@ -1162,15 +1092,11 @@ export function SubscriptionHistoryTimeline({
                         }}
                       >
                         <button
-                          onClick={() => {
+                          onClick={() =>
                             setSelectedInfoMonth(
                               isInfoOpen ? null : item.monthNumber,
-                            );
-                            if (!isInfoOpen) {
-                              setSelectedWorkoutMonth(null);
-                              setSelectedDietMonth(null);
-                            }
-                          }}
+                            )
+                          }
                           className="timeline-card-btn"
                           style={{
                             flex: 1,
@@ -1192,880 +1118,34 @@ export function SubscriptionHistoryTimeline({
                               "background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), transform var(--dur-fast) var(--ease)",
                             "--t-color-idle": "var(--error-text)",
                           } as React.CSSProperties}
-                          title={isInfoOpen ? "إخفاء البيانات" : "استعراض البيانات"}
+                          title={isInfoOpen ? "إخفاء المعلومات" : "عرض المعلومات"}
                         >
                           <Icon
                             name={isInfoOpen ? "close" : "description"}
-                            style={{ fontSize: "24px" }}
+                            style={{ fontSize: "22px" }}
                           />
+                          <span>
+                            {isInfoOpen ? "إخفاء المعلومات" : "عرض المعلومات"}
+                          </span>
                         </button>
-                        <a
-                          href={`/export-profile?profileId=${profile.id}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{
-                            minWidth: "95px",
-                            padding: "11px 16px",
-                            borderRadius: "var(--radius-lg)",
-                            background: "var(--bg4)",
-                            color: "var(--text)",
-                            border: "1px solid var(--border)",
-                            textDecoration: "none",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            gap: "6px",
-                            fontSize: "0.9rem",
-                            fontWeight: 800,
-                            transition:
-                              "background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease), box-shadow var(--dur) var(--ease)",
-                          }}
-                          title="تحميل كجدول PDF"
-                        >
-                          <Icon
-                            name="file_download"
-                            style={{ fontSize: "20px", color: "var(--error-text)" }}
-                          />
-                        </a>
                       </div>
                     </div>
-                    )}
                   </div>
 
-                  {/* Expandable Workout Schedule Details */}
-                  {isWorkoutOpen && (
-                    <div
-                      style={{
-                        background: "var(--bg1)",
-                        borderTop: "1px solid var(--border)",
-                        padding: "24px",
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          marginBottom: "20px",
-                        }}
-                      >
-                        <h4
-                          style={{
-                            fontSize: "1.2rem",
-                            fontWeight: 800,
-                            color: "var(--primary-on-tint)",
-                            margin: 0,
-                          }}
-                        >
-                          💪 تفاصيل التمارين التدريبية ({item.monthName})
-                        </h4>
-                        <button
-                          onClick={() => setSelectedWorkoutMonth(null)}
-                          style={{
-                            background: "transparent",
-                            border: "none",
-                            color: "var(--text-secondary)",
-                            cursor: "pointer",
-                            fontSize: "1.6rem",
-                          }}
-                          title="إغلاق"
-                        >
-                          &times;
-                        </button>
-                      </div>
-
-                      {!item.workout?.daysData ||
-                      item.workout.daysData.length === 0 ? (
-                        <p
-                          style={{
-                            color: "var(--text-secondary)",
-                            textAlign: "center",
-                            padding: "24px 0",
-                            fontSize: "1rem",
-                          }}
-                        >
-                          لا يوجد تمارين مدرجة لهذا الشهر أو قيد التجهيز من قبل
-                          الكابتن إبراهيم.
-                        </p>
-                      ) : (
-                        <div
-                          style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: "28px",
-                          }}
-                        >
-                          {item.workout.daysData.map((day, dIdx) => (
-                            <div
-                              key={dIdx}
-                              style={{
-                                padding: "26px",
-                                borderRadius: "var(--radius-xl)",
-                                background: "var(--bg2)",
-                                border:
-                                  "1px solid color-mix(in srgb, var(--primary) 30%, var(--border))",
-                                boxShadow: "var(--elev-1)",
-                                position: "relative",
-                                overflow: "hidden",
-                              }}
-                            >
-                              {/* Top Accent */}
-                              <div
-                                style={{
-                                  position: "absolute",
-                                  insetBlockStart: 0,
-                                  insetInline: 0,
-                                  height: "3px",
-                                  background:
-                                    "linear-gradient(90deg, var(--primary), transparent)",
-                                }}
-                              />
-
-                              {/* Day Header Bar */}
-                              <div
-                                style={{
-                                  background:
-                                    "color-mix(in srgb, var(--bg3) 80%, transparent)",
-                                  padding: "16px 22px",
-                                  borderRadius: "var(--radius-xl)",
-                                  border: "1px solid var(--border)",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "space-between",
-                                  flexWrap: "wrap",
-                                  gap: "14px",
-                                  marginBottom: "24px",
-                                }}
-                              >
-                                <div
-                                  style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: "14px",
-                                  }}
-                                >
-                                  <div
-                                    style={{
-                                      width: "48px",
-                                      height: "48px",
-                                      borderRadius: "var(--radius-lg)",
-                                      background: "var(--primary)",
-                                      color: "var(--text-inverse)",
-                                      display: "flex",
-                                      alignItems: "center",
-                                      justifyContent: "center",
-                                      fontSize: "26px",
-                                      flexShrink: 0,
-                                    }}
-                                  >
-                                    <Icon name="fitness_center" />
-                                  </div>
-                                  <div>
-                                    <span
-                                      style={{
-                                        fontSize: "0.8rem",
-                                        color: "var(--primary-on-tint)",
-                                        fontWeight: 700,
-                                        letterSpacing: "0.5px",
-                                        textTransform: "uppercase",
-                                        display: "block",
-                                        marginBottom: "3px",
-                                      }}
-                                    >
-                                      جدول التمارين والمقاومة
-                                    </span>
-                                    <h5
-                                      style={{
-                                        margin: 0,
-                                        fontWeight: 900,
-                                        color: "var(--text)",
-                                        fontSize: "1.35rem",
-                                        letterSpacing: "-0.3px",
-                                      }}
-                                    >
-                                      اليوم {dIdx + 1}:{" "}
-                                      {day.name ||
-                                        day.title ||
-                                        (day.muscles && day.muscles.length > 0
-                                          ? day.muscles.join(" / ")
-                                          : `تمرين ${dIdx + 1}`)}
-                                    </h5>
-                                  </div>
-                                </div>
-                                <span
-                                  style={{
-                                    fontSize: "0.95rem",
-                                    color: "var(--text-inverse)",
-                                    fontWeight: 900,
-                                    background: "var(--primary)",
-                                    padding: "8px 20px",
-                                    borderRadius: "var(--radius-pill)",
-                                    display: "inline-flex",
-                                    alignItems: "center",
-                                    gap: "8px",
-                                  }}
-                                >
-                                  <Icon
-                                    name="bolt"
-                                    style={{
-                                      fontSize: "18px",
-                                      color: "var(--text-inverse)",
-                                    }}
-                                  />
-                                  <span>
-                                    {day.exercises?.length ?? 0} تمارين
-                                  </span>
-                                </span>
-                              </div>
-
-                              {!day.exercises || day.exercises.length === 0 ? (
-                                <div
-                                  style={{
-                                    padding: "30px",
-                                    textAlign: "center",
-                                    background:
-                                      "color-mix(in srgb, var(--bg3) 50%, transparent)",
-                                    borderRadius: "var(--radius-xl)",
-                                    border: "1px dashed var(--border)",
-                                  }}
-                                >
-                                  <div
-                                    style={{
-                                      fontSize: "36px",
-                                      marginBottom: "8px",
-                                    }}
-                                  >
-                                    🧘
-                                  </div>
-                                  <span
-                                    style={{
-                                      fontSize: "1.1rem",
-                                      color: "var(--text-secondary)",
-                                      fontWeight: 700,
-                                    }}
-                                  >
-                                    يوم راحة مخصص / لا توجد تمارين مسجلة لهذا
-                                    اليوم
-                                  </span>
-                                </div>
-                              ) : (
-                                <div
-                                  style={{
-                                    display: "grid",
-                                    gridTemplateColumns:
-                                      "repeat(auto-fill, minmax(300px, 1fr))",
-                                    gap: "20px",
-                                  }}
-                                >
-                                  {day.exercises.map((ex, exIdx) => {
-                                    /* All of these are declared on DayExercise
-                                       — the casts were reaching past a type
-                                       that already had them. The one that was
-                                       not, `.rest`, has never been written by
-                                       any version of the builder, so dropping
-                                       it changes nothing that was reachable. */
-                                    const videoUrl = ex.video_url;
-                                    const restVal =
-                                      ex.rest_time ||
-                                      (ex.rest_from
-                                        ? `${ex.rest_from} - ${ex.rest_to} ${ex.rest_to_unit || "sec"}`
-                                        : "60 - 90 sec");
-
-                                    return (
-                                      <div
-                                        key={exIdx}
-                                        style={{
-                                          padding: "22px",
-                                          borderRadius: "var(--radius-xl)",
-                                          background: "var(--bg3)",
-                                          border:
-                                            "1px solid color-mix(in srgb, var(--primary) 35%, var(--border))",
-                                          display: "flex",
-                                          flexDirection: "column",
-                                          justifyContent: "space-between",
-                                          gap: "18px",
-                                          boxShadow: "var(--elev-1)",
-                                        }}
-                                      >
-                                        {/* Top Header of Exercise Card */}
-                                        <div
-                                          style={{
-                                            display: "flex",
-                                            alignItems: "flex-start",
-                                            justifyContent: "space-between",
-                                            gap: "12px",
-                                          }}
-                                        >
-                                          <div
-                                            style={{
-                                              display: "flex",
-                                              alignItems: "flex-start",
-                                              gap: "12px",
-                                              flex: 1,
-                                            }}
-                                          >
-                                            <span
-                                              style={{
-                                                width: "32px",
-                                                height: "32px",
-                                                borderRadius:
-                                                  "var(--radius-md)",
-                                                background: "var(--primary)",
-                                                color: "var(--text-inverse)",
-                                                fontWeight: 900,
-                                                fontSize: "0.95rem",
-                                                display: "flex",
-                                                alignItems: "center",
-                                                justifyContent: "center",
-                                                flexShrink: 0,
-                                              }}
-                                            >
-                                              {exIdx + 1}
-                                            </span>
-                                            <span
-                                              style={{
-                                                fontWeight: 800,
-                                                fontSize: "1.15rem",
-                                                color: "var(--text)",
-                                                lineHeight: "1.4",
-                                              }}
-                                            >
-                                              {ex.name ||
-                                                ex.name_ar ||
-                                                "تمرين مقترح"}
-                                            </span>
-                                          </div>
-                                          {videoUrl && (
-                                            <a
-                                              href={videoUrl}
-                                              target="_blank"
-                                              rel="noreferrer"
-                                              style={{
-                                                background:
-                                                  "var(--primary-dim)",
-                                                color: "var(--primary-on-tint)",
-                                                border:
-                                                  "1px solid var(--border-primary)",
-                                                padding: "4px 10px",
-                                                borderRadius:
-                                                  "var(--radius-sm)",
-                                                fontSize: "0.78rem",
-                                                fontWeight: 800,
-                                                textDecoration: "none",
-                                                display: "inline-flex",
-                                                alignItems: "center",
-                                                gap: "4px",
-                                                flexShrink: 0,
-                                              }}
-                                              title="مشاهدة فيديو التمرين"
-                                            >
-                                              <span>🎬 فيديو</span>
-                                            </a>
-                                          )}
-                                        </div>
-
-                                        {/* Advanced 3-Column Stats Instrument Panel */}
-                                        <div
-                                          style={{
-                                            background: "var(--bg2)",
-                                            border: "1px solid var(--border)",
-                                            borderRadius: "var(--radius-xl)",
-                                            padding: "14px 12px",
-                                            display: "grid",
-                                            gridTemplateColumns:
-                                              "1fr auto 1fr auto 1.1fr",
-                                            alignItems: "center",
-                                            gap: "6px",
-                                          }}
-                                        >
-                                          {/* Sets */}
-                                          <div
-                                            style={{
-                                              display: "flex",
-                                              flexDirection: "column",
-                                              alignItems: "center",
-                                              textAlign: "center",
-                                            }}
-                                          >
-                                            <div
-                                              style={{
-                                                display: "flex",
-                                                alignItems: "center",
-                                                gap: "4px",
-                                                marginBottom: "4px",
-                                              }}
-                                            >
-                                              <Icon
-                                                name="layers"
-                                                style={{
-                                                  fontSize: "15px",
-                                                  color:
-                                                    "var(--primary-on-tint)",
-                                                }}
-                                              />
-                                              <span
-                                                style={{
-                                                  fontSize: "0.76rem",
-                                                  color:
-                                                    "var(--text-secondary)",
-                                                  fontWeight: 700,
-                                                }}
-                                              >
-                                                الجلسات
-                                              </span>
-                                            </div>
-                                            <span
-                                              style={{
-                                                fontSize: "1.2rem",
-                                                fontWeight: 900,
-                                                color: "var(--primary-on-tint)",
-                                              }}
-                                            >
-                                              {ex.sets ?? 3}
-                                            </span>
-                                          </div>
-
-                                          {/* Vertical Divider */}
-                                          <div
-                                            style={{
-                                              width: "1px",
-                                              height: "34px",
-                                              background: "var(--border)",
-                                            }}
-                                          />
-
-                                          {/* Reps */}
-                                          <div
-                                            style={{
-                                              display: "flex",
-                                              flexDirection: "column",
-                                              alignItems: "center",
-                                              textAlign: "center",
-                                            }}
-                                          >
-                                            <div
-                                              style={{
-                                                display: "flex",
-                                                alignItems: "center",
-                                                gap: "4px",
-                                                marginBottom: "4px",
-                                              }}
-                                            >
-                                              <Icon
-                                                name="repeat"
-                                                style={{
-                                                  fontSize: "15px",
-                                                  color: "var(--warning-text)",
-                                                }}
-                                              />
-                                              <span
-                                                style={{
-                                                  fontSize: "0.76rem",
-                                                  color:
-                                                    "var(--text-secondary)",
-                                                  fontWeight: 700,
-                                                }}
-                                              >
-                                                التكرارات
-                                              </span>
-                                            </div>
-                                            <span
-                                              style={{
-                                                fontSize: "1.1rem",
-                                                fontWeight: 900,
-                                                color: "var(--warning-text)",
-                                                direction: "ltr",
-                                              }}
-                                            >
-                                              {Array.isArray(ex.reps)
-                                                ? ex.reps.join(" - ")
-                                                : (ex.reps ?? "10")}
-                                            </span>
-                                          </div>
-
-                                          {/* Vertical Divider */}
-                                          <div
-                                            style={{
-                                              width: "1px",
-                                              height: "34px",
-                                              background: "var(--border)",
-                                            }}
-                                          />
-
-                                          {/* Rest */}
-                                          <div
-                                            style={{
-                                              display: "flex",
-                                              flexDirection: "column",
-                                              alignItems: "center",
-                                              textAlign: "center",
-                                            }}
-                                          >
-                                            <div
-                                              style={{
-                                                display: "flex",
-                                                alignItems: "center",
-                                                gap: "4px",
-                                                marginBottom: "4px",
-                                              }}
-                                            >
-                                              <Icon
-                                                name="timer"
-                                                style={{
-                                                  fontSize: "15px",
-                                                  color: "var(--success-text)",
-                                                }}
-                                              />
-                                              <span
-                                                style={{
-                                                  fontSize: "0.76rem",
-                                                  color:
-                                                    "var(--text-secondary)",
-                                                  fontWeight: 700,
-                                                }}
-                                              >
-                                                الراحة
-                                              </span>
-                                            </div>
-                                            <span
-                                              style={{
-                                                fontSize: "1.05rem",
-                                                fontWeight: 900,
-                                                color: "var(--success-text)",
-                                                direction: "ltr",
-                                              }}
-                                            >
-                                              {restVal}
-                                            </span>
-                                          </div>
-                                        </div>
-
-                                        {ex.notes && (
-                                          <div
-                                            style={{
-                                              background:
-                                                "color-mix(in srgb, var(--primary) 12%, var(--bg2))",
-                                              border:
-                                                "1px solid color-mix(in srgb, var(--primary) 35%, transparent)",
-                                              borderRadius: "var(--radius-lg)",
-                                              padding: "10px 14px",
-                                              fontSize: "0.88rem",
-                                              color: "var(--primary-on-tint)",
-                                              display: "flex",
-                                              alignItems: "center",
-                                              gap: "8px",
-                                              fontWeight: 700,
-                                            }}
-                                          >
-                                            <span style={{ fontSize: "16px" }}>
-                                              💡
-                                            </span>
-                                            <span>{ex.notes}</span>
-                                          </div>
-                                        )}
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Expandable Diet Schedule Details */}
-                  {isDietOpen && (
-                    <div
-                      style={{
-                        background: "var(--bg1)",
-                        borderTop: "1px solid var(--border)",
-                        padding: "24px",
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          marginBottom: "20px",
-                        }}
-                      >
-                        <h4
-                          style={{
-                            fontSize: "1.2rem",
-                            fontWeight: 800,
-                            color: "var(--primary-on-tint)",
-                            margin: 0,
-                          }}
-                        >
-                          🥗 تفاصيل النظام الغذائي ({item.monthName})
-                        </h4>
-                        <button
-                          onClick={() => setSelectedDietMonth(null)}
-                          style={{
-                            background: "transparent",
-                            border: "none",
-                            color: "var(--text-secondary)",
-                            cursor: "pointer",
-                            fontSize: "1.6rem",
-                          }}
-                          title="إغلاق"
-                        >
-                          &times;
-                        </button>
-                      </div>
-
-                      {!item.diet?.mealsData ||
-                      item.diet.mealsData.length === 0 ? (
-                        <p
-                          style={{
-                            color: "var(--text-secondary)",
-                            textAlign: "center",
-                            padding: "24px 0",
-                            fontSize: "1rem",
-                          }}
-                        >
-                          لا يوجد جدول غذائي متاح أو قيد التجهيز من قبل الكابتن
-                          إبراهيم.
-                        </p>
-                      ) : (
-                        <div
-                          style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: "24px",
-                          }}
-                        >
-                          {item.diet.mealsData.map((planItem, pIdx) => (
-                            <div
-                              key={pIdx}
-                              style={{
-                                display: "flex",
-                                flexDirection: "column",
-                                gap: "16px",
-                              }}
-                            >
-                              <h5
-                                style={{
-                                  margin: 0,
-                                  fontSize: "1.1rem",
-                                  color: "var(--text)",
-                                  borderRight: "4px solid var(--primary)",
-                                  paddingRight: "12px",
-                                  fontWeight: 800,
-                                }}
-                              >
-                                {planItem.name || `خطة رقم ${pIdx + 1}`}
-                              </h5>
-                              <div
-                                style={{
-                                  display: "grid",
-                                  gridTemplateColumns:
-                                    "repeat(auto-fit, minmax(280px, 1fr))",
-                                  gap: "14px",
-                                }}
-                              >
-                                {planItem.meals &&
-                                  Object.entries(planItem.meals).map(
-                                    ([slotKey, slotData], sIdx) => {
-                                      if (
-                                        !slotData ||
-                                        (!slotData.time &&
-                                          (!slotData.items ||
-                                            slotData.items.length === 0))
-                                      )
-                                        return null;
-                                      const mealTitles: Record<string, string> =
-                                        {
-                                          breakfast: "وجبة الإفطار",
-                                          lunch: "وجبة الغداء",
-                                          dinner: "وجبة العشاء",
-                                          snack1: "وجبة خفيفة (سناك 1)",
-                                          snack2: "وجبة خفيفة (سناك 2)",
-                                        };
-                                      return (
-                                        <div
-                                          key={sIdx}
-                                          style={{
-                                            padding: "16px",
-                                            borderRadius: "var(--radius-xl)",
-                                            background: "var(--bg2)",
-                                            border: "1px solid var(--border)",
-                                          }}
-                                        >
-                                          <div
-                                            style={{
-                                              display: "flex",
-                                              justifyContent: "space-between",
-                                              alignItems: "center",
-                                              marginBottom: "10px",
-                                              borderBottom:
-                                                "1px solid var(--border)",
-                                              paddingBottom: "8px",
-                                            }}
-                                          >
-                                            <span
-                                              style={{
-                                                fontWeight: 800,
-                                                color: "var(--primary-on-tint)",
-                                                fontSize: "1rem",
-                                              }}
-                                            >
-                                              {mealTitles[slotKey] || slotKey}
-                                            </span>
-                                            {slotData.time && (
-                                              <span
-                                                style={{
-                                                  fontSize: "0.8rem",
-                                                  background: "var(--bg3)",
-                                                  padding: "2px 8px",
-                                                  borderRadius:
-                                                    "var(--radius-xs)",
-                                                  color:
-                                                    "var(--text-secondary)",
-                                                }}
-                                              >
-                                                ⏰ {slotData.time}
-                                              </span>
-                                            )}
-                                          </div>
-                                          {!slotData.items ||
-                                          slotData.items.length === 0 ? (
-                                            <span
-                                              style={{
-                                                fontSize: "0.85rem",
-                                                color: "var(--text-secondary)",
-                                              }}
-                                            >
-                                              غير محدد
-                                            </span>
-                                          ) : (
-                                            <ul
-                                              style={{
-                                                margin: "8px 0 0 0",
-                                                paddingRight: "20px",
-                                                fontSize: "0.95rem",
-                                                color: "var(--text)",
-                                                lineHeight: "1.7",
-                                              }}
-                                            >
-                                              {slotData.items.map(
-                                                (
-                                                  /* `label` is what the field
-                                                     was called before it became
-                                                     `name`; archived months can
-                                                     still hold either. */
-                                                  mItem: MealItem & { label?: string },
-                                                  itemIdx: number,
-                                                ) => {
-                                                  const weightVal =
-                                                    mItem.weight != null
-                                                      ? Math.round(
-                                                          mItem.weight * 10,
-                                                        ) / 10
-                                                      : Math.round(
-                                                          (mItem.qty || 1) *
-                                                            100 *
-                                                            10,
-                                                        ) / 10;
-                                                  const qtyVal =
-                                                    mItem.qty != null
-                                                      ? mItem.qty
-                                                      : 1;
-                                                  const unit =
-                                                    mItem.unit || "غرام";
-                                                  const prefix =
-                                                    unit === "غرام" ||
-                                                    unit === "كغم"
-                                                      ? "الوزن"
-                                                      : "الكمية";
-                                                  const unitSuffix =
-                                                    unit === "بدون وحدة قياس"
-                                                      ? ""
-                                                      : ` ${unit}`;
-                                                  const parts: string[] = [];
-                                                  if (qtyVal > 0)
-                                                    parts.push(
-                                                      `العدد: ${qtyVal}`,
-                                                    );
-                                                  if (weightVal > 0)
-                                                    parts.push(
-                                                      `${prefix}: ${weightVal}${unitSuffix}`,
-                                                    );
-                                                  const portionText =
-                                                    parts.length > 0
-                                                      ? parts.join(" | ")
-                                                      : "حسب الرغبة";
-                                                  return (
-                                                    <li
-                                                      key={itemIdx}
-                                                      style={{
-                                                        marginBottom: "8px",
-                                                      }}
-                                                    >
-                                                      <div
-                                                        style={{
-                                                          display:
-                                                            "inline-flex",
-                                                          alignItems: "center",
-                                                          gap: "10px",
-                                                          flexWrap: "wrap",
-                                                        }}
-                                                      >
-                                                        <span
-                                                          style={{
-                                                            fontWeight: 800,
-                                                          }}
-                                                        >
-                                                          {mItem.name ||
-                                                            mItem.label ||
-                                                            "صنف غذائي"}
-                                                        </span>
-                                                        <span
-                                                          style={{
-                                                            background:
-                                                              "color-mix(in srgb, var(--primary) 15%, transparent)",
-                                                            color:
-                                                              "var(--primary-on-tint)",
-                                                            border:
-                                                              "1px solid color-mix(in srgb, var(--primary) 30%, transparent)",
-                                                            padding: "2px 10px",
-                                                            borderRadius:
-                                                              "var(--radius-sm)",
-                                                            fontSize: "0.82rem",
-                                                            fontWeight: 800,
-                                                          }}
-                                                        >
-                                                          {portionText}
-                                                        </span>
-                                                      </div>
-                                                    </li>
-                                                  );
-                                                },
-                                              )}
-                                            </ul>
-                                          )}
-                                        </div>
-                                      );
-                                    },
-                                  )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Expandable Comprehensive Profile Data & Measurements */}
+                  {/* This month's own record: its answers and attachments, the
+                      weights lifted during it, and the weigh-ins recorded in it.
+                      Everything here is narrowed to the month's own dates, so a
+                      month is read on its own rather than against a running
+                      total — see `monthWindow`. */}
                   {isInfoOpen && (
                     <div
                       style={{
                         background: "var(--bg1)",
                         borderTop: "1px solid var(--border)",
-                        padding: "28px",
+                        padding: "24px",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "24px",
                       }}
                     >
                       <div
@@ -2073,25 +1153,22 @@ export function SubscriptionHistoryTimeline({
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "space-between",
-                          marginBottom: "24px",
+                          gap: "12px",
                         }}
                       >
                         <h4
                           style={{
                             fontSize: "1.25rem",
                             fontWeight: 800,
-                            color: "var(--primary-on-tint)",
+                            color: "var(--error-text)",
                             margin: 0,
                             display: "flex",
                             alignItems: "center",
                             gap: "10px",
                           }}
                         >
-                          <span>📋</span>
-                          <span>
-                            الملف الرياضي والقياسات الشاملة للمتدرب (
-                            {item.monthName})
-                          </span>
+                          <Icon name="description" style={{ fontSize: "24px" }} />
+                          <span>معلومات المشترك ({item.monthName})</span>
                         </h4>
                         <button
                           onClick={() => setSelectedInfoMonth(null)}
@@ -2101,1274 +1178,99 @@ export function SubscriptionHistoryTimeline({
                             color: "var(--text-secondary)",
                             cursor: "pointer",
                             fontSize: "1.6rem",
+                            lineHeight: 1,
                           }}
                           title="إغلاق"
                         >
-                          &times;
+                          ×
                         </button>
                       </div>
 
-                      <div
+                      {/* The month's answers and files — the very component the
+                          standalone "سجل الأشهر" panel was built from, so the two
+                          cannot drift into showing a month differently. */}
+                      {monthRecord ? (
+                        <MonthSection
+                          month={monthRecord.month}
+                          monthIndex={monthRecord.index}
+                          profileId={profile.id}
+                          planNames={planNames}
+                        />
+                      ) : null}
+
+                      <WorkoutProgress
+                        rows={monthWorkoutRows}
+                        emptyNote={`لم تُسجَّل أي أوزان تمارين خلال ${item.monthName}.`}
+                      />
+
+                      {/* Wrapped here rather than inside `WeightLog`, which the
+                          trainee's dashboard also renders as a full page section
+                          — collapsing it there is not wanted. The tab is the
+                          caller's decision, so it is made at the call site, and
+                          `embedded` only drops the heading this summary already
+                          carries. */}
+                      <details
+                        className="crm-modal-section"
                         style={{
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: "28px",
+                          background: "var(--bg2)",
+                          padding: "24px",
+                          borderRadius: "var(--radius-xl)",
+                          /* Matches its two siblings — see `MonthSection`. */
+                          border: "1px solid var(--border-strong)",
                         }}
                       >
-                        {/* Basic Info & Indicators Grid */}
-                        <div>
-                          <h5
-                            style={{
-                              fontSize: "1.05rem",
-                              fontWeight: 800,
-                              color: "var(--text)",
-                              margin: "0 0 14px 0",
-                              borderRight: "4px solid var(--primary)",
-                              paddingRight: "10px",
-                            }}
-                          >
-                            📌 المؤشرات البدنية والبيانات الشخصية
-                          </h5>
-                          <div
-                            style={{
-                              display: "grid",
-                              gridTemplateColumns:
-                                "repeat(auto-fit, minmax(160px, 1fr))",
-                              gap: "12px",
-                            }}
-                          >
-                            <div
-                              style={{
-                                background: "var(--bg2)",
-                                padding: "14px 16px",
-                                borderRadius: "var(--radius-lg)",
-                                border: "1px solid var(--border)",
-                              }}
-                            >
-                              <div
-                                style={{
-                                  fontSize: "0.78rem",
-                                  color: "var(--text-secondary)",
-                                  fontWeight: 600,
-                                }}
-                              >
-                                الاسم الكامل
-                              </div>
-                              <div
-                                style={{
-                                  fontSize: "1.05rem",
-                                  color: "var(--text)",
-                                  fontWeight: 800,
-                                  marginTop: "2px",
-                                }}
-                              >
-                                {profile.fullname || "المشترك"}
-                              </div>
-                            </div>
-                            <div
-                              style={{
-                                background: "var(--bg2)",
-                                padding: "14px 16px",
-                                borderRadius: "var(--radius-lg)",
-                                border: "1px solid var(--border)",
-                              }}
-                            >
-                              <div
-                                style={{
-                                  fontSize: "0.78rem",
-                                  color: "var(--text-secondary)",
-                                  fontWeight: 600,
-                                }}
-                              >
-                                الخطة المشترك بها
-                              </div>
-                              <div
-                                style={{
-                                  fontSize: "0.95rem",
-                                  fontWeight: 800,
-                                  color: getPlanTextColor(profile.plan || raw.plan),
-                                  background: getPlanColor(profile.plan || raw.plan),
-                                  padding: "4px 12px",
-                                  borderRadius: "var(--radius-sm)",
-                                  display: "inline-block",
-                                  border: `1px solid ${getPlanColor(profile.plan || raw.plan)}`,
-                                  marginTop: "6px",
-                                }}
-                              >
-                                {planNameFrom(
-                                  planNames,
-                                  profile.plan || raw.plan,
-                                  "خطة تدريب وتغذية",
-                                )}
-                              </div>
-                            </div>
-                            <div
-                              style={{
-                                background: "var(--bg2)",
-                                padding: "14px 16px",
-                                borderRadius: "var(--radius-lg)",
-                                border: "1px solid var(--border)",
-                              }}
-                            >
-                              <div
-                                style={{
-                                  fontSize: "0.78rem",
-                                  color: "var(--text-secondary)",
-                                  fontWeight: 600,
-                                }}
-                              >
-                                الهدف الرياضي
-                              </div>
-                              <div
-                                style={{
-                                  fontSize: "1.05rem",
-                                  color: "var(--text)",
-                                  fontWeight: 800,
-                                  marginTop: "2px",
-                                }}
-                              >
-                                {answerLabel(
-                                  profile.goal || raw.sub_goal || raw.goal,
-                                  "تحسين اللياقة",
-                                )}
-                              </div>
-                            </div>
-                            <div
-                              style={{
-                                background: "var(--bg2)",
-                                padding: "14px 16px",
-                                borderRadius: "var(--radius-lg)",
-                                border: "1px solid var(--border)",
-                              }}
-                            >
-                              <div
-                                style={{
-                                  fontSize: "0.78rem",
-                                  color: "var(--text-secondary)",
-                                  fontWeight: 600,
-                                }}
-                              >
-                                الوزن الحالي
-                              </div>
-                              <div
-                                style={{
-                                  fontSize: "1.05rem",
-                                  color: "var(--text)",
-                                  fontWeight: 800,
-                                  marginTop: "2px",
-                                }}
-                              >
-                                {profile.weight || raw.weight
-                                  ? `${profile.weight || raw.weight} كجم`
-                                  : "—"}
-                              </div>
-                            </div>
-                            <div
-                              style={{
-                                background: "var(--bg2)",
-                                padding: "14px 16px",
-                                borderRadius: "var(--radius-lg)",
-                                border: "1px solid var(--border)",
-                              }}
-                            >
-                              <div
-                                style={{
-                                  fontSize: "0.78rem",
-                                  color: "var(--text-secondary)",
-                                  fontWeight: 600,
-                                }}
-                              >
-                                الوزن المستهدف
-                              </div>
-                              <div
-                                style={{
-                                  fontSize: "1.05rem",
-                                  color: "var(--primary-on-tint)",
-                                  fontWeight: 800,
-                                  marginTop: "2px",
-                                }}
-                              >
-                                {raw.target_weight
-                                  ? `${raw.target_weight} كجم`
-                                  : "—"}
-                              </div>
-                            </div>
-                            <div
-                              style={{
-                                background: "var(--bg2)",
-                                padding: "14px 16px",
-                                borderRadius: "var(--radius-lg)",
-                                border: "1px solid var(--border)",
-                              }}
-                            >
-                              <div
-                                style={{
-                                  fontSize: "0.78rem",
-                                  color: "var(--text-secondary)",
-                                  fontWeight: 600,
-                                }}
-                              >
-                                الطول
-                              </div>
-                              <div
-                                style={{
-                                  fontSize: "1.05rem",
-                                  color: "var(--text)",
-                                  fontWeight: 800,
-                                  marginTop: "2px",
-                                }}
-                              >
-                                {profile.height || raw.height
-                                  ? `${profile.height || raw.height} سم`
-                                  : "—"}
-                              </div>
-                            </div>
-                            <div
-                              style={{
-                                background: "var(--bg2)",
-                                padding: "14px 16px",
-                                borderRadius: "var(--radius-lg)",
-                                border: "1px solid var(--border)",
-                              }}
-                            >
-                              <div
-                                style={{
-                                  fontSize: "0.78rem",
-                                  color: "var(--text-secondary)",
-                                  fontWeight: 600,
-                                }}
-                              >
-                                العمر
-                              </div>
-                              <div
-                                style={{
-                                  fontSize: "1.05rem",
-                                  color: "var(--text)",
-                                  fontWeight: 800,
-                                  marginTop: "2px",
-                                }}
-                              >
-                                {profile.age || raw.age
-                                  ? `${profile.age || raw.age} سنة`
-                                  : "—"}
-                              </div>
-                            </div>
-                            <div
-                              style={{
-                                background: "var(--bg2)",
-                                padding: "14px 16px",
-                                borderRadius: "var(--radius-lg)",
-                                border: "1px solid var(--border)",
-                              }}
-                            >
-                              <div
-                                style={{
-                                  fontSize: "0.78rem",
-                                  color: "var(--text-secondary)",
-                                  fontWeight: 600,
-                                }}
-                              >
-                                النشاط اليومي
-                              </div>
-                              <div
-                                style={{
-                                  fontSize: "1.05rem",
-                                  color: "var(--text)",
-                                  fontWeight: 800,
-                                  marginTop: "2px",
-                                }}
-                              >
-                                {activityLabel(
-                                  profile.activity || raw.activity,
-                                  "متوسط",
-                                )}
-                              </div>
-                            </div>
-                            {raw.residence && (
-                              <div
-                                style={{
-                                  background: "var(--bg2)",
-                                  padding: "14px 16px",
-                                  borderRadius: "var(--radius-lg)",
-                                  border: "1px solid var(--border)",
-                                }}
-                              >
-                                <div
-                                  style={{
-                                    fontSize: "0.78rem",
-                                    color: "var(--text-secondary)",
-                                    fontWeight: 600,
-                                  }}
-                                >
-                                  محل الإقامة
-                                </div>
-                                <div
-                                  style={{
-                                    fontSize: "1.05rem",
-                                    color: "var(--text)",
-                                    fontWeight: 800,
-                                    marginTop: "2px",
-                                  }}
-                                >
-                                  {raw.residence}
-                                </div>
-                              </div>
-                            )}
-                            {raw.employment && (
-                              <div
-                                style={{
-                                  background: "var(--bg2)",
-                                  padding: "14px 16px",
-                                  borderRadius: "var(--radius-lg)",
-                                  border: "1px solid var(--border)",
-                                }}
-                              >
-                                <div
-                                  style={{
-                                    fontSize: "0.78rem",
-                                    color: "var(--text-secondary)",
-                                    fontWeight: 600,
-                                  }}
-                                >
-                                  المهنة أو طبيعة العمل
-                                </div>
-                                <div
-                                  style={{
-                                    fontSize: "1.05rem",
-                                    color: "var(--text)",
-                                    fontWeight: 800,
-                                    marginTop: "2px",
-                                  }}
-                                >
-                                  {raw.employment}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Body Measurements Grid - Females only */}
-                        {isFemale && (
-                          <div>
-                            <h5
-                              style={{
-                                fontSize: "1.05rem",
-                                fontWeight: 800,
-                                color: "var(--text)",
-                                margin: "0 0 14px 0",
-                                borderRight: "4px solid var(--primary)",
-                                paddingRight: "10px",
-                              }}
-                            >
-                              ⚖️ القياسات الجسدية ومحيط العضلات
-                            </h5>
-                            <div
-                              style={{
-                                display: "grid",
-                                gridTemplateColumns:
-                                  "repeat(auto-fit, minmax(130px, 1fr))",
-                                gap: "12px",
-                                background: "var(--bg2)",
-                                padding: "18px",
-                                borderRadius: "var(--radius-xl)",
-                                border:
-                                  "1px solid color-mix(in srgb, var(--primary) 25%, transparent)",
-                              }}
-                            >
-                              <div style={{ textAlign: "center" }}>
-                                <div
-                                  style={{
-                                    fontSize: "0.78rem",
-                                    color: "var(--text-secondary)",
-                                    fontWeight: 600,
-                                  }}
-                                >
-                                  محيط الذراع
-                                </div>
-                                <div
-                                  style={{
-                                    fontSize: "1.15rem",
-                                    fontWeight: 800,
-                                    color: "var(--text)",
-                                    marginTop: "4px",
-                                  }}
-                                >
-                                  {meas.arm || meas.bicep || "—"}
-                                </div>
-                              </div>
-                              <div
-                                style={{
-                                  textAlign: "center",
-                                  borderInlineStart: "1px solid var(--border)",
-                                }}
-                              >
-                                <div
-                                  style={{
-                                    fontSize: "0.78rem",
-                                    color: "var(--text-secondary)",
-                                    fontWeight: 600,
-                                  }}
-                                >
-                                  محيط الخصر
-                                </div>
-                                <div
-                                  style={{
-                                    fontSize: "1.15rem",
-                                    fontWeight: 800,
-                                    color: "var(--text)",
-                                    marginTop: "4px",
-                                  }}
-                                >
-                                  {meas.waist || "—"}
-                                </div>
-                              </div>
-                              <div
-                                style={{
-                                  textAlign: "center",
-                                  borderInlineStart: "1px solid var(--border)",
-                                }}
-                              >
-                                <div
-                                  style={{
-                                    fontSize: "0.78rem",
-                                    color: "var(--text-secondary)",
-                                    fontWeight: 600,
-                                  }}
-                                >
-                                  محيط الحوض
-                                </div>
-                                <div
-                                  style={{
-                                    fontSize: "1.15rem",
-                                    fontWeight: 800,
-                                    color: "var(--text)",
-                                    marginTop: "4px",
-                                  }}
-                                >
-                                  {meas.hips || "—"}
-                                </div>
-                              </div>
-                              <div
-                                style={{
-                                  textAlign: "center",
-                                  borderInlineStart: "1px solid var(--border)",
-                                }}
-                              >
-                                <div
-                                  style={{
-                                    fontSize: "0.78rem",
-                                    color: "var(--text-secondary)",
-                                    fontWeight: 600,
-                                  }}
-                                >
-                                  محيط الفخذ
-                                </div>
-                                <div
-                                  style={{
-                                    fontSize: "1.15rem",
-                                    fontWeight: 800,
-                                    color: "var(--text)",
-                                    marginTop: "4px",
-                                  }}
-                                >
-                                  {meas.thigh || meas.leg || "—"}
-                                </div>
-                              </div>
-                              <div
-                                style={{
-                                  textAlign: "center",
-                                  borderInlineStart: "1px solid var(--border)",
-                                }}
-                              >
-                                <div
-                                  style={{
-                                    fontSize: "0.78rem",
-                                    color: "var(--text-secondary)",
-                                    fontWeight: 600,
-                                  }}
-                                >
-                                  محيط الصدر
-                                </div>
-                                <div
-                                  style={{
-                                    fontSize: "1.15rem",
-                                    fontWeight: 800,
-                                    color: "var(--text)",
-                                    marginTop: "4px",
-                                  }}
-                                >
-                                  {meas.chest || "—"}
-                                </div>
-                              </div>
-                              <div
-                                style={{
-                                  textAlign: "center",
-                                  borderInlineStart: "1px solid var(--border)",
-                                }}
-                              >
-                                <div
-                                  style={{
-                                    fontSize: "0.78rem",
-                                    color: "var(--text-secondary)",
-                                    fontWeight: 600,
-                                  }}
-                                >
-                                  محيط الأكتاف
-                                </div>
-                                <div
-                                  style={{
-                                    fontSize: "1.15rem",
-                                    fontWeight: 800,
-                                    color: "var(--text)",
-                                    marginTop: "4px",
-                                  }}
-                                >
-                                  {meas.shoulders || "—"}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Meal Schedule & Nutrition Grid */}
-                        <div>
-                          <h5
-                            style={{
-                              fontSize: "1.05rem",
-                              fontWeight: 800,
-                              color: "var(--text)",
-                              margin: "0 0 14px 0",
-                              borderRight: "4px solid var(--primary)",
-                              paddingRight: "10px",
-                            }}
-                          >
-                            🍽️ التغذية ومواعيد الوجبات المفضلة
-                          </h5>
-                          <div
-                            style={{
-                              display: "grid",
-                              gridTemplateColumns:
-                                "repeat(auto-fit, minmax(200px, 1fr))",
-                              gap: "12px",
-                            }}
-                          >
-                            <div
-                              style={{
-                                background: "var(--bg2)",
-                                padding: "14px 16px",
-                                borderRadius: "var(--radius-lg)",
-                                border: "1px solid var(--border)",
-                              }}
-                            >
-                              <div
-                                style={{
-                                  color: "var(--text-secondary)",
-                                  fontWeight: 700,
-                                  fontSize: "0.82rem",
-                                  marginBottom: "4px",
-                                }}
-                              >
-                                فطور أيام العمل:
-                              </div>
-                              <div
-                                style={{
-                                  color: "var(--text)",
-                                  fontWeight: 700,
-                                }}
-                              >
-                                {answerLabel(raw.workday_breakfast, "غير محدد")}
-                              </div>
-                            </div>
-                            <div
-                              style={{
-                                background: "var(--bg2)",
-                                padding: "14px 16px",
-                                borderRadius: "var(--radius-lg)",
-                                border: "1px solid var(--border)",
-                              }}
-                            >
-                              <div
-                                style={{
-                                  color: "var(--text-secondary)",
-                                  fontWeight: 700,
-                                  fontSize: "0.82rem",
-                                  marginBottom: "4px",
-                                }}
-                              >
-                                غداء أيام العمل:
-                              </div>
-                              <div
-                                style={{
-                                  color: "var(--text)",
-                                  fontWeight: 700,
-                                }}
-                              >
-                                {answerLabel(raw.workday_lunch, "غير محدد")}
-                              </div>
-                            </div>
-                            <div
-                              style={{
-                                background: "var(--bg2)",
-                                padding: "14px 16px",
-                                borderRadius: "var(--radius-lg)",
-                                border: "1px solid var(--border)",
-                              }}
-                            >
-                              <div
-                                style={{
-                                  color: "var(--text-secondary)",
-                                  fontWeight: 700,
-                                  fontSize: "0.82rem",
-                                  marginBottom: "4px",
-                                }}
-                              >
-                                عشاء أيام العمل:
-                              </div>
-                              <div
-                                style={{
-                                  color: "var(--text)",
-                                  fontWeight: 700,
-                                }}
-                              >
-                                {answerLabel(raw.workday_dinner, "غير محدد")}
-                              </div>
-                            </div>
-                            <div
-                              style={{
-                                background: "var(--bg2)",
-                                padding: "14px 16px",
-                                borderRadius: "var(--radius-lg)",
-                                border: "1px solid var(--border)",
-                              }}
-                            >
-                              <div
-                                style={{
-                                  color: "var(--text-secondary)",
-                                  fontWeight: 700,
-                                  fontSize: "0.82rem",
-                                  marginBottom: "4px",
-                                }}
-                              >
-                                فطور العطل والإجازات:
-                              </div>
-                              <div
-                                style={{
-                                  color: "var(--text)",
-                                  fontWeight: 700,
-                                }}
-                              >
-                                {answerLabel(raw.holiday_breakfast, "غير محدد")}
-                              </div>
-                            </div>
-                            <div
-                              style={{
-                                background: "var(--bg2)",
-                                padding: "14px 16px",
-                                borderRadius: "var(--radius-lg)",
-                                border: "1px solid var(--border)",
-                              }}
-                            >
-                              <div
-                                style={{
-                                  color: "var(--text-secondary)",
-                                  fontWeight: 700,
-                                  fontSize: "0.82rem",
-                                  marginBottom: "4px",
-                                }}
-                              >
-                                غداء العطل والإجازات:
-                              </div>
-                              <div
-                                style={{
-                                  color: "var(--text)",
-                                  fontWeight: 700,
-                                }}
-                              >
-                                {answerLabel(raw.holiday_lunch, "غير محدد")}
-                              </div>
-                            </div>
-                            <div
-                              style={{
-                                background: "var(--bg2)",
-                                padding: "14px 16px",
-                                borderRadius: "var(--radius-lg)",
-                                border: "1px solid var(--border)",
-                              }}
-                            >
-                              <div
-                                style={{
-                                  color: "var(--text-secondary)",
-                                  fontWeight: 700,
-                                  fontSize: "0.82rem",
-                                  marginBottom: "4px",
-                                }}
-                              >
-                                عشاء العطل والإجازات:
-                              </div>
-                              <div
-                                style={{
-                                  color: "var(--text)",
-                                  fontWeight: 700,
-                                }}
-                              >
-                                {answerLabel(raw.holiday_dinner, "غير محدد")}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Preferences & Habits */}
-                        <div>
-                          <h5
-                            style={{
-                              fontSize: "1.05rem",
-                              fontWeight: 800,
-                              color: "var(--text)",
-                              margin: "0 0 14px 0",
-                              borderRight: "4px solid var(--primary)",
-                              paddingRight: "10px",
-                            }}
-                          >
-                            🥗 التفضيلات والعادات الغذائية
-                          </h5>
-                          <div
-                            style={{
-                              display: "grid",
-                              gridTemplateColumns:
-                                "repeat(auto-fit, minmax(220px, 1fr))",
-                              gap: "12px",
-                            }}
-                          >
-                            <div
-                              style={{
-                                background: "var(--bg2)",
-                                padding: "16px",
-                                borderRadius: "var(--radius-lg)",
-                                border: "1px solid var(--border)",
-                                gridColumn: "span 2 / auto",
-                              }}
-                            >
-                              <div
-                                style={{
-                                  color: "var(--text-secondary)",
-                                  fontWeight: 800,
-                                  fontSize: "0.85rem",
-                                  marginBottom: "4px",
-                                }}
-                              >
-                                الأكلات المفضلة:
-                              </div>
-                              <div
-                                style={{
-                                  color: "var(--text)",
-                                  fontWeight: 700,
-                                }}
-                              >
-                                {raw.fav_foods || "لم يذكر"}
-                              </div>
-                            </div>
-                            <div
-                              style={{
-                                background: "var(--bg2)",
-                                padding: "16px",
-                                borderRadius: "var(--radius-lg)",
-                                border: "1px solid var(--border)",
-                              }}
-                            >
-                              <div
-                                style={{
-                                  color: "var(--primary-on-tint)",
-                                  fontWeight: 800,
-                                  fontSize: "0.85rem",
-                                  marginBottom: "4px",
-                                }}
-                              >
-                                أطعمة مستبعدة أو حساسية:
-                              </div>
-                              <div
-                                style={{
-                                  color: "var(--text)",
-                                  fontWeight: 700,
-                                }}
-                              >
-                                {answerList(
-                                  profile.allergies || raw.allergies,
-                                  "لا يوجد",
-                                )}
-                              </div>
-                            </div>
-                            <div
-                              style={{
-                                background: "var(--bg2)",
-                                padding: "16px",
-                                borderRadius: "var(--radius-lg)",
-                                border: "1px solid var(--border)",
-                              }}
-                            >
-                              <div
-                                style={{
-                                  color: "var(--text-secondary)",
-                                  fontWeight: 700,
-                                  fontSize: "0.85rem",
-                                  marginBottom: "4px",
-                                }}
-                              >
-                                أنواع اللحوم المفضلة:
-                              </div>
-                              <div
-                                style={{
-                                  color: "var(--text)",
-                                  fontWeight: 700,
-                                }}
-                              >
-                                {answerList(raw.meat, "عام")}
-                              </div>
-                            </div>
-                            <div
-                              style={{
-                                background: "var(--bg2)",
-                                padding: "16px",
-                                borderRadius: "var(--radius-lg)",
-                                border: "1px solid var(--border)",
-                              }}
-                            >
-                              <div
-                                style={{
-                                  color: "var(--text-secondary)",
-                                  fontWeight: 700,
-                                  fontSize: "0.85rem",
-                                  marginBottom: "4px",
-                                }}
-                              >
-                                معدل القهوة اليومي:
-                              </div>
-                              <div
-                                style={{
-                                  color: "var(--text)",
-                                  fontWeight: 700,
-                                }}
-                              >
-                                {answerLabel(raw.coffee_rate, "طبيعي")}
-                                {raw.coffee_type ? ` (${raw.coffee_type})` : ""}
-                              </div>
-                            </div>
-                            <div
-                              style={{
-                                background: "var(--bg2)",
-                                padding: "16px",
-                                borderRadius: "var(--radius-lg)",
-                                border: "1px solid var(--border)",
-                              }}
-                            >
-                              <div
-                                style={{
-                                  color: "var(--text-secondary)",
-                                  fontWeight: 700,
-                                  fontSize: "0.85rem",
-                                  marginBottom: "4px",
-                                }}
-                              >
-                                الرغبة في شراء المكملات:
-                              </div>
-                              <div
-                                style={{
-                                  color: "var(--text)",
-                                  fontWeight: 700,
-                                }}
-                              >
-                                {answerLabel(raw.buy_supp, "غير محدد")}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Workout Commitment & Experience */}
-                        <div>
-                          <h5
-                            style={{
-                              fontSize: "1.05rem",
-                              fontWeight: 800,
-                              color: "var(--text)",
-                              margin: "0 0 14px 0",
-                              borderRight: "4px solid var(--primary)",
-                              paddingRight: "10px",
-                            }}
-                          >
-                            🏋️‍♂️ الالتزام الرياضي وخبرة التمرين
-                          </h5>
-                          <div
-                            style={{
-                              display: "grid",
-                              gridTemplateColumns:
-                                "repeat(auto-fit, minmax(200px, 1fr))",
-                              gap: "12px",
-                            }}
-                          >
-                            <div
-                              style={{
-                                background: "var(--bg2)",
-                                padding: "16px",
-                                borderRadius: "var(--radius-lg)",
-                                border: "1px solid var(--border)",
-                              }}
-                            >
-                              <div
-                                style={{
-                                  color: "var(--text-secondary)",
-                                  fontWeight: 700,
-                                  fontSize: "0.85rem",
-                                  marginBottom: "4px",
-                                }}
-                              >
-                                مكان التمرين المختار:
-                              </div>
-                              <div
-                                style={{
-                                  color: "var(--text)",
-                                  fontWeight: 700,
-                                }}
-                              >
-                                {answerLabel(
-                                  raw.workout_commit ||
-                                    raw.workout_location ||
-                                    raw.location,
-                                  "الجيم / النادي الرياضي",
-                                )}
-                              </div>
-                            </div>
-                            <div
-                              style={{
-                                background: "var(--bg2)",
-                                padding: "16px",
-                                borderRadius: "var(--radius-lg)",
-                                border: "1px solid var(--border)",
-                              }}
-                            >
-                              <div
-                                style={{
-                                  color: "var(--text-secondary)",
-                                  fontWeight: 700,
-                                  fontSize: "0.85rem",
-                                  marginBottom: "4px",
-                                }}
-                              >
-                                خبرة التمرين السابقة:
-                              </div>
-                              <div
-                                style={{
-                                  color: "var(--text)",
-                                  fontWeight: 700,
-                                }}
-                              >
-                                {answerLabel(raw.workout_exp, "متوسط")}
-                              </div>
-                            </div>
-                            <div
-                              style={{
-                                background: "var(--bg2)",
-                                padding: "16px",
-                                borderRadius: "var(--radius-lg)",
-                                border: "1px solid var(--border)",
-                              }}
-                            >
-                              <div
-                                style={{
-                                  color: "var(--text-secondary)",
-                                  fontWeight: 700,
-                                  fontSize: "0.85rem",
-                                  marginBottom: "4px",
-                                }}
-                              >
-                                أنواع التمارين السابقة:
-                              </div>
-                              <div
-                                style={{
-                                  color: "var(--text)",
-                                  fontWeight: 700,
-                                }}
-                              >
-                                {answerList(raw.workout_type_exp, "عام")}
-                              </div>
-                            </div>
-                            <div
-                              style={{
-                                background: "var(--bg2)",
-                                padding: "16px",
-                                borderRadius: "var(--radius-lg)",
-                                border: "1px solid var(--border)",
-                              }}
-                            >
-                              <div
-                                style={{
-                                  color: "var(--text-secondary)",
-                                  fontWeight: 700,
-                                  fontSize: "0.85rem",
-                                  marginBottom: "4px",
-                                }}
-                              >
-                                أيام الالتزام الأسبوعية:
-                              </div>
-                              <div
-                                style={{
-                                  color: "var(--text)",
-                                  fontWeight: 700,
-                                }}
-                              >
-                                {answerLabel(raw.workout_days, "حسب الجدول")}
-                              </div>
-                            </div>
-                            <div
-                              style={{
-                                background: "var(--bg2)",
-                                padding: "16px",
-                                borderRadius: "var(--radius-lg)",
-                                border: "1px solid var(--border)",
-                              }}
-                            >
-                              <div
-                                style={{
-                                  color: "var(--text-secondary)",
-                                  fontWeight: 700,
-                                  fontSize: "0.85rem",
-                                  marginBottom: "4px",
-                                }}
-                              >
-                                مواعيد وفترات التمرين:
-                              </div>
-                              <div
-                                style={{
-                                  color: "var(--text)",
-                                  fontWeight: 700,
-                                }}
-                              >
-                                {answerLabel(raw.gym_time, "أوقات مرنة")}
-                              </div>
-                            </div>
-                            {raw.workout_type_other_desc && (
-                              <div
-                                style={{
-                                  background: "var(--bg2)",
-                                  padding: "16px",
-                                  borderRadius: "var(--radius-lg)",
-                                  border: "1px solid var(--border)",
-                                  gridColumn: "1 / -1",
-                                }}
-                              >
-                                <div
-                                  style={{
-                                    color: "var(--text-secondary)",
-                                    fontWeight: 700,
-                                    fontSize: "0.85rem",
-                                    marginBottom: "4px",
-                                  }}
-                                >
-                                  ملاحظات أو رياضات أخرى:
-                                </div>
-                                <div
-                                  style={{
-                                    color: "var(--text)",
-                                    fontWeight: 700,
-                                  }}
-                                >
-                                  {raw.workout_type_other_desc}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Health & Diet History Grid */}
-                        <div>
-                          <h5
-                            style={{
-                              fontSize: "1.05rem",
-                              fontWeight: 800,
-                              color: "var(--text)",
-                              margin: "0 0 14px 0",
-                              borderRight: "4px solid var(--primary)",
-                              paddingRight: "10px",
-                            }}
-                          >
-                            🩺 الملف الصحي وتاريخ التغذية والدايت
-                          </h5>
-                          <div
-                            style={{
-                              display: "grid",
-                              gridTemplateColumns:
-                                "repeat(auto-fit, minmax(260px, 1fr))",
-                              gap: "12px",
-                            }}
-                          >
-                            <div
-                              style={{
-                                background: "var(--bg2)",
-                                padding: "16px",
-                                borderRadius: "var(--radius-lg)",
-                                border: "1px solid var(--border)",
-                              }}
-                            >
-                              <div
-                                style={{
-                                  color: "var(--primary-on-tint)",
-                                  fontWeight: 800,
-                                  fontSize: "0.85rem",
-                                  marginBottom: "4px",
-                                }}
-                              >
-                                المشاكل الصحية أو الإصابات السابقة:
-                              </div>
-                              <div
-                                style={{
-                                  color: "var(--text)",
-                                  fontWeight: 700,
-                                }}
-                              >
-                                {answerList(
-                                  raw.injuries || raw.health_issues,
-                                  "لا توجد مشاكل صحية (سليم)",
-                                )}
-                              </div>
-                            </div>
-                            <div
-                              style={{
-                                background: "var(--bg2)",
-                                padding: "16px",
-                                borderRadius: "var(--radius-lg)",
-                                border: "1px solid var(--border)",
-                              }}
-                            >
-                              <div
-                                style={{
-                                  color: "var(--text-secondary)",
-                                  fontWeight: 700,
-                                  fontSize: "0.85rem",
-                                  marginBottom: "4px",
-                                }}
-                              >
-                                المكملات الغذائية المستخدمة حالياً:
-                              </div>
-                              <div
-                                style={{
-                                  color: "var(--text)",
-                                  fontWeight: 700,
-                                }}
-                              >
-                                {raw.supplements_list || "لا يوجد"}
-                              </div>
-                            </div>
-                            <div
-                              style={{
-                                background: "var(--bg2)",
-                                padding: "16px",
-                                borderRadius: "var(--radius-lg)",
-                                border: "1px solid var(--border)",
-                              }}
-                            >
-                              <div
-                                style={{
-                                  color: "var(--text-secondary)",
-                                  fontWeight: 700,
-                                  fontSize: "0.85rem",
-                                  marginBottom: "4px",
-                                }}
-                              >
-                                تجارب وأنظمة الدايت السابقة:
-                              </div>
-                              <div
-                                style={{
-                                  color: "var(--text)",
-                                  fontWeight: 700,
-                                }}
-                              >
-                                {raw.diet_history || "لا يوجد"}
-                              </div>
-                            </div>
-                            <div
-                              style={{
-                                background: "var(--bg2)",
-                                padding: "16px",
-                                borderRadius: "var(--radius-lg)",
-                                border: "1px solid var(--border)",
-                              }}
-                            >
-                              <div
-                                style={{
-                                  color: "var(--text-secondary)",
-                                  fontWeight: 700,
-                                  fontSize: "0.85rem",
-                                  marginBottom: "4px",
-                                }}
-                              >
-                                سبب فشل أو تعثر الدايت الأخير:
-                              </div>
-                              <div
-                                style={{
-                                  color: "var(--text)",
-                                  fontWeight: 700,
-                                }}
-                              >
-                                {raw.last_diet_fail || "لا يوجد"}
-                              </div>
-                            </div>
-                            <div
-                              style={{
-                                background: "var(--bg2)",
-                                padding: "16px",
-                                borderRadius: "var(--radius-lg)",
-                                border: "1px solid var(--border)",
-                                gridColumn: "1 / -1",
-                              }}
-                            >
-                              <div
-                                style={{
-                                  color: "var(--text-secondary)",
-                                  fontWeight: 700,
-                                  fontSize: "0.85rem",
-                                  marginBottom: "4px",
-                                }}
-                              >
-                                أسباب ودوافع تناول الطعام (توتر/عادات...):
-                              </div>
-                              <div
-                                style={{
-                                  color: "var(--text)",
-                                  fontWeight: 700,
-                                }}
-                              >
-                                {raw.eating_reason || "لا يوجد"}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div style={{ textAlign: "center", marginTop: "10px" }}>
-                          <a
-                            href={`/export-profile?profileId=${profile.id}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{
-                              padding: "12px 28px",
-                              borderRadius: "var(--radius-lg)",
-                              background: "var(--primary)",
-                              color: "var(--text-inverse)",
-                              textDecoration: "none",
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: "10px",
-                              fontWeight: 800,
-                              fontSize: "1rem",
-                            }}
-                          >
+                        <summary
+                          className="crm-modal-section-title"
+                          style={{
+                            margin: 0,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            gap: "12px",
+                            cursor: "pointer",
+                          }}
+                        >
+                          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                             <Icon
-                              name="file_download"
-                              style={{ fontSize: "22px" }}
+                              name="monitor_weight"
+                              style={{ color: "var(--primary)", fontSize: "24px" }}
                             />
-                            <span>
-                              تحميل التقرير الشامل لكافة المعلومات والقياسات PDF
+                            <span
+                              style={{ fontSize: "1.2rem", color: "var(--text)", fontWeight: 700 }}
+                            >
+                              سجل الوزن الأسبوعي
                             </span>
-                          </a>
+                            <span
+                              className="crm-tag"
+                              style={{ fontSize: "0.8rem", padding: "2px 10px", borderRadius: "var(--radius-lg)" }}
+                            >
+                              {monthWeightLogs.length} قراءة
+                            </span>
+                          </div>
+                          <Icon
+                            name="expand_more"
+                            className="accordion-icon"
+                            style={{ color: "var(--text-muted)" }}
+                          />
+                        </summary>
+
+                        <div style={{ marginTop: "24px" }}>
+                          <WeightLog
+                            profile={{
+                              id: profile.id,
+                              weightLogs: monthWeightLogs,
+                              /* The month's own opening weight, not the trainee's
+                                 first ever: each renewal form carries the weight
+                                 they were at when that month began, and that is
+                                 what the chart should start from here. */
+                              weight: monthStartWeight,
+                              created_at: item.startDate || undefined,
+                            }}
+                            readonly
+                            embedded
+                          />
                         </div>
-                      </div>
+                      </details>
                     </div>
                   )}
                 </div>

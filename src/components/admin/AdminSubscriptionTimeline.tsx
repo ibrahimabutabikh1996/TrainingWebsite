@@ -10,6 +10,7 @@ import type { MonthlyArchive, UserProfile, JsonRecord } from "@/types";
 import type { Day } from "@/types/admin";
 import { SubscriptionHistoryTimeline } from "@/components/dashboard/SubscriptionHistoryTimeline";
 import { Icon } from "@/components/Icon";
+import type { WorkoutLogRow } from "@/components/admin/WorkoutProgress";
 
 interface Props {
   profileId: string;
@@ -75,6 +76,41 @@ async function loadTimeline({ profileId, planNames }: Props) {
        where a month has always meant a renewal. Two panels on one page, two
        answers to how long somebody had been subscribed. See
        @/lib/subscriptionMonths. */
+    /* Every weight the trainee logged, read here rather than in the component
+       that draws them.
+     *
+       `WorkoutProgress` used to run this query itself and render on the server.
+       It now sits inside each month of the timeline, and the timeline is a
+       client component — which cannot render an async server component. So the
+       query lives here, on the same page and behind the same `requireAdminPage`
+       guard it was always protected by, and the rows are handed down to be
+       split per month.
+
+       A failure is logged and left as an empty list: a profile page that cannot
+       show the weights is better than one that does not render. */
+    let workoutLogs: WorkoutLogRow[] = [];
+    try {
+      const logs = await prisma.workout_logs.findMany({
+        where: { profile_id: profile.id },
+        orderBy: [{ session_date: "asc" }, { exercise_name: "asc" }, { set_index: "asc" }],
+        select: {
+          exercise_id: true,
+          exercise_name: true,
+          set_index: true,
+          reps: true,
+          weight: true,
+          session_date: true,
+        },
+      });
+      workoutLogs = logs.map((l) => ({
+        ...l,
+        weight: l.weight === null ? null : Number(l.weight),
+        session_date: l.session_date.toISOString().slice(0, 10),
+      }));
+    } catch (error) {
+      console.error("Failed to load workout logs:", error);
+    }
+
     const months = buildSubscriptionMonths(data, profile.created_at);
 
     const deletedMonths = Array.isArray(data.deleted_months) ? (data.deleted_months as number[]) : [];
@@ -165,7 +201,7 @@ async function loadTimeline({ profileId, planNames }: Props) {
       monthlyHistory,
     } as unknown as UserProfile;
 
-    return { mockProfile, monthCount: monthlyHistory.length };
+    return { mockProfile, monthCount: monthlyHistory.length, workoutLogs };
   } catch (err) {
     console.error("Failed to load the admin subscription timeline:", err);
     return null;
@@ -176,7 +212,7 @@ export default async function AdminSubscriptionTimeline({ profileId, planNames }
   const loaded = await loadTimeline({ profileId, planNames });
   if (!loaded) return null;
 
-  const { mockProfile, monthCount } = loaded;
+  const { mockProfile, monthCount, workoutLogs } = loaded;
 
   return (
     <details
@@ -215,7 +251,12 @@ export default async function AdminSubscriptionTimeline({ profileId, planNames }
       </summary>
 
       <div style={{ marginTop: "16px" }}>
-        <SubscriptionHistoryTimeline profile={mockProfile} isAdminView={true} planNames={planNames} />
+        <SubscriptionHistoryTimeline
+          profile={mockProfile}
+          isAdminView={true}
+          planNames={planNames}
+          workoutLogs={workoutLogs}
+        />
       </div>
     </details>
   );

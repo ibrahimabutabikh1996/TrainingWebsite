@@ -75,3 +75,35 @@ export function daysRemaining(
   if (Number.isNaN(end.getTime())) return null;
   return Math.ceil((end.getTime() - now.getTime()) / DAY_MS);
 }
+
+/**
+ * When the subscription began, as `YYYY-MM-DD`, or a dash.
+ *
+ * The printable sheets both put "تاريخ الاشتراك" at the top and both filled it
+ * with `new Date()` — today's date, on every render, whoever the sheet was for.
+ * It was never the date it named.
+ *
+ * `activation_date` is written into the intake blob when the coach activates
+ * the account; `created_at` is the fallback for a profile older than that
+ * column. That pair, in that order, is what the trainee's dashboard, the coach's
+ * panel and `buildSubscriptionMonths` all measure the subscription from, so the
+ * sheets now agree with the screens instead of contradicting them.
+ *
+ * A dash rather than a guess when there is nothing to read: a course opened
+ * from the library has no subscriber, and an invented date on a printed sheet
+ * outlives the page that printed it.
+ */
+export function subscriptionStartOf(
+  activationDate: unknown,
+  createdAt?: Date | string | null
+): string {
+  const candidate =
+    typeof activationDate === "string" && activationDate ? activationDate : createdAt;
+  if (!candidate) return "—";
+
+  const date = candidate instanceof Date ? candidate : new Date(candidate);
+  if (Number.isNaN(date.getTime())) return "—";
+
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())}`;
+}

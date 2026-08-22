@@ -26,10 +26,22 @@ interface WeightLogProps {
     created_at?: string;
   };
   readonly?: boolean;
+  /**
+   * Rendered inside a container that already names it — the collapsible tab in
+   * a month of the coach's timeline, whose summary carries the icon and the
+   * title. Drops this component's own heading, which would otherwise appear
+   * twice, and the centred max-width that would leave it narrower than the tabs
+   * beside it.
+   *
+   * Opt-in, and false by default, because the trainee's dashboard renders this
+   * as a page section of its own where both the heading and the width are
+   * wanted. A default that changed behaviour here would change that page too.
+   */
+  embedded?: boolean;
   onSaveSuccess?: () => void;
 }
 
-export default function WeightLog({ profile, readonly, onSaveSuccess }: WeightLogProps) {
+export default function WeightLog({ profile, readonly, embedded, onSaveSuccess }: WeightLogProps) {
   const [isPending, startTransition] = useTransition();
   const todayStr = new Date().toISOString().split("T")[0];
   const [selectedDate, setSelectedDate] = useState<string>(todayStr);
@@ -91,11 +103,16 @@ export default function WeightLog({ profile, readonly, onSaveSuccess }: WeightLo
   };
 
   return (
-    <div className="home-overview-container" style={{ maxWidth: 1000 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "var(--space-8)" }}>
-        <Icon name="monitor_weight" style={{ fontSize: "36px", color: "var(--primary-on-tint)" }} />
-        <h2 style={{ margin: 0, fontSize: "1.8rem", color: "var(--text)" }}>سجل الوزن الأسبوعي</h2>
-      </div>
+    <div
+      className="home-overview-container"
+      style={embedded ? { maxWidth: "100%", margin: 0 } : { maxWidth: 1000 }}
+    >
+      {!embedded && (
+        <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "var(--space-8)" }}>
+          <Icon name="monitor_weight" style={{ fontSize: "36px", color: "var(--primary-on-tint)" }} />
+          <h2 style={{ margin: 0, fontSize: "1.8rem", color: "var(--text)" }}>سجل الوزن الأسبوعي</h2>
+        </div>
+      )}
 
       {!readonly && (
         <div className="home-stat-card" style={{ padding: "var(--space-6)", marginBottom: "var(--space-10)", overflow: "visible" }}>

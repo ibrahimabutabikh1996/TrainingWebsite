@@ -1,5 +1,4 @@
 "use client";
-import type { JsonRecord } from "@/types";
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -11,20 +10,12 @@ import {
 import type { AttachmentField } from "@/app/admin/profile/attachments";
 import type { PlanNames } from "@/lib/planNames";
 import {
-  buildSubscriptionMonths,
   monthGroups,
   answeredCount,
   monthWeight,
   type SubscriptionMonth,
 } from "@/lib/subscriptionMonths";
 import { Icon, type IconName } from "@/components/Icon";
-
-interface Props {
-  currentData: JsonRecord;
-  profileId: string;
-  createdAt?: string | null;
-  planNames: PlanNames;
-}
 
 /* Ask, then do — deletion here is permanent, so no single click performs one.
    Defined at module level: nested inside the component it would be a new
@@ -103,7 +94,7 @@ const arDate = (iso: string | null) =>
  * light up the same button in the first, and the action has to be told which
  * snapshot it is editing.
  */
-function MonthSection({
+export function MonthSection({
   month,
   monthIndex,
   profileId,
@@ -193,13 +184,23 @@ function MonthSection({
         background: "var(--bg2)",
         padding: "24px",
         borderRadius: "var(--radius-xl)",
-        border: month.isCurrent
-          ? "1px solid color-mix(in srgb, var(--primary) 45%, var(--border))"
-          : "1px solid var(--border)",
+        /* `--border-strong`, not `--border`.
+           `--border` is #162235 and this sits on `--bg2` #15212E — seven units
+           apart, in the blue channel alone, so the outline of the tab was very
+           nearly the colour of what it was drawn on. `--border-strong` (#22334D)
+           already exists in the token set for the borders that have to be seen;
+           the three tabs of a month share it, and nothing outside them does. */
+        border: "1px solid var(--border-strong)",
       }}
-      /* The month in progress is the one the coach came for; the closed ones
-         are there to be opened when a question reaches back. */
-      open={month.isCurrent}
+      /* Neither the primary-coloured border nor `open={month.isCurrent}` is here
+         any more, and both were right when they were written: the months were
+         drawn as one list, and the one in progress had to be picked out of it.
+         Each of these now stands alone inside its own month of the timeline,
+         beside the lifted weights and the weigh-in chart — so "current" marks it
+         out from nothing, while making it look unlike the two tabs it sits with.
+         The `الحالي` badge in the summary still says which month this is.
+         All three tabs start closed, so opening a month gives a short list
+         rather than a wall. */
     >
       <summary
         className="crm-modal-section-title"
@@ -371,51 +372,9 @@ function MonthSection({
   );
 }
 
-/**
- * Every month the subscription has had, each one its own place on the page.
- *
- * This replaced a strip of tabs showing one month at a time. A tab hides what
- * it is not showing: comparing March against June meant clicking between them
- * and remembering, and the months that were not selected gave no sign of what
- * they held. Now each month is a section of its own, closed, with its weight
- * and its attachment count on the row — so the record reads as a list at a
- * glance and opens where the coach wants to read.
- *
- * A month is shown whole and read alone: what it holds is what the trainee
- * submitted for it, never a difference against its neighbour. Newest first,
- * because that is the one being worked on.
- */
-export default function ProfileMonthlyRecord({ currentData, profileId, createdAt, planNames }: Props) {
-  /* The same month list the timeline above is built from, so the two panels
-     cannot disagree about how many months there have been. */
-  const months = buildSubscriptionMonths(currentData, createdAt);
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
-        <Icon name="history" style={{ color: "var(--primary)", fontSize: "26px" }} />
-        <span style={{ fontSize: "1.3rem", color: "var(--text)", fontWeight: 800 }}>
-          سجل الأشهر
-        </span>
-        <span className="crm-tag primary-tag" style={{ fontSize: "0.85rem", padding: "2px 10px", borderRadius: "var(--radius-lg)" }}>
-          {months.length} {months.length === 1 ? "شهر" : "أشهر"}
-        </span>
-      </div>
-
-      {months
-        /* The index is taken before reversing: it is the position in `history`
-           that the delete actions edit, and reversing is only how it is read. */
-        .map((month, index) => ({ month, index }))
-        .reverse()
-        .map(({ month, index }) => (
-          <MonthSection
-            key={month.monthNumber}
-            month={month}
-            monthIndex={month.isCurrent ? null : index}
-            profileId={profileId}
-            planNames={planNames}
-          />
-        ))}
-    </div>
-  );
-}
+/* The default export that stood here — "سجل الأشهر", every month of the
+   subscription listed one after another — is gone. Its months now live one per
+   tab inside the timeline, where each sits beside that month's lifted weights
+   and weigh-ins; a second list of all of them below the page was the same
+   record read a second way. `MonthSection` above is what survived it, and the
+   timeline is its only caller. */

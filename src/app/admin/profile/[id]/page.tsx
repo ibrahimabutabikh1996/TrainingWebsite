@@ -5,9 +5,7 @@ import Link from "next/link";
 import { Toaster } from "react-hot-toast";
 import AccountManager from "@/components/admin/AccountManager";
 import PendingRenewalCard from "@/components/admin/PendingRenewalCard";
-import ProfileMonthlyRecord from "@/components/admin/ProfileMonthlyRecord";
 import DeleteSubscriberZone from "@/components/admin/DeleteSubscriberZone";
-import WorkoutProgress from "@/components/admin/WorkoutProgress";
 import AdminSubscriptionTimeline from "@/components/admin/AdminSubscriptionTimeline";
 import { activityLabel, PLAN_COLOUR_SLOT } from "@/lib/formLabels";
 import { planNameFrom, resolvePlanNames } from "@/lib/planNames";
@@ -16,7 +14,6 @@ import "../../crm.css";
 import type { JsonRecord } from "@/types";
 import { Icon } from "@/components/Icon";
 import { formatTimestamp } from "@/lib/trainingDates";
-import WeightLog from "@/components/dashboard/WeightLog";
 
 export default async function ProfileDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   /* The fullest view of one trainee there is — intake answers, health notes,
@@ -188,29 +185,14 @@ export default async function ProfileDetailsPage({ params }: { params: Promise<{
           <PendingRenewalCard profileId={profile.id} data={data} planNames={planNames} />
 
           <AccountManager profileId={profile.id} existingAccount={existingAccount} />
-          <AdminSubscriptionTimeline profileId={profile.id} planNames={planNames} />
-          
-          <div style={{ marginTop: "24px" }}>
-            <WeightLog 
-              profile={{
-                id: profile.id,
-                weightLogs: data.weightLogs,
-                weight: data.weight,
-                created_at: profile.created_at.toISOString()
-              }} 
-              readonly 
-            />
-          </div>
 
-          {data.plan_type !== 'diet' && (
-            <WorkoutProgress profileId={profile.id} />
-          )}
-          <ProfileMonthlyRecord
-            currentData={data}
-            profileId={profile.id}
-            createdAt={profile.created_at.toISOString()}
-            planNames={planNames}
-          />
+          {/* The monthly record, the logged weights and the weigh-in chart used
+              to stand here as three more sections down the page, each showing
+              the whole subscription at once. They live inside the timeline now —
+              one copy per month, narrowed to that month's dates — so a month is
+              read on its own instead of against a running total. */}
+          <AdminSubscriptionTimeline profileId={profile.id} planNames={planNames} />
+
           <DeleteSubscriberZone profileId={profile.id} />
 
         </div>

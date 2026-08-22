@@ -1,5 +1,4 @@
 import { Fragment } from "react";
-import { prisma } from "@/lib/db";
 import { arabicCount, DAY } from "@/lib/arabicCount";
 import { formatDayAndDate } from "@/lib/trainingDates";
 import { Icon } from "@/components/Icon";
@@ -10,43 +9,39 @@ import { Icon } from "@/components/Icon";
    numbers were typed in — `redateSessionLogs` files each set under the date its
    workout was recorded under.
 
-   Rendered on the server: this is a read-only report, so there is no reason to
-   ship the whole log history to the browser. */
+   Presentation only. It used to run its own Prisma query and render on the
+   server, which was right while it stood alone at the bottom of the profile
+   page. It now appears once inside each month of the subscription timeline —
+   and that timeline is a client component, which cannot render an async server
+   component. So the query moved up to `AdminSubscriptionTimeline`, which is a
+   server component behind the same `requireAdminPage` guard, and this takes the
+   rows it is given. The authorisation is unchanged: the same coach, on the same
+   page, behind the same guard. */
 
-interface Row {
+export interface WorkoutLogRow {
   exercise_id: string;
   exercise_name: string;
   set_index: number;
   reps: string | null;
   weight: number | null;
+  /** `YYYY-MM-DD`, which is what makes filtering a month a string comparison. */
   session_date: string;
 }
 
-export default async function WorkoutProgress({ profileId }: { profileId: string }) {
-  let rows: Row[] = [];
-  try {
-    const logs = await prisma.workout_logs.findMany({
-      where: { profile_id: profileId },
-      orderBy: [{ session_date: "asc" }, { exercise_name: "asc" }, { set_index: "asc" }],
-      select: {
-        exercise_id: true,
-        exercise_name: true,
-        set_index: true,
-        reps: true,
-        weight: true,
-        session_date: true,
-      },
-    });
-    rows = logs.map((l) => ({
-      ...l,
-      weight: l.weight === null ? null : Number(l.weight),
-      session_date: l.session_date.toISOString().slice(0, 10),
-    }));
-  } catch (error) {
-    // A failed query shouldn't take the whole profile page down.
-    console.error("Failed to load workout logs:", error);
-  }
+type Row = WorkoutLogRow;
 
+/**
+ * @param rows  already narrowed to whatever period the caller is showing
+ * @param emptyNote  what to say when there are none — a month with no sessions
+ *                   is a different statement from a trainee who never logged
+ */
+export default function WorkoutProgress({
+  rows,
+  emptyNote = "لم يسجّل المشترك أي أوزان بعد. تظهر هنا الأوزان التي يدخلها أثناء التمرين.",
+}: {
+  rows: Row[];
+  emptyNote?: string;
+}) {
   if (rows.length === 0) {
     return (
       <div className="crm-modal-section">
@@ -55,7 +50,7 @@ export default async function WorkoutProgress({ profileId }: { profileId: string
           سجل الأوزان ومتابعة التقدّم
         </h4>
         <p style={{ margin: 0, color: "var(--text-muted)", fontSize: "0.9rem" }}>
-          لم يسجّل المشترك أي أوزان بعد. تظهر هنا الأوزان التي يدخلها أثناء التمرين.
+          {emptyNote}
         </p>
       </div>
     );
@@ -88,8 +83,12 @@ export default async function WorkoutProgress({ profileId }: { profileId: string
     null
   );
 
+  /* Same container as the month record and the weigh-in chart beside it: one
+     radius, one border, one background, so the three tabs of a month read as
+     three of a kind. `--border-strong` because `--border` is within seven units
+     of `--bg2` and the outline all but disappeared into it. */
   return (
-    <details className="crm-modal-section" style={{ background: 'var(--bg2)', padding: '24px', borderRadius: "var(--radius-lg)", border: '1px solid var(--border)' }}>
+    <details className="crm-modal-section" style={{ background: 'var(--bg2)', padding: '24px', borderRadius: "var(--radius-xl)", border: '1px solid var(--border-strong)' }}>
       <summary className="crm-modal-section-title" style={{ margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', cursor: 'pointer', listStyle: 'none' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Icon name="monitoring" style={{ color: 'var(--primary)', fontSize: '24px' }} />

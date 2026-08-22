@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { requireUserPage, sessionOwnsProfile } from "@/lib/authGuard";
 import { readIntakeData } from "@/lib/intakeData";
 import { asMeals, type DietPlan } from "@/types/diet";
-import { toISODate } from "@/lib/trainingCycle";
+import { subscriptionStartOf } from "@/lib/subscription";
 import { answerLabel } from "@/lib/formLabels";
 import ExportDietClient from "./ExportDietClient";
 import { notFound } from "next/navigation";
@@ -34,7 +34,10 @@ export default async function ExportDietPage({
   if (data?.fullname) traineeName = String(data.fullname);
   else if (profile.username) traineeName = profile.username;
 
-  const startDateStr = toISODate(new Date());
+  /* Was `toISODate(new Date())` — today's date under a label that says
+     "تاريخ الاشتراك". Shared with the training sheet so the two cannot drift
+     into printing different start dates for the same subscriber. */
+  const startDateStr = subscriptionStartOf(data?.activation_date, profile.created_at);
   const weight = data?.weight ? `${data.weight} كغم` : "—";
   const height = data?.height ? `${data.height} سم` : "—";
   
