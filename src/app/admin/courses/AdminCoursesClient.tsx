@@ -19,6 +19,7 @@ import { toast, Toaster } from "react-hot-toast";
 import { Icon } from "@/components/Icon";
 import { CustomSelect } from "@/components/CustomSelect";
 import { formatTimestamp } from "@/lib/trainingDates";
+import { getEmbedUrl, safeVideoUrl } from "@/lib/videoEmbed";
 import "../crm.css";
 import "./courses.css";
 import { normalizeArabic, arabicIncludes } from "@/lib/arabicSearch";
@@ -33,10 +34,14 @@ export default function AdminCoursesClient({
   initialCourses,
   initialTrainees = [],
   initialAssignments = {},
+  exerciseVideos = {},
 }: {
   initialCourses: Course[],
   initialTrainees?: TraineeOption[],
   initialAssignments?: CourseAssignments,
+  /** Library videos keyed by exercise id and by name — the fallback for
+   *  programmes saved before an exercise carried its own `video_url`. */
+  exerciseVideos?: Record<string, string>,
 }) {
   const router = useRouter();
   /* Only the id is held in state. Keeping the whole course object meant the
@@ -47,6 +52,20 @@ export default function AdminCoursesClient({
   const [showAssignModal, setShowAssignModal] = useState<string | null>(null);
   const [selectedTraineeId, setSelectedTraineeId] = useState<string>("");
   const [isActionLoading, setIsActionLoading] = useState(false);
+  /* The video the play button in the table asked for. Held separately from the
+     course so closing the player returns to the course rather than dismissing
+     both. */
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+
+  /* What the video column shows for one row.
+     The programme's own copy first, then the library by origin id, then by
+     name — the order the export sheet uses. `safeVideoUrl` has the final word:
+     this column ends up as an iframe `src`, and `javascript:` in that database
+     field is exactly the thing that guard was written for. */
+  const videoFor = (ex: { video_url?: string | null; refId?: string; name_ar?: string }) =>
+    safeVideoUrl(
+      ex.video_url || exerciseVideos[ex.refId || ""] || exerciseVideos[ex.name_ar || ""] || ""
+    );
 
   const courses = initialCourses || [];
   const trainees = initialTrainees || [];
@@ -366,14 +385,17 @@ export default function AdminCoursesClient({
           </div>
         </div>
 
-        {/* Centered Modal for Course Details */}
+        {/* Centered Modal for Course Details.
+            The widest of the admin dialogs on purpose: this one lays out a
+            whole course — days, and the exercises under each — where the
+            others ask a single question and stay narrow. */}
         {selectedCourse && (
           <AdminModal
             isOpen={!!selectedCourse}
             onClose={() => setSelectedCourseId(null)}
             title={selectedCourse.name}
             icon="fitness_center"
-            maxWidth={820}
+            maxWidth={900}
             footer={
               <div style={{ display: "flex", gap: 12, justifyContent: "flex-end", width: "100%", direction: "rtl" }}>
                 <a
@@ -489,6 +511,7 @@ export default function AdminCoursesClient({
                                   <th style={{ textAlign: "center", width: "70px", paddingInline: "6px" }}>الجولات</th>
                                   <th style={{ textAlign: "start" }}>التكرارات</th>
                                   <th style={{ textAlign: "center", width: "140px" }}>وقت الراحة</th>
+                                  <th style={{ textAlign: "center", width: "90px" }}>الفيديو</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -514,7 +537,7 @@ export default function AdminCoursesClient({
                                             </div>
                                           </div>
                                         </td>
-                                        <td colSpan={3} style={{ textAlign: "start" }}>
+                                        <td colSpan={4} style={{ textAlign: "start" }}>
                                           {cols.length > 0 ? (
                                             <div className="co-custom-cols">
                                               {cols.map((c, cIdx) => (
@@ -569,6 +592,24 @@ export default function AdminCoursesClient({
                                       <td style={{ textAlign: "center", fontSize: "0.82rem", color: "var(--primary)", fontWeight: 600 }}>
                                         {ex.rest_time || "من 60 ثانية إلى 90 ثانية"}
                                       </td>
+                                      <td style={{ textAlign: "center" }}>
+                                        {(() => {
+                                          const url = videoFor(ex);
+                                          return url ? (
+                                            <button
+                                              type="button"
+                                              className="co-video-btn"
+                                              onClick={() => setVideoUrl(url)}
+                                              title="مشاهدة الفيديو"
+                                              aria-label={`مشاهدة فيديو ${ex.name_ar || "التمرين"}`}
+                                            >
+                                              <Icon name="play_circle" />
+                                            </button>
+                                          ) : (
+                                            <span className="co-video-empty" aria-label="لا يوجد فيديو">—</span>
+                                          );
+                                        })()}
+                                      </td>
                                     </tr>
                                   );
                                 })}
@@ -584,6 +625,35 @@ export default function AdminCoursesClient({
             </div>
           </AdminModal>
         )}
+
+        {/* Opens over the course it was launched from, and closing it returns
+            there — `videoUrl` is its own piece of state for that reason.
+            Same player as the exercise library's, down to the message: an
+            address `getEmbedUrl` refuses is one a browser should not be
+            pointed at, and nothing is framed in that case. */}
+        <AdminModal
+          isOpen={!!videoUrl}
+          onClose={() => setVideoUrl(null)}
+          title="معاينة الفيديو"
+          icon="play_circle"
+          maxWidth={800}
+          zIndex={10000}
+        >
+          {videoUrl && getEmbedUrl(videoUrl) ? (
+            <div style={{ position: "relative", width: "100%", aspectRatio: "16 / 9", background: "#000" }}>
+              <iframe
+                src={getEmbedUrl(videoUrl)!}
+                allow="autoplay; encrypted-media; picture-in-picture"
+                allowFullScreen
+                style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none" }}
+              />
+            </div>
+          ) : videoUrl ? (
+            <p style={{ padding: "var(--space-6)", textAlign: "center", color: "var(--text-muted)" }}>
+              رابط الفيديو غير صالح — عدّله من صفحة التمارين.
+            </p>
+          ) : null}
+        </AdminModal>
       </div>
 
       {/* Assignment Modal (kept as centered modal as it requires select input) */}

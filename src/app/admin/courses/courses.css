@@ -522,8 +522,9 @@
 }
 
 /* Custom exercise rows — a title plus up to four free-text columns the coach
-   defined themselves. They carry no sets/reps/rest, so the row spans the three
-   numeric columns and lays the written values out the way the builder does. */
+   defined themselves. They carry no sets/reps/rest, and no library origin to
+   find a video through either, so the row spans the four columns after the
+   title and lays the written values out the way the builder does. */
 .co-custom-cols {
   display: flex;
   align-items: center;
@@ -541,4 +542,45 @@
   font-size: var(--text-sm);
   color: var(--admin-on-surface);
   overflow-wrap: anywhere;
+}
+
+/* The video column.
+ *
+ * A 32px round target rather than the text link the footer buttons use: it
+ * repeats on every row of every day, and a row of worded links would read as
+ * the loudest thing in a table whose subject is sets and reps.
+ * The dash beside it is the same one the sets cell falls back to, so a row
+ * without a video looks like a row missing any other value rather than like a
+ * control that failed to draw. */
+.co-video-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--border-primary);
+  background: transparent;
+  color: var(--primary);
+  cursor: pointer;
+  transition:
+    background-color var(--dur) var(--ease),
+    border-color var(--dur) var(--ease),
+    transform var(--dur) var(--ease);
+}
+
+.co-video-btn:hover {
+  background: var(--primary-dim);
+  border-color: var(--primary);
+  transform: scale(1.08);
+}
+
+.co-video-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.co-video-empty {
+  color: var(--text-muted);
 }

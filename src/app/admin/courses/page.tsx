@@ -26,6 +26,7 @@ export default async function AdminCoursesPage() {
   let courses: Course[] = [];
   let trainees: TraineeOption[] = [];
   const assignments: CourseAssignments = {};
+  const exerciseVideos: Record<string, string> = {};
 
   try {
     const courseRows = await prisma.courses.findMany({
@@ -60,6 +61,24 @@ export default async function AdminCoursesPage() {
       if (!p.current_course_id) return;
       (assignments[p.current_course_id] ??= []).push(trainees[i].name);
     });
+
+    /* The video column's fallback, keyed by both id and name for the same
+       reason the export sheet keys it that way.
+       A programme copies `video_url` out of the library when the coach adds the
+       exercise, so most rows answer for themselves — but the field was added
+       after courses were already being saved, and anything older carries no
+       video at all. `refId` traces the origin without a foreign key, so it may
+       resolve to nothing; the name is the second chance. Nothing here rewrites
+       the programme, it only fills a cell that would otherwise read empty on
+       every course built before the copy existed. */
+    const libraryRows = await prisma.exercises.findMany({
+      select: { id: true, name_ar: true, video_url: true },
+    });
+    libraryRows.forEach((e) => {
+      if (!e.video_url) return;
+      exerciseVideos[e.id] = e.video_url;
+      if (e.name_ar) exerciseVideos[e.name_ar] = e.video_url;
+    });
   } catch (error) {
     console.error("Failed to fetch data for admin library:", error);
   }
@@ -69,6 +88,7 @@ export default async function AdminCoursesPage() {
       initialCourses={courses}
       initialTrainees={trainees}
       initialAssignments={assignments}
+      exerciseVideos={exerciseVideos}
     />
   );
 }
