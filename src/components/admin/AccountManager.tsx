@@ -5,6 +5,7 @@ import { toast } from "react-hot-toast";
 import { isSubscriptionExpired, daysRemaining } from "@/lib/subscription";
 import { Icon } from "@/components/Icon";
 import { formatTimestamp } from "@/lib/trainingDates";
+import { confirmDialog } from "@/lib/confirmDialog";
 
 interface AccountManagerProps {
   profileId: string;
@@ -45,7 +46,7 @@ export default function AccountManager({ profileId, existingAccount: initialAcco
   const [isSuspendLoading, setIsSuspendLoading] = useState(false);
 
   const handleToggleSuspend = async () => {
-    if (!confirm(isSuspended ? "هل أنت متأكد من تفعيل الحساب؟" : "هل أنت متأكد من تعطيل الحساب؟")) return;
+    if (!(await confirmDialog(isSuspended ? "هل أنت متأكد من تفعيل الحساب؟" : "هل أنت متأكد من تعطيل الحساب؟"))) return;
     setIsSuspendLoading(true);
     try {
       const res = await fetch("/api/admin/suspend-account", {

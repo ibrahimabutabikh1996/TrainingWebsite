@@ -12,6 +12,7 @@ import { addNutritionSource, updateNutritionSource, deleteNutritionSource } from
 import { Icon } from "@/components/Icon";
 import "./diet.css";
 import { normalizeArabic, arabicIncludes } from "@/lib/arabicSearch";
+import { confirmDialog } from "@/lib/confirmDialog";
 
 const CATEGORIES = ["مصادر البروتين", "مصادر الكاربوهيدرات", "مصادر الدهون الصحية", "الخضراوات", "الفواكه"];
 
@@ -78,7 +79,7 @@ export default function AdminDietClient({ initialSources }: { initialSources: Nu
   };
 
   const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`هل أنت متأكد من حذف "${name}"؟`)) return;
+    if (!(await confirmDialog(`هل أنت متأكد من حذف "${name}"؟`, { danger: true }))) return;
     
     const res = await deleteNutritionSource(id);
     if (res.success) {

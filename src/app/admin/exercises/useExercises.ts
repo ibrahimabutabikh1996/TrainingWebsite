@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
 import { Exercise } from "@/types/admin";
+import { confirmDialog } from "@/lib/confirmDialog";
 
 /** The categories the form offers; also drives the filter and the counters. */
 export const CATEGORIES = ["مقاومة", "كارديو", "اطالة"] as const;
@@ -157,7 +158,7 @@ export function useExercises(initialExercises: Exercise[]) {
     const target = exercises.find((ex) => ex.id === id);
     /* Name the exercise — the old prompt said "this exercise" with no clue
        which card the click landed on. */
-    if (!confirm(`حذف تمرين «${target?.name_ar ?? ""}» نهائياً؟`)) return;
+    if (!(await confirmDialog(`حذف تمرين «${target?.name_ar ?? ""}» نهائياً؟`, { danger: true }))) return;
 
     const toastId = toast.loading("جارٍ الحذف...");
     try {

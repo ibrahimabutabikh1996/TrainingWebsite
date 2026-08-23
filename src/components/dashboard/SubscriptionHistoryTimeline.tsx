@@ -14,6 +14,7 @@ import { buildSubscriptionMonths } from "@/lib/subscriptionMonths";
 import { MonthSection } from "@/components/admin/ProfileMonthlyRecord";
 import WorkoutProgress, { type WorkoutLogRow } from "@/components/admin/WorkoutProgress";
 import WeightLog from "@/components/dashboard/WeightLog";
+import { confirmDialog } from "@/lib/confirmDialog";
 
 /* Whether an ISO date falls inside a month of the subscription.
  *
@@ -112,7 +113,7 @@ export function SubscriptionHistoryTimeline({
             type="button"
             onClick={async () => {
               if (
-                window.confirm(
+                await confirmDialog(
                   "هل أنت متأكد من استعادة السجل التاريخي والإبقاء على البيانات؟",
                 )
               ) {
@@ -367,7 +368,7 @@ export function SubscriptionHistoryTimeline({
               type="button"
               onClick={async () => {
                 if (
-                  window.confirm(
+                  await confirmDialog(
                     "هل أنت متأكد من مسح وحذف السجل التاريخي والأنظمة السابقة بالكامل لهذا المتدرب؟",
                   )
                 ) {
@@ -407,7 +408,7 @@ export function SubscriptionHistoryTimeline({
                 type="button"
                 onClick={async () => {
                   if (
-                    window.confirm(
+                    await confirmDialog(
                       "هل تريد استعادة السجل التاريخي المحذوف والإبقاء عليه دون حذف؟",
                     )
                   ) {
@@ -592,7 +593,7 @@ export function SubscriptionHistoryTimeline({
                       onClick={async (e) => {
                         e.stopPropagation();
                         if (
-                          window.confirm(
+                          await confirmDialog(
                             `هل أنت متأكد من حذف ( ${item.monthName} ) من السجل التاريخي للاعب؟`,
                           )
                         ) {
@@ -940,9 +941,13 @@ export function SubscriptionHistoryTimeline({
                                 "1px solid color-mix(in srgb, var(--success) 35%, transparent)",
                             }}
                           >
-                            {item.diet?.calories
-                              ? `${item.diet.calories} سعرة حرارية`
-                              : "نظام غذائي مخصص"}
+                            {/* Was a calorie figure with this as its fallback,
+                                and the figure never arrived: neither builder of
+                                this timeline — the panel's nor the export's —
+                                sets `diet.calories`, so the branch had been
+                                dead since it was written. The macros behind it
+                                are no longer collected either. */}
+                            نظام غذائي مخصص
                           </span>
                         </div>
                         <p

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import "./admin.css";
 import { Icon, type IconName } from "@/components/Icon";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 export default function AdminLayout({
   children,
@@ -146,6 +147,13 @@ export default function AdminLayout({
           )}
         </div>
       </nav>
+
+      {/* Every "are you sure?" in the panel comes out here, mounted once the
+          way the root layout mounts the upload window. It draws nothing until
+          `confirmDialog()` is called. Panel-only on purpose: all the callers
+          are these screens, and mounting it here keeps crm.css out of the
+          bundle the public pages ship. */}
+      <ConfirmDialog />
     </div>
   );
 }
