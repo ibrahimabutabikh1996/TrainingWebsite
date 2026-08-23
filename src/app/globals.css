@@ -831,3 +831,303 @@ input[type="number"] {
   -moz-appearance: textfield;
 }
 
+
+
+/* ==========================================================================
+   Shared form primitives — `.ui-*`
+
+   The admin screens each grew their own field, switch and image-picker, so the
+   same control shipped at three label sizes and four paddings depending on
+   which page you were on. These are that control, once: the geometry is the
+   one `.diet-field` and `.diet-image-field` already established, lifted out of
+   a page stylesheet so the rest of the product can read from it instead of
+   re-deriving it.
+
+   Only the CMS consumes these today. Nothing here targets a bare element, so
+   adopting them elsewhere is opt-in, one class at a time — no screen changes
+   appearance until its markup asks to.
+   ========================================================================== */
+
+/* --- Field: label over control, on the 4px scale. --- */
+.ui-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  /* Without this a field inside a grid track refuses to shrink below its
+     content and pushes the row wider than the card. */
+  min-width: 0;
+}
+
+.ui-label {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-secondary);
+  line-height: var(--leading-tight);
+}
+
+.ui-control {
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: var(--admin-radius);
+  border: 1px solid var(--border-strong);
+  background: var(--input-bg);
+  color: var(--text);
+  font-family: inherit;
+  font-size: var(--text-base);
+  outline: none;
+  transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+
+.ui-control::placeholder {
+  color: var(--text-muted);
+}
+
+.ui-control:hover:not(:focus) {
+  border-color: var(--border-primary);
+}
+
+.ui-control:focus {
+  border-color: var(--primary);
+  background: var(--bg4);
+  box-shadow: var(--focus-ring);
+}
+
+textarea.ui-control {
+  resize: vertical;
+  min-height: 76px;
+  line-height: var(--leading-snug);
+}
+
+/* --- Switch ---
+   A real track-and-knob rather than a native checkbox tinted with
+   `accent-color`: the native box reads as a form input on a settings row, and
+   its size is not ours to set on every platform. The input itself stays in the
+   DOM and keeps every behaviour a checkbox has — label association, keyboard
+   toggle, `:checked` — it is only visually replaced.
+
+   `inset-inline-start` rather than `left`, so the knob travels toward the end
+   of the line in Arabic the same way it does in English. */
+.ui-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+  min-width: 0;
+}
+
+.ui-switch input {
+  /* Off-screen rather than `display:none`, which would drop it from the
+     accessibility tree and the tab order. */
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ui-switch-track {
+  position: relative;
+  width: 34px;
+  height: 20px;
+  flex-shrink: 0;
+  border-radius: var(--radius-pill);
+  background: var(--bg4);
+  border: 1px solid var(--border-strong);
+  transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+
+.ui-switch-track::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  inset-inline-start: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: var(--radius-circle);
+  background: var(--text-muted);
+  transition: inset-inline-start var(--dur) var(--ease), background-color var(--dur) var(--ease);
+}
+
+.ui-switch input:checked + .ui-switch-track {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.ui-switch input:checked + .ui-switch-track::after {
+  inset-inline-start: 16px;
+  background: var(--text-inverse);
+}
+
+.ui-switch input:focus-visible + .ui-switch-track {
+  box-shadow: var(--focus-ring);
+}
+
+.ui-switch input:disabled + .ui-switch-track {
+  opacity: 0.5;
+}
+
+.ui-switch-label {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-secondary);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ui-switch input:checked ~ .ui-switch-label {
+  color: var(--text);
+}
+
+/* A switch presented as its own settings row. */
+.ui-switch-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--admin-radius);
+  border: 1px solid var(--border);
+  background: var(--bg3);
+  transition: border-color var(--dur) var(--ease), background-color var(--dur) var(--ease);
+}
+
+.ui-switch-row:hover {
+  border-color: var(--border-primary);
+}
+
+/* --- Media field ---
+   A thumbnail beside its actions, in one row. The alternative — a drop zone
+   stacked over a full-width preview — cost ~500px of the form per image, and
+   the CMS has nine of them. */
+.ui-media-field {
+  /* A consumer may lay a full-size drop target under the contents; the two
+     rules below are what keep that target under them rather than over them. */
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--admin-radius);
+  background: color-mix(in srgb, var(--text) 2%, transparent);
+  transition: border-color var(--dur) var(--ease), background-color var(--dur) var(--ease);
+}
+
+.ui-media-field:hover {
+  border-color: var(--border-primary);
+}
+
+.ui-media-thumb {
+  position: relative;
+  z-index: 2;
+  width: 76px;
+  height: 76px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: var(--admin-radius-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--bg3);
+  color: var(--text-muted);
+}
+
+.ui-media-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.ui-media-body {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ui-media-hint {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  line-height: var(--leading-snug);
+}
+
+.ui-media-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* Compact action inside a media field. `position:relative` because the upload
+   variant lays a transparent file input over itself. */
+.ui-media-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: var(--admin-radius-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--bg3);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+  transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease), opacity var(--dur) var(--ease);
+}
+
+.ui-media-btn .app-icon { font-size: 15px; }
+
+.ui-media-btn:hover:not(:disabled) {
+  border-color: var(--primary);
+  color: var(--primary-on-tint);
+  background: var(--primary-dim);
+}
+
+.ui-media-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ui-media-btn.is-upload {
+  border-style: dashed;
+}
+
+.ui-media-btn.is-danger:hover:not(:disabled) {
+  border-color: var(--error);
+  color: var(--error-text);
+  background: var(--error-bg);
+}
+
+/* The file input that covers an upload button. */
+.ui-media-file {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* --- Grid helpers ---
+   `auto-fit` rather than a fixed column count, so a pair of fields collapses to
+   one column when the pane is narrow instead of overflowing it. */
+.ui-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px;
+}
+
+.ui-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}

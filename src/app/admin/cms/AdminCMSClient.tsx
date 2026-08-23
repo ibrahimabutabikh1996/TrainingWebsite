@@ -77,7 +77,9 @@ const InputField = ({ label, fieldKey, isTextarea = false, forceDir }: { label: 
           value={currentContent[fieldKey] || ""}
           onChange={(e) => setContent(fieldKey, e.target.value)}
           placeholder={defaultText}
-          rows={4}
+          /* Two rows, not four. Every description on this screen is one or two
+             sentences, and the box stays resizable for the ones that aren't. */
+          rows={2}
           dir={forceDir ?? "rtl"}
           className="cms-textarea"
         />
@@ -95,12 +97,37 @@ const InputField = ({ label, fieldKey, isTextarea = false, forceDir }: { label: 
   );
 };
 
+/* One switch, everywhere on this screen.
+   It was ten hand-written checkboxes tinted with an inline `accentColor`, at
+   three different sizes (16px, 18px, 20px) depending on the call site, each
+   wrapped in its own inline flex row. The visual is `.ui-switch` in
+   globals.css; the `<input type="checkbox">` itself is untouched and only
+   moved off-screen, so label association, the tab order and keyboard toggling
+   are still the browser's, not ours. */
+const Switch = ({ checked, onChange, label, disabled = false }: {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  label?: React.ReactNode;
+  disabled?: boolean;
+}) => (
+  <label className="ui-switch">
+    <input
+      type="checkbox"
+      checked={checked}
+      disabled={disabled}
+      onChange={(e) => onChange(e.target.checked)}
+    />
+    <span className="ui-switch-track" aria-hidden="true" />
+    {label != null && <span className="ui-switch-label">{label}</span>}
+  </label>
+);
+
 const PhoneInputField = ({ label, fieldKey }: { label: string, fieldKey: string }) => {
   const { currentContent, setContent } = React.useContext(CMSContext);
 
   const val = currentContent[fieldKey] || "";
   let code = "+964", p1 = "", p2 = "", p3 = "";
-  
+
   const parts = val.split(" ");
   if (parts.length >= 4) {
     code = parts[0]; p1 = parts[1]; p2 = parts[2]; p3 = parts.slice(3).join(" ");
@@ -122,54 +149,47 @@ const PhoneInputField = ({ label, fieldKey }: { label: string, fieldKey: string 
   return (
     <div className="cms-form-group">
       <label className="cms-label">{label}</label>
-      <div 
-        style={{ 
-          display: "flex", 
-          alignItems: "center",
-          gap: "8px",
-          padding: "8px 12px",
-          background: "var(--bg3)",
-          border: "1px solid var(--border-strong)",
-          borderRadius: "var(--radius-md)",
-          direction: "ltr",
-          /* Without this the fixed-width segments push the row past the card. */
-          minWidth: 0,
-          overflow: "hidden",
-          transition: "all 0.25s ease"
-        }} 
-      >
-        <input 
-          type="text" 
+      {/* The four segments are one control, so they share one border and one
+          focus ring rather than each drawing its own separator. Geometry is in
+          `.cms-phone`; the parsing above is unchanged. */}
+      <div className="cms-phone">
+        <input
+          type="text"
           value={code}
           onChange={(e) => update(e.target.value, p1, p2, p3)}
-          style={{ width: "55px", textAlign: "center", border: "none", background: "transparent", color: "var(--text)", outline: "none", fontSize: "0.95rem", padding: 0 }}
+          className="cms-phone-code"
           placeholder="+964"
+          aria-label="مفتاح الدولة"
         />
-        <div style={{ width: "1px", height: "20px", background: "var(--border)" }}></div>
-        <input 
-          type="text" 
+        <span className="cms-phone-sep" />
+        <input
+          type="text"
           value={p1}
           onChange={(e) => update(code, e.target.value.replace(/\D/g, ''), p2, p3)}
-          style={{ width: "40px", textAlign: "center", border: "none", background: "transparent", color: "var(--text)", outline: "none", fontSize: "0.95rem", padding: 0 }}
+          className="cms-phone-p1"
           maxLength={3}
           placeholder="787"
+          aria-label="مقدمة الرقم"
         />
-        <div style={{ width: "1px", height: "20px", background: "var(--border)" }}></div>
-        <input 
-          type="text" 
+        <span className="cms-phone-sep" />
+        <input
+          type="text"
           value={p2}
           onChange={(e) => update(code, p1, e.target.value.replace(/\D/g, ''), p3)}
-          style={{ width: "45px", textAlign: "center", border: "none", background: "transparent", color: "var(--text)", outline: "none", fontSize: "0.95rem", borderLeft: "1px solid var(--border)" }}
+          className="cms-phone-p2"
           maxLength={3}
           placeholder="751"
+          aria-label="وسط الرقم"
         />
-        <input 
-          type="text" 
+        <span className="cms-phone-sep" />
+        <input
+          type="text"
           value={p3}
           onChange={(e) => update(code, p1, p2, e.target.value.replace(/\D/g, ''))}
-          style={{ flex: 1, minWidth: 0, width: 0, border: "none", background: "transparent", color: "var(--text)", outline: "none", fontSize: "0.95rem", padding: "0 8px", borderLeft: "1px solid var(--border)" }}
+          className="cms-phone-p3"
           maxLength={4}
           placeholder="1605"
+          aria-label="نهاية الرقم"
         />
       </div>
     </div>
@@ -182,66 +202,102 @@ const ImageUploadField = ({ label, fieldKey, recommendedSize }: { label: string,
   const hasImage = hasRealImage(imageUrl);
 
   return (
-    <div style={{ marginTop: 24, marginBottom: 16 }}>
-      <label className="cms-label" style={{ marginBottom: 12 }}>{label}</label>
-      
-      {/* Upload Zone */}
-      <div className="cms-upload-zone" style={{ position: "relative", overflow: "hidden" }}>
-        <div className="cms-upload-content">
-          <span className="cms-upload-text">{isUploading ? "جاري معالجة ورفع الصورة..." : "اسحب الصورة هنا أو انقر لاختيار ملف"}</span>
-          {!isUploading && (
-            <>
-              <span className="cms-upload-hint">PNG, JPG, WEBP أو GIF (الحد الأقصى 2 ميجابايت)</span>
-              {recommendedSize && <span className="cms-upload-hint" style={{ color: "var(--primary)", marginTop: 2, fontWeight: 600 }}>الأبعاد الموصى بها: {recommendedSize}</span>}
-            </>
+    <div className="cms-form-group">
+      <label className="cms-label">{label}</label>
+
+      {/* One row: the thumbnail and the three things you can do to it.
+          It used to be a 76px drop zone, then a full-width "choose from
+          library" button, then a preview card up to 320px tall — ~500px per
+          image, on a screen that has nine of them.
+          The file input still covers the whole row, so dragging a file onto it
+          works exactly as it did; the action buttons sit above it in the stack
+          so their own clicks are not swallowed. */}
+      <div className="ui-media-field">
+        <input
+          type="file"
+          accept="image/*"
+          onChange={(e) => handleImageUpload(e, fieldKey)}
+          disabled={isUploading}
+          className="cms-media-dropzone"
+          title="اسحب صورة هنا أو انقر للاختيار"
+          aria-label={`رفع ${label}`}
+        />
+
+        <div className={`ui-media-thumb${hasImage ? "" : " is-empty"}`}>
+          {hasImage ? (
+            <img
+              src={imageUrl}
+              alt={label}
+              onClick={() => setPreviewImageUrl(imageUrl)}
+              style={{ cursor: "zoom-in" }}
+            />
+          ) : (
+            <Icon name="image" />
           )}
         </div>
-        <input 
-          type="file" 
-          accept="image/*" 
-          onChange={(e) => handleImageUpload(e, fieldKey)} 
-          disabled={isUploading} 
-          className="cms-file-input" 
-        />
-      </div>
 
-      <button
-        type="button"
-        onClick={() => openMediaSelector(fieldKey)}
-        className="cms-btn-secondary"
-        style={{ width: "100%", justifyContent: "center", gap: 8, padding: "10px", fontSize: "0.875rem", marginBottom: 16 }}
-      >
-        اختيار من مكتبة الوسائط
-      </button>
+        <div className="ui-media-body">
+          <span className="ui-media-hint">
+            {isUploading
+              ? "جاري معالجة ورفع الصورة..."
+              : hasImage
+                ? "اسحب صورة جديدة هنا لاستبدالها."
+                : "اسحب الصورة هنا أو استخدم الأزرار أدناه."}
+          </span>
+          {recommendedSize && !isUploading && (
+            <span className="cms-media-rec">الأبعاد الموصى بها: {recommendedSize}</span>
+          )}
 
-      {/* Preview block if image exists */}
-      {hasImage && (
-        <div style={{ display: "flex", justifyContent: "flex-start", marginTop: 8 }}>
-          <div className="cms-image-preview-card">
-            <img src={imageUrl} alt={label} className="cms-preview-img" onClick={() => setPreviewImageUrl(imageUrl)} style={{ cursor: "zoom-in" }} />
-            <div className="cms-preview-overlay" style={{ display: 'flex', gap: '8px' }}>
-              {/* "View" is not a destructive action — it was borrowing the
-                  delete button's class and overriding the fill inline, which
-                  left dark text on a translucent white wash (1.7:1). */}
-              <button
-                onClick={() => setPreviewImageUrl(imageUrl)}
-                className="cms-preview-btn-view"
-                title="عرض الصورة"
-              >
-                عرض
-              </button>
-              <button 
-                onClick={() => handleDeleteImage(fieldKey)} 
-                disabled={isUploading || isSaving}
-                className="cms-preview-btn-delete"
-                title="حذف الصورة"
-              >
-                حذف
-              </button>
-            </div>
+          <div className="ui-media-actions">
+            <span className="ui-media-btn is-upload">
+              <Icon name="upload" />
+              <span>رفع</span>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => handleImageUpload(e, fieldKey)}
+                disabled={isUploading}
+                className="ui-media-file"
+                aria-label={`رفع ${label}`}
+              />
+            </span>
+
+            <button
+              type="button"
+              onClick={() => openMediaSelector(fieldKey)}
+              disabled={isUploading}
+              className="ui-media-btn"
+            >
+              <Icon name="photo_library" />
+              <span>من المكتبة</span>
+            </button>
+
+            {hasImage && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setPreviewImageUrl(imageUrl)}
+                  className="ui-media-btn"
+                  title="عرض الصورة بالحجم الكامل"
+                >
+                  <Icon name="visibility" />
+                  <span>عرض</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteImage(fieldKey)}
+                  disabled={isUploading || isSaving}
+                  className="ui-media-btn is-danger"
+                  title="حذف الصورة"
+                >
+                  <Icon name="delete" />
+                  <span>حذف</span>
+                </button>
+              </>
+            )}
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };
@@ -249,7 +305,7 @@ const ImageUploadField = ({ label, fieldKey, recommendedSize }: { label: string,
 const TestimonialsEditor = () => {
   const { currentContent, setContent, processAndUploadImage, handleSave, isSaving } = React.useContext(CMSContext);
   const [expandedIndex, setExpandedIndex] = React.useState<number | null>(null);
-  
+
   const testimonials: Testimonial[] = Array.isArray(currentContent.testimonials) ? currentContent.testimonials : [];
 
   const updateTestimonial = (index: number, key: keyof Testimonial, value: string) => {
@@ -276,7 +332,7 @@ const TestimonialsEditor = () => {
     updated[index] = updated[index + dir];
     updated[index + dir] = temp;
     setContent("testimonials", updated);
-    
+
     if (expandedIndex === index) setExpandedIndex(index + dir);
     else if (expandedIndex === index + dir) setExpandedIndex(index);
   };
@@ -295,57 +351,54 @@ const TestimonialsEditor = () => {
 
   return (
     <div className="cms-section-card">
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-        <div>
-          <h3 className="cms-card-title" style={{ margin: 0, marginBottom: 4 }}>أراء المشتركين</h3>
-          <p style={{ color: "var(--muted)", fontSize: "0.9rem", margin: 0 }}>إدارة التقييمات وقصص النجاح التي تظهر في الصفحة الرئيسية.</p>
+      <div className="cms-media-head">
+        <div className="cms-media-head-text">
+          <h3 className="cms-card-title">أراء المشتركين</h3>
+          <p className="cms-media-info">إدارة التقييمات وقصص النجاح التي تظهر في الصفحة الرئيسية.</p>
         </div>
-        <button type="button" onClick={addTestimonial} className="cms-btn-primary" style={{ padding: "8px 16px", fontSize: "0.9rem" }}>
-          + إضافة رأي جديد
+        <button type="button" onClick={addTestimonial} className="cms-btn-primary">
+          <Icon name="add" />
+          <span>إضافة رأي جديد</span>
         </button>
       </div>
 
       {testimonials.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "40px 0", color: "var(--muted)", border: "1px dashed var(--border)", borderRadius: 12 }}>
-          لا توجد آراء مضافة حالياً. سيتم عرض الأمثلة الافتراضية في الموقع.
-        </div>
+        <p className="cms-empty">لا توجد آراء مضافة حالياً. سيتم عرض الأمثلة الافتراضية في الموقع.</p>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <div className="cms-testimonial-list">
           {testimonials.map((t, idx) => {
             const isExpanded = expandedIndex === idx;
-            
+
             return (
-              <div key={idx} style={{ border: isExpanded ? "1px solid var(--primary)" : "1px solid var(--border)", borderRadius: 12, background: isExpanded ? "var(--bg2)" : "var(--bg3)", overflow: "hidden", transition: "all 0.2s ease", boxShadow: isExpanded ? "var(--elev-2)" : "none" }}>
-                
+              <div key={idx} className={`cms-testimonial${isExpanded ? " is-open" : ""}`}>
+
                 {/* Accordion Header */}
-                <div 
+                <div
                   onClick={() => setExpandedIndex(isExpanded ? null : idx)}
-                  style={{ padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", borderBottom: isExpanded ? "1px solid var(--border)" : "none" }}
+                  className="cms-testimonial-head"
                 >
-                  <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                    <div style={{ width: 40, height: 40, borderRadius: "50%", background: isExpanded ? "var(--primary)" : "var(--primary-dim)", color: isExpanded ? "var(--text-inverse)" : "var(--primary)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold", transition: "all 0.2s" }}>
-                      {idx + 1}
-                    </div>
-                    <div>
-                      <div style={{ fontWeight: 700, color: "var(--text)", fontSize: "1.05rem" }}>{t.author_name || "رأي جديد (بدون اسم)"}</div>
-                      <div style={{ fontSize: "0.85rem", color: "var(--muted)", display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
-                        <span>النوع: {t.type === 'text' ? 'نص فقط' : t.type === 'image' ? 'صورة' : t.type === 'video' ? 'فيديو' : 'صوت'}</span>
+                  <div className="cms-testimonial-id">
+                    <div className="cms-testimonial-num">{idx + 1}</div>
+                    <div style={{ minWidth: 0 }}>
+                      <div className="cms-testimonial-name">{t.author_name || "رأي جديد (بدون اسم)"}</div>
+                      <div className="cms-testimonial-meta">
+                        النوع: {t.type === 'text' ? 'نص فقط' : t.type === 'image' ? 'صورة' : t.type === 'video' ? 'فيديو' : 'صوت'}
                       </div>
                     </div>
                   </div>
-                  
-                  <div style={{ display: "flex", gap: 8, alignItems: "center" }} onClick={e => e.stopPropagation()}>
-                    <button type="button" onClick={() => moveTestimonial(idx, -1)} disabled={idx === 0} style={{ background: "transparent", border: "1px solid var(--border-strong)", color: idx === 0 ? "var(--muted)" : "var(--text)", width: 32, height: 32, borderRadius: 6, cursor: idx === 0 ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center" }} title="تحريك لأعلى">↑</button>
-                    <button type="button" onClick={() => moveTestimonial(idx, 1)} disabled={idx === testimonials.length - 1} style={{ background: "transparent", border: "1px solid var(--border-strong)", color: idx === testimonials.length - 1 ? "var(--muted)" : "var(--text)", width: 32, height: 32, borderRadius: 6, cursor: idx === testimonials.length - 1 ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center" }} title="تحريك لأسفل">↓</button>
-                    <button type="button" onClick={() => removeTestimonial(idx)} style={{ background: "rgba(var(--error-rgb), 0.1)", border: "1px solid rgba(var(--error-rgb), 0.2)", color: "var(--error-text)", padding: "0 12px", height: 32, borderRadius: 6, cursor: "pointer", fontSize: "0.85rem", fontWeight: 600, marginRight: 8 }}>حذف</button>
-                    <Icon name={isExpanded ? "expand_less" : "expand_more"} style={{ color: "var(--muted)", marginLeft: 8 }} />
+
+                  <div className="cms-testimonial-actions" onClick={e => e.stopPropagation()}>
+                    <button type="button" onClick={() => moveTestimonial(idx, -1)} disabled={idx === 0} className="cms-row-btn" title="تحريك لأعلى" aria-label="تحريك لأعلى">↑</button>
+                    <button type="button" onClick={() => moveTestimonial(idx, 1)} disabled={idx === testimonials.length - 1} className="cms-row-btn" title="تحريك لأسفل" aria-label="تحريك لأسفل">↓</button>
+                    <button type="button" onClick={() => removeTestimonial(idx)} className="cms-row-btn is-danger">حذف</button>
+                    <Icon name={isExpanded ? "expand_less" : "expand_more"} style={{ color: "var(--text-muted)" }} />
                   </div>
                 </div>
 
                 {/* Accordion Body */}
                 {isExpanded && (
-                  <div style={{ padding: "24px 20px" }}>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+                  <div className="cms-testimonial-body">
+                    <div className="ui-grid-2">
                       <div className="cms-form-group">
                         <label className="cms-label">النوع</label>
                         <CustomSelect
@@ -365,7 +418,7 @@ const TestimonialsEditor = () => {
                       </div>
                     </div>
 
-                    <div className="cms-form-group" style={{ marginBottom: 16 }}>
+                    <div className="cms-form-group" style={{ marginBottom: 0 }}>
                       <label className="cms-label">الخطة المشترك بها</label>
                       <CustomSelect
                         value={t.author_role || ""}
@@ -389,47 +442,45 @@ const TestimonialsEditor = () => {
                     </div>
 
                     {t.type !== "text" && (
-                      <div className="cms-form-group" style={{ marginBottom: 16, background: "var(--bg)", padding: 16, borderRadius: 8, border: "1px dashed var(--border)" }}>
+                      <div className="cms-testimonial-media">
                         <label className="cms-label">الوسائط (صورة، فيديو، أو مقطع صوتي)</label>
-                        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
-                          <input type="text" value={t.media_url || ""} onChange={(e) => updateTestimonial(idx, "media_url", e.target.value)} className="cms-input" style={{ flex: 1, minWidth: 200 }} placeholder="رابط الملف المباشر..." dir="ltr" />
-                          <div style={{ position: "relative", overflow: "hidden", display: "inline-block", flexShrink: 0 }}>
-                            <input 
-                              type="file" 
-                              accept={t.type === "image" ? "image/*" : t.type === "video" ? "video/*" : "audio/*"} 
-                              onChange={(e) => handleMediaUpload(e, idx)} 
-                              style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%" }} 
+                        <div className="cms-media-url-row">
+                          <input type="text" value={t.media_url || ""} onChange={(e) => updateTestimonial(idx, "media_url", e.target.value)} className="cms-input" placeholder="رابط الملف المباشر..." dir="ltr" />
+                          <span className="ui-media-btn is-upload">
+                            <Icon name="upload" />
+                            <span>رفع ملف</span>
+                            <input
+                              type="file"
+                              accept={t.type === "image" ? "image/*" : t.type === "video" ? "video/*" : "audio/*"}
+                              onChange={(e) => handleMediaUpload(e, idx)}
+                              className="ui-media-file"
+                              aria-label="رفع ملف الوسائط"
                             />
-                            <button type="button" className="cms-btn-secondary" style={{ pointerEvents: "none", height: "42px", padding: "0 20px" }}>
-                              <Icon name="upload" style={{ marginLeft: 8 }} />
-                              رفع ملف
-                            </button>
-                          </div>
+                          </span>
                         </div>
                         {t.media_url && (
-                          <div style={{ marginTop: 16, padding: 12, background: "var(--bg3)", borderRadius: 8, border: "1px solid var(--border)" }}>
-                            {t.type === "image" && <img src={t.media_url} alt={t.author_name ? `صورة رأي ${t.author_name}` : "معاينة الصورة المرفقة"} style={{ maxHeight: 200, maxWidth: "100%", borderRadius: 6, display: "block", objectFit: "contain", margin: "0 auto" }} />}
-                            {t.type === "video" && <video src={t.media_url} controls style={{ maxHeight: 240, width: "100%", borderRadius: 6 }} />}
-                            {t.type === "audio" && <audio src={t.media_url} controls style={{ width: "100%", height: 44 }} />}
+                          <div className="cms-media-preview">
+                            {t.type === "image" && <img src={t.media_url} alt={t.author_name ? `صورة رأي ${t.author_name}` : "معاينة الصورة المرفقة"} />}
+                            {t.type === "video" && <video src={t.media_url} controls />}
+                            {t.type === "audio" && <audio src={t.media_url} controls />}
                           </div>
                         )}
                       </div>
                     )}
 
-                    <div className="cms-form-group">
+                    <div className="cms-form-group" style={{ marginBottom: 0 }}>
                       <label className="cms-label">نص الرأي</label>
-                      <textarea 
-                        value={t.text || ""} 
-                        onChange={(e) => updateTestimonial(idx, "text", e.target.value)} 
+                      <textarea
+                        value={t.text || ""}
+                        onChange={(e) => updateTestimonial(idx, "text", e.target.value)}
                         className="cms-textarea"
-                        rows={4}
+                        rows={3}
                         placeholder="اكتب قصة نجاح أو رأي المشترك هنا..."
-                        style={{ resize: "vertical" }}
                       />
                     </div>
 
-                    <div style={{ marginTop: 24, display: "flex", justifyContent: "flex-end", borderTop: "1px solid var(--border)", paddingTop: 16 }}>
-                      <button type="button" onClick={handleSave} disabled={isSaving} className="cms-btn-primary" style={{ padding: "10px 24px", borderRadius: 8, fontSize: "0.95rem", display: "flex", alignItems: "center", gap: 8 }}>
+                    <div className="cms-testimonial-save">
+                      <button type="button" onClick={handleSave} disabled={isSaving} className="cms-btn-primary">
                         {isSaving ? (
                           <>
                             <div className="cms-spinner" style={{ width: 14, height: 14, borderWidth: 2 }} />
@@ -717,7 +768,7 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, fieldKey?: string) => {
     if (!e.target.files || e.target.files.length === 0) return;
-    
+
     const imageFile = e.target.files[0];
 
     // If uploading directly to media library (no fieldKey), skip crop
@@ -773,7 +824,7 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
   const handleDeleteImage = async (fieldKey: string) => {
     const urlToDelete = currentContent[fieldKey];
     if (!urlToDelete) return;
-    
+
     setConfirmMessage("هل أنت متأكد من حذف هذه الصورة؟ سيتم إزالتها نهائياً من مساحة التخزين.");
     setConfirmAction(() => async () => {
       setIsUploading(true);
@@ -809,10 +860,10 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
       const toastId = toast.loading("جاري الحذف من المكتبة...");
       const success = await deleteImageServer(url);
       setIsUploading(false);
-      
+
       if (success) {
         setMediaLibrary(mediaLibrary.filter(img => img.url !== url));
-        
+
         // Clean up references in React state
         setContentAr((prev: JsonRecord) => {
           const updated = { ...prev };
@@ -848,9 +899,9 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
         const response = await fetch(url);
         const blob = await response.blob();
         const objectUrl = URL.createObjectURL(blob);
-        
+
         toast.dismiss(toastId);
-        
+
         setCropImageSrc(objectUrl);
         setCropFieldKey(activeMediaSelectField);
         setCropAspect(getAspectForField(activeMediaSelectField));
@@ -894,21 +945,21 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
   return (
     <CMSContext.Provider value={{ currentContent, setContent, isUploading, handleImageUpload, openMediaSelector, handleDeleteImage, isSaving, setPreviewImageUrl, processAndUploadImage, handleSave }}>
     <div className="cms-container">
-      <Toaster 
-        position="top-center" 
-        toastOptions={{ 
-          style: { 
-            background: '#141414', 
-            color: 'var(--text)', 
-            border: '1px solid var(--admin-primary, var(--primary))', 
-            padding: '16px 24px', 
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          style: {
+            background: '#141414',
+            color: 'var(--text)',
+            border: '1px solid var(--admin-primary, var(--primary))',
+            padding: '16px 24px',
             borderRadius: "var(--radius-lg)",
             boxShadow: '0 20px 40px rgba(0,0,0,0.7), 0 0 20px rgba(var(--primary-rgb), 0.15)',
             direction: 'rtl',
             fontSize: '0.95rem',
             fontWeight: '600'
-          } 
-        }} 
+          }
+        }}
       />
 
       <div className="cms-header-row">
@@ -920,20 +971,17 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
       </div>
 
       {previewImageUrl && (
-        <div 
-          style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.85)", display: "flex", justifyContent: "center", alignItems: "center", cursor: "zoom-out" }}
-          onClick={() => setPreviewImageUrl(null)}
-        >
-          <img src={previewImageUrl} style={{ maxWidth: "90vw", maxHeight: "90vh", objectFit: "contain", borderRadius: "var(--radius-sm)", boxShadow: "0 20px 40px rgba(0,0,0,0.5)" }} alt="معاينة" />
-          <button style={{ position: "absolute", top: 24, right: 24, background: "rgba(255,255,255,0.1)", color: "white", border: "1px solid rgba(255,255,255,0.2)", borderRadius: "50%", width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "all 0.2s" }}>
+        <div className="cms-viewer" onClick={() => setPreviewImageUrl(null)}>
+          <img src={previewImageUrl} alt="معاينة" />
+          <button type="button" className="cms-viewer-close" aria-label="إغلاق المعاينة">
             <Icon name="close" />
           </button>
         </div>
       )}
 
       {cropModalOpen && cropImageSrc && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 10000, background: "rgba(0,0,0,0.9)", display: "flex", flexDirection: "column" }}>
-          <div style={{ position: "relative", flex: 1 }}>
+        <div className="cms-crop-overlay">
+          <div className="cms-crop-stage">
             <Cropper
               image={cropImageSrc}
               crop={crop}
@@ -944,13 +992,13 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
               onZoomChange={setZoom}
             />
           </div>
-          <div style={{ padding: "24px", background: "var(--bg2)", display: "flex", flexWrap: "wrap", gap: "16px", justifyContent: "space-between", alignItems: "center" }}>
-            <div style={{ color: "var(--muted2)", fontSize: "0.9rem", flex: "1 1 250px", lineHeight: "1.5" }}>قم بتحريك وتكبير الصورة لاقتطاع الجزء المناسب. المربع مقيد بالأبعاد الصحيحة.</div>
-            <div style={{ display: "flex", gap: "12px", flexShrink: 0, flexWrap: "wrap" }}>
-              <button onClick={() => setCropModalOpen(false)} className="cms-btn-secondary" style={{ padding: "8px 24px" }}>
+          <div className="cms-crop-bar">
+            <div className="cms-crop-hint">قم بتحريك وتكبير الصورة لاقتطاع الجزء المناسب. المربع مقيد بالأبعاد الصحيحة.</div>
+            <div className="cms-crop-actions">
+              <button type="button" onClick={() => setCropModalOpen(false)} className="cms-btn-secondary">
                 إلغاء
               </button>
-              <button onClick={handleConfirmCrop} className="cms-btn-primary" style={{ padding: "8px 24px" }}>
+              <button type="button" onClick={handleConfirmCrop} className="cms-btn-primary">
                 تأكيد وقص الصورة
               </button>
             </div>
@@ -990,9 +1038,9 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
               { id: "visibility", label: "اخفاء واظهار الاقسام" },
               { id: "media", label: "مكتبة الوسائط" }
             ] satisfies { id: string; label: string }[]).map(tab => (
-              <button 
-                key={tab.id} 
-                onClick={() => setActiveTab(tab.id)} 
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
                 className={`cms-tab-btn ${activeTab === tab.id ? "active" : ""}`}
               >
                   <span>{tab.label}</span>
@@ -1010,66 +1058,38 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
               <Icon name="chevron_left" />
             </button>
           </div>
-          
+
           <div className="cms-content-pane">
             {activeTab === "visibility" && (
               <div className="cms-section-card">
                 <h3 className="cms-card-title">
                   إدارة ظهور الأقسام
                 </h3>
-                <p style={{ color: "var(--text-secondary)", marginBottom: "24px", fontSize: "0.95rem" }}>
+                <p className="cms-card-note">
                   قم بتفعيل أو إيقاف الأقسام التي تود عرضها في الصفحة الرئيسية.
                 </p>
-                <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                  <label style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer", userSelect: "none", padding: "16px", background: "var(--bg3)", borderRadius: "var(--radius-md)", border: "1px solid var(--border-strong)" }}>
-                    <input
-                      type="checkbox"
-                      checked={currentContent.section_coach_active !== "false"}
-                      onChange={(e) => setContentAr((prev: JsonRecord) => ({ ...prev, section_coach_active: e.target.checked ? "true" : "false" }))}
-                      style={{ width: 20, height: 20, accentColor: "var(--primary)" }}
-                    />
-                    <span style={{ fontSize: "1rem", fontWeight: "var(--weight-semibold)", color: "var(--text)" }}>قسم المدرب</span>
-                  </label>
-
-                  <label style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer", userSelect: "none", padding: "16px", background: "var(--bg3)", borderRadius: "var(--radius-md)", border: "1px solid var(--border-strong)" }}>
-                    <input
-                      type="checkbox"
-                      checked={currentContent.section_membership_active !== "false"}
-                      onChange={(e) => setContentAr((prev: JsonRecord) => ({ ...prev, section_membership_active: e.target.checked ? "true" : "false" }))}
-                      style={{ width: 20, height: 20, accentColor: "var(--primary)" }}
-                    />
-                    <span style={{ fontSize: "1rem", fontWeight: "var(--weight-semibold)", color: "var(--text)" }}>الباقات والاشتراكات</span>
-                  </label>
-
-                  <label style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer", userSelect: "none", padding: "16px", background: "var(--bg3)", borderRadius: "var(--radius-md)", border: "1px solid var(--border-strong)" }}>
-                    <input
-                      type="checkbox"
-                      checked={currentContent.section_testimonials_active !== "false"}
-                      onChange={(e) => setContentAr((prev: JsonRecord) => ({ ...prev, section_testimonials_active: e.target.checked ? "true" : "false" }))}
-                      style={{ width: 20, height: 20, accentColor: "var(--primary)" }}
-                    />
-                    <span style={{ fontSize: "1rem", fontWeight: "var(--weight-semibold)", color: "var(--text)" }}>آراء المشتركين</span>
-                  </label>
-
-                  <label style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer", userSelect: "none", padding: "16px", background: "var(--bg3)", borderRadius: "var(--radius-md)", border: "1px solid var(--border-strong)" }}>
-                    <input
-                      type="checkbox"
-                      checked={currentContent.section_offers_active !== "false"}
-                      onChange={(e) => setContentAr((prev: JsonRecord) => ({ ...prev, section_offers_active: e.target.checked ? "true" : "false" }))}
-                      style={{ width: 20, height: 20, accentColor: "var(--primary)" }}
-                    />
-                    <span style={{ fontSize: "1rem", fontWeight: "var(--weight-semibold)", color: "var(--text)" }}>العروض الخاصة</span>
-                  </label>
-
-                  <label style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer", userSelect: "none", padding: "16px", background: "var(--bg3)", borderRadius: "var(--radius-md)", border: "1px solid var(--border-strong)" }}>
-                    <input
-                      type="checkbox"
-                      checked={currentContent.section_contact_active !== "false"}
-                      onChange={(e) => setContentAr((prev: JsonRecord) => ({ ...prev, section_contact_active: e.target.checked ? "true" : "false" }))}
-                      style={{ width: 20, height: 20, accentColor: "var(--primary)" }}
-                    />
-                    <span style={{ fontSize: "1rem", fontWeight: "var(--weight-semibold)", color: "var(--text)" }}>معلومات التواصل</span>
-                  </label>
+                {/* Five switches in two columns of 40px rows. As a single column
+                    of 16px-padded blocks they held ~360px to say five words
+                    each. The keys and their `!== "false"` reading are
+                    unchanged — only the row is. */}
+                <div className="cms-switch-grid">
+                  {([
+                    { key: "section_coach_active", label: "قسم المدرب" },
+                    { key: "section_membership_active", label: "الباقات والاشتراكات" },
+                    { key: "section_testimonials_active", label: "آراء المشتركين" },
+                    { key: "section_offers_active", label: "العروض الخاصة" },
+                    { key: "section_contact_active", label: "معلومات التواصل" },
+                  ] satisfies { key: string; label: string }[]).map(({ key, label }) => (
+                    <div className="ui-switch-row" key={key}>
+                      <Switch
+                        checked={currentContent[key] !== "false"}
+                        onChange={(checked) =>
+                          setContentAr((prev: JsonRecord) => ({ ...prev, [key]: checked ? "true" : "false" }))
+                        }
+                        label={label}
+                      />
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
@@ -1085,18 +1105,18 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
                 <h3 className="cms-card-title">
                   قسم العروض الخاصة
                 </h3>
-                <p style={{ color: "var(--text-secondary)", marginBottom: 20, fontSize: "0.95rem" }}>
+                <p className="cms-card-note">
                   البطاقات الثلاث التي تظهر في قسم «العروض الخاصة» على الصفحة الرئيسية.
                   لإظهار القسم أو إخفائه بالكامل استخدم تبويب «اخفاء واظهار الاقسام».
                 </p>
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 8 }}>
+                <div className="ui-grid-2">
                   <InputField label="العنوان العلوي للقسم" fieldKey="off_eyebrow" />
                   <InputField label="عنوان القسم" fieldKey="off_title" />
+                  <InputField label="نص زر البطاقات" fieldKey="off_card_btn" />
                 </div>
-                <InputField label="نص زر البطاقات" fieldKey="off_card_btn" />
 
-                <div className="cms-pricing-grid" style={{ marginTop: 24 }}>
+                <div className="cms-pricing-grid" style={{ marginTop: 16 }}>
                   {([
                     { n: 1, title: "العرض الأول", prices: 3, note: false },
                     { n: 2, title: "العرض الثاني", prices: 3, note: false },
@@ -1106,50 +1126,40 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
                     const isActive = currentContent[activeKey] !== "false";
                     return (
                       <div className="cms-pricing-card" key={n}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", borderBottom: "1px dashed var(--border)", paddingBottom: 10, marginBottom: 16 }}>
-                          <div className="cms-pricing-header" style={{ marginBottom: 0, borderBottom: "none", paddingBottom: 0 }}>
-                            {title}
-                          </div>
-                          <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", userSelect: "none" }}>
-                            <input
-                              type="checkbox"
-                              checked={isActive}
-                              onChange={(e) => {
-                                const val = e.target.checked ? "true" : "false";
-                                setContentAr((prev: JsonRecord) => ({ ...prev, [activeKey]: val }));
-                              }}
-                              style={{ width: 16, height: 16, accentColor: "var(--primary)" }}
-                            />
-                            <span style={{ fontSize: "0.8rem", fontWeight: 700, color: isActive ? "var(--primary)" : "var(--muted)" }}>
-                              {isActive ? "نشط" : "إيقاف مؤقت"}
-                            </span>
-                          </label>
+                        <div className="cms-pricing-head">
+                          <div className="cms-pricing-header">{title}</div>
+                          <Switch
+                            checked={isActive}
+                            onChange={(checked) =>
+                              setContentAr((prev: JsonRecord) => ({ ...prev, [activeKey]: checked ? "true" : "false" }))
+                            }
+                            label={isActive ? "نشط" : "موقف"}
+                          />
                         </div>
 
                         <InputField label="العنوان الفرعي للعرض" fieldKey={`off_card${n}_badge`} />
                         <InputField label="وصف العرض" fieldKey={`off_card${n}_desc`} isTextarea />
 
+                        {/* Label, before, after — one price on one line. The
+                            "before" figure is optional; leaving it empty simply
+                            shows the price with nothing struck through. */}
                         {Array.from({ length: prices }, (_, i) => i + 1).map((p) => (
-                          <div key={p} style={{ marginBottom: p === prices ? 12 : 8 }}>
+                          <div key={p} className="cms-price-row is-triple">
                             <InputField label={`تسمية السعر ${["الأول", "الثاني", "الثالث"][p - 1]}`} fieldKey={`off_card${n}_p${p}_label`} />
-                            {/* Before and after, side by side, in the order they
-                                appear on the card. The "before" figure is
-                                optional — leaving it empty simply shows the
-                                price with nothing struck through. */}
-                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                              <InputField label="السعر قبل الخصم (اختياري)" fieldKey={`off_card${n}_p${p}_was`} />
-                              <InputField label="السعر بعد الخصم" fieldKey={`off_card${n}_p${p}_val`} />
-                            </div>
+                            <InputField label="قبل الخصم (اختياري)" fieldKey={`off_card${n}_p${p}_was`} />
+                            <InputField label="بعد الخصم" fieldKey={`off_card${n}_p${p}_val`} />
                           </div>
                         ))}
 
                         {note && <InputField label="ملاحظة أسفل الأسعار" fieldKey={`off_card${n}_note`} isTextarea />}
 
-                        <div style={{ borderTop: "1px dashed var(--border)", paddingTop: 12, marginTop: 12, marginBottom: 16 }}>
-                          <label className="cms-label">مزايا العرض:</label>
-                          <InputField label="الميزة الأولى" fieldKey={`off_card${n}_f1`} />
-                          <InputField label="الميزة الثانية" fieldKey={`off_card${n}_f2`} />
-                          <InputField label="الميزة الثالثة" fieldKey={`off_card${n}_f3`} />
+                        <div className="cms-card-divider">
+                          <label className="cms-label">مزايا العرض</label>
+                          <div className="cms-feature-list">
+                            <InputField label="الميزة الأولى" fieldKey={`off_card${n}_f1`} />
+                            <InputField label="الميزة الثانية" fieldKey={`off_card${n}_f2`} />
+                            <InputField label="الميزة الثالثة" fieldKey={`off_card${n}_f3`} />
+                          </div>
                         </div>
 
                         <InputField label="النص البديل للصورة" fieldKey={`off_card${n}_alt`} />
@@ -1172,23 +1182,19 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
                     Still subordinate to that switch on the page: the window's
                     button points at #offers, and sending a visitor to a hidden
                     section is worse than not showing the window at all. */}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap", borderBottom: "1px solid var(--border)", paddingBottom: 12, marginBottom: 20 }}>
-                  <h3 className="cms-card-title" style={{ margin: 0, border: "none", padding: 0 }}>
+                <div className="cms-card-head">
+                  <h3 className="cms-card-title">
                     العروض الخاصة (النافذة المنبثقة)
                   </h3>
-                  <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", userSelect: "none", padding: "8px 14px", background: "var(--bg3)", borderRadius: "var(--radius-md)", border: "1px solid var(--border-strong)" }}>
-                    <input
-                      type="checkbox"
+                  <div className="ui-switch-row">
+                    <Switch
                       checked={currentContent.promo_popup_active !== "false"}
-                      onChange={(e) => setContentAr((prev: JsonRecord) => ({ ...prev, promo_popup_active: e.target.checked ? "true" : "false" }))}
-                      style={{ width: 18, height: 18, accentColor: "var(--primary)" }}
+                      onChange={(checked) => setContentAr((prev: JsonRecord) => ({ ...prev, promo_popup_active: checked ? "true" : "false" }))}
+                      label={currentContent.promo_popup_active !== "false" ? "النافذة فعّالة" : "النافذة موقفة"}
                     />
-                    <span style={{ fontSize: "0.85rem", fontWeight: 700, color: currentContent.promo_popup_active !== "false" ? "var(--primary)" : "var(--muted)" }}>
-                      {currentContent.promo_popup_active !== "false" ? "النافذة فعّالة" : "النافذة موقفة"}
-                    </span>
-                  </label>
+                  </div>
                 </div>
-                <p style={{ color: "var(--text-secondary)", marginBottom: "24px", fontSize: "0.95rem" }}>
+                <p className="cms-card-note">
                   {currentContent.section_offers_active === "false"
                     ? "قسم العروض موقف حالياً من تبويب (اخفاء واظهار الاقسام)، ولن تظهر النافذة قبل تفعيله."
                     : "تظهر النافذة للزائر بعد ثوانٍ من فتح الصفحة الرئيسية. أوقفها من هنا إن أردت عرض قسم العروض دون نافذة تعترض الزائر."}
@@ -1258,140 +1264,56 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
                   إدارة خطط العضوية والاشتراكات
                 </h3>
                 <InputField label="عنوان قسم الخطط الرئيسي" fieldKey="mem_title" />
-                
-                <div className="cms-pricing-grid" style={{ marginTop: 24 }}>
-                  {/* Card 1 */}
-                  <div className="cms-pricing-card">
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", borderBottom: "1px dashed var(--border)", paddingBottom: 10, marginBottom: 16 }}>
-                      <div className="cms-pricing-header" style={{ marginBottom: 0, borderBottom: "none", paddingBottom: 0 }}>
-                        الخطة الأولى (بدون متابعة)
+
+                <div className="cms-pricing-grid" style={{ marginTop: 16 }}>
+                  {/* Three cards that differed only in their title, their key
+                      prefix and how many prices they carry. They were written
+                      out three times, which is how card 2 and card 3 ended up
+                      with the same 12px gap where card 1 had 8px. Same keys,
+                      same `!== "false"` reading, same fields — one shape. */}
+                  {([
+                    { n: 1, title: "الخطة الأولى (بدون متابعة)", label: "الأولى", prices: 3 },
+                    { n: 2, title: "الخطة الثانية (خطة المتابعة الأسبوعية)", label: "الثانية", prices: 2 },
+                    { n: 3, title: "الخطة الثالثة (خطة المتابعة اليومية)", label: "الثالثة", prices: 2 },
+                  ] as const).map(({ n, title, label, prices }) => {
+                    const activeKey = `card${n}_active`;
+                    const isActive = currentContent[activeKey] !== "false";
+                    return (
+                      <div className="cms-pricing-card" key={n}>
+                        <div className="cms-pricing-head">
+                          <div className="cms-pricing-header">{title}</div>
+                          <Switch
+                            checked={isActive}
+                            onChange={(checked) =>
+                              setContentAr((prev: JsonRecord) => ({ ...prev, [activeKey]: checked ? "true" : "false" }))
+                            }
+                            label={isActive ? "نشطة" : "موقفة"}
+                          />
+                        </div>
+
+                        <InputField label="العنوان الفرعي للخطة" fieldKey={`card${n}_badge`} />
+                        <InputField label="وصف الخطة" fieldKey={`card${n}_desc`} isTextarea />
+
+                        {Array.from({ length: prices }, (_, i) => i + 1).map((p) => (
+                          <div key={p} className="cms-price-row">
+                            <InputField label={`تسمية السعر ${["الأول", "الثاني", "الثالث"][p - 1]}`} fieldKey={`card${n}_p${p}_label`} />
+                            <InputField label={`قيمة السعر ${["الأول", "الثاني", "الثالث"][p - 1]}`} fieldKey={`card${n}_p${p}_val`} />
+                          </div>
+                        ))}
+
+                        <div className="cms-card-divider">
+                          <label className="cms-label">ميزات الخطة</label>
+                          <div className="cms-feature-list">
+                            <InputField label="الميزة الأولى" fieldKey={`card${n}_f1`} />
+                            <InputField label="الميزة الثانية" fieldKey={`card${n}_f2`} />
+                            <InputField label="الميزة الثالثة" fieldKey={`card${n}_f3`} />
+                          </div>
+                        </div>
+
+                        <ImageUploadField label={`صورة الخطة ${label}`} fieldKey={`card${n}_img_url`} recommendedSize="600x600 (مربعة)" />
                       </div>
-                      <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", userSelect: "none" }}>
-                        <input 
-                          type="checkbox" 
-                          checked={currentContent.card1_active !== "false"}
-                          onChange={(e) => {
-                            const val = e.target.checked ? "true" : "false";
-                            setContentAr((prev: JsonRecord) => ({ ...prev, card1_active: val }));
-                          }}
-                          style={{ width: 16, height: 16, accentColor: "var(--primary)" }}
-                        />
-                        <span style={{ fontSize: "0.8rem", fontWeight: 700, color: (currentContent.card1_active !== "false") ? "var(--primary)" : "var(--muted)" }}>
-                          {(currentContent.card1_active !== "false") ? "نشطة" : "إيقاف مؤقت"}
-                        </span>
-                      </label>
-                    </div>
-                    <InputField label="العنوان الفرعي للخطة" fieldKey="card1_badge" />
-                    <InputField label="وصف الخطة" fieldKey="card1_desc" isTextarea />
-                    
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
-                      <InputField label="تسمية السعر الأول" fieldKey="card1_p1_label" />
-                      <InputField label="قيمة السعر الأول" fieldKey="card1_p1_val" />
-                    </div>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
-                      <InputField label="تسمية السعر الثاني" fieldKey="card1_p2_label" />
-                      <InputField label="قيمة السعر الثاني" fieldKey="card1_p2_val" />
-                    </div>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
-                      <InputField label="تسمية السعر الثالث" fieldKey="card1_p3_label" />
-                      <InputField label="قيمة السعر الثالث" fieldKey="card1_p3_val" />
-                    </div>
-
-                    <div style={{ borderTop: "1px dashed var(--border)", paddingTop: 12, marginTop: 12, marginBottom: 16 }}>
-                      <label className="cms-label">ميزات الخطة:</label>
-                      <InputField label="الميزة الأولى" fieldKey="card1_f1" />
-                      <InputField label="الميزة الثانية" fieldKey="card1_f2" />
-                      <InputField label="الميزة الثالثة" fieldKey="card1_f3" />
-                    </div>
-                    
-                    <ImageUploadField label="صورة الخطة الأولى" fieldKey="card1_img_url" recommendedSize="600x600 (مربعة)" />
-                  </div>
-                  
-                  {/* Card 2 */}
-                  <div className="cms-pricing-card">
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", borderBottom: "1px dashed var(--border)", paddingBottom: 10, marginBottom: 16 }}>
-                      <div className="cms-pricing-header" style={{ marginBottom: 0, borderBottom: "none", paddingBottom: 0 }}>
-                        الخطة الثانية (خطة المتابعة الأسبوعية)
-                      </div>
-                      <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", userSelect: "none" }}>
-                        <input 
-                          type="checkbox" 
-                          checked={currentContent.card2_active !== "false"}
-                          onChange={(e) => {
-                            const val = e.target.checked ? "true" : "false";
-                            setContentAr((prev: JsonRecord) => ({ ...prev, card2_active: val }));
-                          }}
-                          style={{ width: 16, height: 16, accentColor: "var(--primary)" }}
-                        />
-                        <span style={{ fontSize: "0.8rem", fontWeight: 700, color: (currentContent.card2_active !== "false") ? "var(--primary)" : "var(--muted)" }}>
-                          {(currentContent.card2_active !== "false") ? "نشطة" : "إيقاف مؤقت"}
-                        </span>
-                      </label>
-                    </div>
-                    <InputField label="العنوان الفرعي للخطة" fieldKey="card2_badge" />
-                    <InputField label="وصف الخطة" fieldKey="card2_desc" isTextarea />
-
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
-                      <InputField label="تسمية السعر الأول" fieldKey="card2_p1_label" />
-                      <InputField label="قيمة السعر الأول" fieldKey="card2_p1_val" />
-                    </div>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
-                      <InputField label="تسمية السعر الثاني" fieldKey="card2_p2_label" />
-                      <InputField label="قيمة السعر الثاني" fieldKey="card2_p2_val" />
-                    </div>
-
-                    <div style={{ borderTop: "1px dashed var(--border)", paddingTop: 12, marginTop: 12, marginBottom: 16 }}>
-                      <label className="cms-label">ميزات الخطة:</label>
-                      <InputField label="الميزة الأولى" fieldKey="card2_f1" />
-                      <InputField label="الميزة الثانية" fieldKey="card2_f2" />
-                      <InputField label="الميزة الثالثة" fieldKey="card2_f3" />
-                    </div>
-                    
-                    <ImageUploadField label="صورة الخطة الثانية" fieldKey="card2_img_url" recommendedSize="600x600 (مربعة)" />
-                  </div>
-                  
-                  {/* Card 3 */}
-                  <div className="cms-pricing-card">
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", borderBottom: "1px dashed var(--border)", paddingBottom: 10, marginBottom: 16 }}>
-                      <div className="cms-pricing-header" style={{ marginBottom: 0, borderBottom: "none", paddingBottom: 0 }}>
-                        الخطة الثالثة (خطة المتابعة اليومية)
-                      </div>
-                      <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", userSelect: "none" }}>
-                        <input 
-                          type="checkbox" 
-                          checked={currentContent.card3_active !== "false"}
-                          onChange={(e) => {
-                            const val = e.target.checked ? "true" : "false";
-                            setContentAr((prev: JsonRecord) => ({ ...prev, card3_active: val }));
-                          }}
-                          style={{ width: 16, height: 16, accentColor: "var(--primary)" }}
-                        />
-                        <span style={{ fontSize: "0.8rem", fontWeight: 700, color: (currentContent.card3_active !== "false") ? "var(--primary)" : "var(--muted)" }}>
-                          {(currentContent.card3_active !== "false") ? "نشطة" : "إيقاف مؤقت"}
-                        </span>
-                      </label>
-                    </div>
-                    <InputField label="العنوان الفرعي للخطة" fieldKey="card3_badge" />
-                    <InputField label="وصف الخطة" fieldKey="card3_desc" isTextarea />
-
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
-                      <InputField label="تسمية السعر الأول" fieldKey="card3_p1_label" />
-                      <InputField label="قيمة السعر الأول" fieldKey="card3_p1_val" />
-                    </div>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
-                      <InputField label="تسمية السعر الثاني" fieldKey="card3_p2_label" />
-                      <InputField label="قيمة السعر الثاني" fieldKey="card3_p2_val" />
-                    </div>
-
-                    <div style={{ borderTop: "1px dashed var(--border)", paddingTop: 12, marginTop: 12, marginBottom: 16 }}>
-                      <label className="cms-label">ميزات الخطة:</label>
-                      <InputField label="الميزة الأولى" fieldKey="card3_f1" />
-                      <InputField label="الميزة الثانية" fieldKey="card3_f2" />
-                      <InputField label="الميزة الثالثة" fieldKey="card3_f3" />
-                    </div>
-                    
-                    <ImageUploadField label="صورة الخطة الثالثة" fieldKey="card3_img_url" recommendedSize="600x600 (مربعة)" />
-                  </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -1424,11 +1346,11 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
                   <div className="cms-split-main">
                     <InputField label="عنوان قسم التواصل (العنوان الصغير)" fieldKey="contact_eyebrow" />
                     <InputField label="العنوان الرئيسي للتواصل" fieldKey="contact_title" />
-                    
+
                     {/* 260px floor: the phone field's own segments, icon,
                         separators and padding need ~265px, so the previous
                         180px minimum clipped its last group. */}
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 12, marginTop: 16 }}>
+                    <div className="ui-grid-2" style={{ marginTop: 4 }}>
                       <PhoneInputField label="رقم الهاتف" fieldKey="contact_phone" />
                       <InputField label="البريد الإلكتروني" fieldKey="contact_email" forceDir="ltr" />
                       <InputField label="رابط/حساب الإنستغرام" fieldKey="contact_ig" forceDir="ltr" />
@@ -1445,8 +1367,8 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
               <div className="cms-section-card">
                 {/* The text block had no shrink constraint, so it consumed the
                     row and pushed the upload button outside the card. */}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, flexWrap: "wrap", marginBottom: 16 }}>
-                  <div style={{ flex: "1 1 260px", minWidth: 0 }}>
+                <div className="cms-media-head">
+                  <div className="cms-media-head-text">
                     <h3 className="cms-card-title">
                       مكتبة الوسائط
                     </h3>
@@ -1454,14 +1376,15 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
                       تظهر هنا جميع الصور التي قمت برفعها مسبقاً إلى مساحة التخزين الخاصة بك. يمكنك تصفح الصور، نسخ روابطها المباشرة لاستخدامها، أو حذف غير المستخدم منها لتحرير المساحة.
                     </p>
                   </div>
-                  <div style={{ position: "relative", overflow: "hidden", display: "inline-block", flexShrink: 0 }}>
-                    <input 
-                      type="file" 
-                      accept="image/*" 
-                      onChange={(e) => handleImageUpload(e)} 
-                      disabled={isUploading} 
-                      style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%", height: "100%" }}
+                  <div className="cms-upload-wrap">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleImageUpload(e)}
+                      disabled={isUploading}
+                      className="ui-media-file"
                       title="رفع صورة جديدة"
+                      aria-label="رفع صورة جديدة إلى المكتبة"
                     />
                     {/* Was `crm-badge primary` — a class with no definition
                         anywhere, so this rendered as a default grey button that
@@ -1471,14 +1394,14 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
                     </button>
                   </div>
                 </div>
-                
+
                 {isLoadingMedia ? (
                   <div className="cms-loading-media">
                     <div className="cms-spinner"></div>
                     <p>جاري تحميل مكتبة الصور...</p>
                   </div>
                 ) : mediaLibrary.length === 0 ? (
-                  <p style={{ padding: 48, textAlign: "center", background: "var(--bg3)", borderRadius: "var(--radius-lg)", color: "var(--muted)" }}>لا توجد صور مرفوعة حالياً في المكتبة.</p>
+                  <p className="cms-empty">لا توجد صور مرفوعة حالياً في المكتبة.</p>
                 ) : (
                   <div className="cms-media-grid">
                     {mediaLibrary.map((img, idx) => (
@@ -1507,7 +1430,7 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
                     library that ends and a library that looks like it lost the
                     older half. */}
                 {!isLoadingMedia && mediaHasMore && (
-                  <p style={{ marginTop: "var(--space-4)", padding: "var(--space-3) var(--space-4)", background: "var(--bg3)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)", color: "var(--text-secondary)", fontSize: "var(--text-sm)", textAlign: "center" }}>
+                  <p className="cms-list-end">
                     تُعرض أحدث {mediaLibrary.length} صورة فقط. المكتبة تحتوي على المزيد — احذف ما لم يعد مستخدماً لتظهر الصور الأقدم.
                   </p>
                 )}
@@ -1572,17 +1495,17 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
             <h3 className="cms-modal-title">تأكيد الحذف نهائياً</h3>
             <p className="cms-modal-desc">{confirmMessage}</p>
             <div className="cms-modal-actions">
-              <button 
+              <button
                 onClick={() => {
                   if (confirmAction) confirmAction();
                   setShowConfirmModal(false);
-                }} 
+                }}
                 className="cms-modal-btn-confirm"
               >
                 نعم، احذف
               </button>
-              <button 
-                onClick={() => setShowConfirmModal(false)} 
+              <button
+                onClick={() => setShowConfirmModal(false)}
                 className="cms-modal-btn-cancel"
               >
                 تراجع
@@ -1594,70 +1517,54 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
 
       {activeMediaSelectField && (
         <div className="cms-modal-overlay">
-          <div className="cms-modal-card" style={{ maxWidth: 600, width: "95%" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, borderBottom: "1px solid var(--border)", paddingBottom: 12 }}>
-              <h3 style={{ margin: 0, fontSize: "1.2rem", fontWeight: 700, color: "var(--text)" }}>اختر صورة من مكتبة الوسائط</h3>
-              <button 
+          <div className="cms-modal-card is-wide">
+            <div className="cms-selector-head">
+              <h3 className="cms-selector-title">اختر صورة من مكتبة الوسائط</h3>
+              <button
+                type="button"
                 onClick={() => setActiveMediaSelectField(null)}
-                style={{ background: "transparent", border: "none", color: "var(--muted2)", cursor: "pointer", display: "flex", alignItems: "center" }}
+                className="cms-selector-close"
+                aria-label="إغلاق"
               >
                 <Icon name="close" />
               </button>
             </div>
 
             {isLoadingMedia ? (
-              <div className="cms-loading-media" style={{ padding: "60px 0" }}>
+              <div className="cms-loading-media">
                 <div className="cms-spinner"></div>
                 <p>جاري تحميل مكتبة الصور...</p>
               </div>
             ) : mediaLibrary.length === 0 ? (
-              <div style={{ padding: "60px 0", color: "var(--muted)" }}>
-                <p>لا توجد صور مرفوعة حالياً.</p>
-                <p style={{ fontSize: "0.85rem", marginTop: 8 }}>يمكنك رفع صور جديدة أولاً من خلال سحب وإفلات الملفات.</p>
-              </div>
+              <p className="cms-empty">
+                لا توجد صور مرفوعة حالياً. ارفع صورة من تبويب «مكتبة الوسائط» أولاً.
+              </p>
             ) : (
-              <div style={{ maxHeight: "400px", overflowY: "auto", paddingLeft: 6 }}>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(110px, 1fr))", gap: 12 }}>
+              <div className="cms-selector-scroll">
+                <div className="cms-selector-grid">
                   {mediaLibrary.map((img, idx) => (
-                    <div 
-                      key={idx} 
+                    <button
+                      type="button"
+                      key={idx}
                       onClick={() => handleSelectFromLibrary(img.url)}
-                      style={{ 
-                        position: "relative", 
-                        border: "1px solid var(--border)", 
-                        borderRadius: "var(--radius-sm)", 
-                        overflow: "hidden", 
-                        aspectRatio: "1/1", 
-                        background: "var(--bg3)",
-                        cursor: "pointer",
-                        transition: "all 0.2s"
-                      }}
                       className="cms-selector-img-card"
+                      title={img.name}
                     >
-                      <img src={img.url} alt={img.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                      <div className="cms-selector-hover-overlay" style={{
-                        position: "absolute",
-                        inset: 0,
-                        background: "rgba(var(--primary-rgb), 0.15)",
-                        opacity: 0,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        transition: "opacity 0.2s"
-                      }}>
-                        <Icon name="check_circle" style={{ color: "var(--primary)", fontSize: 28 }} />
-                      </div>
-                    </div>
+                      <img src={img.url} alt={img.name} />
+                      <span className="cms-selector-hover-overlay">
+                        <Icon name="check_circle" style={{ fontSize: 26 }} />
+                      </span>
+                    </button>
                   ))}
                 </div>
               </div>
             )}
 
-            <div style={{ marginTop: 24, paddingTop: 16, borderTop: "1px solid var(--border)", display: "flex", justifyContent: "flex-end" }}>
-              <button 
-                onClick={() => setActiveMediaSelectField(null)} 
+            <div className="cms-selector-foot">
+              <button
+                type="button"
+                onClick={() => setActiveMediaSelectField(null)}
                 className="cms-modal-btn-cancel"
-                style={{ flex: "none", padding: "10px 24px" }}
               >
                 إلغاء
               </button>

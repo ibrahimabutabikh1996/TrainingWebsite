@@ -2,7 +2,7 @@
 
 .cms-container {
   width: 100%;
-  padding-bottom: 40px;
+  padding-bottom: 24px;
   animation: fadeIn 0.4s ease-out;
 }
 
@@ -11,21 +11,23 @@
   to { opacity: 1; /* minimal: no transform */ }
 }
 
-/* --- Header Row --- */
+/* --- Header Row ---
+   A working screen, not a landing one: the title is here to say where you are,
+   and at clamp(28px, 4vw, 40px) with a 32px tail it was spending ~80px of every
+   viewport doing it, above a tab strip that then spent 58px more. */
 .cms-header-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 32px;
+  margin-bottom: 14px;
   gap: 16px;
 }
 
-/* Matches .welcome-text h1 on the trainee dashboard. */
 .cms-header-title {
-  margin: 0 0 8px;
+  margin: 0;
   color: var(--text);
   font-family: var(--font-display);
-  font-size: clamp(28px, 4vw, 40px);
+  font-size: clamp(22px, 2.6vw, 28px);
   font-weight: 400;
   letter-spacing: 0;
   line-height: var(--leading-tight);
@@ -46,7 +48,7 @@
 .cms-layout {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
   align-items: stretch;
 }
 
@@ -126,7 +128,7 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 16px;
+  padding: 7px 14px;
   background: transparent;
   color: var(--text-secondary);
   border: none;
@@ -182,230 +184,286 @@
   border: 1px solid var(--admin-card-border);
   border-radius: var(--admin-radius-lg);
   box-shadow: var(--admin-card-shadow);
-  padding: 24px;
-  margin-bottom: 16px;
+  padding: 18px;
+  margin-bottom: 12px;
 }
 
+/* One panel per tab, so the title is a heading inside a card, not a second page
+   title under the first. The rule under it went with the extra weight — the
+   card's own edge already separates it from what follows. */
 .cms-card-title {
   font-size: var(--text-md);
   font-weight: 700;
   color: var(--text);
-  margin: 0 0 20px 0;
+  margin: 0 0 14px 0;
   display: flex;
   align-items: center;
   gap: 8px;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 12px;
+  padding-bottom: 0;
 }
 
-/* --- Form Input Fields --- */
+/* Explanatory line under a card title. Was five different inline styles. */
+.cms-card-note {
+  margin: -8px 0 16px;
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+  color: var(--text-secondary);
+  max-width: 78ch;
+}
+
+/* A title with a control on the far end of the same line. */
+.cms-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.cms-card-head .cms-card-title {
+  margin: 0;
+}
+
+/* --- Form Input Fields ---
+   `.cms-*` names kept so the 61 call sites keep working; the geometry is the
+   shared `.ui-field` set in globals.css, which is the one the rest of admin
+   already uses. The 20px tail on every group is now a 12px gap owned by the
+   container, so stacked fields and grid-laid fields space identically. */
 .cms-form-group {
-  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  margin-bottom: 12px;
 }
 
 .cms-label {
   display: block;
-  font-size: var(--text-base);
-  color: var(--muted2);
-  margin-bottom: 8px;
-  font-weight: 600;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin-bottom: 0;
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
 }
 
 .cms-input, .cms-textarea {
   width: 100%;
   background: var(--input-bg);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-strong);
   border-radius: var(--admin-radius);
-  padding: 10px 12px;
+  padding: 9px 12px;
   color: var(--text);
   font-family: inherit;
   font-size: var(--text-base);
   outline: none;
-  transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), opacity var(--dur) var(--ease), transform var(--dur) var(--ease);
+  transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
 }
 
-.cms-input:hover, .cms-textarea:hover {
-  border-color: rgba(var(--primary-rgb), 0.2);
+.cms-input::placeholder, .cms-textarea::placeholder {
+  color: var(--text-muted);
+}
+
+.cms-input:hover:not(:focus), .cms-textarea:hover:not(:focus) {
+  border-color: var(--border-primary);
 }
 
 .cms-input:focus, .cms-textarea:focus {
   background: var(--bg4);
   border-color: var(--primary);
+  box-shadow: var(--focus-ring);
 }
 
 .cms-textarea {
   resize: vertical;
-  min-height: 100px;
-  line-height: 1.5;
+  min-height: 76px;
+  line-height: var(--leading-snug);
 }
 
-/* --- Drag & Drop Upload Zone --- */
-.cms-upload-zone {
-  border: 1px solid var(--border);
-  background: color-mix(in srgb, var(--text) 2%, transparent);
-  border-radius: var(--admin-radius);
-  padding: 18px;
-  text-align: center;
-  cursor: pointer;
-  transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), opacity var(--dur) var(--ease), transform var(--dur) var(--ease);
-  position: relative;
-  overflow: hidden;
-  margin-bottom: 12px;
-}
-
-.cms-upload-zone:hover {
-  border-color: var(--primary);
-  background: rgba(var(--primary-rgb), 0.02);
-}
-
-.cms-upload-content {
+/* Phone entry: one control split into segments, so it has to look like one
+   control — same border, background, height and focus ring as `.cms-input`. */
+.cms-phone {
   display: flex;
-  flex-direction: column;
   align-items: center;
   gap: 8px;
-}
-
-.cms-upload-zone:hover .cms-upload-text {
-  font-size: var(--text-base);
-  font-weight: 700;
-  color: var(--text);
-}
-
-.cms-upload-hint {
-  font-size: var(--text-xs);
-  color: var(--muted);
-}
-
-.cms-file-input {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  cursor: pointer;
-  z-index: 10;
-}
-
-/* Image Preview Block */
-.cms-image-preview-card {
-  position: relative;
-  display: inline-block;
-  border-radius: var(--admin-radius);
+  /* Same 9px block padding as .cms-input, so the row it shares with the email
+     and Instagram fields is one height. A fixed min-height cannot do that: the
+     Arabic face gives a 15px control a 29px line box, not the 22px the number
+     would assume. */
+  padding: 9px 10px;
+  min-width: 0;
   overflow: hidden;
-  border: 1px solid var(--border);
-  max-width: 320px;
-  width: 100%;
+  direction: ltr;
+  background: var(--input-bg);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--admin-radius);
+  transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
 }
 
-.cms-preview-img {
-  width: 100%;
-  /* Capped so a portrait source (the coach and login art are 800x1000) cannot
-     grow to 500px+ and push the form fields off the screen. Click still opens
-     the full-size viewer. */
-  max-height: 320px;
-  height: auto;
-  object-fit: contain;
-  background: var(--bg3);
-  display: block;
-  transition: transform 0.3s ease;
+.cms-phone:hover:not(:focus-within) {
+  border-color: var(--border-primary);
 }
 
-.cms-image-preview-card:hover .cms-preview-img {
+.cms-phone:focus-within {
+  border-color: var(--primary);
+  background: var(--bg4);
+  box-shadow: var(--focus-ring);
 }
 
-.cms-preview-overlay {
+.cms-phone input {
+  border: none;
+  background: transparent;
+  color: var(--text);
+  outline: none;
+  font-family: inherit;
+  font-size: var(--text-base);
+  padding: 0;
+  text-align: center;
+}
+
+.cms-phone input::placeholder { color: var(--text-muted); }
+
+.cms-phone-sep {
+  width: 1px;
+  height: 18px;
+  flex-shrink: 0;
+  background: var(--border);
+}
+
+.cms-phone-code { width: 46px; }
+.cms-phone-p1 { width: 38px; }
+.cms-phone-p2 { width: 38px; }
+/* The last group takes the slack; `width:0` with `flex:1` keeps its intrinsic
+   width from widening the row past the card. */
+.cms-phone-p3 { flex: 1; min-width: 0; width: 0; text-align: start; padding-inline: 6px; }
+
+/* --- Image field ---
+   The drop zone, the "choose from library" button and a 320px-tall preview used
+   to stack: ~500px of form per image, and this screen has nine. It is now the
+   shared `.ui-media-field` row — thumbnail beside its actions — with only the
+   two things the CMS adds on top: a drop target over the whole row, and the
+   recommended-size hint.
+   Dragging still works; the file input covers the row rather than a zone of
+   its own. */
+/* Empty state: a placeholder glyph where the thumbnail will go. */
+.ui-media-thumb.is-empty .app-icon {
+  font-size: 26px;
+}
+
+.cms-media-rec {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--primary-on-tint);
+}
+
+/* The invisible file input that turns the whole row into a drop target. Layer 1
+   of the field: `.ui-media-thumb` and `.ui-media-body` sit on layer 2, so the
+   thumbnail's own click (open the viewer) and the action buttons still reach
+   their handlers instead of opening a file dialog. */
+.cms-media-dropzone {
   position: absolute;
   inset: 0;
-  background: var(--overlay-scrim);
-  backdrop-filter: blur(2px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  z-index: 1;
   opacity: 0;
-  transition: opacity 0.25s ease;
-}
-
-.cms-image-preview-card:hover .cms-preview-overlay {
-  opacity: 1;
-}
-
-/* The two actions on an image preview share a shape and differ only in intent:
-   destructive is filled with --error, neutral is a readable light chip. Both sit
-   on an arbitrary photograph, so neither may rely on the image behind it. */
-.cms-preview-btn-delete,
-.cms-preview-btn-view {
-  border: none;
-  border-radius: var(--admin-radius-sm);
-  padding: var(--space-2) var(--space-4);
-  font-size: var(--text-sm);
-  font-weight: var(--weight-semibold);
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  transition: background-color var(--dur) var(--ease), color var(--dur) var(--ease);
-}
-
-.cms-preview-btn-delete {
-  background: var(--error);
-  color: var(--text-inverse);
-}
-
-.cms-preview-btn-view {
-  background: #fff;
-  color: #0F172A;
-}
-
-.cms-preview-btn-delete:hover,
-.cms-preview-btn-view:hover {
-  filter: brightness(0.92);
 }
 
 /* --- Pricing Cards Grid (Memberships) --- */
 .cms-pricing-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 20px;
+  gap: 14px;
 }
 
+/* --bg2, not --bg3. The section card is a 70%-opacity --bg glass, so a --bg3
+   card reads against it — but --bg3 is also --input-bg, and every field inside
+   this card then had the card's own colour and a --border-strong edge that is
+   three points away from it. The fields were invisible. Three surfaces, three
+   steps: section card, plan card, field. */
 .cms-pricing-card {
-  background: var(--bg3);
-  border: 1px solid var(--border);
+  background: var(--bg2);
+  border: 1px solid var(--border-strong);
   border-radius: var(--admin-radius-lg);
-  padding: 16px;
-  transition: border-color 0.25s ease;
+  padding: 14px;
+  min-width: 0;
+  transition: border-color var(--dur) var(--ease);
 }
 
 .cms-pricing-card:hover {
-  border-color: var(--primary);
+  border-color: var(--border-primary);
+}
+
+/* Card head: the plan's name on one end, its on/off switch on the other. Was
+   an inline flex wrapper around a header that carried its own bottom rule, so
+   the rule and the wrapper's rule drew twice. */
+.cms-pricing-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  /* --border is #162235 and --bg3 is #243342: on a raised surface that rule is
+     not a rule, it is a coincidence. Separators inside a card use
+     --border-strong; --border stays for the card's own edge against --bg. */
+  border-bottom: 1px dashed var(--border-strong);
+  padding-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 .cms-pricing-header {
   font-size: var(--text-base);
   font-weight: 700;
-  color: var(--primary-on-tint);
-  margin-bottom: 16px;
+  color: var(--text);
+  margin: 0;
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: 8px;
-  border-bottom: 1px dashed var(--border);
-  padding-bottom: 10px;
 }
 
 .cms-pricing-header span {
   font-size: var(--text-lg);
 }
 
+/* A price is a label and its value — one thing, so one row. Two full-width
+   fields stacked cost ~130px each; the pair now costs ~66px. */
+.cms-price-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+/* The offers cards carry a third field per price (the struck-through "before").
+   At the 130px floor above, auto-fit could only place two of them and left the
+   third stranded on a row of its own. */
+.cms-price-row.is-triple {
+  grid-template-columns: repeat(auto-fit, minmax(104px, 1fr));
+}
+
+/* Feature list and the divider that opens it. */
+.cms-card-divider {
+  border-top: 1px dashed var(--border-strong);
+  padding-top: 12px;
+  margin-top: 4px;
+}
+
+.cms-card-divider .cms-label {
+  margin-bottom: 8px;
+}
+
 /* --- Media Library Gallery --- */
 .cms-media-info {
-  margin-bottom: 20px;
+  margin: 0;
   font-size: var(--text-sm);
-  color: var(--muted2);
-  line-height: 1.6;
+  color: var(--text-secondary);
+  line-height: var(--leading-snug);
 }
 
 .cms-media-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  gap: 12px;
 }
 
 .cms-media-card {
@@ -531,8 +589,8 @@
   position: static;
   bottom: 0;
   z-index: 60;
-  margin-top: 32px;
-  padding: 16px 20px;
+  margin-top: 16px;
+  padding: 12px 16px;
   border: 1px solid var(--border);
   border-radius: var(--admin-radius);
   background: color-mix(in srgb, var(--bg2) 92%, transparent);
@@ -756,13 +814,115 @@
   background: var(--bg4);
 }
 
-/* Selector Image Hover */
-.cms-selector-img-card:hover {
-  border-color: var(--primary) !important;
+/* --- Media selector dialog ---
+   A tile grid, so each tile is a <button>: it was a clickable <div>, which is
+   invisible to the keyboard and to a screen reader. The geometry it carried
+   inline is here, and the two hover rules no longer need !important to beat
+   an inline style that no longer exists. */
+.cms-modal-card.is-wide {
+  max-width: 600px;
+  width: 95%;
+  text-align: start;
 }
 
-.cms-selector-img-card:hover .cms-selector-hover-overlay {
-  opacity: 1 !important;
+.cms-selector-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid var(--border-strong);
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+}
+
+.cms-selector-title {
+  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  color: var(--text);
+}
+
+.cms-selector-close {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: var(--admin-radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background-color var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+
+.cms-selector-close:hover {
+  background: var(--bg3);
+  color: var(--text);
+}
+
+.cms-selector-scroll {
+  max-height: 360px;
+  overflow-y: auto;
+  padding-inline-end: 4px;
+}
+
+.cms-selector-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 10px;
+}
+
+.cms-selector-img-card {
+  position: relative;
+  padding: 0;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--admin-radius-sm);
+  background: var(--bg3);
+  cursor: pointer;
+  transition: border-color var(--dur) var(--ease);
+}
+
+.cms-selector-img-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.cms-selector-hover-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(var(--primary-rgb), 0.2);
+  color: var(--primary-on-tint);
+  opacity: 0;
+  transition: opacity var(--dur) var(--ease);
+}
+
+.cms-selector-img-card:hover,
+.cms-selector-img-card:focus-visible {
+  border-color: var(--primary);
+}
+
+.cms-selector-img-card:hover .cms-selector-hover-overlay,
+.cms-selector-img-card:focus-visible .cms-selector-hover-overlay {
+  opacity: 1;
+}
+
+.cms-selector-foot {
+  display: flex;
+  justify-content: flex-end;
+  border-top: 1px solid var(--border-strong);
+  padding-top: 14px;
+  margin-top: 16px;
+}
+
+.cms-selector-foot .cms-modal-btn-cancel {
+  flex: none;
+  padding: 9px 22px;
 }
 
 /* Split Layout for section content.
@@ -773,9 +933,11 @@
 .cms-section-split {
   display: flex;
   flex-wrap: wrap;
-  gap: 20px;
+  gap: 16px;
 }
 
+/* The fields own their spacing through this gap, so `.cms-form-group` drops its
+   own tail inside a split — otherwise every field pays twice. */
 .cms-split-main {
   flex: 2 1 340px;
   min-width: 0;
@@ -792,6 +954,30 @@
   gap: 12px;
 }
 
+.cms-split-main > .cms-form-group,
+.cms-split-side > .cms-form-group,
+.cms-grid > .cms-form-group,
+.ui-grid-2 > .cms-form-group,
+.ui-grid-3 > .cms-form-group,
+.cms-price-row > .cms-form-group {
+  margin-bottom: 0;
+}
+
+/* The visibility tab: five switches that held ~360px in a single column of
+   16px-padded rows. Two columns of 40px rows say the same thing in ~110px. */
+.cms-switch-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 8px;
+}
+
+/* Feature inputs inside a plan card — three short lines, not three sections. */
+.cms-feature-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 @media (max-width: 768px) {
   .cms-section-split {
     flex-direction: column;
@@ -799,4 +985,348 @@
   .cms-split-side {
     min-width: 100%;
   }
+}
+
+
+/* ==========================================================================
+   Remaining helpers — each of these replaced an inline `style={{}}` that was
+   repeated with slightly different numbers at every call site. Nothing here
+   changes behaviour; it changes whether the spacing is the same twice.
+   ========================================================================== */
+
+/* Status line inside a card: a note that reacts to a switch above it. */
+.cms-note-muted {
+  margin: 0 0 14px;
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+  color: var(--text-muted);
+}
+
+/* Empty and end-of-list messages in the media library. */
+.cms-empty {
+  margin: 0;
+  padding: 36px 16px;
+  text-align: center;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--admin-radius);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+.cms-list-end {
+  margin-top: var(--space-3);
+  padding: 10px 14px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--admin-radius);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  text-align: center;
+}
+
+/* Media library head: description on one end, the upload button on the other. */
+.cms-media-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.cms-media-head-text {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+
+.cms-media-head-text .cms-card-title {
+  margin-bottom: 6px;
+}
+
+/* Wraps a button that a transparent file input covers. */
+.cms-upload-wrap {
+  position: relative;
+  overflow: hidden;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+/* --- Full-size image viewer --- */
+.cms-viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: zoom-out;
+}
+
+.cms-viewer img {
+  max-width: 90vw;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--elev-3);
+}
+
+.cms-viewer-close {
+  position: absolute;
+  top: 20px;
+  inset-inline-end: 20px;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-circle);
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  cursor: pointer;
+  transition: background-color var(--dur) var(--ease);
+}
+
+.cms-viewer-close:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+/* --- Crop modal --- */
+.cms-crop-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  flex-direction: column;
+}
+
+.cms-crop-stage {
+  position: relative;
+  flex: 1;
+}
+
+.cms-crop-bar {
+  padding: 16px 20px;
+  background: var(--bg2);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cms-crop-hint {
+  flex: 1 1 250px;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+}
+
+.cms-crop-actions {
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+/* --- Testimonials accordion ---
+   Every row here was an inline style object: the header padding, the index
+   badge, the three action buttons, the open/closed border and background. Nine
+   rows of that is nine chances for one of them to drift, which is how the
+   reorder buttons ended up with a 6px radius on a screen where nothing else
+   has one. */
+.cms-testimonial-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cms-testimonial {
+  border: 1px solid var(--border);
+  border-radius: var(--admin-radius);
+  background: var(--bg3);
+  overflow: hidden;
+  transition: border-color var(--dur) var(--ease), background-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+
+.cms-testimonial.is-open {
+  border-color: var(--primary);
+  background: var(--bg2);
+  box-shadow: var(--elev-2);
+}
+
+.cms-testimonial-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  cursor: pointer;
+}
+
+.cms-testimonial.is-open .cms-testimonial-head {
+  border-bottom: 1px solid var(--border-strong);
+}
+
+.cms-testimonial-id {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.cms-testimonial-num {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-circle);
+  background: var(--primary-dim);
+  color: var(--primary-on-tint);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  transition: background-color var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+
+.cms-testimonial.is-open .cms-testimonial-num {
+  background: var(--primary);
+  color: var(--text-inverse);
+}
+
+.cms-testimonial-name {
+  font-weight: var(--weight-bold);
+  color: var(--text);
+  font-size: var(--text-base);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cms-testimonial-meta {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.cms-testimonial-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* Square icon button — the same 30px box as `.cms-testimonial-num`, so the row
+   reads as one band rather than three heights. */
+.cms-row-btn {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--admin-radius-sm);
+  /* Filled, not outlined: --border-strong and --bg3 are within a few points of
+     each other, so an outlined chip on the row was an invisible button with a
+     glyph floating in it. */
+  border: 1px solid transparent;
+  background: var(--bg4);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: var(--text-sm);
+  transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease), opacity var(--dur) var(--ease);
+}
+
+.cms-row-btn:hover:not(:disabled) {
+  border-color: var(--primary);
+  color: var(--primary-on-tint);
+  background: var(--primary-dim);
+}
+
+.cms-row-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.cms-row-btn.is-danger {
+  width: auto;
+  padding: 0 10px;
+  border-color: color-mix(in srgb, var(--error) 30%, transparent);
+  background: var(--error-bg);
+  color: var(--error-text);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+}
+
+.cms-row-btn.is-danger:hover:not(:disabled) {
+  border-color: var(--error);
+  background: color-mix(in srgb, var(--error) 20%, transparent);
+  color: var(--error-text);
+}
+
+.cms-testimonial-body {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Media sub-panel inside an opened testimonial. */
+.cms-testimonial-media {
+  padding: 12px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--admin-radius);
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cms-media-url-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.cms-media-url-row .cms-input {
+  flex: 1;
+  min-width: 180px;
+}
+
+.cms-media-preview {
+  padding: 10px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--admin-radius-sm);
+}
+
+.cms-media-preview img {
+  max-height: 170px;
+  max-width: 100%;
+  display: block;
+  margin: 0 auto;
+  object-fit: contain;
+  border-radius: var(--radius-xs);
+}
+
+.cms-media-preview video {
+  max-height: 200px;
+  width: 100%;
+  border-radius: var(--radius-xs);
+}
+
+.cms-media-preview audio {
+  width: 100%;
+  height: 40px;
+}
+
+/* The save button at the foot of an opened testimonial. */
+.cms-testimonial-save {
+  display: flex;
+  justify-content: flex-end;
+  border-top: 1px solid var(--border-strong);
+  padding-top: 12px;
+  margin-top: 2px;
 }
