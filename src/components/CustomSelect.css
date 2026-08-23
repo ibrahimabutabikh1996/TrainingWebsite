@@ -40,6 +40,21 @@
   background-color: var(--bg);
 }
 
+/* A closed select shows one line, the way a native one does — it never grows
+   taller to fit a long option. Without this, "بدون وحدة قياس" (114px of text
+   in the 60px the diet plan's unit control leaves it) broke over five lines
+   and made that one trigger 109px tall against 51px everywhere else in the
+   app.
+   `min-width: 0` is doing real work: this is a flex item, and its default
+   `auto` minimum refuses to shrink below the content — so without it the label
+   pushes the trigger past the width its container set instead of clipping. */
+.custom-select-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
 .custom-select-icon {
   font-size: 20px;
   color: var(--text-muted);
