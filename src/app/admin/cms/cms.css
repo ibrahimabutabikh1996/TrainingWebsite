@@ -50,21 +50,40 @@
   align-items: stretch;
 }
 
-/* Sidebar Tab List */
-.cms-sidebar {
-  width: 100%;
+/* Tab strip — the arrows, the track, and the tabs inside it.
+ *
+ * The track is `.diet-segment` to the value: 4px of padding, 4px between
+ * items, `--radius-lg` over `--bg3`, and one indicator on the open tab rather
+ * than two. It used to carry a tint *and* a 3px underline at once, on a 12px
+ * track, which is what made the bar read as heavy beside the segmented
+ * controls on every other panel screen.
+ *
+ * The sticky offset moved to the wrapper so the arrows travel with the tabs. */
+.cms-tabs {
   display: flex;
-  flex-direction: row;
-  overflow-x: auto;
+  align-items: center;
   gap: 8px;
-  flex-shrink: 0;
-  background: var(--bg2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
-  padding: 12px;
   position: sticky;
   top: 16px;
   z-index: 40;
+  /* The track is translucent while it scrolls under the page; the wrapper needs
+     a ground of its own or the tabs show through it when stuck. */
+  background: var(--bg);
+  padding-block: 4px;
+}
+
+.cms-sidebar {
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  gap: 4px;
+  padding: 4px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  scroll-behavior: smooth;
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none;  /* Internet Explorer 10+ */
 }
@@ -72,33 +91,63 @@
   display: none; /* Safari and Chrome */
 }
 
-.cms-tab-btn {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
+/* Same button as `.ex-icon-btn` and `.co-icon-btn`, which the exercise and
+   course libraries already share. Flat and unclickable at each end, so the
+   strip says where it is — on a 1920px screen nothing overflows and both go
+   quiet rather than promising tabs that are not there. */
+.cms-tab-nav {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
   background: transparent;
-  color: var(--muted2);
-  border: none;
-  border-bottom: 3px solid transparent;
+  color: var(--text-muted);
   cursor: pointer;
+  transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease), opacity var(--dur) var(--ease);
+}
+
+.cms-tab-nav .app-icon { font-size: 18px; }
+
+.cms-tab-nav:hover:not(:disabled) {
+  background: var(--primary-dim);
+  border-color: var(--border-primary);
+  color: var(--primary-on-tint);
+}
+
+.cms-tab-nav:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.cms-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: transparent;
+  color: var(--text-secondary);
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
   font-weight: 600;
-  font-size: var(--text-base);
-  border-radius: var(--admin-radius);
-  transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), opacity var(--dur) var(--ease), transform var(--dur) var(--ease);
+  font-size: var(--text-sm);
+  border-radius: var(--radius-md);
+  transition: background-color var(--dur) var(--ease), color var(--dur) var(--ease);
   width: auto;
   white-space: nowrap;
 }
 
 .cms-tab-btn:hover {
   color: var(--text);
-  background: var(--bg3);
+  background: var(--bg4);
 }
 
 .cms-tab-btn.active {
-  background: var(--primary-dim);
-  color: var(--primary-on-tint);
-  border-bottom-color: var(--primary);
+  background: var(--primary);
+  color: var(--text-inverse);
 }
 
 /* Content Container Pane */
@@ -477,8 +526,9 @@
 /* Pinned to the bottom of the viewport. As a static block it sat at the end of
    the document — on the membership tab that put "save" ~5000px down, so every
    edit meant scrolling the full page to commit it. */
+/* Static until there is something to save — see `.is-pinned` below. */
 .cms-footer {
-  position: sticky;
+  position: static;
   bottom: 0;
   z-index: 60;
   margin-top: 32px;
@@ -545,9 +595,19 @@
   padding: 12px 20px;
 }
 
+/* The bar follows the coach only while it has something to offer. Saved, it is
+   one disabled button and a line of text, and it was holding 89px of every
+   screen for them — a fifth of a 1080px viewport once the nav bar and the tabs
+   have taken theirs, and near a third at 768px. Dirty, it is the one control
+   that matters, and it rides up so saving is never a scroll away. */
+.cms-footer.is-pinned {
+  position: sticky;
+}
+
 /* Keeps a field that's focused near the end of the form from being scrolled to
-   underneath the bar. Scoped to the CMS, the only admin page with one. */
-.admin-main-content:has(.cms-footer) {
+   underneath the bar — which can only happen while the bar is pinned. Scoped to
+   the CMS, the only admin page with one. */
+.admin-main-content:has(.cms-footer.is-pinned) {
   scroll-padding-block-end: 120px;
 }
 

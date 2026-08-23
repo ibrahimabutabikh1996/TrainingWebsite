@@ -2,7 +2,7 @@
 
 import { hasRealImage, PLACEHOLDER_IMAGE } from "@/lib/placeholderImage";
 import type { JsonRecord, Testimonial } from "@/types";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { saveLandingContent, listImagesServer, deleteImageServer } from "./actions";
 import { uploadMediaWithProgress } from '@/lib/mediaUpload';
 import { Toaster, toast } from 'react-hot-toast';
@@ -465,6 +465,40 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
      the way a scattered set of flags would. */
   const isDirty = JSON.stringify(contentAr) !== savedSnapshot;
   const [activeTab, setActiveTab] = useState("hero");
+
+  /* The tab strip scrolls sideways with its scrollbar hidden, and it overflows
+     on every screen narrower than 1920px — two of the ten tabs are off the end
+     at 1366px, five at 768px, with nothing on screen saying so. These drive the
+     arrows that make the hidden ones reachable, and go flat at each end so the
+     strip says where it is. */
+  const tabStripRef = useRef<HTMLDivElement>(null);
+  const [tabScroll, setTabScroll] = useState({ start: false, end: false });
+
+  const readTabScroll = useCallback(() => {
+    const el = tabStripRef.current;
+    if (!el) return;
+    /* `scrollLeft` is negative in a right-to-left strip, so distance from each
+       edge is taken as an absolute — the sign is the direction, not the amount. */
+    const offset = Math.abs(el.scrollLeft);
+    const max = el.scrollWidth - el.clientWidth;
+    setTabScroll({ start: offset > 1, end: offset < max - 1 });
+  }, []);
+
+  useEffect(() => {
+    readTabScroll();
+    const el = tabStripRef.current;
+    if (!el) return;
+    el.addEventListener("scroll", readTabScroll, { passive: true });
+    window.addEventListener("resize", readTabScroll);
+    return () => {
+      el.removeEventListener("scroll", readTabScroll);
+      window.removeEventListener("resize", readTabScroll);
+    };
+  }, [readTabScroll]);
+
+  const scrollTabs = (direction: 1 | -1) => {
+    tabStripRef.current?.scrollBy({ left: direction * 240, behavior: "smooth" });
+  };
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
@@ -882,9 +916,6 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
           <h2 className="cms-header-title">
               محتوى الموقع
           </h2>
-          <p className="cms-header-sub">
-            قم بتعديل نصوص وصور الصفحة الرئيسية.
-          </p>
         </div>
       </div>
 
@@ -928,7 +959,21 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
       )}
 
       <div className="cms-layout">
-          <div className="cms-sidebar">
+          {/* The strip and its two arrows travel together — the wrapper is what
+              the sticky offset now applies to, so the buttons stay beside the
+              tabs rather than scrolling away from them. */}
+          <div className="cms-tabs">
+            <button
+              type="button"
+              className="cms-tab-nav"
+              onClick={() => scrollTabs(1)}
+              disabled={!tabScroll.start}
+              aria-label="تمرير لليمين"
+            >
+              <Icon name="chevron_right" />
+            </button>
+
+          <div className="cms-sidebar" ref={tabStripRef}>
             {([
               { id: "hero", label: "الرئيسية (Hero)" },
               { id: "coach", label: "قسم المدرب" },
@@ -953,6 +998,17 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
                   <span>{tab.label}</span>
               </button>
             ))}
+          </div>
+
+            <button
+              type="button"
+              className="cms-tab-nav"
+              onClick={() => scrollTabs(-1)}
+              disabled={!tabScroll.end}
+              aria-label="تمرير لليسار"
+            >
+              <Icon name="chevron_left" />
+            </button>
           </div>
           
           <div className="cms-content-pane">
@@ -1460,7 +1516,14 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
           </div>
         </div>
 
-        <div className="cms-footer">
+        {/* Lifts and follows only while there is something to save. At rest the
+            bar says "كل التغييرات محفوظة" with its save button disabled, and held
+            89px of a screen that already gives 72px to the nav bar and 58px to
+            the tabs — a fifth of a 1080px screen, near a third of a 768px one.
+            Sticky and static occupy the same box in flow, so this toggles
+            nothing about the layout; it only decides whether the bar detaches
+            when the page scrolls past it. */}
+        <div className={`cms-footer ${isDirty ? "is-pinned" : ""}`}>
           {isDirty ? (
             <span className="cms-dirty">تغييرات غير محفوظة</span>
           ) : (
