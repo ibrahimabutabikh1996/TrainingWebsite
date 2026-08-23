@@ -20,6 +20,7 @@ import { Icon } from "@/components/Icon";
 import "../diet.css";
 import "./plan.css";
 import { normalizeArabic, arabicIncludes } from "@/lib/arabicSearch";
+import { confirmDialog } from "@/lib/confirmDialog";
 
 /* A plan the coach has started but not yet saved has no database id. Everything
    else about it behaves like a saved one, so the id is simply optional rather
@@ -71,8 +72,8 @@ export default function DietPlanBuilder({
 
   /* Switching trainee is a navigation, not local state: the plans belong to the
      URL, and the page remounts the builder on the new ?traineeId=. */
-  const handleTraineeChange = (id: string) => {
-    if (dirtyPositions.length > 0 && !confirm("هناك تعديلات غير محفوظة ستفقد. المتابعة؟")) return;
+  const handleTraineeChange = async (id: string) => {
+    if (dirtyPositions.length > 0 && !(await confirmDialog("هناك تعديلات غير محفوظة ستفقد. المتابعة؟"))) return;
     router.push(id ? `/admin/diet/plan?traineeId=${id}` : "/admin/diet/plan");
   };
 
@@ -108,8 +109,8 @@ export default function DietPlanBuilder({
     }));
   };
 
-  const handleRemoveMeal = (mealId: string) => {
-    if (!confirm("هل أنت متأكد من حذف هذه الوجبة؟")) return;
+  const handleRemoveMeal = async (mealId: string) => {
+    if (!(await confirmDialog("هل أنت متأكد من حذف هذه الوجبة؟", { danger: true }))) return;
     updateActivePlan((plan) => ({
       ...plan,
       meals: plan.meals.filter((m) => m.id !== mealId),
@@ -199,7 +200,7 @@ export default function DietPlanBuilder({
   };
 
   const handleDeletePlan = async (plan: EditablePlan) => {
-    if (!confirm(`هل أنت متأكد من حذف "${plan.name}"؟`)) return;
+    if (!(await confirmDialog(`هل أنت متأكد من حذف "${plan.name}"؟`, { danger: true }))) return;
 
     /* An unsaved draft exists only here, so it never reaches the server. */
     if (plan.id) {
@@ -241,9 +242,6 @@ export default function DietPlanBuilder({
       <header className="diet-header">
         <div className="diet-header-text">
           <h1>تصميم النظام الغذائي</h1>
-          <p>
-            تُضاف الوجبات بشكل غير محدود. لكل وجبة يُضاف الأصناف من مكتبة المصادر مع إمكانية تسمية الوجبة وتحديد الوقت.
-          </p>
         </div>
 
         <div className="dplan-header-actions">
@@ -460,7 +458,13 @@ export default function DietPlanBuilder({
                                           onChange={(e) => handleWeightChange(meal.id, item.id, e.target.value)}
                                           title="الوزن أو الكمية الإجمالية"
                                         />
-                                        <div style={{ width: 110 }}>
+                                        {/* Wide enough for the longest unit.
+                                            "بدون وحدة قياس" is 114px of text,
+                                            and the trigger spends 50px of the
+                                            box on its padding and caret — at
+                                            110 the label had 60px and was cut
+                                            down to "بدون و…". */}
+                                        <div style={{ width: 165 }}>
                                           <CustomSelect
                                             value={item.unit || "غرام"}
                                             onChange={(v) => handleUnitChange(meal.id, item.id, v)}
