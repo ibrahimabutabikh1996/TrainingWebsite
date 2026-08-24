@@ -9,6 +9,8 @@ import { Toaster, toast } from 'react-hot-toast';
 import Cropper from 'react-easy-crop';
 import getCroppedImg, { DEFAULT_MAX_EDGE } from '@/lib/cropUtils';
 import { Icon } from "@/components/Icon";
+import { previewSrc } from "@/lib/imageOptim";
+import { Overlay } from "@/components/ui/Overlay";
 import { CustomSelect } from "@/components/CustomSelect";
 import "./cms.css";
 
@@ -226,8 +228,11 @@ const ImageUploadField = ({ label, fieldKey, recommendedSize }: { label: string,
         <div className={`ui-media-thumb${hasImage ? "" : " is-empty"}`}>
           {hasImage ? (
             <img
-              src={imageUrl}
+              /* 76x76 on screen; ask for twice that and no more. This box is
+                 where the fifty-megapixel original used to land. */
+              src={previewSrc(imageUrl, 152)}
               alt={label}
+              decoding="async"
               onClick={() => setPreviewImageUrl(imageUrl)}
               style={{ cursor: "zoom-in" }}
             />
@@ -460,7 +465,7 @@ const TestimonialsEditor = () => {
                         </div>
                         {t.media_url && (
                           <div className="cms-media-preview">
-                            {t.type === "image" && <img src={t.media_url} alt={t.author_name ? `صورة رأي ${t.author_name}` : "معاينة الصورة المرفقة"} />}
+                            {t.type === "image" && <img src={previewSrc(t.media_url, 384)} alt={t.author_name ? `صورة رأي ${t.author_name}` : "معاينة الصورة المرفقة"} loading="lazy" decoding="async" />}
                             {t.type === "video" && <video src={t.media_url} controls />}
                             {t.type === "audio" && <audio src={t.media_url} controls />}
                           </div>
@@ -587,13 +592,13 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
    * render with the landing page's stylesheet alone and with the navigation a
    * signed-out visitor sees. See the page's own note.
    *
-   * The sign-in screen is still previewed on the real `/login`, because that
-   * page has no separate preview route — its own copy comes from the same
-   * draft. */
+   * The sign-in screen has its own route now, `/cms-preview/login`, gated and
+   * dressed the same way. It used to open the working `/login?preview=true` —
+   * a live sign-in form with nothing to say it was a preview. */
   const handleOpenPreview = () => {
     let url = "/cms-preview";
     if (activeTab === "login") {
-      url = "/login?preview=true";
+      url = "/cms-preview/login";
     } else if (activeTab === "contact") {
       url = "/cms-preview#contact";
     } else if (activeTab === "membership") {
@@ -962,101 +967,121 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
         }}
       />
 
-      <div className="cms-header-row">
-        <div>
-          <h2 className="cms-header-title">
-              محتوى الموقع
-          </h2>
-        </div>
-      </div>
-
       {previewImageUrl && (
-        <div className="cms-viewer" onClick={() => setPreviewImageUrl(null)}>
-          <img src={previewImageUrl} alt="معاينة" />
-          <button type="button" className="cms-viewer-close" aria-label="إغلاق المعاينة">
-            <Icon name="close" />
-          </button>
-        </div>
+        <Overlay>
+          <div className="cms-viewer" onClick={() => setPreviewImageUrl(null)}>
+            <img src={previewSrc(previewImageUrl, 1200)} alt="معاينة" decoding="async" />
+            <button type="button" className="cms-viewer-close" aria-label="إغلاق المعاينة">
+              <Icon name="close" />
+            </button>
+          </div>
+        </Overlay>
       )}
 
       {cropModalOpen && cropImageSrc && (
-        <div className="cms-crop-overlay">
-          <div className="cms-crop-stage">
-            <Cropper
-              image={cropImageSrc}
-              crop={crop}
-              zoom={zoom}
-              aspect={cropAspect}
-              onCropChange={setCrop}
-              onCropComplete={onCropComplete}
-              onZoomChange={setZoom}
-            />
-          </div>
-          <div className="cms-crop-bar">
-            <div className="cms-crop-hint">قم بتحريك وتكبير الصورة لاقتطاع الجزء المناسب. المربع مقيد بالأبعاد الصحيحة.</div>
-            <div className="cms-crop-actions">
-              <button type="button" onClick={() => setCropModalOpen(false)} className="cms-btn-secondary">
-                إلغاء
-              </button>
-              <button type="button" onClick={handleConfirmCrop} className="cms-btn-primary">
-                تأكيد وقص الصورة
-              </button>
+        <Overlay>
+          <div className="cms-crop-overlay">
+            <div className="cms-crop-stage">
+              <Cropper
+                image={cropImageSrc}
+                crop={crop}
+                zoom={zoom}
+                aspect={cropAspect}
+                onCropChange={setCrop}
+                onCropComplete={onCropComplete}
+                onZoomChange={setZoom}
+              />
+            </div>
+            <div className="cms-crop-bar">
+              <div className="cms-crop-hint">قم بتحريك وتكبير الصورة لاقتطاع الجزء المناسب. المربع مقيد بالأبعاد الصحيحة.</div>
+              <div className="cms-crop-actions">
+                <button type="button" onClick={() => setCropModalOpen(false)} className="cms-btn-secondary">
+                  إلغاء
+                </button>
+                <button type="button" onClick={handleConfirmCrop} className="cms-btn-primary">
+                  تأكيد وقص الصورة
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        </Overlay>
       )}
 
       <div className="cms-layout">
-          {/* The strip and its two arrows travel together — the wrapper is what
-              the sticky offset now applies to, so the buttons stay beside the
-              tabs rather than scrolling away from them. */}
-          <div className="cms-tabs">
-            <button
-              type="button"
-              className="cms-tab-nav"
-              onClick={() => scrollTabs(1)}
-              disabled={!tabScroll.start}
-              aria-label="تمرير لليمين"
-            >
-              <Icon name="chevron_right" />
-            </button>
-
-          <div className="cms-sidebar" ref={tabStripRef}>
-            {([
-              { id: "hero", label: "الرئيسية (Hero)" },
-              { id: "coach", label: "قسم المدرب" },
-              { id: "membership", label: "الخطط والاشتراكات" },
-              { id: "testimonials", label: "آراء المشتركين" },
-              { id: "contact", label: "معلومات التواصل" },
-              { id: "login", label: "صفحة الدخول" },
-              /* Two different things used to answer to "العروض": this tab, which
-                 edits the promotional pop-up, and the offers *section* on the
-                 landing page — thirty-eight fields with no editor at all. The
-                 label now says which is which, and the section has its own. */
-              { id: "offercards", label: "بطاقات العروض الخاصة" },
-              { id: "offers", label: "النافذة الترويجية" },
-              { id: "visibility", label: "اخفاء واظهار الاقسام" },
-              { id: "media", label: "مكتبة الوسائط" }
-            ] satisfies { id: string; label: string }[]).map(tab => (
+          {/* The page title and the tab strip pin as one block.
+              The strip was already `position: sticky`, and it did stick — but it
+              travelled 33px first, measured the same on every tab. That 33px was
+              the title above it scrolling away while the strip chased it up to its
+              own `top: 16px`. A sticky element cannot stop before it reaches its
+              offset, so the only way to spend zero pixels is for the strip to be
+              resting on that offset already — which means the title has to be
+              inside the sticky box rather than above it.
+          
+              Hence `top: 0` on the wrapper: it opens exactly at the top of the
+              scrollport's content, so it is pinned from the first pixel. Raising
+              the strip's own `top` to the title's height would have done it too,
+              and would have drifted — the title is clamp(22px, 2.6vw, 28px), so
+              that number is only correct at one window width. */}
+          <div className="cms-head">
+            <div className="cms-header-row">
+              <div>
+                <h2 className="cms-header-title">
+                    محتوى الموقع
+                </h2>
+              </div>
+            </div>
+          
+            {/* The strip and its two arrows travel together — the wrapper is what
+                the sticky offset now applies to, so the buttons stay beside the
+                tabs rather than scrolling away from them. */}
+            <div className="cms-tabs">
               <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`cms-tab-btn ${activeTab === tab.id ? "active" : ""}`}
+                type="button"
+                className="cms-tab-nav"
+                onClick={() => scrollTabs(1)}
+                disabled={!tabScroll.start}
+                aria-label="تمرير لليمين"
               >
-                  <span>{tab.label}</span>
+                <Icon name="chevron_right" />
               </button>
-            ))}
-          </div>
 
-            <button
-              type="button"
-              className="cms-tab-nav"
-              onClick={() => scrollTabs(-1)}
-              disabled={!tabScroll.end}
-              aria-label="تمرير لليسار"
-            >
-              <Icon name="chevron_left" />
-            </button>
+            <div className="cms-sidebar" ref={tabStripRef}>
+              {([
+                { id: "hero", label: "الرئيسية (Hero)" },
+                { id: "coach", label: "قسم المدرب" },
+                { id: "membership", label: "الخطط والاشتراكات" },
+                { id: "testimonials", label: "آراء المشتركين" },
+                { id: "contact", label: "معلومات التواصل" },
+                { id: "login", label: "صفحة الدخول" },
+                /* Two different things used to answer to "العروض": this tab, which
+                   edits the promotional pop-up, and the offers *section* on the
+                   landing page — thirty-eight fields with no editor at all. The
+                   label now says which is which, and the section has its own. */
+                { id: "offercards", label: "بطاقات العروض الخاصة" },
+                { id: "offers", label: "النافذة الترويجية" },
+                { id: "visibility", label: "اخفاء واظهار الاقسام" },
+                { id: "media", label: "مكتبة الوسائط" }
+              ] satisfies { id: string; label: string }[]).map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`cms-tab-btn ${activeTab === tab.id ? "active" : ""}`}
+                >
+                    <span>{tab.label}</span>
+                </button>
+              ))}
+            </div>
+
+              <button
+                type="button"
+                className="cms-tab-nav"
+                onClick={() => scrollTabs(-1)}
+                disabled={!tabScroll.end}
+                aria-label="تمرير لليسار"
+              >
+                <Icon name="chevron_left" />
+              </button>
+            </div>
           </div>
 
           <div className="cms-content-pane">
@@ -1406,7 +1431,7 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
                   <div className="cms-media-grid">
                     {mediaLibrary.map((img, idx) => (
                       <div key={idx} className="cms-media-card">
-                        <img src={img.url} alt={img.name} className="cms-media-img" onClick={() => setPreviewImageUrl(img.url)} style={{ cursor: "zoom-in" }} />
+                        <img src={previewSrc(img.url, 264)} alt={img.name} className="cms-media-img" loading="lazy" decoding="async" onClick={() => setPreviewImageUrl(img.url)} style={{ cursor: "zoom-in" }} />
                         <div className="cms-media-overlay">
                           <span className="cms-media-name" title={img.name}>{img.name}</span>
                           <div className="cms-media-actions">
@@ -1436,141 +1461,145 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
                 )}
               </div>
             )}
-          </div>
-        </div>
 
-        {/* Lifts and follows only while there is something to save. At rest the
-            bar says "كل التغييرات محفوظة" with its save button disabled, and held
-            89px of a screen that already gives 72px to the nav bar and 58px to
-            the tabs — a fifth of a 1080px screen, near a third of a 768px one.
-            Sticky and static occupy the same box in flow, so this toggles
-            nothing about the layout; it only decides whether the bar detaches
-            when the page scrolls past it. */}
-        <div className={`cms-footer ${isDirty ? "is-pinned" : ""}`}>
-          {isDirty ? (
-            <span className="cms-dirty">تغييرات غير محفوظة</span>
-          ) : (
-            <span className="cms-saved">
-              كل التغييرات محفوظة
-            </span>
-          )}
-
-          {activeTab !== "media" && (
-            <button
-              onClick={handleOpenPreview}
-              disabled={isSaving || isUploading}
-              className="cms-btn-secondary"
-            >
-              معاينة قبل النشر
-            </button>
-          )}
-
-
-          <button
-            onClick={handleSave}
-            /* Nothing to publish when the content matches what is stored. */
-            disabled={isSaving || isUploading || !isDirty}
-            className="cms-btn-primary"
-          >
-            {isSaving ? (
-              <>
-                <div className="cms-spinner" style={{ width: 16, height: 16, border: "2px solid var(--text-inverse)", borderTopColor: "transparent" }}></div>
-                <span>جاري الحفظ...</span>
-              </>
+          {/* Lifts and follows only while there is something to save. At rest the
+              bar says "كل التغييرات محفوظة" with its save button disabled, and held
+              89px of a screen that already gives 72px to the nav bar and 58px to
+              the tabs — a fifth of a 1080px screen, near a third of a 768px one.
+              Sticky and static occupy the same box in flow, so this toggles
+              nothing about the layout; it only decides whether the bar detaches
+              when the page scrolls past it. */}
+          <div className={`cms-footer ${isDirty ? "is-pinned" : ""}`}>
+            {isDirty ? (
+              <span className="cms-dirty">تغييرات غير محفوظة</span>
             ) : (
-              <>
-                <span>حفظ التغييرات ونشرها</span>
-              </>
+              <span className="cms-saved">
+                كل التغييرات محفوظة
+              </span>
             )}
-          </button>
+
+            {activeTab !== "media" && (
+              <button
+                onClick={handleOpenPreview}
+                disabled={isSaving || isUploading}
+                className="cms-btn-secondary"
+              >
+                معاينة قبل النشر
+              </button>
+            )}
+
+
+            <button
+              onClick={handleSave}
+              /* Nothing to publish when the content matches what is stored. */
+              disabled={isSaving || isUploading || !isDirty}
+              className="cms-btn-primary"
+            >
+              {isSaving ? (
+                <>
+                  <div className="cms-spinner" style={{ width: 16, height: 16, border: "2px solid var(--text-inverse)", borderTopColor: "transparent" }}></div>
+                  <span>جاري الحفظ...</span>
+                </>
+              ) : (
+                <>
+                  <span>حفظ التغييرات ونشرها</span>
+                </>
+              )}
+            </button>
+          </div>
+          </div>
         </div>
 
       {showConfirmModal && (
-        <div className="cms-modal-overlay">
-          <div className="cms-modal-card">
-            <div className="cms-modal-icon-wrapper">
-              <div className="cms-modal-icon">
+        <Overlay>
+          <div className="cms-modal-overlay">
+            <div className="cms-modal-card">
+              <div className="cms-modal-icon-wrapper">
+                <div className="cms-modal-icon">
+                </div>
+              </div>
+              <h3 className="cms-modal-title">تأكيد الحذف نهائياً</h3>
+              <p className="cms-modal-desc">{confirmMessage}</p>
+              <div className="cms-modal-actions">
+                <button
+                  onClick={() => {
+                    if (confirmAction) confirmAction();
+                    setShowConfirmModal(false);
+                  }}
+                  className="cms-modal-btn-confirm"
+                >
+                  نعم، احذف
+                </button>
+                <button
+                  onClick={() => setShowConfirmModal(false)}
+                  className="cms-modal-btn-cancel"
+                >
+                  تراجع
+                </button>
               </div>
             </div>
-            <h3 className="cms-modal-title">تأكيد الحذف نهائياً</h3>
-            <p className="cms-modal-desc">{confirmMessage}</p>
-            <div className="cms-modal-actions">
-              <button
-                onClick={() => {
-                  if (confirmAction) confirmAction();
-                  setShowConfirmModal(false);
-                }}
-                className="cms-modal-btn-confirm"
-              >
-                نعم، احذف
-              </button>
-              <button
-                onClick={() => setShowConfirmModal(false)}
-                className="cms-modal-btn-cancel"
-              >
-                تراجع
-              </button>
-            </div>
           </div>
-        </div>
+        </Overlay>
       )}
 
       {activeMediaSelectField && (
-        <div className="cms-modal-overlay">
-          <div className="cms-modal-card is-wide">
-            <div className="cms-selector-head">
-              <h3 className="cms-selector-title">اختر صورة من مكتبة الوسائط</h3>
-              <button
-                type="button"
-                onClick={() => setActiveMediaSelectField(null)}
-                className="cms-selector-close"
-                aria-label="إغلاق"
-              >
-                <Icon name="close" />
-              </button>
-            </div>
-
-            {isLoadingMedia ? (
-              <div className="cms-loading-media">
-                <div className="cms-spinner"></div>
-                <p>جاري تحميل مكتبة الصور...</p>
+        <Overlay>
+          <div className="cms-modal-overlay">
+            <div className="cms-modal-card is-wide">
+              <div className="cms-selector-head">
+                <h3 className="cms-selector-title">اختر صورة من مكتبة الوسائط</h3>
+                <button
+                  type="button"
+                  onClick={() => setActiveMediaSelectField(null)}
+                  className="cms-selector-close"
+                  aria-label="إغلاق"
+                >
+                  <Icon name="close" />
+                </button>
               </div>
-            ) : mediaLibrary.length === 0 ? (
-              <p className="cms-empty">
-                لا توجد صور مرفوعة حالياً. ارفع صورة من تبويب «مكتبة الوسائط» أولاً.
-              </p>
-            ) : (
-              <div className="cms-selector-scroll">
-                <div className="cms-selector-grid">
-                  {mediaLibrary.map((img, idx) => (
-                    <button
-                      type="button"
-                      key={idx}
-                      onClick={() => handleSelectFromLibrary(img.url)}
-                      className="cms-selector-img-card"
-                      title={img.name}
-                    >
-                      <img src={img.url} alt={img.name} />
-                      <span className="cms-selector-hover-overlay">
-                        <Icon name="check_circle" style={{ fontSize: 26 }} />
-                      </span>
-                    </button>
-                  ))}
+
+              {isLoadingMedia ? (
+                <div className="cms-loading-media">
+                  <div className="cms-spinner"></div>
+                  <p>جاري تحميل مكتبة الصور...</p>
                 </div>
-              </div>
-            )}
+              ) : mediaLibrary.length === 0 ? (
+                <p className="cms-empty">
+                  لا توجد صور مرفوعة حالياً. ارفع صورة من تبويب «مكتبة الوسائط» أولاً.
+                </p>
+              ) : (
+                <div className="cms-selector-scroll">
+                  <div className="cms-selector-grid">
+                    {mediaLibrary.map((img, idx) => (
+                      <button
+                        type="button"
+                        key={idx}
+                        onClick={() => handleSelectFromLibrary(img.url)}
+                        className="cms-selector-img-card"
+                        title={img.name}
+                      >
+                        <img src={previewSrc(img.url, 192)} alt={img.name} loading="lazy" decoding="async" />
+                        <span className="cms-selector-hover-overlay">
+                          <Icon name="check_circle" style={{ fontSize: 26 }} />
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
-            <div className="cms-selector-foot">
-              <button
-                type="button"
-                onClick={() => setActiveMediaSelectField(null)}
-                className="cms-modal-btn-cancel"
-              >
-                إلغاء
-              </button>
+              <div className="cms-selector-foot">
+                <button
+                  type="button"
+                  onClick={() => setActiveMediaSelectField(null)}
+                  className="cms-modal-btn-cancel"
+                >
+                  إلغاء
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        </Overlay>
       )}
     </div>
     </CMSContext.Provider>

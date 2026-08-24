@@ -17,6 +17,8 @@
  * file and that config in step.
  */
 
+import { safeMediaUrl } from "@/lib/richText";
+
 /** Requestable widths — the union of Next's default `imageSizes`/`deviceSizes`. */
 const ALLOWED_WIDTHS = [16, 32, 48, 64, 96, 128, 256, 384, 640, 750, 828, 1080, 1200, 1920, 2048, 3840];
 
@@ -55,4 +57,29 @@ export function optimizedSrcSet(
  */
 export function optimizedCssUrl(url: string, width: number, quality = DEFAULT_QUALITY): string {
   return `url('${optimizedSrc(url, width, quality)}')`;
+}
+
+/**
+ * A thumbnail address for a picture the coach uploaded, safe to hand to `<img>`.
+ *
+ * The panel used to write `<img src={url}>` with the stored address exactly as
+ * it came out of the bucket, in five places. That is what put a 9504x5346
+ * photograph — fifty megapixels, two megabytes — into a 74-pixel box on the
+ * content screen. The transfer is the smaller half of that cost: decoding fifty
+ * megapixels allocates a couple of hundred megabytes of bitmap and does it on
+ * the main thread, which is why the page felt slow rather than merely heavy.
+ *
+ * `optimizedSrc` already existed and the landing page already used it; the panel
+ * simply never did. Same optimiser, same allow-list in `next.config.ts`, so no
+ * new surface — this only asks for the size the box is actually drawn at.
+ *
+ * Falls back to the address it was given when `safeMediaUrl` refuses it, so a
+ * picture that cannot be optimised still appears rather than disappearing. That
+ * is the right way round here: this is a thumbnail in the coach's own panel, not
+ * a value being interpolated into CSS, and the optimiser refuses anything it was
+ * not told about regardless.
+ */
+export function previewSrc(url: string, width: number, quality = DEFAULT_QUALITY): string {
+  const safe = safeMediaUrl(url);
+  return safe ? optimizedSrc(safe, width, quality) : url;
 }

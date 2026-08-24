@@ -18,7 +18,11 @@ export default async function AdminCMSPage() {
   const contentAr = settings?.content_ar as JsonRecord || defaultTranslations;
 
   return (
-    <div style={{ padding: 0 }}>
+    /* Named so the stylesheet can give this one screen a full-height column.
+       The content manager scrolls its own content pane rather than the shell's
+       main element — see `.cms-page-shell` in cms.css for why. `padding: 0` was
+       a no-op on a bare div and is gone with it. */
+    <div className="cms-page-shell">
       <AdminCMSClient initialAr={contentAr} />
     </div>
   );

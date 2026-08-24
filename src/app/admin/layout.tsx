@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import "./admin.css";
 import { Icon, type IconName } from "@/components/Icon";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { optimizedSrc, optimizedSrcSet } from "@/lib/imageOptim";
 
 export default function AdminLayout({
   children,
@@ -58,8 +59,13 @@ export default function AdminLayout({
             className="admin-collapsed-logo-tile admin-logo-mobile"
           >
             <img
-              src="/images/logo/mainLogo.png"
+              /* Drawn at 36px and hidden outright above the phone breakpoint —
+                 but `display: none` does not stop the fetch, so the full 2048px
+                 original (139 KB) was downloaded on every admin page and then
+                 never painted. */
+              src={optimizedSrc("/images/logo/mainLogo.png", 96)}
               alt="Ibrahim Abutabikh Main Logo"
+              decoding="async"
               style={{
                 width: "36px",
                 height: "36px",
@@ -75,8 +81,14 @@ export default function AdminLayout({
             className="admin-hlogo-link admin-logo-desktop"
           >
             <img
-              src="/images/logo/hLogo.png"
+              /* 5170x824 for a 200x60 box: 184 KB on every admin page. The
+                 landing page has asked for these same three widths since the
+                 optimiser was introduced; the panel never did. */
+              src={optimizedSrc("/images/logo/hLogo.png", 384)}
+              srcSet={optimizedSrcSet("/images/logo/hLogo.png", [384, 640])}
+              sizes="200px"
               alt="Ibrahim Abutabikh Logo"
+              decoding="async"
               style={{
                 maxHeight: "60px",
                 height: "auto",

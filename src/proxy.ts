@@ -49,10 +49,17 @@ export async function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     "/admin/:path*",
-    /* The content manager's preview of the home page. It sits outside /admin so
-       that it renders with the landing page's stylesheet alone rather than the
-       panel's, but it is the coach's screen and is gated like the rest of them. */
-    "/cms-preview",
+    /* The content manager's previews — the home page at `/cms-preview` and the
+       sign-in screen at `/cms-preview/login`. They sit outside /admin so that
+       each renders with its own page's stylesheet alone rather than the panel's,
+       but they are the coach's screens and are gated like the rest of them.
+
+       `:path*` matches zero or more segments, so this one entry covers the bare
+       `/cms-preview` and everything under it. It was an exact path before, which
+       would have left `/cms-preview/login` unmatched — the page's own
+       `requireAdminPage` would still have turned a stranger away, but the proxy
+       is the first line and it should not have a gap in it. */
+    "/cms-preview/:path*",
     "/dashboard/:path*",
     "/account/:path*",
     "/export-workout",

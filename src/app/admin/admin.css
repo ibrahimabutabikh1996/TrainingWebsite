@@ -253,10 +253,20 @@
   width: 100%;
   /* `backwards`, not `forwards`/`both`: a filled-forwards transform would stay
      applied after the animation ends, and any transform makes this div the
-     containing block for `position: fixed` descendants — which would trap the
-     admin modals (.cms-modal-overlay, .dplan-picker-backdrop) inside it instead
-     of letting them cover the viewport. These pages don't portal their modals
-     out, so the transform has to be gone once the entrance finishes. */
+     containing block for `position: fixed` descendants — which would trap a
+     modal inside it instead of letting it cover the viewport.
+
+     Still true for `.dplan-picker-backdrop`, which is written inside the page
+     that opens it. The three that used to share the problem —
+     `.cms-modal-overlay`, `.cms-crop-overlay` and `.admin-modal-scrim` — now go
+     through `<Overlay>` (`@/components/ui/Overlay`) and are drawn on `<body>`,
+     so neither this transform nor the stacking context below can reach them.
+
+     Note the containing-block trap is only half of it. `.admin-main-content`
+     also carries `position: relative; z-index: 2` a few lines up, and that is a
+     *stacking context* — which is what actually put the crop window's buttons
+     under `.admin-bottom-nav` (z-index 100, outside this element) despite the
+     window asking for 10000. See the note in Overlay.tsx for the measurement. */
   animation: adminFadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 

@@ -11,6 +11,7 @@ import { optimizedCssUrl, optimizedSrc, optimizedSrcSet } from "@/lib/imageOptim
 import { useParallax } from "@/hooks/useParallax";
 import { normalizeLegacyName } from "@/lib/planNames";
 import { PromotionalPopup } from "@/components/PromotionalPopup";
+import { PreviewBar } from "@/components/ui/PreviewBar";
 
 /* Baseline copy. Anything the coach edits in the CMS overrides these at runtime
    through the [data-i18n] pass below. */
@@ -2005,26 +2006,8 @@ export default function LandingClient({
         />
       )}
 
-      {/* The one thing on this page a visitor does not get.
-          It floats, so the page underneath keeps the exact layout it will have
-          once published — and it is here because a tab showing the home page
-          with none of its buttons working is otherwise indistinguishable from
-          the live site having broken. */}
-      {isPreview && (
-        <div className="cms-preview-bar" role="status">
-          <span className="cms-preview-dot" aria-hidden="true" />
-          <span className="cms-preview-text">
-            وضع المعاينة — هكذا ستظهر الصفحة للزائر بعد النشر
-          </span>
-          <button
-            type="button"
-            className="cms-preview-close"
-            onClick={() => window.close()}
-          >
-            إغلاق
-          </button>
-        </div>
-      )}
+      {/* Shared with the sign-in preview — see @/components/ui/PreviewBar. */}
+      {isPreview && <PreviewBar />}
     </div>
   );
 }

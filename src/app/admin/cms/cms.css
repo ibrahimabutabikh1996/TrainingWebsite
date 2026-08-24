@@ -1,8 +1,50 @@
 /* --- CMS Client Design System & Layout --- */
 
+/* The content manager scrolls its content pane, not the shell.
+ *
+ * Everywhere else in the panel `.admin-main-content` is the scroller and the
+ * page just grows inside it. Here that meant the tab strip had to be `sticky`
+ * with an opaque ground under it, because content ran underneath — and an
+ * opaque ground is exactly what hid the page's own glow and left the head
+ * reading as a flat rectangle two shades darker than everything around it.
+ *
+ * Turning the pane into the scroller removes the cause rather than the symptom:
+ * nothing passes behind the head any more, so the head needs no ground, no
+ * `z-index` and no `position` at all. It is simply the first row of a column
+ * whose second row scrolls.
+ *
+ * The chain has to carry a definite height the whole way down, which is what
+ * these four rules are: shell → container → layout → pane. `min-height: 0` on
+ * each flex item is the part that is easy to miss — without it a flex item
+ * refuses to shrink below its content, the pane never gets a bounded height,
+ * and the scrollbar reappears on the shell instead. */
+/* `:has()` rather than a blanket rule, because `.admin-main-content` is the
+   shell for every screen in the panel and the others still want it to scroll.
+   A percentage height was tried first and does not resolve here — the shell is
+   a block box whose own height comes from flex, so the child had nothing
+   definite to be a percentage of, and the scrollbar stayed on the shell. Making
+   the shell a flex column for this one page gives the child a real box to fill.
+   A browser without `:has()` falls back to today's behaviour rather than to
+   anything broken. */
+.admin-main-content:has(> .cms-page-shell) {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.cms-page-shell {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 .cms-container {
   width: 100%;
-  padding-bottom: 24px;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
   animation: fadeIn 0.4s ease-out;
 }
 
@@ -50,6 +92,8 @@
   flex-direction: column;
   gap: 12px;
   align-items: stretch;
+  flex: 1;
+  min-height: 0;
 }
 
 /* Tab strip — the arrows, the track, and the tabs inside it.
@@ -60,17 +104,27 @@
  * track, which is what made the bar read as heavy beside the segmented
  * controls on every other panel screen.
  *
- * The sticky offset moved to the wrapper so the arrows travel with the tabs. */
+ * The sticky offset moved to the wrapper so the arrows travel with the tabs;
+ * that wrapper is now `.cms-head`, below. */
+
+/* The page title and the tab strip. The first row of the column — it does not
+   move because nothing scrolls it, not because it is pinned.
+
+   It carried `position: sticky`, `top: 0`, `z-index: 40`, a `background` and a
+   pseudo-element painting the shell's top padding. All five existed to survive
+   content passing underneath. The pane owns the scrolling now, so nothing does,
+   and every one of them is gone — including the ground, which is the point:
+   measured, it was rendering `rgb(10,18,26)` against a page rendering
+   `rgb(12,19,27)`, a flat patch two shades darker where it covered the glow
+   from `.admin-layout-wrapper::before`. With no ground the glow simply shows
+   through, exactly as it does everywhere else. */
 .cms-tabs {
   display: flex;
   align-items: center;
   gap: 8px;
-  position: sticky;
-  top: 16px;
-  z-index: 40;
-  /* The track is translucent while it scrolls under the page; the wrapper needs
-     a ground of its own or the tabs show through it when stuck. */
-  background: var(--bg);
+  /* Static now — the wrapper above carries the sticky, the offset and the
+     ground. Two sticky boxes nested inside one another would pin at the same
+     line and draw over each other. */
   padding-block: 4px;
 }
 
@@ -82,7 +136,16 @@
   overflow-x: auto;
   gap: 4px;
   padding: 4px;
-  background: var(--bg3);
+  /* No container fill, unlike `.diet-segment`, `.ex-segment` and `.co-segment`,
+     which share this recipe otherwise. Those three are short segmented controls
+     — three or four choices — where the `--bg3` slab reads as one control. This
+     one carries ten tabs across the full width of the pane and sits pinned at
+     the top of the page, so the same slab reads as a heavy bar rather than a
+     control, and it was asked to go.
+     The 1px edge stays: it is what still groups the ten into one thing, which
+     is the part of the segmented-control contract in AGENTS.md that matters
+     here. If the other three are ever changed to match, that contract needs
+     rewording rather than quietly contradicting. */
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   scroll-behavior: smooth;
@@ -155,6 +218,11 @@
 /* Content Container Pane */
 .cms-content-pane {
   flex: 1;
+  /* The scroller. `min-height: 0` is what lets it be one: a flex item's
+     automatic minimum is its content, so without this it grows to fit the form
+     and hands the overflow back to the shell. */
+  min-height: 0;
+  overflow-y: auto;
   /* Complete all-around buffer to eliminate sharp clipping boundaries during hover animations without affecting layout dimensions */
   margin: -16px -22px -24px -22px;
   padding: 16px 22px 24px 22px;
@@ -1084,11 +1152,21 @@
   flex-shrink: 0;
 }
 
-/* --- Full-size image viewer --- */
+/* --- Full-size image viewer ---
+   10000, not the 9999 this carried. 9999 is exactly `.admin-layout-wrapper`'s
+   own value, and a tie is broken by document order — so the viewer, written
+   inside that wrapper, lost to it every time. The visible result was the
+   bottom bar: `document.elementFromPoint` over the middle of the strip
+   returned `a.admin-nav-link`, meaning a click meant to dismiss the preview
+   landed on a navigation link and left the page instead.
+
+   The four other full-screen surfaces in the panel already sit at 10000, and
+   this one now goes through the same `<Overlay>` portal they do, so all five
+   are one rung above the shell rather than four above and one tied. */
 .cms-viewer {
   position: fixed;
   inset: 0;
-  z-index: 9999;
+  z-index: 10000;
   background: rgba(0, 0, 0, 0.85);
   display: flex;
   justify-content: center;
