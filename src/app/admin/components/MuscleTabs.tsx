@@ -22,12 +22,31 @@ const getMuscleImage = (muscle: string) => {
     case "فيديوهات توضيحية": return "/photos/musclesPhotos/25 - VIdeos فديوهات توضيحية.png";
     case "منزلي بدون معدات": return "/photos/musclesPhotos/24 - Home Workout منزلي بدون معدات.png";
     case "خشونة الركبة": return "/photos/musclesPhotos/26 - خشونة الركبة.png";
-    case "كل التمارين": 
-    default: 
+    case "كل التمارين":
+    default:
       return "/photos/musclesPhotos/27 - كل عضلات الجسم.png";
   }
 };
 
+/* The tiles and the two arrows that page through them.
+ *
+ * This was written entirely in inline styles, which is why it behaved the same
+ * on a 1920px monitor and a 320px phone: an inline style is unreachable from a
+ * media query, so nothing here could be told to stand down on a small screen.
+ * On a 320px screen the two 44px arrows and their gaps took 104px of the 262px
+ * the toolbar had, leaving a 158px window onto a 1279px strip — a filter you
+ * could see one and a half tiles of.
+ *
+ * The arrows are for a mouse. A touch screen swipes the strip directly, so
+ * below 640px they are hidden and the tiles take the whole width; see
+ * `.mtabs-nav` in exercises.css. Nothing is lost: the same tiles, reached the
+ * way a phone reaches them.
+ *
+ * The scrollbar-hiding rule went with the styles, and not a moment too soon —
+ * it was `div::-webkit-scrollbar { display: none }`, a bare type selector in a
+ * <style> tag, so mounting this component hid the scrollbar of every div on the
+ * page. It is scoped to this track now.
+ */
 export default function MuscleTabs({ uniqueMuscles, selectedMuscle, onSelect }: MuscleTabsProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -44,127 +63,31 @@ export default function MuscleTabs({ uniqueMuscles, selectedMuscle, onSelect }: 
   };
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)", position: "relative" }}>
-      <button
-        onClick={scrollRight}
-        aria-label="تمرير لليمين"
-        style={{
-          flexShrink: 0,
-          zIndex: 10,
-          width: "44px",
-          height: "44px",
-          borderRadius: "50%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "rgba(255, 255, 255, 0.05)",
-          backdropFilter: "blur(12px)",
-          WebkitBackdropFilter: "blur(12px)",
-          border: "1px solid rgba(255, 255, 255, 0.2)",
-          boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15), inset 0 1px 1px rgba(255, 255, 255, 0.15)",
-          color: "var(--text)",
-          cursor: "pointer",
-          transition: "all 0.2s ease",
-        }}
-      >
+    <div className="mtabs">
+      <button onClick={scrollRight} aria-label="تمرير لليمين" className="mtabs-nav">
         <Icon name="chevron_right" />
       </button>
 
-      <div
-        ref={scrollRef}
-        role="group"
-        aria-label="تصفية حسب العضلة"
-        style={{
-          display: "flex",
-          gap: "var(--space-4)",
-          overflowX: "auto",
-          paddingBottom: "var(--space-4)",
-          paddingTop: "var(--space-2)",
-          paddingInline: "var(--space-2)",
-          maxWidth: "100%",
-          scrollbarWidth: "none",
-          msOverflowStyle: "none",
-        }}
-      >
-        <style>{`div::-webkit-scrollbar { display: none; }`}</style>
+      <div ref={scrollRef} role="group" aria-label="تصفية حسب العضلة" className="mtabs-track">
         {uniqueMuscles.map((muscle) => {
           const isSelected = selectedMuscle === muscle;
-          const imgSrc = getMuscleImage(muscle);
           return (
             <button
               key={muscle}
               onClick={() => onSelect(muscle)}
               aria-pressed={isSelected}
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: "var(--space-3)",
-                minWidth: "110px",
-                padding: "var(--space-4) var(--space-2)",
-                background: isSelected ? "var(--bg3)" : "transparent",
-                border: `1px solid ${isSelected ? "var(--primary)" : "var(--border)"}`,
-                borderRadius: "var(--radius-xl)",
-                cursor: "pointer",
-                transition: "all var(--dur-slow) var(--ease-out)",
-                transform: isSelected ? "translateY(-4px)" : "translateY(0)",
-                boxShadow: isSelected ? "var(--elev-2)" : "none",
-                flexShrink: 0,
-              }}
+              className="mtabs-tile"
             >
-              <div style={{ height: "72px", width: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <img 
-                  src={imgSrc} 
-                  alt={muscle} 
-                  style={{ 
-                    maxHeight: "100%", 
-                    maxWidth: "100%",
-                    objectFit: "contain", 
-                    filter: isSelected ? "none" : "grayscale(100%) opacity(40%)",
-                    transition: "all var(--dur-slow) var(--ease-out)",
-                    transform: isSelected ? "scale(1.1)" : "scale(1)"
-                  }} 
-                />
-              </div>
-              <span
-                style={{
-                  fontSize: "var(--text-sm)",
-                  fontWeight: isSelected ? "var(--weight-bold)" : "var(--weight-medium)",
-                  color: isSelected ? "var(--text)" : "var(--text-secondary)",
-                  transition: "color var(--dur-fast) var(--ease)",
-                  whiteSpace: "nowrap"
-                }}
-              >
-                {muscle}
+              <span className="mtabs-tile-img">
+                <img src={getMuscleImage(muscle)} alt={muscle} />
               </span>
+              <span className="mtabs-tile-label">{muscle}</span>
             </button>
           );
         })}
       </div>
 
-      <button
-        onClick={scrollLeft}
-        aria-label="تمرير لليسار"
-        style={{
-          flexShrink: 0,
-          zIndex: 10,
-          width: "44px",
-          height: "44px",
-          borderRadius: "50%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "rgba(255, 255, 255, 0.05)",
-          backdropFilter: "blur(12px)",
-          WebkitBackdropFilter: "blur(12px)",
-          border: "1px solid rgba(255, 255, 255, 0.2)",
-          boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15), inset 0 1px 1px rgba(255, 255, 255, 0.15)",
-          color: "var(--text)",
-          cursor: "pointer",
-          transition: "all 0.2s ease",
-        }}
-      >
+      <button onClick={scrollLeft} aria-label="تمرير لليسار" className="mtabs-nav">
         <Icon name="chevron_left" />
       </button>
     </div>

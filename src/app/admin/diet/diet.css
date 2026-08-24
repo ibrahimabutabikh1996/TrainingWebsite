@@ -63,6 +63,17 @@
   max-width: none;
 }
 
+/* The pair of them, as one row. This was an inline `display: flex` on the div,
+   which meant no media query could reach it — and the two buttons hold long
+   Arabic labels that `white-space: nowrap` refuses to break, so at 320px the
+   row measured 393px and `.admin-main-content` scrolled sideways by 73px.
+   Wrapping is what a phone needs and a stylesheet is where it can be said. */
+.diet-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
 /* Shared geometry for the header's two buttons so they read as one pair —
    same height, radius and type. They differ only in fill: the page's own action
    (adding a source to this library) is the solid one; the link out to the plan
@@ -600,4 +611,151 @@
   background: var(--primary);
   border: 1px solid var(--primary);
   color: var(--text-inverse);
+}
+
+/* ─── Phones ──────────────────────────────────────────────────────────────
+   Two things change below 640px, and neither is a shrink. The header's pair of
+   buttons stop sitting side by side — their labels are long enough that two of
+   them never fit a phone line, and a wrapped pair of different widths reads as
+   an accident, so each takes the full row. And every control the coach presses
+   here is brought up to the touch floor: the segment tabs, the search field's
+   own box, and the clear button inside it were all between 22px and 40px, which
+   is comfortable under a cursor and fiddly under a thumb. */
+@media (max-width: 640px) {
+  .diet-header-actions {
+    width: 100%;
+  }
+
+  .diet-header-actions > .diet-add-btn,
+  .diet-header-actions > .diet-btn-secondary {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+
+  /* Edit and delete come out of the corner and take a row of their own.
+     They were absolutely positioned at 30px with 4px between them, which is
+     two small targets a thumb's width apart with a destructive one on the
+     inside — and the 84px gutter the card reserves for them was a quarter of a
+     320px screen taken from the name of the food. In the flow they can be 44px
+     without costing the text anything, and the card gets its width back. */
+  .diet-card-minimal {
+    flex-wrap: wrap;
+    padding: var(--space-4);
+    gap: var(--space-4);
+  }
+
+  .diet-card-minimal-actions {
+    position: static;
+    flex: 1 1 100%;
+    justify-content: flex-end;
+    gap: var(--space-2);
+  }
+
+  .minimal-action-btn {
+    width: var(--tap-min);
+    height: var(--tap-min);
+  }
+
+  .minimal-action-btn .app-icon {
+    font-size: 18px;
+  }
+}
+
+
+/* ─── Touch ───────────────────────────────────────────────────────────────
+   Sizes only, gated on the pointer rather than the width — a phone turned into
+   landscape is 667 to 932px wide and still driven by a thumb, so a rule keyed
+   on `max-width: 640px` switched itself off at exactly the moment nothing else
+   about the device had changed. A control that is bigger than it needs to be on
+   a tablet is right; a *layout* rule cannot be moved here on the same argument,
+   which is why the stacking and wrapping above stay keyed on the width. */
+/* The card's two row actions on a tablet — a touch screen too wide for the
+   phone layout above.
+   Below 640px they leave the corner entirely and take a row of their own, and
+   the block above already sizes them; a tablet keeps the corner layout, so here
+   they grow in place instead and the gutter the card reserves for them grows to
+   match: two 44px buttons and the 4px between them need 92px plus the 12px
+   inset, where 84px was cut for two 30px ones. Without that second rule the
+   pair would sit over the name of the food.
+   Bounded at 641px for the same reason it exists — under that the buttons are
+   in the flow, and this block sits after the phone block, so an unbounded
+   gutter would reserve 104px of a 320px card for two buttons that are no longer
+   in the corner. */
+@media (pointer: coarse) and (min-width: 641px) {
+  .minimal-action-btn {
+    width: var(--tap-min);
+    height: var(--tap-min);
+  }
+
+  .minimal-action-btn .app-icon {
+    font-size: 18px;
+  }
+
+  .diet-card-minimal {
+    padding-inline-end: 104px;
+  }
+}
+
+@media (pointer: coarse), (max-width: 640px) {
+  .diet-segment button {
+    min-height: var(--tap-min);
+  }
+
+  /* Shared with the plan builder and the course builder, so this one rule
+     reaches the row actions on all three. */
+  .diet-icon-btn {
+    width: var(--tap-min);
+    height: var(--tap-min);
+  }
+
+  /* The input's own box, not the bordered shell around it — a tap only counts
+     where the field actually is. */
+  .diet-search input {
+    min-height: 28px;
+    padding-block: var(--space-2);
+  }
+
+  .diet-search-clear {
+    width: 32px;
+    height: 32px;
+  }
+
+  .diet-search-clear .app-icon {
+    font-size: 16px;
+  }
+}
+
+/* These buttons are drawn transparent and take their border, ground and full
+   opacity from `.diet-card-minimal:hover`. A touch screen has no hover, so on
+   every phone and tablet they sat as two faint glyphs with no button around
+   them — the delete at 60% opacity. Same fix, and same reasoning, as the
+   `@media (hover: none)` block at the end of crm.css. */
+@media (hover: none) {
+  .minimal-action-btn {
+    background: var(--bg4);
+    border-color: var(--border);
+    color: var(--text-secondary);
+  }
+
+  .minimal-action-btn.delete-btn {
+    color: var(--error-text);
+    opacity: 1;
+  }
+}
+
+
+/* ─── Phones: the fields, at the size iOS will not zoom ───────────────────
+   Safari zooms the page in when a focused control is set below 16px, and
+   these read 15px. The zoom is not a preference — it fires on every tap into
+   the field and leaves the page scaled and offset, which is the single
+   loudest way a site says it is a website rather than an app. 16px here is
+   the whole fix, and pinch-zoom stays available because nothing had to be
+   locked down to get it. Gated on the pointer, because Safari zooms whichever
+   way the phone is held and a landscape phone is 667px wide or more. */
+@media (pointer: coarse), (max-width: 640px) {
+  .diet-search input,
+  .diet-field input,
+  .diet-field textarea {
+    font-size: 16px;
+  }
 }

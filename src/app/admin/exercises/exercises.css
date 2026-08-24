@@ -634,3 +634,182 @@
   .ex-toolbar { padding: 16px; }
   .ex-grid { grid-template-columns: 1fr; }
 }
+
+/* ─── Touch ───────────────────────────────────────────────────────────────
+   Keyed on the pointer, not on the width, and the difference is a phone lying
+   on its side: turned into landscape it is 667 to 932px WIDE while still being
+   driven by a thumb, so a rule keyed on `max-width: 640px` switched itself off
+   at exactly the moment nothing else about the device had changed.
+   `pointer: coarse` asks the question that is actually being asked; the width
+   arm stays for a narrow window on a desktop, where the layout is already the
+   phone's. A laptop with a touchscreen reports its *primary* pointer as fine,
+   so it is left alone — as it should be, since it has a mouse.
+
+   Every control on a card, at thumb size. The library runs to a hundred-odd
+   exercises and each card carries an edit and a delete sitting 4px apart, drawn
+   at 34px — the two most consequential buttons on the screen, one of them
+   destructive, at three quarters of the touch floor and close enough together
+   to catch the wrong one. The icons stay the size they were; only the box
+   around them grows. */
+@media (pointer: coarse), (max-width: 640px) {
+  .ex-icon-btn {
+    width: var(--tap-min);
+    height: var(--tap-min);
+  }
+
+  .ex-card-actions {
+    gap: var(--space-2);
+  }
+
+  .ex-segment button,
+  .ex-video,
+  .ex-muscle-opt {
+    min-height: var(--tap-min);
+  }
+
+  .ex-search input {
+    padding-block: 14px;
+  }
+
+  .ex-search-clear {
+    width: 34px;
+    height: 34px;
+  }
+}
+
+/* ─── Muscle filter strip (src/app/admin/components/MuscleTabs.tsx) ────────
+   Lifted out of that component's inline styles unchanged — same geometry, same
+   colours, same transitions. The move is what makes the two rules at the
+   bottom of this block possible: an inline style cannot be reached by a media
+   query, and this strip needed to behave differently on a phone. */
+
+.mtabs {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  position: relative;
+}
+
+.mtabs-nav {
+  flex-shrink: 0;
+  z-index: 10;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-circle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), inset 0 1px 1px rgba(255, 255, 255, 0.15);
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.mtabs-track {
+  display: flex;
+  gap: var(--space-4);
+  overflow-x: auto;
+  padding: var(--space-2) var(--space-2) var(--space-4);
+  max-width: 100%;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.mtabs-track::-webkit-scrollbar {
+  display: none;
+}
+
+.mtabs-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-width: 110px;
+  padding: var(--space-4) var(--space-2);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  cursor: pointer;
+  transition: background var(--dur-slow) var(--ease-out), border-color var(--dur-slow) var(--ease-out), transform var(--dur-slow) var(--ease-out), box-shadow var(--dur-slow) var(--ease-out);
+  flex-shrink: 0;
+}
+
+.mtabs-tile[aria-pressed="true"] {
+  background: var(--bg3);
+  border-color: var(--primary);
+  transform: translateY(-4px);
+  box-shadow: var(--elev-2);
+}
+
+.mtabs-tile-img {
+  height: 72px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mtabs-tile-img img {
+  max-height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+  filter: grayscale(100%) opacity(40%);
+  transform: scale(1);
+  transition: filter var(--dur-slow) var(--ease-out), transform var(--dur-slow) var(--ease-out);
+}
+
+.mtabs-tile[aria-pressed="true"] .mtabs-tile-img img {
+  filter: none;
+  transform: scale(1.1);
+}
+
+.mtabs-tile-label {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-secondary);
+  transition: color var(--dur-fast) var(--ease);
+  white-space: nowrap;
+}
+
+.mtabs-tile[aria-pressed="true"] .mtabs-tile-label {
+  font-weight: var(--weight-bold);
+  color: var(--text);
+}
+
+/* A screen that swipes does not need buttons that scroll.
+   The pair of them cost 104px of a 320px screen — 40% of the filter, spent on
+   an affordance a thumb does not use — which left a 158px window onto a strip
+   of 1279px. Hidden here, the tiles get the full width and are dragged
+   directly; on a mouse-driven screen the arrows are still the only way to page
+   through a strip that carries no visible scrollbar, so they stay. */
+@media (max-width: 640px) {
+  .mtabs-nav {
+    display: none;
+  }
+
+  .mtabs-track {
+    padding-inline: 0;
+  }
+}
+
+
+/* ─── Phones: the fields, at the size iOS will not zoom ───────────────────
+   Safari zooms the page in when a focused control is set below 16px, and
+   these read 15px. The zoom is not a preference — it fires on every tap into
+   the field and leaves the page scaled and offset, which is the single
+   loudest way a site says it is a website rather than an app. 16px here is
+   the whole fix, and pinch-zoom stays available because nothing had to be
+   locked down to get it. Gated on the pointer, because Safari zooms whichever
+   way the phone is held and a landscape phone is 667px wide or more. */
+@media (pointer: coarse), (max-width: 640px) {
+  .ex-search input,
+  .ex-field input,
+  .ex-field textarea {
+    font-size: 16px;
+  }
+}

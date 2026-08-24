@@ -7,6 +7,69 @@
 
 body {
     transition: background-color 0.3s ease, color 0.3s ease;
+    /* A URL, an ID or an untranslated technical string has no space to break
+       at, so it is measured as one indivisible word — and a word wider than the
+       column widens the column. `break-word` only splits when the alternative
+       is overflow, so ordinary Arabic prose is untouched. */
+    overflow-wrap: break-word;
+}
+
+/* Replaced media never outgrows its column.
+   `:where()` keeps this at zero specificity, which is the whole point: every
+   explicit size already in the stylesheets — `.coach-img { height: 400px }`,
+   the muscle tiles' inline `height: 72px`, a `<img width height>` pair — still
+   wins. This only catches the ones nobody sized, where the intrinsic pixel
+   width would otherwise decide the layout.
+
+   Raster media and frames only. `svg` was in this list and had to come out:
+   every SVG in this project is an icon drawn to a size its own rule states, so
+   there is nothing here for the rule to save — and `height: auto` on one still
+   changed how it sat in a flex column, which moved the landing page's scroll
+   arrow by three pixels on a desktop. A rule that only ever costs is not worth
+   keeping for the case that never happens. */
+:where(img, video, canvas, iframe) {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Text stays the size it was asked to be.
+   iOS inflates the body text of a page it judges too narrow, most visibly the
+   moment a phone is turned into landscape — a heading that fitted in portrait
+   comes back larger and breaks the line it was measured for. This opts out of
+   the guess without touching the reader's own zoom, which is a different
+   mechanism and stays available. No effect on any desktop browser. */
+html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
+/* ─── Touch ───────────────────────────────────────────────────────────────
+   Two habits that separate an app from a page, applied only where there is a
+   finger. Neither reaches a screen with a cursor. */
+@media (pointer: coarse) {
+    /* The grey rectangle Android and iOS paint over whatever is tapped is drawn
+       to the element's box, not its shape — on a pill button or a round icon it
+       is visibly the wrong outline, and it is the single most recognisable
+       "this is a web page" artefact there is. Replaced with the brand tint
+       rather than removed: the press still has to answer, and a control with no
+       feedback at all feels broken in a way the grey box never did. */
+    :where(a, button, [role="button"], input, select, textarea, label) {
+        -webkit-tap-highlight-color: rgba(var(--primary-rgb), 0.12);
+    }
+
+    /* A pane that has reached its end should stop, not hand the gesture to the
+       page behind it and drag that instead. This is what keeps a scrolling
+       sheet or list feeling like its own surface. */
+    :where(.admin-main-content, .crm-drawer-scroll-area, .custom-scrollbar) {
+        overscroll-behavior: contain;
+    }
+
+    /* The image picker's row of commands — "from the library", "view",
+       "delete" — sits in every media field in the panel at 37px. The label is
+       what sizes them, so a floor is all that is needed. */
+    .ui-media-btn {
+        min-height: var(--tap-min);
+    }
 }
 
 
@@ -195,6 +258,43 @@ body {
 
     /* --- Focus ring — one definition, used by every interactive element. --- */
     --focus-ring: 0 0 0 3px rgba(var(--primary-rgb), 0.28);
+
+    /* --- Touch target floor ---
+       The smallest a control may be on a screen driven by a thumb. Controls
+       that read at 30px with a mouse are sized against this inside the phone
+       breakpoints; it is a token rather than a literal so the whole product
+       moves together if the figure is ever revisited. */
+    --tap-min: 44px;
+
+    /* --- Safe areas ---
+       The strips of screen a phone owns rather than the page: the notch or
+       Dynamic Island at the top, the home indicator at the bottom, the rounded
+       corners either side in landscape. `viewportFit: "cover"` in
+       `src/app/layout.tsx` is what makes these report anything but zero — see
+       the note there — and every piece of fixed furniture is responsible for
+       padding itself clear of them.
+
+       Named as tokens rather than written as `env()` at each call site for two
+       reasons. A rule that reads `env()` directly cannot be tested: headless
+       Chrome has no cutout, so it reports 0 and a bar that respects the inset
+       measures identically to one that has never heard of it. Reading through a
+       variable lets `tests/http/dashboard-mobile.mjs` set the property and watch
+       whether the bar moves. The second reason is the ordinary one — a literal
+       repeated at thirty call sites is thirty places to fix.
+
+       `admin.css` predates these and writes `env()` inline. It is correct and
+       is left alone; new fixed furniture should use the tokens.
+
+       Named for physical edges, against the logical-properties rule the rest of
+       this system follows, because that is what they are: the cutout is on the
+       left of the handset whichever way the text runs. In this RTL document
+       `padding-inline-start` resolves to the *right* edge, so pairing it with a
+       left inset would pad the wrong side — these belong with `padding-left`
+       and `padding-right`, which is also how `admin.css` already spends them. */
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-left: env(safe-area-inset-left, 0px);
+    --safe-right: env(safe-area-inset-right, 0px);
 }
 
 /* --- Icons (see src/components/Icon.tsx) ---
@@ -470,9 +570,13 @@ body[lang="ar"] .nav-item {
   gap: 12px;
 }
 
+/* `min()` on the track floor, not a bare 300px: `minmax(300px, 1fr)` cannot go
+   below 300px, so on a 320px phone with any padding at all the track was wider
+   than the grid and the column overflowed. Capping the floor at the container's
+   own width lets the single column shrink with the screen instead. */
 .grid-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
   gap: 24px;
 }
 
@@ -1122,12 +1226,24 @@ textarea.ui-control {
    one column when the pane is narrow instead of overflowing it. */
 .ui-grid-2 {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(190px, 100%), 1fr));
   gap: 12px;
 }
 
 .ui-grid-3 {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr));
   gap: 10px;
+}
+
+/* --- Phones ---
+   The shared media control appears wherever an image or a video is attached —
+   the content manager, the exercise form, the nutrition library — and it is set
+   in 12px, which leaves the button 37px tall. Raised to the touch floor on the
+   screens where a finger is doing the pressing; the type and the icon inside it
+   are untouched. */
+@media (max-width: 640px) {
+  .ui-media-btn {
+    min-height: var(--tap-min);
+  }
 }

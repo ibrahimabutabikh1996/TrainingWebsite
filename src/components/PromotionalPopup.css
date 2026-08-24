@@ -1,8 +1,10 @@
 .promo-popup-overlay {
+  /* `inset: 0` already sizes this to the viewport on all four sides. The
+     `100vw` that stood beside it was the wider measurement — viewport plus
+     scrollbar gutter — and on any desktop that draws a classic scrollbar it
+     made the scrim overhang the page it was covering. */
   position: fixed;
   inset: 0;
-  width: 100vw;
-  height: 100vh;
   background: rgba(2, 6, 23, 0.65);
   backdrop-filter: blur(8px);
   z-index: 99999;
@@ -10,7 +12,13 @@
   align-items: center;
   justify-content: center;
   animation: promoFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  padding: 16px;
+  /* The page runs under the cutout now, and this covers the page. On a phone
+     held in landscape the island eats into one side, which is exactly where a
+     centred 460px card would otherwise put its edge. */
+  padding-top: calc(16px + env(safe-area-inset-top));
+  padding-bottom: calc(16px + env(safe-area-inset-bottom));
+  padding-left: calc(16px + env(safe-area-inset-left));
+  padding-right: calc(16px + env(safe-area-inset-right));
 }
 
 .promo-popup-card {
@@ -27,12 +35,15 @@
   flex-direction: column;
 }
 
+/* 44px at every width. The card it sits on is 460px at its widest, so there is
+   never a shortage of room — and this is the only way past a window that opens
+   itself over the page. */
 .promo-popup-close {
   position: absolute;
   top: 16px;
   right: 16px;
-  width: 36px;
-  height: 36px;
+  width: var(--tap-min);
+  height: var(--tap-min);
   background: rgba(0,0,0,0.4);
   backdrop-filter: blur(4px);
   border: none;
@@ -175,12 +186,6 @@
 @media (max-width: 480px) {
   .promo-popup-card {
     border-radius: var(--radius-lg);
-  }
-  /* The only way past this window on a phone, sitting over a photograph — worth
-     the four pixels that bring it to a comfortable thumb target. */
-  .promo-popup-close {
-    width: 40px;
-    height: 40px;
   }
   .promo-popup-banner {
     height: 160px;

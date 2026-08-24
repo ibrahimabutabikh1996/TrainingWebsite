@@ -410,15 +410,45 @@
   .co-grid { grid-template-columns: 1fr; }
 }
 
+/* ─── Touch ───────────────────────────────────────────────────────────────
+   Keyed on the pointer, not on the width, and the difference is a phone lying
+   on its side: turned into landscape it is 667 to 932px WIDE while still being
+   driven by a thumb, so a rule keyed on `max-width: 640px` switched itself off
+   at exactly the moment nothing else about the device had changed.
+   `pointer: coarse` asks the question that is actually being asked; the width
+   arm stays for a narrow window on a desktop, where the layout is already the
+   phone's. A laptop with a touchscreen reports its *primary* pointer as fine,
+   so it is left alone — as it should be, since it has a mouse.
+
+   Card actions and sort tabs at thumb size. Five icon buttons sit in a row on
+   each course card at 34px; the sort tabs were 40px tall. */
+@media (pointer: coarse), (max-width: 640px) {
+  .co-icon-btn {
+    width: var(--tap-min);
+    height: var(--tap-min);
+  }
+
+  .co-segment button {
+    min-height: var(--tap-min);
+  }
+}
+
 /* ─── Professional Minimalist Exercises Table ─── */
 
 /* Shared table recipe — see .wl-exercise-table and .dpv-min-table, which are
    built the same way: bordered wrapper, tinted header row, hairline separators
    from the border token, and one padding rhythm for th and td. */
+/* The wrapper is the scroll container, which is the whole reason it exists as
+   a separate element. `overflow: hidden` clipped the rounded corners and
+   nothing else; on a phone the five columns of a day's exercises cannot honour
+   a 280px measure, and a table that cannot fit either crushes its cells to one
+   word a line or pushes past the dialog. This lets it keep a readable width
+   and scroll within its own box — the page behind it never moves. */
 .co-minimal-table-wrapper {
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
   background: var(--bg2);
   box-shadow: var(--elev-1);
 }
@@ -429,6 +459,14 @@
   text-align: start;
   font-size: var(--text-sm);
   line-height: var(--leading-snug);
+}
+
+/* Below this the columns stop being legible, so the table holds its measure
+   and the wrapper above scrolls to it. */
+@media (max-width: 560px) {
+  .co-minimal-table {
+    min-width: 480px;
+  }
 }
 
 .co-minimal-table thead tr {
@@ -583,4 +621,35 @@
 
 .co-video-empty {
   color: var(--text-muted);
+}
+
+/* Here rather than in the touch block above, which is declared 180 lines before
+   `.co-video-btn` itself — at equal specificity the later rule wins, so an
+   override up there is quietly lost. One video button per exercise row, so it
+   repeats down the whole table.
+   `--tap-min` rather than 40px: the button carries a 1px border on each side,
+   so 40 measured 42 — still short of the floor. Same pointer gate as the rest
+   of the touch rules, so a phone held sideways is covered too; the row is
+   inside a table that scrolls within its own box on a narrow screen, so the
+   extra height costs the page nothing. */
+@media (pointer: coarse), (max-width: 640px) {
+  .co-video-btn {
+    width: var(--tap-min);
+    height: var(--tap-min);
+  }
+}
+
+
+/* ─── Phones: the fields, at the size iOS will not zoom ───────────────────
+   Safari zooms the page in when a focused control is set below 16px, and
+   these read 15px. The zoom is not a preference — it fires on every tap into
+   the field and leaves the page scaled and offset, which is the single
+   loudest way a site says it is a website rather than an app. 16px here is
+   the whole fix, and pinch-zoom stays available because nothing had to be
+   locked down to get it. Gated on the pointer, because Safari zooms whichever
+   way the phone is held and a landscape phone is 667px wide or more. */
+@media (pointer: coarse), (max-width: 640px) {
+  .co-search input {
+    font-size: 16px;
+  }
 }

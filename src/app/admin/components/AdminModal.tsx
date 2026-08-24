@@ -22,16 +22,24 @@ interface AdminModalProps {
 export default function AdminModal({ isOpen, onClose, title, icon = "info", children, footer, maxWidth = 600, zIndex = 9999 }: AdminModalProps) {
   if (!isOpen) return null;
 
+  /* Everything a phone needs to say about this dialog is said in crm.css, under
+     `.admin-modal-scrim`. The inset, the padding, the header and footer gutters
+     and the close button's target were inline values, and an inline value is
+     the one thing a media query cannot reach — so on a 320px screen the scrim
+     spent 48px of the width on padding, stopped 72px short of a bar that is
+     64px tall there, and left the close button at 28px. */
   return (
-    <div style={{
-      position: "fixed", top: 0, bottom: "72px", left: 0, right: 0, zIndex,
+    <div className="admin-modal-scrim" style={{
+      zIndex,
       backgroundColor: "var(--overlay-scrim)", backdropFilter: "blur(4px)",
-      display: "flex", alignItems: "center", justifyContent: "center", padding: "var(--space-8) var(--space-6)"
+      display: "flex", alignItems: "center", justifyContent: "center"
     }}>
       {/* `maxHeight: 100%` rather than a viewport unit, and the distinction is
           the whole reason this used to sit against the top of the screen.
-          The overlay above stops 72px short of the bottom to clear the nav bar
-          and adds its own padding, so what is actually free is 100vh - 136px.
+          The scrim above stops short of the bottom to clear the nav bar and
+          adds its own padding, so what is free is a good deal less than the
+          viewport — and how much less now depends on the screen, since both
+          figures are breakpoint- and safe-area-aware in crm.css.
           A panel capped at 90vh was being measured against something else
           entirely: it only fitted on a screen taller than 1200px, and on
           everything shorter it overflowed a centred flex box at both ends —
@@ -40,12 +48,12 @@ export default function AdminModal({ isOpen, onClose, title, icon = "info", chil
       <div className="crm-glass-panel" style={{ width: "100%", maxWidth, maxHeight: "100%", display: "flex", flexDirection: "column", overflow: "hidden", backgroundColor: "var(--bg2)", borderRadius: "var(--radius-xl)", boxShadow: "var(--elev-3)", border: "1px solid var(--border)" }}>
 
         {/* Header */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "var(--space-4) var(--space-6)", borderBottom: "1px solid var(--border)", flexShrink: 0 }}>
-          <h3 style={{ fontSize: "var(--text-lg)", fontWeight: "var(--weight-semibold)", margin: 0, display: "flex", alignItems: "center", gap: "var(--space-2)", color: "var(--text)" }}>
+        <div className="admin-modal-head" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--border)", flexShrink: 0 }}>
+          <h3 style={{ fontSize: "var(--text-lg)", fontWeight: "var(--weight-semibold)", margin: 0, display: "flex", alignItems: "center", gap: "var(--space-2)", color: "var(--text)", minWidth: 0 }}>
             <Icon name={icon} style={{ color: "var(--primary)" }} />
             {title}
           </h3>
-          <button onClick={onClose} aria-label="إغلاق" style={{ background: "transparent", border: "none", color: "var(--text-muted)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: "var(--space-1)", borderRadius: "var(--radius-sm)" }}>
+          <button onClick={onClose} aria-label="إغلاق" className="admin-modal-close" style={{ background: "transparent", border: "none", color: "var(--text-muted)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "var(--radius-sm)" }}>
             <Icon name="close" />
           </button>
         </div>
@@ -57,7 +65,7 @@ export default function AdminModal({ isOpen, onClose, title, icon = "info", chil
 
         {/* Footer */}
         {footer && (
-          <div style={{ padding: "var(--space-4) var(--space-6)", borderTop: "1px solid var(--border)", flexShrink: 0, display: "flex", justifyContent: "flex-end", gap: "var(--space-3)" }}>
+          <div className="admin-modal-foot" style={{ borderTop: "1px solid var(--border)", flexShrink: 0, display: "flex", justifyContent: "flex-end", gap: "var(--space-3)" }}>
             {footer}
           </div>
         )}

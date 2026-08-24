@@ -920,6 +920,7 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
 
                               {!isExCompleted && isSessionEditable && (
                                 <button
+                                  className="wl-mark-done"
                                   onClick={() =>
                                     saveWeight(session.id, ex, 999, "0", "")
                                   }
@@ -927,21 +928,10 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
                                     states[manualCompleteKey] === "saving"
                                   }
                                   style={{
-                                    background:
-                                      "color-mix(in srgb, var(--primary) 15%, transparent)",
-                                    color: "var(--primary)",
-                                    border: "1px solid var(--border-primary)",
-                                    borderRadius: "var(--radius-sm)",
-                                    padding: "4px 10px",
-                                    fontSize: "0.8rem",
-                                    fontWeight: 600,
                                     cursor:
                                       states[manualCompleteKey] === "saving"
                                         ? "wait"
                                         : "pointer",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: "4px",
                                   }}
                                 >
                                   {states[manualCompleteKey] === "saving" ? (
@@ -1112,20 +1102,10 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
                                 }}
                               >
                                 <a
+                                  className="wl-video-link"
                                   href={safeVideoUrl(ex.video_url) ?? undefined}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  style={{
-                                    display: "inline-flex",
-                                    alignItems: "center",
-                                    gap: "6px",
-                                    fontSize: "0.85rem",
-                                    color: "var(--text-muted)",
-                                    textDecoration: "none",
-                                    background: "var(--bg3)",
-                                    padding: "4px 12px",
-                                    borderRadius: "var(--radius-pill)",
-                                  }}
                                 >
                                   <span>فتح الفيديو في المتصفح</span>
                                   <Icon

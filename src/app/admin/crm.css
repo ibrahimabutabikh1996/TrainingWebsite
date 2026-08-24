@@ -613,6 +613,12 @@
 }
 
 .crm-btn-whatsapp {
+  /* 36px square, which is what the one call site used to declare inline. Moved
+     here so the touch floor below can reach it — an inline width cannot be
+     answered by a media query, which is why this control was still 36px on a
+     phone while every other icon button in the panel had grown. */
+  width: 36px;
+  height: 36px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -622,6 +628,13 @@
   border-radius: var(--radius-md);
   cursor: pointer;
   transition: all var(--dur) var(--ease);
+}
+
+@media (pointer: coarse) {
+  .crm-btn-whatsapp {
+    width: var(--tap-min);
+    height: var(--tap-min);
+  }
 }
 .crm-btn-whatsapp:hover {
   background: color-mix(in srgb, #25D366 20%, transparent);
@@ -928,6 +941,17 @@ details[open].crm-modal-section > summary .accordion-icon {
     gap: var(--space-3);
   }
 
+  /* 40px numerals side by side, on a screen 320px wide. The figure is the
+     point of the stat, so it stays the largest thing in the block — it just
+     stops being sized for a monitor. */
+  .crm-hero-stat .stat-val {
+    font-size: 2rem;
+  }
+
+  .crm-hero-stats-group {
+    gap: var(--space-6);
+  }
+
   .crm-card-avatar {
     width: 44px;
     height: 44px;
@@ -956,11 +980,194 @@ details[open].crm-modal-section > summary .accordion-icon {
   }
 }
 
+/* ─── Touch ───────────────────────────────────────────────────────────────
+   The field, not the box drawn around it. The shell is a comfortable 55px, but
+   12px of that on each side belongs to the div — so the input inside it
+   measures 29px, and a tap on the padding lands on a div and does nothing.
+   Moving the vertical padding inward leaves the shell the height it was and
+   makes the whole of it put the caret in the field.
+   Gated on the pointer, so a phone in landscape — 667px wide and still a phone
+   — is covered, and a mouse, which does not miss a 29px row, is not. */
+@media (pointer: coarse), (max-width: 640px) {
+  .crm-search-box {
+    padding-block: 0;
+  }
+
+  .crm-search-input {
+    padding-block: var(--space-3);
+  }
+}
+
 /* Row actions fade in on hover, which never fires on a touch screen — they were
    stuck at half opacity and offset by 4px on every phone and tablet. */
 @media (hover: none) {
   .crm-card-actions {
     opacity: 1;
     transform: none;
+  }
+}
+
+/* ─── AdminModal (src/app/admin/components/AdminModal.tsx) ────────────────
+   The four dialogs behind that component — the course, its video, and the two
+   in the course builder — draw from here. What is in the component is what
+   never changes with the viewport; what changes with it is here. */
+
+.admin-modal-scrim {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  /* Clears the bottom bar, which is 72px on a desktop and 64px on a phone —
+     plus the strip that bar gives up to the home indicator. */
+  bottom: calc(72px + env(safe-area-inset-bottom));
+  padding-top: calc(var(--space-8) + env(safe-area-inset-top));
+  padding-bottom: var(--space-8);
+  padding-left: calc(var(--space-6) + env(safe-area-inset-left));
+  padding-right: calc(var(--space-6) + env(safe-area-inset-right));
+}
+
+.admin-modal-head,
+.admin-modal-foot {
+  padding: var(--space-4) var(--space-6);
+}
+
+/* A footer wraps rather than overflowing. The panel above clips what it cannot
+   hold, so a row of buttons wider than the dialog is not a cramped row — it is
+   a row with buttons missing from the end of it, and no scrollbar anywhere to
+   say so. */
+.admin-modal-foot {
+  flex-wrap: wrap;
+}
+
+/* Footers that are a row of their own inside the slot, rather than the two or
+   three buttons the slot expects. Same contract, so the wrapping is the same. */
+.admin-modal-foot-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: flex-end;
+  width: 100%;
+}
+
+/* The icon inside is 20px and the padding around it was 4px, so the only way
+   out of a dialog was a 28px target. The box grows, the icon does not, and the
+   negative margin keeps the header's own gutter looking unchanged. */
+.admin-modal-close {
+  width: var(--tap-min);
+  height: var(--tap-min);
+  padding: 0;
+  margin: calc(var(--space-2) * -1) calc(var(--space-3) * -1);
+  flex-shrink: 0;
+}
+
+.admin-modal-close:hover {
+  background: var(--bg3);
+  color: var(--text);
+}
+
+/* A tenth of a 320px screen was going to side padding, and the bar it clears is
+   64px here rather than 72px — so the panel sat 8px higher than it had to over
+   a gap that showed the page through it. */
+@media (max-width: 640px) {
+  .admin-modal-scrim {
+    bottom: calc(64px + env(safe-area-inset-bottom));
+    padding-top: calc(var(--space-4) + env(safe-area-inset-top));
+    padding-bottom: var(--space-4);
+    padding-left: calc(var(--space-3) + env(safe-area-inset-left));
+    padding-right: calc(var(--space-3) + env(safe-area-inset-right));
+  }
+
+  .admin-modal-head,
+  .admin-modal-foot {
+    padding: var(--space-3) var(--space-4);
+  }
+
+  /* Two buttons of unequal width wrapped onto two lines is what a footer of
+     `flex-end` gives a phone. They share the row instead. */
+  .admin-modal-foot > *,
+  .admin-modal-foot-row > * {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+}
+
+
+/* ─── Phones: the fields, at the size iOS will not zoom ───────────────────
+   Safari zooms the page in when a focused control is set below 16px, and
+   these read 15px. The zoom is not a preference — it fires on every tap into
+   the field and leaves the page scaled and offset, which is the single
+   loudest way a site says it is a website rather than an app. 16px here is
+   the whole fix, and pinch-zoom stays available because nothing had to be
+   locked down to get it. Gated on the pointer, because Safari zooms whichever
+   way the phone is held and a landscape phone is 667px wide or more. */
+@media (pointer: coarse), (max-width: 640px) {
+  .crm-search-input {
+    font-size: 16px;
+  }
+}
+
+/* ─── Dialogs on a phone held sideways ────────────────────────────────────
+   The scrim reserves the bar's height at the bottom and pads itself top and
+   bottom; against a ~390px viewport that left the panel about 250px to live
+   in, most of it spent on the dialog's own header and footer. The gutters come
+   down and the panel gets the screen. Nothing inside it changes — the body was
+   already the scrolling part. */
+@media (max-height: 500px) and (orientation: landscape) {
+  .admin-modal-scrim {
+    bottom: calc(52px + env(safe-area-inset-bottom));
+    padding-top: calc(var(--space-2) + env(safe-area-inset-top));
+    padding-bottom: var(--space-2);
+  }
+
+  .admin-modal-head,
+  .admin-modal-foot {
+    padding-block: var(--space-2);
+  }
+}
+
+/* ─── Timeline month card — the row of actions at the bottom ────────────────
+   Rendered by `SubscriptionHistoryTimeline`, which reaches the screen only
+   through the subscriber page, which is why the rule lives here.
+
+   The row was three inline declarations ending in `flexWrap: "nowrap"`. Two
+   buttons whose labels are "فتح صفحة التحميل" cannot share a 200px card at
+   320px, and a flex item will not shrink below its own min-content width, so
+   they ran past the card — which sets `overflow: hidden` to clip its rounded
+   header and therefore swallowed them. 63px of button, with no scrollbar and
+   nothing to say it was there.
+
+   Above the breakpoint the row is byte-for-byte what it was, `nowrap` and all.
+   On a phone it wraps and each action takes the full width of the card, which
+   is what a phone does with a pair of actions anyway. */
+.timeline-card-actions {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+  margin-top: auto;
+  flex-wrap: nowrap;
+}
+
+@media (max-width: 480px) {
+  .timeline-card-actions {
+    flex-wrap: wrap;
+  }
+
+  /* `min-width: 0` as well as the basis: the basis decides the line it lands
+     on, the min-width is what lets a long label shrink inside it rather than
+     setting a floor of its own. */
+  .timeline-card-actions > * {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+}
+
+/* "Remove this month from the history", in a month card's header.
+   Its size comes from `padding: 6px 14px` and a 0.82rem label, which lands at
+   38px — under the floor, and a destructive action is the last one that should
+   be easy to hit by accident *or* hard to hit on purpose. No height is declared
+   inline, so a floor here reaches it. Left alone for a mouse. */
+@media (pointer: coarse) {
+  .timeline-danger-btn {
+    min-height: var(--tap-min);
   }
 }

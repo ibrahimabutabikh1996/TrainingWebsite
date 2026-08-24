@@ -397,7 +397,13 @@ export default function AdminCoursesClient({
             icon="fitness_center"
             maxWidth={900}
             footer={
-              <div style={{ display: "flex", gap: 12, justifyContent: "flex-end", width: "100%", direction: "rtl" }}>
+              /* Four buttons with long labels — this row measures ~900px, and
+                 the dialog it sits in clips its own overflow. Below 430px the
+                 first two were cut clean off: not squeezed, gone, along with
+                 the only link to the PDF. A class rather than an inline
+                 `display: flex` so `.admin-modal-foot-row` in crm.css can wrap
+                 it, which is all it needed. */
+              <div className="admin-modal-foot-row" style={{ direction: "rtl" }}>
                 <a
                   href={`/export-workout?courseId=${selectedCourse.id}`}
                   target="_blank"

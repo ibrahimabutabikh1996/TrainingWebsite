@@ -590,6 +590,7 @@ export function SubscriptionHistoryTimeline({
                   {isAdminView && (
                     <button
                       type="button"
+                      className="timeline-danger-btn"
                       onClick={async (e) => {
                         e.stopPropagation();
                         if (
@@ -707,8 +708,20 @@ export function SubscriptionHistoryTimeline({
                     style={{
                       padding: "24px",
                       display: "grid",
+                      /* `min(280px, 100%)`, not a bare 280px. A bare minimum is
+                         a floor the track cannot go under even when the
+                         container is narrower than it, so on a 320px phone
+                         these columns resolved to 280px inside about 200px of
+                         room — and the month card above sets `overflow: hidden`
+                         to clip its own rounded header, which turned the
+                         overflow into 103px of silently unreachable content:
+                         the subscriber's name, and both "open the download
+                         page" buttons. `min()` lets the floor collapse to the
+                         container on screens narrower than the floor, which is
+                         the same fix `.home-stats-grid` and `.ui-grid-2`
+                         already use. Above 280px nothing changes. */
                       gridTemplateColumns:
-                        "repeat(auto-fit, minmax(280px, 1fr))",
+                        "repeat(auto-fit, minmax(min(280px, 100%), 1fr))",
                       gap: "20px",
                     }}
                   >
@@ -794,15 +807,7 @@ export function SubscriptionHistoryTimeline({
                         </p>
                       </div>
 
-                      <div
-                        style={{
-                          display: "flex",
-                          gap: "8px",
-                          alignItems: "stretch",
-                          marginTop: "auto",
-                          flexWrap: "nowrap",
-                        }}
-                      >
+                      <div className="timeline-card-actions">
                         {/* No course assigned to this month means there is no
                             training sheet to print. This used to fall back to
                             /export-profile — the trainee's measurements and
@@ -964,15 +969,7 @@ export function SubscriptionHistoryTimeline({
                         </p>
                       </div>
 
-                      <div
-                        style={{
-                          display: "flex",
-                          gap: "8px",
-                          alignItems: "stretch",
-                          marginTop: "auto",
-                          flexWrap: "nowrap",
-                        }}
-                      >
+                      <div className="timeline-card-actions">
                         <a
                           href={`/export-diet?profileId=${profile.id}`}
                           target="_blank"
@@ -1087,15 +1084,7 @@ export function SubscriptionHistoryTimeline({
                         </p>
                       </div>
 
-                      <div
-                        style={{
-                          display: "flex",
-                          gap: "8px",
-                          alignItems: "stretch",
-                          marginTop: "auto",
-                          flexWrap: "nowrap",
-                        }}
-                      >
+                      <div className="timeline-card-actions">
                         <button
                           onClick={() =>
                             setSelectedInfoMonth(

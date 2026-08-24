@@ -55,16 +55,33 @@
 
 html {
   scroll-behavior: smooth;
-  scroll-padding-top: 80px;
+  /* Clears the fixed bar when a nav link jumps to a section — and the bar is
+     now as tall as 68px plus whatever the notch takes, so this follows it. */
+  scroll-padding-top: calc(80px + env(safe-area-inset-top));
 }
 
+/* No `overflow-x: hidden` here.
+ *
+ * It stood on this rule and it governed two pages, since the intake form loads
+ * this stylesheet for the shared bar. An overflow value on `body` does not stay
+ * on `body` — with `html` left `visible` the used value propagates to the
+ * viewport, so this was the viewport clipping, and a horizontal scrollbar could
+ * not appear on either page whatever went past the edge. That is not the same
+ * thing as nothing going past the edge, and the difference is invisible until
+ * something does.
+ *
+ * `tests/http/responsive-audit.mjs` lifts exactly this rule before it measures,
+ * for exactly that reason. With it lifted the document reports `scrollWidth ===
+ * clientWidth` at 320, 360, 375, 390, 414, 430, 768 and 1024 on both pages, so
+ * there is nothing left for it to hide and it is gone. If a bar ever appears
+ * here again, it is telling the truth and the box behind it is the thing to
+ * fix. */
 body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-primary);
   font-size: var(--text-base);
   line-height: 1.65;
-  overflow-x: hidden;
 }
 
 :lang(ar) {
@@ -190,6 +207,9 @@ body::before {
   z-index: 400;
   background: var(--primary);
   color: var(--text-inverse);
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap-min);
   padding: 10px 18px;
   border-radius: var(--radius-md);
   font-size: var(--text-sm);
@@ -211,8 +231,21 @@ body::before {
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  padding: 0 48px;
-  height: 68px;
+  /* Held clear of the cutout on all three sides it can touch.
+     With `viewport-fit: cover` declared in the root layout the page runs edge
+     to edge, so the bar's glass reaches the physical top — and without this the
+     logo and the burger would sit under the notch in portrait, and under the
+     island in landscape, where they cannot be tapped at all. The height grows
+     by the top inset so the row inside it stays 68px.
+
+     `env()` is 0px wherever there is no inset, so on every desktop this still
+     computes to exactly `0 48px` and `68px`. Physical sides, because an inset
+     describes the hardware, not the writing direction. */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: 0;
+  padding-left: calc(48px + env(safe-area-inset-left));
+  padding-right: calc(48px + env(safe-area-inset-right));
+  height: calc(68px + env(safe-area-inset-top));
   background: var(--nav-bg-glass);
   backdrop-filter: blur(20px) saturate(1.4);
   -webkit-backdrop-filter: blur(20px) saturate(1.4);
@@ -231,6 +264,11 @@ body::before {
 .nav-logo {
   display: flex;
   align-items: center;
+  /* The lockup shrinks to 30px tall on a phone, and this link is the way back
+     to the top of the site. The box keeps the touch floor while the picture
+     inside it goes on scaling; the bar's own height is fixed, so nothing
+     around it moves. */
+  min-height: var(--tap-min);
   gap: 10px;
   /* Shrinkable, and min-width:0 so it may actually go below its content
            width — the nav-actions cluster keeps flex-shrink: 0 and wins. */
@@ -380,13 +418,17 @@ body::before {
   gap: 5px;
   cursor: pointer;
   z-index: 210;
-  width: 40px;
-  height: 40px;
+  /* The one control that opens the whole menu on a phone, and it was 40px.
+     The three bars inside are still 22px wide — only the box a thumb has to
+     land on grew, and the negative end margin keeps it optically flush with
+     the bar's padding the way it was. */
+  width: var(--tap-min);
+  height: var(--tap-min);
   padding: 0;
   background: transparent;
   border: none;
   border-radius: var(--radius-sm);
-  margin-inline-end: -8px;
+  margin-inline-end: -10px;
   transition: background 0.25s;
 }
 .burger-menu:hover {
@@ -671,7 +713,8 @@ body::before {
    being asked to deal with. */
 .scroll-follower {
   position: fixed;
-  bottom: 28px;
+  /* Above the home indicator rather than behind it. */
+  bottom: calc(28px + env(safe-area-inset-bottom));
   inset-inline-end: 56px;
   z-index: 90;
   display: grid;
@@ -1840,7 +1883,10 @@ a.contact-item:hover p {
 /* ─── RESPONSIVE ─── */
 @media (max-width: 1180px) {
   .landing-wrapper nav {
-    padding: 0 28px;
+    /* Longhands, so the safe-area terms on the base rule survive — a tablet in
+       landscape is inside this breakpoint and can have a cutout. */
+    padding-left: calc(28px + env(safe-area-inset-left));
+    padding-right: calc(28px + env(safe-area-inset-right));
   }
   .hero-content {
     padding-inline: 56px;
@@ -1916,9 +1962,27 @@ a.contact-item:hover p {
     -webkit-backdrop-filter: blur(20px);
     flex-direction: column;
     align-items: stretch;
-    justify-content: center;
+    /* `safe center` and a scroller, because centring alone loses content.
+       This is 100dvh tall and holds six links plus two stacked buttons — about
+       500px of column. In portrait that fits and centres; turned sideways the
+       viewport is ~390px and the overflow of a `center` distribution goes off
+       *both* ends, where no scrollbar can reach it. The links at the top and
+       the sign-up button at the bottom were simply gone.
+       `safe` keeps the centring while there is room and falls back to packing
+       from the start when there is not, which is the case the scroller then
+       handles. A browser too old for `safe` reads it as plain `center` and
+       behaves exactly as it does today. */
+    justify-content: safe center;
+    overflow-y: auto;
+    overscroll-behavior: contain;
     gap: 8px;
-    padding: 40px 32px;
+    /* 100dvh tall against a page that now runs under the cutout: without this
+       the first link sits beneath the notch and the last beneath the home
+       indicator. The 40/32 it had is still what a phone without either gets. */
+    padding-top: calc(40px + env(safe-area-inset-top));
+    padding-bottom: calc(40px + env(safe-area-inset-bottom));
+    padding-left: calc(32px + env(safe-area-inset-left));
+    padding-right: calc(32px + env(safe-area-inset-right));
     transform: translateX(100%);
     transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     border-inline-start: 1px solid var(--border);
@@ -1962,7 +2026,10 @@ a.contact-item:hover p {
 
 @media (max-width: 680px) {
   .landing-wrapper nav {
-    padding: 0 16px;
+    /* Longhands: the `padding` shorthand here would reset all four sides and
+       take the safe-area terms on the base rule with it. */
+    padding-left: calc(16px + env(safe-area-inset-left));
+    padding-right: calc(16px + env(safe-area-inset-right));
     gap: 12px;
   }
   .hero {
@@ -2415,5 +2482,150 @@ body.offers-active .nav-links a[href="#offers"]::after {
   }
   .footer-brand-mark {
     height: 40px;
+  }
+}
+
+/* ─── Touch ───────────────────────────────────────────────────────────────
+   Everything in here is a target that is comfortable under a cursor and small
+   under a thumb. `hover: none` asks the honest question — what is pointing at
+   this page — rather than guessing from the width. The width is kept beside it
+   because the honest question does not always get an honest answer: plenty of
+   tablets, and headless Chrome, report a mouse they do not have, and a screen
+   this narrow is being held either way. */
+/* The offers pill, on a touch screen wide enough that the drawer has not taken
+   over. It is a real pill with a visible ground, so unlike its plain
+   neighbours the padding here is drawn, not just felt — `4px 12px` puts it at
+   37px, the shortest target in the bar and the one most meant to be pressed.
+   The generic `.nav-links a` rule below cannot reach it: this selector carries
+   three classes to that one's one.
+   Bounded below at 901px on purpose. Under that the drawer's own rule already
+   gives it `14px 12px`, and this block sits later in the file, so without the
+   bound it would undo that and shrink the pill inside the drawer. */
+@media (pointer: coarse) and (min-width: 901px) {
+  body.offers-active .nav-links a[href="#offers"] {
+    padding-block: 8px;
+  }
+}
+
+@media (pointer: coarse), (max-width: 640px) {
+  /* Free height on the bar's links. These are inline boxes, so vertical padding
+     grows what a finger can hit without moving the line box, the bar's height
+     or anything around them — the underline is anchored to `bottom: 0`, which
+     only `padding-bottom` would move. It takes a 33px row to 47px on the one
+     range where the drawer has not taken over yet and a tablet may still be
+     driving the bar with a thumb. Held inside this query because on a screen
+     with a cursor there is nothing to fix, and the desktop bar is not ours to
+     move. */
+  .nav-links a {
+    /* 21px, not 14: the links do not all carry the same line box — the plain
+       ones measured 47px with 14px of top padding and the highlighted one 37px,
+       which is under the floor. 21px puts the shortest of them at 44 and costs
+       nothing, because an inline box's vertical padding grows only what the
+       pointer can hit. `padding-bottom` deliberately stays at 4px: the
+       underline is anchored to `bottom: 0` and that is the one side that would
+       move it. */
+    padding-top: 21px;
+  }
+
+  /* A footer link is one line of 13px text — a 24px box with 12px of air above
+     and below it. The padding moves into the link, so the column stands the
+     same height and the whole row answers to the tap instead of the glyphs. */
+  .footer-col ul {
+    gap: 2px;
+  }
+  .footer-col ul a {
+    display: block;
+    padding-block: 11px;
+  }
+
+  .footer-socials a {
+    width: var(--tap-min);
+    height: var(--tap-min);
+  }
+
+  /* The scroll cue's label is 11px caps under a 20px arrow, so the link's box
+     was 20px wide — something you aim at rather than press.
+     A floor on the width and nothing else. Padding plus a negative margin was
+     the first attempt and it was wrong twice over: on a tablet the box is
+     anchored by `inset-inline-end`, so widening it already grows inward and
+     the offset was never needed; on a phone the box is centred with
+     `margin-inline: auto`, and this rule sits later in the file, so the
+     negative margin overrode that centring and pushed the cue 12px past the
+     hero — which clips its overflow, so the arrow was cut in half on every
+     phone width measured. `min-width` alone grows the target inward from
+     whichever edge holds it, and cannot reach an edge. */
+  .hero-scroll-cue {
+    min-width: var(--tap-min);
+  }
+}
+
+/* ─── Phones held sideways ────────────────────────────────────────────────
+   Keyed on the height rather than the width, because that is what actually
+   changes: a phone in landscape is ~390px tall, and every fixed or
+   viewport-sized box on this page was written against a screen twice that.
+   `orientation: landscape` is there so a short desktop window — a browser
+   dragged to half height — is left alone.
+
+   Nothing is hidden here and nothing is removed. The hero stops insisting on a
+   height it cannot have, the furniture that surrounds the reading area gets
+   proportionally less of it, and the two things pinned to the bottom corner
+   move in so they are not sitting on the content. */
+@media (max-height: 500px) and (orientation: landscape) {
+  /* 100svh is right in portrait and absurd sideways: it makes a 390px-tall
+     screen show nothing but the hero, with the section below it a full swipe
+     away. Content decides the height instead, with a floor low enough to fit. */
+  .hero {
+    min-height: 340px;
+    padding-top: calc(84px + env(safe-area-inset-top));
+  }
+
+  .hero-content {
+    padding-block: 0 56px;
+  }
+
+  /* The bar is 68px of a 390px screen — a fifth of it — before the notch takes
+     its share. */
+  .landing-wrapper nav {
+    height: calc(56px + env(safe-area-inset-top));
+  }
+
+  .landing-wrapper nav.scrolled {
+    height: calc(56px + env(safe-area-inset-top));
+  }
+
+  /* Six links and two buttons in ~390px: the rows tighten so the whole menu is
+     reachable by scrolling a short distance rather than a long one. */
+  .nav-links a {
+    padding-block: 12px;
+  }
+
+  .nav-links .nav-drawer-cta {
+    margin-top: 14px;
+  }
+
+  /* Both live in the same bottom corner, which is the corner a thumb wraps
+     around when the phone is held sideways. */
+  .hero-scroll-cue {
+    bottom: 10px;
+  }
+
+  .scroll-follower {
+    bottom: calc(14px + env(safe-area-inset-bottom));
+    inset-inline-end: calc(20px + env(safe-area-inset-right));
+  }
+
+  /* The section rhythm is built for a tall screen; sideways a 64px pad plus a
+     56px margin is most of the swipe between one heading and the next. These
+     are the selectors that actually carry it — `#coach` and its two siblings
+     are IDs, so a class selector aimed at `section` would never have reached
+     them. */
+  main#main > section {
+    margin: 40px 0;
+  }
+
+  #coach,
+  #membership,
+  #contact {
+    padding: 56px 0;
   }
 }

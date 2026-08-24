@@ -297,6 +297,26 @@ body::before {
 }
 .field-toggle:hover { color: var(--primary-on-tint); }
 
+/* The target, which is larger than the button.
+   The only control for checking a mistyped password was a 24px square. Growing
+   the button itself would move it — its inset is measured from the field's
+   edge, and the field's end padding is cut to clear exactly this box. So the
+   target is an empty layer centred over it: nothing is drawn, nothing moves,
+   and 44px of the field answers to the thumb. Same device gate as everywhere
+   else, though it would be harmless on a desktop — a mouse does not miss a
+   20px icon, and this way the rule says who it is for. */
+@media (pointer: coarse), (max-width: 640px) {
+  .field-toggle::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: var(--tap-min);
+    height: var(--tap-min);
+    transform: translate(-50%, -50%);
+  }
+}
+
 /* Remember / Forgot row */
 .field-meta {
   display: flex;
@@ -501,7 +521,9 @@ body::before {
   font-weight: 700;
   text-decoration: none;
   transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), opacity var(--dur) var(--ease), transform var(--dur) var(--ease);
-  height: 42px;
+  /* Two pixels under the touch floor, and it is the only other destination in
+     the login bar. */
+  height: var(--tap-min);
 }
 .btn-nav-register:hover {
   background: var(--primary);
@@ -539,4 +561,19 @@ body::before {
 }
 .btn-register-card:active {
   transform: translateY(0);
+}
+
+
+/* ─── Phones: the fields, at the size iOS will not zoom ───────────────────
+   Safari zooms the page in when a focused control is set below 16px, and
+   these read 15px. The zoom is not a preference — it fires on every tap into
+   the field and leaves the page scaled and offset, which is the single
+   loudest way a site says it is a website rather than an app. 16px here is
+   the whole fix, and pinch-zoom stays available because nothing had to be
+   locked down to get it. Gated on the pointer, because Safari zooms whichever
+   way the phone is held and a landscape phone is 667px wide or more. */
+@media (pointer: coarse), (max-width: 640px) {
+  .field input {
+    font-size: 16px;
+  }
 }

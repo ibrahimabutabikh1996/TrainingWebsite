@@ -163,6 +163,20 @@ export default function DashboardPage() {
 
   return (
     <div className="dashboard-page">
+      {/* Tap anywhere to dismiss the overflow menu.
+          This has to live outside <nav>, not inside it beside the menu where it
+          used to. The bar carries `transform: translateX(-50%)` and a
+          `backdrop-filter`, and either of those makes it the containing block
+          for a `position: fixed` descendant — so `inset: 0` resolved to the bar
+          rather than to the viewport, and the full-screen catcher was really a
+          318x66 patch lying on top of the bar's own buttons. Tapping the page
+          did not close the menu, and tapping a sibling tab hit the catcher
+          instead of the tab, which spent the tap closing the menu and went
+          nowhere. Verified by hand before and after. */}
+      {isMoreMenuOpen && (
+        <div className="dash-menu-scrim" onClick={() => setIsMoreMenuOpen(false)} />
+      )}
+
       {/* Bottom Navbar */}
       <nav className="dash-bottom-nav">
 
@@ -188,11 +202,7 @@ export default function DashboardPage() {
                   </button>
                   {isMoreMenuOpen && (
                     <>
-                      <div 
-                        onClick={() => setIsMoreMenuOpen(false)} 
-                        style={{ position: "fixed", inset: 0, zIndex: 90 }} 
-                      />
-                      <div 
+                      <div
                         className="dash-more-menu"
                         /* The panel is `.custom-select-dropdown`, to the value:
                            same border, radius, shadow, 4px of padding and 2px
@@ -428,7 +438,7 @@ export default function DashboardPage() {
               <div className="home-overview-container">
                 {/* Hero Greeting Text */}
                 <div style={{ marginBottom: "var(--space-8)" }}>
-                  <h2 style={{ fontSize: "1.8rem", margin: 0 }}>
+                  <h2 className="dash-section-heading">
                     هلا بيك كابتن، <span style={{ color: "var(--primary)" }}>{profile.fullname}</span>!
                   </h2>
                 </div>

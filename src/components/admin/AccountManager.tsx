@@ -356,7 +356,7 @@ export default function AccountManager({ profileId, existingAccount: initialAcco
         )}
 
         {/* 2-Column Info Cards Grid */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "20px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(300px, 100%), 1fr))", gap: "20px" }}>
           
           {/* Card 1: Username & Access Details */}
           <div
@@ -471,7 +471,7 @@ export default function AccountManager({ profileId, existingAccount: initialAcco
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
+              gridTemplateColumns: "repeat(auto-fill, minmax(min(260px, 100%), 1fr))",
               gap: "14px",
             }}
           >
@@ -560,7 +560,7 @@ export default function AccountManager({ profileId, existingAccount: initialAcco
 
       {isCreating && (
         <form onSubmit={handleCreateAccount} style={{ background: 'var(--bg3)', padding: '20px', borderRadius: "var(--radius-sm)", border: '1px solid var(--border)' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(220px, 100%), 1fr))', gap: '16px', marginBottom: '20px' }}>
             <div>
               <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem', color: 'var(--text)' }}>اسم المستخدم</label>
               <input 

@@ -38,11 +38,14 @@
      moved to the new scale. Don't reintroduce them. */
 
   display: flex;
-  height: 100vh;
-  width: 100vw;
+  /* `inset: 0` rather than `100vw`/`100vh` from a corner. `100vw` is the
+     viewport *including* the classic scrollbar gutter, so on a desktop that
+     draws one this box was ~15px wider than the space it had — clipped away
+     here by `overflow: hidden`, but it is the same arithmetic that puts a
+     horizontal bar on any element that does not clip. Sizing from all four
+     edges asks for what is actually there. */
   position: fixed;
-  top: 0;
-  left: 0;
+  inset: 0;
   z-index: 9999;
   overflow: hidden;
   color: var(--admin-on-surface);
@@ -75,18 +78,43 @@
    Ultra-Premium SaaS Bottom Navbar (Apple Pro Studio Architecture)
    ========================================================================== */
 
-/* Bottom Navbar Glass Panel */
+/* Bottom Navbar Glass Panel.
+
+   The bar carries a fixed cast — a logo, six destinations and a settings
+   button — in whatever width the phone has. Three of those eight boxes had a
+   hard `width`, which on a 320px screen added up to 368px inside a 304px bar:
+   the settings button and the menu hanging off it sat 56px past the edge,
+   where `position: fixed` meant no scrollbar ever appeared to say so. It was
+   simply gone, and with it the only way to sign out or change a password.
+   The row now fits by construction — the ends keep their size, the middle
+   takes what is left and divides it. */
 .admin-bottom-nav {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  height: 72px;
   display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  padding: 0 24px;
+  gap: var(--space-2);
+  /* The bar owns the strip of screen the phone reserves for its home indicator
+     — and, held in landscape, the cutout on whichever side it lands. It grows
+     by that much and pads itself by the same, so the buttons sit exactly where
+     they did while the glass still runs to the physical edge.
+
+     Not inside a breakpoint, and it does not need one: `env()` resolves to 0px
+     on every screen with no inset to report, which is every desktop and most
+     phones. Only the declared value changes — the computed one stays `72px`
+     and `0 24px` unless there is genuinely something in the way.
+
+     Physical sides rather than logical: an inset describes where the hardware
+     is, which does not turn around when the text does. */
+  height: calc(72px + env(safe-area-inset-bottom));
+  padding-top: 0;
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: calc(24px + env(safe-area-inset-left));
+  padding-right: calc(24px + env(safe-area-inset-right));
   background: var(--nav-bg-glass, rgba(15, 15, 15, 0.75));
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
@@ -120,10 +148,17 @@
 /* ==========================================================================
    Navigation Links & Containers
    ========================================================================== */
+/* `min-width: 0` is what makes the shrinking possible at all: a flex item's
+   automatic minimum is its min-content width, and for a row of boxes with a
+   declared `width` that floor is the sum of those widths. Without this the
+   container refuses to go below 284px however little room the bar has. */
 .admin-nav-container {
   display: flex;
   flex-direction: row;
   align-items: center;
+  justify-content: center;
+  flex: 0 1 auto;
+  min-width: 0;
   gap: 12px;
 }
 
@@ -206,7 +241,9 @@
   z-index: 2;
   overflow-y: auto;
   padding: var(--space-10);
-  padding-bottom: calc(var(--space-10) + 72px);
+  /* Clears the bar, including whatever the bar itself had to give up to the
+     home indicator — otherwise the last card on every admin page ends under it. */
+  padding-bottom: calc(var(--space-10) + 72px + env(safe-area-inset-bottom));
 }
 
 /* Keeps admin pages on a readable measure the way .dashboard-main does, while
@@ -243,49 +280,104 @@
   opacity: 0.8;
 }
 
+/* The wide lockup is 32px tall and it is the way back to the site from the
+   panel — a short target for a thumb, and the bar has 72px to give. Gated on
+   touch: the box it sits in is measured by this link, so on a desktop the
+   taller box would move the brand block, and there is nothing to fix there. */
+@media (hover: none), (max-width: 1024px) {
+  .admin-hlogo-link {
+    display: flex;
+    align-items: center;
+    min-height: var(--tap-min);
+  }
+}
+
 @media (max-width: 768px) {
   .admin-main-content {
-    /* Maintain the top/side padding, but ensure the bottom padding clears the navbar */
-    padding: 24px 12px calc(24px + 64px);
+    /* Maintain the top/side padding, but ensure the bottom padding clears the
+       navbar — which is 64px here, plus the inset the bar itself absorbs.
+       Longhands, not the `padding` shorthand: the shorthand resets all four
+       sides and would drop the safe-area term declared on the base rule. */
+    padding-top: 24px;
+    padding-left: calc(12px + env(safe-area-inset-left));
+    padding-right: calc(12px + env(safe-area-inset-right));
+    padding-bottom: calc(24px + 64px + env(safe-area-inset-bottom));
   }
-  
+
   .admin-logo-desktop {
     display: none;
   }
-  
+
   .admin-logo-mobile {
     display: flex;
   }
-  
-  
+
+
   .admin-bottom-nav {
-    padding: 0 8px;
-    height: 64px;
+    height: calc(64px + env(safe-area-inset-bottom));
+    padding-left: calc(8px + env(safe-area-inset-left));
+    padding-right: calc(8px + env(safe-area-inset-right));
   }
-  
+
   .admin-nav-container {
     gap: 4px;
   }
-  
+
   .admin-nav-link,
   .admin-logout-btn {
     width: 44px;
     height: 44px;
   }
-  
+
+  /* The six destinations are the only part of the bar that may give ground —
+     the logo and the settings button are one box each and already at their
+     floor, so they are pinned and the middle absorbs the squeeze. A basis
+     rather than a width, so the links divide what is left instead of insisting
+     on 44px apiece and pushing the row off the screen.
+     All three declarations live in here rather than on the base rules: above
+     this breakpoint nothing is ever squeezed, and `flex-shrink: 0` on the ends
+     changes how the desktop bar sizes its logo. */
+  .admin-brand-header,
+  .admin-bottom-actions {
+    flex: 0 0 auto;
+  }
+
+  .admin-nav-link {
+    flex: 0 1 44px;
+    min-width: 0;
+  }
+
   .admin-nav-link .app-icon,
   .admin-logout-btn .app-icon {
     font-size: 20px;
   }
-  
+
   .admin-collapsed-logo-tile {
-    width: 40px;
-    height: 40px;
+    width: var(--tap-min);
+    height: var(--tap-min);
   }
-  
+
   .admin-collapsed-logo-tile img {
     width: 28px !important;
     height: 28px !important;
+  }
+}
+
+/* Phones narrow enough that eight boxes and their gaps no longer clear 44px
+   each. Only the six destinations give ground — they are one row of the same
+   thing, so they shrink together and stay legible as a set, while the two
+   single controls at the ends keep the full target. At 320px that leaves the
+   icons about 34px across and 44px tall, which is the floor the width imposes;
+   from 382px up they are back at 44 square. */
+@media (max-width: 400px) {
+  .admin-bottom-nav {
+    padding-left: calc(6px + env(safe-area-inset-left));
+    padding-right: calc(6px + env(safe-area-inset-right));
+    gap: var(--space-1);
+  }
+
+  .admin-nav-container {
+    gap: 2px;
   }
 }
 
@@ -392,6 +484,10 @@
   flex-direction: column;
   gap: 2px;
   min-width: 200px;
+  /* The bar it hangs off is 6px from the edge of a 320px screen, and this menu
+     is wider than the button that opens it. Capped against the viewport so a
+     longer command can never carry the panel past the edge. */
+  max-width: calc(100vw - 12px);
   padding: 4px;
   z-index: 101;
   animation: dropdownFade 0.2s ease-out forwards;
@@ -443,4 +539,30 @@
   height: 1px;
   background: var(--border);
   margin: 4px 0;
+}
+
+/* ─── Phones held sideways ────────────────────────────────────────────────
+   A phone in landscape is around 390px tall. The bar is 64px of that and the
+   shell reserves 88px more in padding, so a third of the screen was furniture
+   before any content was drawn. Keyed on height, and gated on orientation so a
+   short desktop window is not caught by it.
+
+   The six destinations, the logo and the settings button all stay — this is a
+   bar that gets shorter, not a bar that loses buttons. Their boxes stay at
+   44px wide, which is where the finger lands; only the vertical is spent
+   differently, and there is more width here than in portrait to spend it in. */
+@media (max-height: 500px) and (orientation: landscape) {
+  .admin-bottom-nav {
+    height: calc(52px + env(safe-area-inset-bottom));
+  }
+
+  .admin-nav-link,
+  .admin-logout-btn {
+    height: 44px;
+  }
+
+  .admin-main-content {
+    padding-top: 14px;
+    padding-bottom: calc(14px + 52px + env(safe-area-inset-bottom));
+  }
 }

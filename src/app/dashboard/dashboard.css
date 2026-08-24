@@ -29,20 +29,59 @@
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
+/* The trailing padding is what stops the last card ending underneath the
+   floating bar, so it is spelled as the sum it always was rather than as a
+   total: the bar's height, the gap below the bar, one more gap above it, and
+   the home indicator under all of it.
+
+   On a desktop this comes to 68 + 16 + 20 + 0 — the same 104px that was written
+   here as a literal, verified unchanged by `desktop-invariance.mjs`. What it
+   adds is the last term and the link to the first two: the phone rule used to
+   carry its own 96px, which was a second guess at the same quantity and did not
+   know about the home indicator at all, so on any iPhone with one the final
+   card ended up behind the glass. */
 .dashboard-main {
   position: relative;
   z-index: 10;
   width: 100%;
   max-width: 1200px;
   margin: 32px auto 0 auto;
-  padding: 0 32px 104px 32px;
+  padding: 0 32px calc(var(--dash-nav-h) + var(--dash-nav-gap) + var(--space-5) + var(--safe-bottom)) 32px;
   animation: fadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @media (max-width: 768px) {
   .dashboard-main {
-    padding: 0 20px 96px 20px;
+    /* 20px of gutter plus 24px of card padding spent 44px of a 320px screen
+       before a word of content — so the gutter comes down to the 16px an app
+       uses, and the card padding follows it below. `max()` against the inset
+       keeps the page clear of the rounded corners in landscape. */
+    padding-left: max(16px, var(--safe-left));
+    padding-right: max(16px, var(--safe-right));
     margin-top: 24px;
+  }
+
+  /* Panels keep their proportions but stop spending a seventh of the screen on
+     their own inner margin. Both card surfaces move together — `.dashboard-card`
+     and `.home-stat-card` are the same component drawn by two rules, and a
+     phone that tightened one and not the other would show the seam. */
+  .dashboard-card,
+  .home-stat-card {
+    padding: var(--space-4);
+  }
+
+  .dashboard-card-title {
+    font-size: var(--text-lg);
+    padding-bottom: var(--space-2);
+    margin-bottom: var(--space-4);
+  }
+
+  /* The rhythm between sections. 24px between stacked cards on a screen this
+     narrow reads as drift; 16px keeps them a group without crowding, and it is
+     the same step the cards now use inside themselves. */
+  .home-overview-container,
+  .home-stats-grid {
+    gap: var(--space-4);
   }
 }
 
@@ -415,16 +454,93 @@
   transform: translateY(1px);
 }
 
-/* ─── TRAINEE DASHBOARD BOTTOM NAVIGATION ─── */
+/* The heading that names a tab — "hello captain, <name>", "weekly weight log".
+   Both were written inline at a flat 1.8rem, which is 28.8px whether the screen
+   is 1440px or 320px wide; on the narrow one the greeting took three lines
+   before any content began. `clamp()` gives back the same 28.8px at the top of
+   the range and eases to 22px on a phone, and being a class at all is what lets
+   a media query see it.
+
+   No `line-height` here on purpose. Adding `--leading-tight` seemed harmless
+   and moved every card on the home tab up 18px on a desktop, because the inline
+   styles this replaces set no line-height at all and inherited the page's much
+   looser Arabic one. The rule only overrides what the inline styles actually
+   declared. */
+.dash-section-heading {
+  margin: 0;
+  font-size: clamp(1.375rem, 1.05rem + 1.6vw, 1.8rem);
+  color: var(--text);
+}
+
+/* The waiting card on a phone.
+   It is the whole screen for a trainee whose plan is still being written, and
+   at 64px/40px of its own padding it was spending 80 of a 320px screen's width
+   and 128px of its height on margin — the paragraph inside came out about
+   twelve characters wide. The proportions are the same, just scaled to the
+   screen they are on. Desktop keeps the roomier setting.
+
+   Split by concern rather than merged: the padding and type are a width
+   question, the button's floor is a finger question, and a tablet has the
+   second without the first. */
+@media (max-width: 640px) {
+  .processing-card {
+    padding: var(--space-10) var(--space-5);
+    margin: var(--space-3) auto;
+  }
+
+  .processing-icon {
+    width: 64px;
+    height: 64px;
+    margin-bottom: var(--space-5);
+  }
+
+  .processing-title {
+    font-size: var(--text-xl);
+    margin-bottom: var(--space-3);
+  }
+
+  .processing-text {
+    font-size: var(--text-base);
+    margin-bottom: var(--space-6);
+  }
+}
+
+@media (pointer: coarse) {
+  .processing-btn {
+    min-height: var(--tap-min);
+  }
+}
+
+/* ─── TRAINEE DASHBOARD BOTTOM NAVIGATION ───
+   A floating pill, so it has to keep clear of three things at once: the home
+   indicator below it, the screen edges beside it, and the last card of whatever
+   tab is open — which it would otherwise cover, because a fixed box takes no
+   part in layout and nothing under it knows it is there.
+
+   Its height and its distance from the bottom are tokens because
+   `.dashboard-main` has to reserve exactly that much room at the end of the
+   page. Two literals kept in step by hand is how the last card ends up half
+   behind the bar the first time either number is touched. */
+.dashboard-page {
+  --dash-nav-h: 68px;
+  --dash-nav-gap: 16px;
+}
+
 .dash-bottom-nav {
   position: fixed;
-  bottom: 16px;
+  /* The gap is measured from the top of the home indicator, not from the
+     bottom of the glass. On a phone without one the inset is zero and this is
+     the 16px it always was. */
+  bottom: calc(var(--dash-nav-gap) + var(--safe-bottom));
   left: 50%;
   transform: translateX(-50%);
   width: max-content;
-  min-width: 320px;
-  max-width: 95vw;
-  height: 68px;
+  /* `min-width: 320px` was wider than a 320px phone once the 95vw cap is
+     applied, so on the narrowest screens the pill ran edge to edge with no
+     margin at all. It now yields to the viewport, keeping a gap either side. */
+  min-width: min(320px, calc(100vw - 2 * var(--dash-nav-gap)));
+  max-width: min(95vw, calc(100vw - 2 * var(--dash-nav-gap) - var(--safe-left) - var(--safe-right)));
+  height: var(--dash-nav-h);
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -544,16 +660,33 @@
   .dash-bottom-actions {
     gap: 2px;
   }
+  /* `clamp(36px, 11vw, 44px)` reached the floor rather than the ceiling on
+     every phone it was written for — 36px at 320px wide, 43px at 390px, never
+     44 below a 400px screen. The clamp was guarding against a row that could
+     not fit, and with four buttons there is no such row: four 44px targets and
+     their gaps come to 182px inside a bar that is never narrower than 288px.
+     So the floor is simply the floor. */
   .dash-nav-link, .dash-logout-btn {
-    width: clamp(36px, 11vw, 44px);
-    height: clamp(36px, 11vw, 44px);
+    width: var(--tap-min);
+    height: var(--tap-min);
   }
   .dash-collapsed-logo-tile {
-    width: clamp(36px, 11vw, 44px);
-    height: clamp(36px, 11vw, 44px);
+    width: var(--tap-min);
+    height: var(--tap-min);
   }
   .dash-nav-link .app-icon, .dash-logout-btn .app-icon {
-    font-size: clamp(18px, 6vw, 24px);
+    font-size: 22px;
+  }
+}
+
+/* A phone on its side has about 390px of height to spend, and the bar was
+   taking 84px of it — a fifth of the screen, for four buttons that are 44px
+   tall. The glass gets shorter and sits closer to the edge; the targets inside
+   it do not shrink, because the hand holding the phone has not changed. */
+@media (max-height: 500px) and (orientation: landscape) {
+  .dashboard-page {
+    --dash-nav-h: 56px;
+    --dash-nav-gap: 8px;
   }
 }
 /* ─── HOME (DEFAULT TAB) OVERVIEW & STATISTICS CARDS ─── */
@@ -873,6 +1006,34 @@
 /* Matches `.custom-select-option`, like the panel around it — radius, colour,
    hover ground and 12px of horizontal padding. The vertical padding stays at
    12px: these are commands pressed with a thumb, not options being read. */
+/* The weight entry row — the field and the button that saves it.
+   Both carried `height: 42px` as an inline style, which is two pixels under the
+   touch floor and unreachable from a media query. The 42px is kept for a mouse,
+   exactly as it was; a thumb gets the floor. */
+.dash-weight-input,
+.dash-weight-save {
+  height: 42px;
+}
+
+@media (pointer: coarse) {
+  .dash-weight-input,
+  .dash-weight-save {
+    height: var(--tap-min);
+  }
+}
+
+/* The catcher behind the overflow menu.
+   A sibling of the bar rather than a child of it — see the note in page.tsx for
+   what being a child cost. Below the bar's z-index so the menu and the buttons
+   stay above it, above everything else so a tap anywhere on the page is a
+   dismissal. No fill: this closes a small menu, not a modal, and dimming the
+   whole screen for it would overstate what is happening. */
+.dash-menu-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+}
+
 .dash-more-item {
   display: flex;
   align-items: center;

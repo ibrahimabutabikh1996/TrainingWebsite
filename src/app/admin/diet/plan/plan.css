@@ -272,8 +272,12 @@
   transition: border-color 0.25s, box-shadow 0.25s;
 }
 
-.dplan-time { width: 150px; }
-.dplan-note { flex: 1; min-width: 200px; }
+/* Both floors capped against the container, the way `.ex-search` and
+   `.diet-search` already are here: a bare `min-width: 200px` on a flex item is
+   a promise the row cannot keep once the card holding it is narrower than
+   that, and the item overflows rather than wrapping. */
+.dplan-time { width: 150px; max-width: 100%; }
+.dplan-note { flex: 1; min-width: min(200px, 100%); }
 
 .dplan-time:focus,
 .dplan-note:focus {
@@ -592,4 +596,22 @@
 @media (max-width: 720px) {
   .dplan-toolbar { flex-direction: column; align-items: stretch; }
   .dplan-trainee select, .dplan-name input { min-width: 0; width: 100%; }
+}
+
+
+/* ─── Phones: the fields, at the size iOS will not zoom ───────────────────
+   Safari zooms the page in when a focused control is set below 16px, and
+   these read 13-15px. The zoom is not a preference — it fires on every tap into
+   the field and leaves the page scaled and offset, which is the single
+   loudest way a site says it is a website rather than an app. 16px here is
+   the whole fix, and pinch-zoom stays available because nothing had to be
+   locked down to get it. Gated on the pointer, because Safari zooms whichever
+   way the phone is held and a landscape phone is 667px wide or more. */
+@media (pointer: coarse), (max-width: 640px) {
+  .dplan-name input,
+  .dplan-qty input,
+  .dplan-picker-filters input,
+  .dplan-picker-filters select {
+    font-size: 16px;
+  }
 }

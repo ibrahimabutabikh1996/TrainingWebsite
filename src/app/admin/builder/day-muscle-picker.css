@@ -31,6 +31,7 @@
 .dmp-chip button {
   display: grid;
   place-items: center;
+  position: relative;
   width: 18px;
   height: 18px;
   padding: 0;
@@ -40,6 +41,22 @@
   color: var(--primary-on-tint);
   cursor: pointer;
   transition: background 0.18s, color 0.18s;
+}
+
+/* Removes a muscle from the day, and it is drawn at 18px inside a pill that has
+   no room for more. Growing the button would grow the chip and the row of them;
+   this grows only the area a finger has to find.
+   30px rather than the full 44px floor on purpose — the chips sit 8px apart, so
+   a 44px circle would reach 13px into its neighbour and start answering for a
+   button that is not it. This stays inside the gap. */
+.dmp-chip button::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 30px;
+  height: 30px;
+  transform: translate(-50%, -50%);
 }
 
 .dmp-chip button:hover {
@@ -239,4 +256,19 @@
 .dmp-custom-submit:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+
+/* ─── Phones: the fields, at the size iOS will not zoom ───────────────────
+   Safari zooms the page in when a focused control is set below 16px, and
+   these read 13px. The zoom is not a preference — it fires on every tap into
+   the field and leaves the page scaled and offset, which is the single
+   loudest way a site says it is a website rather than an app. 16px here is
+   the whole fix, and pinch-zoom stays available because nothing had to be
+   locked down to get it. Gated on the pointer, because Safari zooms whichever
+   way the phone is held and a landscape phone is 667px wide or more. */
+@media (pointer: coarse), (max-width: 640px) {
+  .dmp-custom-box input {
+    font-size: 16px;
+  }
 }

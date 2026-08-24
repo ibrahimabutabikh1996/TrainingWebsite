@@ -116,7 +116,7 @@ export default function AdminDietClient({ initialSources }: { initialSources: Nu
           <h1>النظام الغذائي</h1>
         </div>
 
-        <div style={{ display: 'flex', gap: '12px' }}>
+        <div className="diet-header-actions">
           <Link href="/admin/diet/plan" className="diet-btn-secondary">
             <Icon name="edit_document" style={{ fontSize: 20 }} />
             <span>إنشاء نظام غذائي</span>

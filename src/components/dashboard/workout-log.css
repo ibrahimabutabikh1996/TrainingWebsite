@@ -552,3 +552,50 @@
   font-weight: 600;
   overflow-wrap: anywhere;
 }
+
+/* ─── Two controls that used to be written inline ───────────────────────────
+   "Mark done" beside an exercise, and the link that opens its video in a new
+   tab. Both were `style={{...}}` on the element, which is why both were still
+   34px tall on a phone: an inline declaration cannot be reached from a media
+   query, so the touch-target floor every other control in this product picks up
+   simply never applied to these two.
+   The values below are the ones that were inline, so a mouse sees exactly what
+   it saw before; only the phone rules underneath are new. */
+.wl-mark-done {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: color-mix(in srgb, var(--primary) 15%, transparent);
+  color: var(--primary-on-tint);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.wl-video-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  background: var(--bg3);
+  color: var(--text-muted);
+  border-radius: var(--radius-pill);
+  font-size: 0.85rem;
+  text-decoration: none;
+}
+
+/* Gated on the pointer rather than on a width: these sit inside a card that is
+   just as narrow on a tablet, and a thumb is a thumb at every viewport. The
+   label still sets the width — only the height has a floor — so neither control
+   changes shape, and `justify-content` keeps the text centred in the taller box
+   instead of stranded at the top. */
+@media (pointer: coarse) {
+  .wl-mark-done,
+  .wl-video-link {
+    min-height: var(--tap-min);
+    justify-content: center;
+  }
+}

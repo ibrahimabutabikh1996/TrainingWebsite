@@ -110,7 +110,7 @@ export default function WeightLog({ profile, readonly, embedded, onSaveSuccess }
       {!embedded && (
         <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "var(--space-8)" }}>
           <Icon name="monitor_weight" style={{ fontSize: "36px", color: "var(--primary-on-tint)" }} />
-          <h2 style={{ margin: 0, fontSize: "1.8rem", color: "var(--text)" }}>سجل الوزن الأسبوعي</h2>
+          <h2 className="dash-section-heading">سجل الوزن الأسبوعي</h2>
         </div>
       )}
 
@@ -147,8 +147,8 @@ export default function WeightLog({ profile, readonly, embedded, onSaveSuccess }
                   value={weight}
                   onChange={(e) => setWeight(e.target.value)}
                   placeholder="مثال: 75.5"
-                  className="form-input"
-                  style={{ height: "42px", paddingInlineEnd: "40px", fontSize: "1rem" }}
+                  className="form-input dash-weight-input"
+                  style={{ paddingInlineEnd: "40px", fontSize: "1rem" }}
                 />
                 <span style={{ position: "absolute", insetInlineEnd: "12px", top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", fontSize: "0.9rem", pointerEvents: "none" }}>
                   Kg
@@ -159,8 +159,8 @@ export default function WeightLog({ profile, readonly, embedded, onSaveSuccess }
               <button
                 onClick={handleSave}
                 disabled={isPending}
-                className="dash-primary-btn"
-                style={{ width: "100%", height: "42px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", whiteSpace: "nowrap" }}
+                className="dash-primary-btn dash-weight-save"
+                style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", whiteSpace: "nowrap" }}
               >
                 {isPending ? "جاري الحفظ..." : (
                   <>

@@ -675,6 +675,28 @@
   .cms-footer .cms-btn-secondary { flex: 1; justify-content: center; }
 }
 
+
+/* ─── Touch ───────────────────────────────────────────────────────────────
+   Sizes only, gated on the pointer rather than the width — a phone turned into
+   landscape is 667 to 932px wide and still driven by a thumb, so a rule keyed
+   on `max-width: 640px` switched itself off at exactly the moment nothing else
+   about the device had changed. A control that is bigger than it needs to be on
+   a tablet is right; a *layout* rule cannot be moved here on the same argument,
+   which is why the stacking and wrapping above stay keyed on the width.
+
+   Eight tabs on a strip 304px wide, with 68px of it spent on two arrows a
+   thumb has no use for — the strip already scrolls, and a touch screen scrolls
+   it by dragging. They go, and the tabs get the width back. */
+@media (pointer: coarse), (max-width: 640px) {
+  .cms-tab-nav {
+    display: none;
+  }
+
+  .cms-tab-btn {
+    min-height: var(--tap-min);
+  }
+}
+
 .cms-btn-primary, .cms-btn-secondary {
   padding: var(--space-3) var(--space-5);
   border-radius: var(--radius-md);
@@ -984,6 +1006,16 @@
   }
   .cms-split-side {
     min-width: 100%;
+  }
+
+  /* The hover buffer above bleeds 22px past this pane on each side, which the
+     shell's 40px of desktop padding swallows. On a phone the shell only has
+     12px, so the other 10px went past the edge and `.admin-main-content`
+     scrolled sideways at every width from 320 to 768. Matching the bleed to
+     the padding that is actually there keeps the buffer and loses the bar. */
+  .cms-content-pane {
+    margin-inline: -12px;
+    padding-inline: 12px;
   }
 }
 
@@ -1329,4 +1361,21 @@
   border-top: 1px solid var(--border-strong);
   padding-top: 12px;
   margin-top: 2px;
+}
+
+
+/* ─── Phones: the fields, at the size iOS will not zoom ───────────────────
+   Safari zooms the page in when a focused control is set below 16px, and
+   these read 15px. The zoom is not a preference — it fires on every tap into
+   the field and leaves the page scaled and offset, which is the single
+   loudest way a site says it is a website rather than an app. 16px here is
+   the whole fix, and pinch-zoom stays available because nothing had to be
+   locked down to get it. Gated on the pointer, because Safari zooms whichever
+   way the phone is held and a landscape phone is 667px wide or more. */
+@media (pointer: coarse), (max-width: 640px) {
+  .cms-input,
+  .cms-textarea,
+  .cms-phone input {
+    font-size: 16px;
+  }
 }
