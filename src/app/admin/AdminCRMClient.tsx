@@ -4,8 +4,8 @@ import type { JsonRecord } from "@/types";
 import { useEffect, useState } from "react";
 import { Profile } from "@/types/admin";
 import { Toaster, toast } from "react-hot-toast";
-import { PLAN_COLOUR_SLOT, PLAN_VALUES } from "@/lib/formLabels";
-import { planNameFrom, type PlanNames } from "@/lib/planNames";
+import { PLAN_COLOUR_SLOT } from "@/lib/formLabels";
+import { planNameFrom, planOptions, type PlanNames } from "@/lib/planNames";
 import { Icon } from "@/components/Icon";
 import { CustomSelect } from "@/components/CustomSelect";
 import { useNow } from "@/hooks/useNow";
@@ -356,7 +356,7 @@ export default function AdminCRMClient({
                    goes live rather than the day someone remembers this file. */
                 options={[
                   { value: "all", label: "جميع الخطط" },
-                  ...PLAN_VALUES.map((value) => ({ value, label: planNameFrom(planNames, value) })),
+                  ...planOptions(planNames),
                 ]}
               />
               <CustomSelect 

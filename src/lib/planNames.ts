@@ -1,6 +1,6 @@
 import type { JsonRecord } from "@/types";
 import { translations } from "@/lib/translations";
-import { PLAN_KEYS } from "@/lib/formLabels";
+import { PLAN_KEYS, PLAN_VALUES } from "@/lib/formLabels";
 
 /* What each plan and offer is called, taken from the content manager.
  *
@@ -98,4 +98,57 @@ export function planNameFrom(
 ): string {
   if (plan === null || plan === undefined || plan === "") return fallback;
   return names[String(plan)] ?? fallback;
+}
+
+
+/** A plan value that names one of the offers rather than one of the plans. */
+export function isOfferValue(plan: unknown): boolean {
+  return String(plan).startsWith("offer");
+}
+
+export interface PlanOption {
+  value: string;
+  label: string;
+}
+
+/**
+ * The six plan values as a list to choose from, with the ambiguous ones marked.
+ *
+ * `off_card1_badge` and friends are deliberately the same strings as
+ * `card1_badge` and friends — that was asked for, and the note beside them in
+ * `translations.ts` spells out the cost: six products under three names, and
+ * anything that shows the name alone cannot tell them apart. A dropdown is the
+ * sharpest case of that, because it puts both under the pointer at once. The
+ * subscriber filter listed "خطة المتابعة اليومية" twice with nothing to say
+ * which was which, and so did the two pickers in the intake form — where the
+ * pair are separate products at separate prices.
+ *
+ * So the marker goes on here, in the list, and nowhere else: the cards on the
+ * landing page keep the names the coach chose for them.
+ *
+ * Marked only when the name is actually shared. A label is suffixed when some
+ * other value resolves to the same string, which means the day the offers are
+ * given names of their own in the content manager the suffix disappears by
+ * itself — rather than leaving a coach who named an offer "عرض رمضان" reading
+ * "عرض رمضان (عرض)".
+ */
+export function planOptions(names: PlanNames): PlanOption[] {
+  const labelFor = (value: string) => planNameFrom(names, value, value);
+
+  const seen = new Map<string, number>();
+  for (const value of PLAN_VALUES) {
+    const label = labelFor(value);
+    seen.set(label, (seen.get(label) ?? 0) + 1);
+  }
+
+  return PLAN_VALUES.map((value) => {
+    const label = labelFor(value);
+    const shared = (seen.get(label) ?? 0) > 1;
+    return {
+      value,
+      label: shared && isOfferValue(value)
+        ? `${label} (${translations.plan_offer_suffix})`
+        : label,
+    };
+  });
 }

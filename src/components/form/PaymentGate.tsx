@@ -17,8 +17,7 @@
 import toast from "react-hot-toast";
 
 import { t } from "@/lib/translations";
-import { PLAN_VALUES } from "@/lib/formLabels";
-import { planNameFrom, type PlanNames } from "@/lib/planNames";
+import { planNameFrom, planOptions, type PlanNames } from "@/lib/planNames";
 import { Dropzone, SelectField } from "./Fields";
 
 /* Also written into src/app/LandingClient.tsx in several places. Named here
@@ -116,7 +115,7 @@ export function PaymentGate({
                 label={t("lbl_plan")}
                 value={plan}
                 onChange={onPlan}
-                options={PLAN_VALUES.map((value) => ({ value, label: planNameFrom(planNames, value) }))}
+                options={planOptions(planNames)}
                 required
                 full
               />

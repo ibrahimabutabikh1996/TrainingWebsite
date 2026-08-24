@@ -1,8 +1,8 @@
 "use client";
 
 import { t } from "@/lib/translations";
-import { PLAN_VALUES, PLANS_NEEDING_TYPE } from "@/lib/formLabels";
-import { planNameFrom } from "@/lib/planNames";
+import { PLANS_NEEDING_TYPE } from "@/lib/formLabels";
+import { planOptions } from "@/lib/planNames";
 import { FormGrid, SelectField, TextInput } from "./Fields";
 import type { StepProps } from "./types";
 
@@ -20,10 +20,7 @@ export function StepOneBasicInfo({ formData, update, planLocked, planNames }: St
      exactly what happened when the offers were pointed at this form: its three
      cards had no entry here, and someone arriving without `?plan=` could not
      have picked one. The labels are the coach's own, from the content manager. */
-  const planOptions = PLAN_VALUES.map((value) => ({
-    value,
-    label: planNameFrom(planNames, value),
-  }));
+  const options = planOptions(planNames);
 
 
   return (
@@ -59,7 +56,7 @@ export function StepOneBasicInfo({ formData, update, planLocked, planNames }: St
         label={t("lbl_plan")}
         value={formData.plan}
         onChange={(plan) => update({ plan })}
-        options={planOptions}
+        options={options}
         required
         disabled={planLocked}
         full

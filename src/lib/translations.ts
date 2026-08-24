@@ -160,6 +160,11 @@ export const translations = {
     off_card1_badge: "خطة ذاتية التوجيه",
     off_card2_badge: "خطة المتابعة الأسبوعية",
     off_card3_badge: "خطة المتابعة اليومية",
+    /* What an offer is marked with in a list that also holds the plan of the
+       same name — see `planOptions` in `@/lib/planNames`. The list is the one
+       place the two products stand side by side, so it is the one place the
+       shared name is not enough to choose by. */
+    plan_offer_suffix: "عرض",
     lbl_fullname: "الاسم الكامل",
     lbl_gender: "الجنس",
     opt_gender_male: "ذكر",
