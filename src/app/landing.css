@@ -862,24 +862,39 @@ body::before {
   }
 }
 
-/* ─── BUTTONS ─── */
+/* ─── BUTTONS ───
+   Three things changed here and none of them is a colour.
+
+   `font-size` was `--text-xs`, 12px. That is the caption step — the size this
+   system uses for badges and table meta — and it was carrying the hero's only
+   call to action. It goes to `--text-base`, the body step, which is what a
+   primary action should be set in.
+
+   `letter-spacing: 1.5px` and `text-transform: uppercase` are both gone because
+   both were already doing nothing. `globals.css` ends with
+   `:lang(ar) *:not(.app-icon) { letter-spacing: 0 !important }`, so the tracking
+   never applied; and Arabic script has no letter case, so the transform had
+   nothing to transform. They read as styling and were dead weight.
+
+   `min-height` is new: it pins the box at a comfortable size independently of
+   the type inside it, so the two buttons stay the same height as each other
+   whatever their labels do. */
 .btn-primary {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
+  min-height: 48px;
   white-space: nowrap;
   text-decoration: none;
   background: var(--primary);
   color: var(--text-inverse);
-  border: none;
-  padding: 14px 32px;
+  border: 1px solid transparent;
+  padding: 12px 32px;
   border-radius: var(--radius-md);
   font-family: var(--font-primary);
-  font-size: var(--text-xs);
+  font-size: var(--text-base);
   font-weight: 700;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
   cursor: pointer;
   transition:
     background 0.2s ease,
@@ -888,17 +903,22 @@ body::before {
 }
 .btn-primary:hover {
   background: var(--primary-hover);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
 }
 .btn-primary:active {
   transform: translateY(0);
 }
 
+/* The same box as `.btn-primary`, to the pixel — same min-height, same padding,
+   same border width — so the pair sits level in `.hero-btns` no matter which
+   label is longer. Only the fill and the border differ, which is the whole
+   point of a secondary. */
 .btn-secondary {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
+  min-height: 48px;
   white-space: nowrap;
   text-decoration: none;
   background: transparent;
@@ -906,13 +926,11 @@ body::before {
      white that would drift the moment the palette moves. */
   color: var(--text);
   border: 1px solid var(--border-primary);
-  padding: 13px 30px;
+  padding: 12px 32px;
   border-radius: var(--radius-md);
   font-family: var(--font-primary);
-  font-size: var(--text-xs);
+  font-size: var(--text-base);
   font-weight: 700;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
   cursor: pointer;
   transition:
     background 0.2s ease,
@@ -923,7 +941,7 @@ body::before {
 .btn-secondary:hover {
   background: var(--primary-dim);
   border-color: var(--primary);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
 }
 .btn-secondary:active {
   transform: translateY(0);
@@ -1105,19 +1123,24 @@ body::before {
   border-radius: var(--radius-lg);
   position: relative;
   z-index: 1;
-  filter: grayscale(85%) contrast(1.05);
+  /* No filter. This carried `grayscale(85%) contrast(1.05)` and only relaxed to
+     `grayscale(20%)` on hover — so the coach's photograph was never once shown
+     in its own colours, not even to a visitor who reached for it. The hover
+     signal is now the frame and the lift below, which say "this is a surface
+     you are touching" without spending the photograph to say it. */
   /* Drifts against the frame drawn behind it, which stays where it is — the
      photograph and its outline pulling apart slightly is the whole effect
      here, so the frame must not be given a layer of its own. */
   transform: translate3d(0, var(--py, 0px), 0) translateY(var(--img-lift, 0px));
   transition:
-    filter 0.5s ease,
     box-shadow 0.5s ease,
     --img-lift 0.5s ease;
   display: block;
 }
+/* Nothing clips this image, so it is the one that must not scale — growing it
+   would push it over the frame behind it and past the column beside it. It
+   lifts instead, and the frame answers. */
 .coach-image-wrapper:hover .coach-img {
-  filter: grayscale(20%) contrast(1.02);
   --img-lift: -2px;
 }
 .coach-image-frame {
@@ -1219,24 +1242,33 @@ body::before {
   grid-template-columns: repeat(3, 1fr);
   gap: 24px;
 }
+/* `--border` against `--bg2` is #162235 on #15212E — a contrast ratio of 1.02:1,
+   which is to say the card had no visible edge at all and read as a shape
+   floating in the page. `--border-strong` is the next step of the same scale,
+   already in the palette, and brings it to 1.28:1: still quiet, but there.
+   The resting `--elev-1` is what AGENTS.md specifies for a card and what
+   `.dashboard-card` and `.admin-card` already carry; this one said
+   "Flat - no shadow" and was the odd one out. */
 .membership-card {
   background: var(--bg2);
   display: flex;
   flex-direction: column;
   transition:
     border-color var(--dur) var(--ease),
+    box-shadow var(--dur) var(--ease),
     transform var(--dur) var(--ease-out);
   position: relative;
   border-radius: var(--radius-lg);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--elev-1);
   overflow: hidden;
-  /* Flat - no shadow */
 }
 /* Extra specificity so the lift wins over `.reveal.visible`'s transform */
 .membership-grid .membership-card:hover,
 .membership-grid .membership-card:focus-within {
   transform: translateY(-2px);
   border-color: var(--primary);
+  box-shadow: var(--elev-2);
 }
 
 /* Give each plan card its own accent by remapping the brand tokens
@@ -1280,7 +1312,13 @@ body::before {
   object-fit: cover;
   display: block;
   background: var(--bg3);
-  filter: brightness(0.7) saturate(0.7);
+  /* No filter. `brightness(0.7) saturate(0.7)` on a photograph that is already
+     dark left the three plan cards reading as empty grey rectangles — the
+     picture was there and simply could not be seen, and the hover only lifted
+     it to `brightness(0.85)`. The scale below is the whole hover now. The
+     gradient over this image stays, and is a separate concern: it protects the
+     badge, and it protects it harder now that the photograph underneath is at
+     full brightness. */
   /* The hover scale is a variable rather than a second `transform` declaration,
      because there is only one `transform` slot and the parallax already has it.
      Transitioning the custom property means the hover still eases in — a plain
@@ -1288,12 +1326,9 @@ body::before {
      image would lag a frame behind the page. */
   transform: translate3d(0, var(--py, 0px), 0) scale(var(--img-scale, 1));
   --img-scale: 1;
-  transition:
-    filter 0.4s,
-    --img-scale 0.6s ease;
+  transition: --img-scale 0.6s ease;
 }
 .membership-card:hover .membership-card-img {
-  filter: brightness(0.85) saturate(0.9);
   --img-scale: 1.04;
 }
 .membership-card-media {
@@ -1315,11 +1350,12 @@ body::before {
     transparent 60%
   );
   opacity: 0.9;
-  transition: opacity 0.4s;
 }
-.membership-card:hover .membership-card-media::after {
-  opacity: 0.75;
-}
+/* The hover used to fade this to 0.75, which made sense while the photograph
+   under it was held at `brightness(0.7)` — the pair moved together and the card
+   "woke up". With the photograph at its own brightness, fading its only
+   protection is the wrong half to give away: the badge sits on top of it and
+   has to stay readable at the exact moment somebody is looking. Constant. */
 
 .membership-card-body {
   padding: 32px 28px;
@@ -1432,12 +1468,19 @@ body::before {
   font-size: 8px;
   flex-shrink: 0;
 }
+/* The plan card's action. Shape only — every colour below is left exactly as it
+   was found, including the three literals, because the card remaps `--primary`
+   to its tier and swapping them to tokens would repaint this button in the
+   plan's colour. That is a palette decision, not a polish one.
+   (Those literals do want revisiting: `#38bdf8` is a cyan the palette does not
+   contain, and the per-plan hovers below force four more with `!important`.) */
 .btn-card {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 100%;
-  padding: 14px;
+  min-height: 48px;
+  padding: 12px 16px;
   background: #15212e;
   color: #38bdf8;
   border: 1px solid #38bdf8;
@@ -1445,8 +1488,6 @@ body::before {
   font-family: var(--font-primary);
   font-size: var(--text-base);
   font-weight: 600;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
   text-decoration: none;
   cursor: pointer;
   transition:
@@ -1515,18 +1556,23 @@ body::before {
   background: var(--bg2);
   padding: 32px 28px;
   border-radius: var(--radius-lg);
-  border: 1px solid var(--border);
+  /* Same edge and same resting elevation as `.membership-card` — see the note
+     there. These two are the page's card surfaces and had drifted apart. */
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--elev-1);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   gap: 24px;
   transition:
     border-color var(--dur) var(--ease),
+    box-shadow var(--dur) var(--ease),
     transform var(--dur) var(--ease-out);
 }
 .testimonial-card:hover {
   transform: translateY(-2px);
   border-color: var(--primary);
+  box-shadow: var(--elev-2);
 }
 .testimonial-content {
   display: flex;
@@ -1697,19 +1743,21 @@ a.contact-item:hover p {
   aspect-ratio: 3/4;
   object-fit: cover;
   border-radius: var(--radius-lg);
-  filter: grayscale(85%);
+  /* Was `grayscale(85%)`, easing to `grayscale(10%)` on hover — the same
+     never-quite-in-colour treatment the coach photograph carried. The border is
+     what responds now. */
   /* Nothing clips this one, so the drift has no edge to expose — it is held to
      18px in the markup because that is as much as reads as depth before it
      starts to look like a layout bug. */
   transform: translate3d(0, var(--py, 0px), 0) scale(var(--img-scale, 1));
   transition:
-    filter 0.5s,
+    border-color 0.35s var(--ease),
     --img-scale 0.5s;
   border: 1px solid var(--border);
 }
 .trainer-image:hover {
-  filter: grayscale(10%);
   --img-scale: 1.02;
+  border-color: var(--primary);
 }
 
 /* ─── FOOTER ─── */
