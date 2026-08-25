@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { requireAdminPage } from "@/lib/authGuard";
 import AdminCoursesClient from "./AdminCoursesClient";
+import LiveRefresh from "@/components/LiveRefresh";
 import type { Course, CourseAssignments, TraineeOption } from "@/types/admin";
 
 export const dynamic = "force-dynamic";
@@ -83,12 +84,18 @@ export default async function AdminCoursesPage() {
     console.error("Failed to fetch data for admin library:", error);
   }
 
+  /* A fragment because this page returns the client component bare — there is
+     no wrapper here to hang it inside, and adding one would change the layout
+     for the sake of a component that renders nothing. */
   return (
-    <AdminCoursesClient
-      initialCourses={courses}
-      initialTrainees={trainees}
-      initialAssignments={assignments}
-      exerciseVideos={exerciseVideos}
-    />
+    <>
+      <LiveRefresh scope="panel" />
+      <AdminCoursesClient
+        initialCourses={courses}
+        initialTrainees={trainees}
+        initialAssignments={assignments}
+        exerciseVideos={exerciseVideos}
+      />
+    </>
   );
 }

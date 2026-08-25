@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { requireAdminPage } from "@/lib/authGuard";
 import AdminCRMClient from "./AdminCRMClient";
+import LiveRefresh from "@/components/LiveRefresh";
 import type { JsonRecord } from "@/types";
 import { getLandingContent } from "./cms/actions";
 import { resolvePlanNames } from "@/lib/planNames";
@@ -109,5 +110,13 @@ export default async function AdminDashboardPage() {
     (await getLandingContent())?.content_ar as JsonRecord | undefined
   );
 
-  return <AdminCRMClient initialProfiles={serializedProfiles} planNames={planNames} />;
+  /* A fragment because this page returns the client component bare — there is
+     no wrapper here to hang it inside, and adding one would change the layout
+     for the sake of a component that renders nothing. */
+  return (
+    <>
+      <LiveRefresh scope="panel" />
+      <AdminCRMClient initialProfiles={serializedProfiles} planNames={planNames} />
+    </>
+  );
 }

@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { requireAdminPage } from "@/lib/authGuard";
 import AdminExercisesClient from "./AdminExercisesClient";
+import LiveRefresh from "@/components/LiveRefresh";
 import type { Exercise } from "@/types/admin";
 
 export const dynamic = "force-dynamic"; // Ensure fresh data on load
@@ -43,6 +44,10 @@ export default async function AdminExercisesPage() {
     /* Same shell as the other admin screens; the old bespoke wrapper had its
        own padding and max-width, which is why this page never lined up. */
     <div className="crm-dashboard">
+      {/* The coach's screens follow the panel as a whole: a subscriber who
+          registers or asks to renew, a plan saved from another tab. Read-only
+          lists, so a refresh arriving mid-look costs nothing. */}
+      <LiveRefresh scope="panel" />
       <div className="crm-main-area">
         <AdminExercisesClient initialExercises={exercises} />
       </div>

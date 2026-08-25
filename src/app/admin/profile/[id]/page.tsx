@@ -13,6 +13,7 @@ import { getLandingContent } from "@/app/admin/cms/actions";
 import "../../crm.css";
 import type { JsonRecord } from "@/types";
 import { Icon } from "@/components/Icon";
+import LiveRefresh from "@/components/LiveRefresh";
 import { formatTimestamp } from "@/lib/trainingDates";
 
 export default async function ProfileDetailsPage({ params }: { params: Promise<{ id: string }> }) {
@@ -85,6 +86,12 @@ export default async function ProfileDetailsPage({ params }: { params: Promise<{
 
   return (
     <div className="crm-dashboard">
+      {/* The trainee's side of the conversation. A weight logged on their phone,
+          a workout recorded, a renewal requested — all of it lands in the rows
+          this page reads on the server, and this is what tells the page to read
+          them again. */}
+      <LiveRefresh scope="profile" id={profile.id} />
+
       {/* This page had none, so every message AccountManager raised — including
           "account created" — was dropped silently. */}
       <Toaster

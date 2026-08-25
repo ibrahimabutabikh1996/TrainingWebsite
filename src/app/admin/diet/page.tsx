@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { requireAdminPage } from "@/lib/authGuard";
 import AdminDietClient from "./AdminDietClient";
+import LiveRefresh from "@/components/LiveRefresh";
 import type { NutritionSource } from "@/types/admin";
 
 export const dynamic = "force-dynamic";
@@ -37,6 +38,10 @@ export default async function AdminDietPage() {
 
   return (
     <div className="crm-dashboard">
+      {/* The coach's screens follow the panel as a whole: a subscriber who
+          registers or asks to renew, a plan saved from another tab. Read-only
+          lists, so a refresh arriving mid-look costs nothing. */}
+      <LiveRefresh scope="panel" />
       <div className="crm-main-area">
         <AdminDietClient initialSources={sources} />
       </div>

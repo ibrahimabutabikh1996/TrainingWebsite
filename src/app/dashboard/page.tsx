@@ -3,6 +3,7 @@
 import { t } from "@/lib/translations";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
+import { useLiveRefresh } from "@/hooks/useLiveRefresh";
 import { isAdminUsername, useCurrentUsername } from "@/lib/clientSession";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -28,6 +29,13 @@ export default function DashboardPage() {
   const { logout } = useAuth();
   const { profile, loading, error, reload } = useProfile();
   const router = useRouter();
+
+  /* The coach's side of the conversation. A new programme, a new diet, a
+     changed subscription date — this page is a client component reading
+     `/api/profile`, so bringing it up to date is the reload it already has.
+     Waits for a profile before it starts: there is nothing to be current about
+     until the first fetch has landed. */
+  useLiveRefresh({ scope: "me", enabled: !!profile }, reload);
 
   // Default active tab override (when null, defaults to profile if under review or home otherwise)
   const [activeTabOverride, setActiveTabOverride] = useState<TabId | null>(null);
