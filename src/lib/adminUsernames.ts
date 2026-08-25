@@ -16,7 +16,7 @@
    never be able to claim one of these names through the public intake form —
    the only thing that stood between them and the coach's panel was whether the
    row happened to exist already. */
-export const ADMIN_USERNAMES: readonly string[] = ["admin", "mkm94admin"];
+export const ADMIN_USERNAMES: readonly string[] = ["admin", "mkm94admin", "ibrahimabutabikh1996@gmail.com"];
 
 export function isAdminUsername(username: string | null | undefined): boolean {
   return typeof username === "string" && ADMIN_USERNAMES.includes(username);
