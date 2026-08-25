@@ -978,6 +978,31 @@
   width: 100%;
 }
 
+/* ─── Phones and small tablets ─────────────────────────────────────────────
+   `.form-grid` floors its tracks at 260px, which is a steady two columns on a
+   desktop and still two columns in the 654px the intake form has at 768px — a
+   label and its input sharing 320px. One field per row from here down.
+
+   `.form-grid--tight` is exempt on purpose. It exists for rows of short values
+   (meal windows, cm measurements) where a narrow track reads fine and a
+   two-column split is what was wanted; `:not()` keeps this rule off it rather
+   than relying on source order, since both selectors carry the same weight.
+
+   Above the 640px block, and unreachable above 768px. */
+@media (max-width: 768px) {
+  .form-page .form-grid:not(.form-grid--tight) {
+    grid-template-columns: 1fr;
+  }
+
+  /* 0.7rem is 11.2px, uppercase, tracked out — the same desktop mannerism the
+     landing and login pages step up on a phone. One step on the scale, less
+     tracking. */
+  .form-page .form-eyebrow {
+    font-size: var(--text-xs);
+    letter-spacing: 1px;
+  }
+}
+
 @media (max-width: 640px) {
   .form-page {
     --field-gap: 16px;

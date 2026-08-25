@@ -135,6 +135,55 @@
   gap: 12px;
 }
 
+/* The three-column row, moved here out of a `style={{}}` on the `<ul>`.
+ *
+ * It had to move. An inline style beats every rule in every stylesheet and
+ * every media query in them, so as long as the grid lived on the element there
+ * was no width at which it could be told to stop being three columns — and the
+ * wrap the block above was written to perform never got the chance to happen,
+ * because `display: grid` had already replaced the `display: flex` it needs.
+ * On a 375px screen the two right-hand tracks measured 54px each: a rest range
+ * of two numbers and two unit menus, stacked inside a 54px column.
+ *
+ * The four declarations are the ones that were inline, unchanged, so every
+ * width above the breakpoint renders exactly what it rendered before —
+ * `323.5px 485.25px 485.25px` at 1440 and `283.5px 425.25px 425.25px` at 1280,
+ * both re-measured after the move. It needs `.bldr-page` in front to outweigh
+ * `.bldr-page .dplan-items` above; bare `.bldr-ex-row` would lose to it and the
+ * row would silently go back to being a flex line. */
+.bldr-page .bldr-ex-row {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr 1.5fr;
+  gap: 12px;
+  align-items: start;
+}
+
+/* One control group per row. The first track cannot go under 178px — that is
+   the stepper's min-content width and it does not shrink — so on a phone the
+   other two split whatever is left, which is how 54px happened. */
+@media (max-width: 768px) {
+  .bldr-page .bldr-ex-row {
+    grid-template-columns: 1fr;
+  }
+
+  /* The rest range is six boxes — `من 60 ثانية إلى 90 ثانية` — laid out as a
+     wrapping flex line, so where the break falls is whatever the width decides.
+     At 375px it fell after `إلى`, which left the word stranded at the end of
+     one line and its number at the start of the next.
+
+     Three columns of two rows puts each `word / number / unit` triple on its
+     own line and cannot break anywhere else. The six children fill it in
+     order, so no child needs a rule of its own. The `flex-wrap: wrap` sitting
+     inline on this element is left inert rather than fought: it is a flex
+     property and this is a grid. */
+  .bldr-page .dplan-item--rest .bldr-pill {
+    display: grid;
+    grid-template-columns: auto auto auto;
+    justify-content: start;
+    row-gap: 10px;
+  }
+}
+
 .bldr-page .dplan-item {
   flex: 1 1 250px;
   flex-direction: column;

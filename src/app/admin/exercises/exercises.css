@@ -628,6 +628,25 @@
 
 @keyframes exSpin { to { transform: rotate(360deg); } }
 
+/* ─── Phones and small tablets ─────────────────────────────────────────────
+   `.ex-grid` floors its tracks at 270px, which is still two columns in the
+   744px pane a 768px screen leaves — two half-width exercise cards, each with
+   a video thumbnail, on a screen held in one hand. `.ex-form-row` does the
+   same inside the add/edit dialog, where a label and its input then share a
+   220px track.
+
+   Above the 640px block so that block still decides everything below 640px;
+   nothing here can be reached above 768px, so the desktop panel is untouched. */
+@media (max-width: 768px) {
+  .ex-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ex-form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 640px) {
   .ex-header { flex-direction: column; align-items: stretch; }
   .ex-add-btn { justify-content: center; }

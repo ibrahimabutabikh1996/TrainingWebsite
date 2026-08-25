@@ -1072,6 +1072,17 @@
   .cms-section-split {
     flex-direction: column;
   }
+
+  /* Membership plan cards. The 280px floor holds two tracks in the content
+     pane a 768px screen leaves, so each plan card — image, price, feature
+     list and all — came out at half width. One plan per row.
+
+     `.cms-media-grid`, `.cms-selector-grid` and `.cms-price-row` are
+     deliberately not here: those tracks hold a thumbnail or a single short
+     number, and stacking a thumbnail grid into one column just makes it long. */
+  .cms-pricing-grid {
+    grid-template-columns: 1fr;
+  }
   .cms-split-side {
     min-width: 100%;
   }
@@ -1084,6 +1095,15 @@
   .cms-content-pane {
     margin-inline: -12px;
     padding-inline: 12px;
+    /* The same buffer at the bottom is a different matter from the sides. It is
+       a NEGATIVE 24px, so the pane hangs 24px below `.cms-container` — which is
+       the box that was carefully sized to stop above the bar — and the last
+       field ends up inside the fade that sits over the bar's approach, dimmed
+       for no reason a reader can see. The buffer exists to keep hover
+       animations from clipping, and there are no hover animations on a touch
+       screen, so on a phone the bottom edge simply lines up with its container
+       again. The three other sides keep theirs. */
+    margin-bottom: 0;
   }
 }
 

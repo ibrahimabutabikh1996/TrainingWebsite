@@ -403,6 +403,16 @@
 .co-empty p { margin: 0; font-size: var(--text-base); color: var(--text-secondary); }
 .co-empty .co-add-btn { margin-top: 6px; }
 
+/* ─── Phones and small tablets ─────────────────────────────────────────────
+   Same story as `.ex-grid`: a 290px floor still resolves to two tracks in the
+   744px pane a 768px screen leaves, so a course card comes out half width.
+   Above the 640px block, and unreachable above 768px. */
+@media (max-width: 768px) {
+  .co-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 640px) {
   .co-header { flex-direction: column; align-items: stretch; }
   .co-add-btn { justify-content: center; }

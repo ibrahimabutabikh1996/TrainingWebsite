@@ -61,28 +61,18 @@
     margin-top: 24px;
   }
 
-  /* Panels keep their proportions but stop spending a seventh of the screen on
-     their own inner margin. Both card surfaces move together — `.dashboard-card`
-     and `.home-stat-card` are the same component drawn by two rules, and a
-     phone that tightened one and not the other would show the seam. */
-  .dashboard-card,
-  .home-stat-card {
-    padding: var(--space-4);
-  }
+  /* The card, title and gap rules that used to sit here have moved to the
+     phone block at the end of this file. They were dead where they stood:
+     `.dashboard-card` (103), `.dashboard-card-title` (120),
+     `.home-overview-container` (693), `.home-stats-grid` (754) and
+     `.home-stat-card` (760) are all declared FURTHER DOWN, at the same
+     specificity, so the base rule won and a phone kept the 24px desktop
+     padding and the 24px desktop gap. Measured, not guessed: at 375px
+     `.home-stats-grid` computed `gap: 24px` and `.dashboard-card` computed
+     `padding: 24px`.
 
-  .dashboard-card-title {
-    font-size: var(--text-lg);
-    padding-bottom: var(--space-2);
-    margin-bottom: var(--space-4);
-  }
-
-  /* The rhythm between sections. 24px between stacked cards on a screen this
-     narrow reads as drift; 16px keeps them a group without crowding, and it is
-     the same step the cards now use inside themselves. */
-  .home-overview-container,
-  .home-stats-grid {
-    gap: var(--space-4);
-  }
+     `.dashboard-main` stays here because it works here — its base rule is at
+     line 43, above this block. */
 }
 
 /* ─── DASHBOARD GRID ─── */
@@ -1082,3 +1072,53 @@
 .crm-tag.plan-1 { background-color: #820911 !important; color: #FFFFFF !important; border-color: #FFFFFF !important; }
 .crm-tag.plan-2 { background-color: #FFD700 !important; color: #000000 !important; border-color: #FFFFFF !important; }
 .crm-tag.plan-3 { background-color: #370F75 !important; color: #FFFFFF !important; border-color: #FFFFFF !important; }
+
+/* ─── Phones ───────────────────────────────────────────────────────────────
+ *
+ * At the end of the file on purpose. Everything below is declared at the same
+ * specificity as its base rule, so the only thing that decides the winner is
+ * which comes last — and the base rules for these five selectors are spread
+ * from line 103 to line 831. Anything phone-sized has to sit after all of
+ * them, which is here.
+ *
+ * `.dash-bottom-nav` and everything inside it is deliberately absent: the bar
+ * is left exactly as it already is at every width.
+ *
+ * None of this is reachable above 768px, so the desktop layout is untouched. */
+@media (max-width: 768px) {
+  /* Panels keep their proportions but stop spending a seventh of the screen on
+     their own inner margin. Both card surfaces move together — `.dashboard-card`
+     and `.home-stat-card` are the same component drawn by two rules, and a
+     phone that tightened one and not the other would show the seam. */
+  .dashboard-card,
+  .home-stat-card {
+    padding: var(--space-4);
+  }
+
+  .dashboard-card-title {
+    font-size: var(--text-lg);
+    padding-bottom: var(--space-2);
+    margin-bottom: var(--space-4);
+  }
+
+  /* The rhythm between sections. 24px between stacked cards on a screen this
+     narrow reads as drift; 16px keeps them a group without crowding, and it is
+     the same step the cards now use inside themselves. */
+  .home-overview-container,
+  .home-stats-grid {
+    gap: var(--space-4);
+  }
+
+  /* One card per row. The `auto-fit` floor is 320px, which still resolves to
+     two tracks in a 736px pane — fine on a desktop, a pair of half-width
+     cards on anything held in a hand. */
+  .home-stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Start date and end date, side by side in 140px each at 375px. One below
+     the other, each with the full width, so neither date has to wrap. */
+  .home-sub-details {
+    grid-template-columns: 1fr;
+  }
+}

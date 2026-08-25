@@ -355,6 +355,45 @@ html {
     --admin-radius-lg: var(--radius-lg);
     --admin-radius: var(--radius-md);
     --admin-radius-sm: var(--radius-sm);
+
+    /* The colour and surface aliases, here rather than on
+       `.admin-layout-wrapper` where they were declared for a long time.
+       A descendant scope was the wrong home for them, and the reason is
+       `Overlay.tsx`: every admin dialog is portalled to `document.body`, which
+       puts it OUTSIDE the wrapper — so inside a dialog every one of these
+       resolved to nothing.
+
+       An undefined custom property does not fall back to something sensible.
+       `color: var(--admin-on-surface)` is invalid at computed-value time, which
+       for an inherited property means `unset`, which means `inherit` — and the
+       chain above a portalled dialog is `body`, which sets no colour, so it
+       landed on the UA default. Black. On a `--bg2` panel that is 1.3:1, and it
+       was most of the text in the course, subscriber and confirm dialogs:
+       the description, the dates, the exercise names, the rep chips, the labels
+       on three of the four footer buttons. `border: 1px solid color-mix(…)`
+       failed the same way and computed to `0px none`, which is why those three
+       buttons had no outline either.
+
+       Aliases, not literals, so they keep tracking the palette above rather
+       than freezing a copy of it — the same reason the radius three are
+       aliases. Verified a no-op inside `.admin-layout-wrapper`: none of the
+       tokens on the right-hand side is redeclared anywhere in the admin scope,
+       so they substitute to the same values here as they did there, and the
+       admin pages measure identically at 1280 and 1440. */
+    --admin-card-bg: var(--nav-bg-glass);
+    --admin-card-border: var(--border);
+    --admin-card-shadow: var(--elev-1);
+    --admin-card-shadow-hover: var(--elev-2);
+
+    --admin-primary: var(--primary);
+    --admin-on-surface: var(--text);
+    --admin-outline: var(--muted2);
+    --admin-error: var(--error, #ef4444);
+
+    --admin-bg: var(--bg);
+    --admin-bg-2: var(--bg2);
+    --admin-bg-3: var(--bg3);
+    --admin-bg-4: var(--bg4);
 }
 
 /* Baseline for controls that never set a radius of their own. Zero specificity,
@@ -1260,6 +1299,21 @@ textarea.ui-control {
    in 12px, which leaves the button 37px tall. Raised to the touch floor on the
    screens where a finger is doing the pressing; the type and the icon inside it
    are untouched. */
+/* ─── Phones and small tablets ─────────────────────────────────────────────
+   The shared two-up field helper. Its 190px floor means two tracks from about
+   400px up, so on a phone a pair of fields is already sharing the row, and in
+   a 768px pane they sit at ~370px each. Below 768px each field takes the row.
+
+   `.ui-grid-3` is left alone: its tracks hold one short value each, and it is
+   not rendered anywhere in the app today.
+
+   Unreachable above 768px, so no desktop pane moves. */
+@media (max-width: 768px) {
+  .ui-grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 640px) {
   .ui-media-btn {
     min-height: var(--tap-min);

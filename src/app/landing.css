@@ -2289,6 +2289,84 @@ body.offers-active .nav-links a[href="#offers"]::after {
   }
 }
 
+/* ─── Phones and small tablets ─────────────────────────────────────────────
+ *
+ * The step the file was missing. Above this the 1000px block puts the card
+ * grids into two columns; below it the 680px block puts them into one. Between
+ * 681 and 768 nothing else fired, so a 768px screen was reading two ~324px
+ * cards and full 120px/48px desktop gutters — a desktop layout scaled down
+ * rather than a layout for the width.
+ *
+ * It sits ABOVE the 680px block deliberately. Both match on a phone and both
+ * carry the same specificity, so the later one wins; every value below 680px
+ * is still decided there, untouched. Nothing here is reachable above 768px, so
+ * the desktop layout cannot see any of it. */
+@media (max-width: 768px) {
+  .membership-grid,
+  .testimonials-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* The 1000px block gives a stranded odd last card `width: 100%` and a 520px
+     cap so it does not sit alone in a half-empty row. In one column there is
+     no half-empty row left and the cap is simply wrong — but the two grids
+     want opposite things once it goes.
+
+     A membership card has no width of its own and fills its track, so the last
+     one should too: the cap comes off. A testimonial card carries
+     `max-width: 420px` and is centred by `justify-items`, so removing the cap
+     outright made the last testimonial 702px beside 420px siblings — which is
+     what the first cut of this block did. It gets the card's own figure back
+     instead. The 520px rule outweighs `.testimonial-card` four selectors to
+     one, so the value has to be restated here rather than left to fall
+     through; if line 1555 ever moves, this moves with it. */
+  .membership-grid > .membership-card:last-child:nth-child(odd) {
+    max-width: none;
+  }
+
+  .testimonials-grid > .testimonial-card:last-child:nth-child(odd) {
+    max-width: 420px;
+  }
+
+  /* One step in from the desktop 120px/64px/48px, not the whole way — the
+     680px block takes it the rest. `#testimonials` is included here and is not
+     in the 680px list, so this is also the first rule that brings it down off
+     the desktop 120px on a phone. */
+  #coach,
+  #membership,
+  #testimonials,
+  #contact {
+    padding: 96px 0;
+  }
+
+  .coach-header,
+  .membership-header,
+  .testimonials-header,
+  .contact-header {
+    margin-bottom: 52px;
+  }
+
+  .coach-inner,
+  .membership-inner,
+  .testimonials-inner,
+  .contact-inner,
+  .footer-inner {
+    padding: 0 32px;
+  }
+
+  /* The same eyebrow treatment the 680px block already applies, brought up to
+     768px — measured at 11px in this band and 12px just below it, which is the
+     wrong way round. The 680px block still restates it for its own range; the
+     values match, so which one wins does not matter. */
+  .hero-eyebrow,
+  .section-eyebrow,
+  .contact-item h4,
+  .footer-col h4 {
+    font-size: var(--text-xs);
+    letter-spacing: 1.5px;
+  }
+}
+
 @media (max-width: 680px) {
   /* 80px of margin between two 80px paddings put 240px of empty screen between
      one heading and the next — a third of a phone viewport, three times over. */

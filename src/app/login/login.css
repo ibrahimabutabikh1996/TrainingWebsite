@@ -477,6 +477,41 @@ body::before {
   .panel-form { padding: 52px 32px; min-height: auto; overflow: visible; }
   .top-bar { padding: 12px 24px; }
 }
+/* ─── Phones and small tablets ─────────────────────────────────────────────
+ *
+ * 11px with 3.5px of tracking is a desktop mannerism, and this page leans on
+ * it three times: the eyebrow, every field label, and the submit button. It is
+ * the same call the landing page already made in its 680px block — at arm's
+ * length on a phone the Arabic closes up while the tracking pulls the word
+ * apart, so the type goes up one step on the scale and the tracking comes
+ * down. `--text-2xs` is 11px and `--text-xs` is 12px; `--text-sm` is 13px.
+ *
+ * Sizes only. Nothing here moves a box, and none of it is reachable above
+ * 768px, so the desktop panel is unchanged.
+ *
+ * Placed after the 820px block and before the 480px one so the existing
+ * breakpoints keep deciding what they already decide. */
+@media (max-width: 768px) {
+  .form-eyebrow {
+    font-size: var(--text-xs);
+    letter-spacing: 2px;
+  }
+
+  .field label {
+    font-size: var(--text-xs);
+    letter-spacing: 0.04em;
+  }
+
+  .btn-submit {
+    font-size: var(--text-sm);
+    letter-spacing: 1.5px;
+  }
+
+  .or-divider span {
+    font-size: var(--text-xs);
+  }
+}
+
 @media (max-width: 480px) {
   .panel-form { padding: 40px 24px; }
   .social-btns { grid-template-columns: 1fr; }

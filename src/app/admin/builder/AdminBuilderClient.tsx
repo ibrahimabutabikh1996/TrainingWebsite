@@ -496,7 +496,7 @@ export default function AdminBuilderClient({
                           </div>
                         </header>
 
-                        <ul className="dplan-items" style={{ display: "grid", gridTemplateColumns: "1fr 1.5fr 1.5fr", gap: "12px", alignItems: "start" }}>
+                        <ul className="dplan-items bldr-ex-row">
                           <li className="dplan-item dplan-item--sets">
                             <div className="dplan-item-main">
                               <strong>عدد الجولات</strong>

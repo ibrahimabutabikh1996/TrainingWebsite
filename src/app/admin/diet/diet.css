@@ -621,6 +621,22 @@
    here is brought up to the touch floor: the segment tabs, the search field's
    own box, and the clear button inside it were all between 22px and 40px, which
    is comfortable under a cursor and fiddly under a thumb. */
+/* ─── Phones and small tablets ─────────────────────────────────────────────
+   `.diet-grid` floors at 350px and still fits two tracks at 768px; the
+   nutrition dialog's `.diet-form-row` floors at 180px and fits three, which
+   puts a label and its number field into 180px. One column for both.
+
+   Above the 640px block, and unreachable above 768px. */
+@media (max-width: 768px) {
+  .diet-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .diet-form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 640px) {
   .diet-header-actions {
     width: 100%;
