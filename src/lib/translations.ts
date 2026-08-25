@@ -271,6 +271,11 @@ export const translations = {
     lbl_analysis: "تحاليل سابقة إن وجدت (يرجى إرسال ملف النتيجة)",
     lbl_upload_file: "اضغط أو اسحب الملف هنا للرفع",
     lbl_photos_male: "صور للجسم (مطلوبة للذكور)",
+    /* The same photographs, named for the coach reading them back rather than
+       for the trainee being asked to supply them — "(مطلوبة للذكور)" is an
+       instruction to whoever is filling the form in, and it says nothing to
+       someone looking at the pictures a year later. */
+    lbl_photos_body: "صور الجسم",
     lbl_photos_male_hint: "صورة أمامية، جانبية، للظهر، وللرجل — تحت إضاءة سقفية، مع الوقوف على بعد نصف متر قبل مصدر الإضاءة.",
     lbl_upload_photos: "اضغط أو اسحب الصور هنا للرفع (أمامية وجانبية وخلفية وللرجل)",
     sub_measurements: "القياسات البدنية المطلوبة (للإناث)",

@@ -21,6 +21,7 @@ import "../diet.css";
 import "./plan.css";
 import { normalizeArabic, arabicIncludes } from "@/lib/arabicSearch";
 import { confirmDialog } from "@/lib/confirmDialog";
+import TraineeIntakeHelp from "@/components/admin/TraineeIntakeHelp";
 
 /* A plan the coach has started but not yet saved has no database id. Everything
    else about it behaves like a saved one, so the id is simply optional rather
@@ -225,6 +226,13 @@ export default function DietPlanBuilder({
 
   return (
     <div className="diet-page dplan-page">
+      {/* The answers this diet is being built from — weight, height, goal, then
+          everything that decides what may go on the plate: allergies, the foods
+          they like, the meat, the coffee, past injuries, and whether they can
+          buy supplements at all. The trainee here comes from the URL rather
+          than from local state, because picking one remounts this builder. */}
+      <TraineeIntakeHelp view="diet" traineeId={initialTraineeId} />
+
       <Toaster
         position="top-center"
         toastOptions={{

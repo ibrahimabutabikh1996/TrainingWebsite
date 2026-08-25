@@ -50,6 +50,7 @@ const eslintConfig = defineConfig([
       "src/app/export-profile/ExportProfileClient.tsx",
       "src/components/PromotionalPopup.tsx",
       "src/components/admin/ProfileMonthlyRecord.tsx",
+      "src/components/admin/TraineeIntakeHelp.tsx",
       "src/components/dashboard/TraineeProfileDetails.tsx",
       "src/components/form/Fields.tsx",
       // Brand marks on loading screens and page chrome

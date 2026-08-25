@@ -12,6 +12,7 @@ import { loadCourseTemplateAction, saveCourseAction } from "./actions";
 import { arabicCount, DAY, EXERCISE } from "@/lib/arabicCount";
 import { Icon } from "@/components/Icon";
 import { CustomSelect } from "@/components/CustomSelect";
+import TraineeIntakeHelp from "@/components/admin/TraineeIntakeHelp";
 /* Same order the diet plan builder uses: the shared page vocabulary first, then
    the plan-builder layout, then this page's own additions. */
 import "../diet/diet.css";
@@ -228,6 +229,12 @@ export default function AdminBuilderClient({
 
   return (
     <div className="diet-page dplan-page bldr-page">
+      {/* The answers this programme is being built from — weight, target,
+          height, goal, and the photographs. Reads the trainee currently chosen
+          in the toolbar above; with none chosen it says so rather than
+          disappearing. Nothing is fetched until it is opened. */}
+      <TraineeIntakeHelp view="workout" traineeId={selectedTrainee} />
+
       <Toaster
         position="top-center"
         toastOptions={{
@@ -286,10 +293,13 @@ export default function AdminBuilderClient({
             </button>
           )}
 
-          <a href="/admin/courses" className="diet-btn-secondary">
-            <Icon name="library_books" style={{ fontSize: 20 }} />
-            <span>مكتبة الكورسات</span>
-          </a>
+          {/* The link to the course library was here, and it was the only
+              control on this row that did not act on the programme being built
+              — it navigated away from it. The same destination is a permanent
+              button in the bottom bar on every admin page, this one included,
+              so nothing became unreachable when it went. The diet builder's
+              toolbar never had an equivalent; this is the two of them agreeing
+              rather than a control being lost. */}
 
           <button onClick={handleSaveCourse} className="diet-add-btn" disabled={isSaving}>
             <Icon name="save" style={{ fontSize: 20 }} />

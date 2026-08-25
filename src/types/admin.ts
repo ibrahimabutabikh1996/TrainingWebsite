@@ -167,3 +167,26 @@ export type NutritionSource = {
   created_at: Date | string | null;
 };
 
+
+/* ── The intake summary the coach can open while building a programme ──────
+ *
+ * Which answers travel is decided on the server, by view name — see
+ * `intakeActions.ts`. The client names a view, never a field, so a tampered
+ * call cannot ask for the phone number or the health history that are sitting
+ * in the same blob.
+ */
+
+/** Which set of answers to read. Named on the client, resolved on the server. */
+export type IntakeView = "workout" | "diet";
+
+/** One answered question, already resolved to display text. */
+export type IntakeRow =
+  | { kind: "text"; label: string; value: string }
+  /* Stored values, not addresses. Each becomes a request to `/api/attachments`
+     via `attachmentSrc`, which authorises the caller against this very path
+     before it signs anything. */
+  | { kind: "photos"; label: string; paths: string[] };
+
+export type IntakeSummary =
+  | { success: true; name: string; rows: IntakeRow[] }
+  | { success: false; error: string };

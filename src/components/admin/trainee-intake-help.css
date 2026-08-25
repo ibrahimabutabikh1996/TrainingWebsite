@@ -1,0 +1,189 @@
+/* The floating question mark, and the answers behind it.
+   See the note at the top of `TraineeIntakeHelp.tsx`. */
+
+/* ── The button ────────────────────────────────────────────────────────────
+ *
+ * Three things decide where this sits, and all three are already spoken for by
+ * the admin shell:
+ *
+ *   the bar        `.admin-bottom-nav` is 72px tall, 64px below 768px, and 52px
+ *                  on a phone held sideways. The button clears whichever is in
+ *                  force, plus the strip the bar gives up to the home indicator.
+ *   the fade       below 768px a scrim covers the bar and 72px above it. This
+ *                  outranks it — `z-index: 60` against the scrim's 50 — so the
+ *                  button stays solid where content dissolves. It cannot reach
+ *                  the bar itself: `.admin-main-content` carries `z-index: 2`
+ *                  and the bar carries 100 on the same parent, so this whole
+ *                  subtree paints underneath it whatever it asks for.
+ *   the text       `inset-inline-end` rather than `left`. The panel runs RTL,
+ *                  so the inline end is the left of the screen, which is where
+ *                  a floating action button belongs in a right-to-left reading.
+ */
+.tih-fab {
+  position: fixed;
+  bottom: calc(72px + env(safe-area-inset-bottom) + var(--space-4));
+  inset-inline-end: calc(var(--space-5) + env(safe-area-inset-left));
+  z-index: 60;
+
+  /* `--tap-min` is 44px and this is 52, because the button floats over content
+     rather than sitting in a row with neighbours to aim between. */
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-circle);
+  background: var(--bg3);
+  color: var(--primary-on-tint);
+  cursor: pointer;
+  box-shadow: var(--elev-2);
+  transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease),
+    color var(--dur) var(--ease), transform var(--dur) var(--ease-out);
+}
+
+.tih-fab .app-icon {
+  font-size: 26px;
+}
+
+.tih-fab:hover {
+  background: var(--bg4);
+  border-color: var(--border-primary);
+  transform: translateY(-2px);
+}
+
+.tih-fab:focus-visible {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: var(--focus-ring);
+}
+
+@media (max-width: 768px) {
+  .tih-fab {
+    bottom: calc(64px + env(safe-area-inset-bottom) + var(--space-4));
+    inset-inline-end: calc(var(--space-4) + env(safe-area-inset-left));
+  }
+}
+
+/* Sideways the bar is 52px, and the height is what is scarce — the button comes
+   down with the bar rather than keeping a gap the screen cannot spare. */
+@media (max-height: 500px) and (orientation: landscape) {
+  .tih-fab {
+    bottom: calc(52px + env(safe-area-inset-bottom) + var(--space-3));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tih-fab:hover {
+    transform: none;
+  }
+}
+
+/* ── The answers ───────────────────────────────────────────────────────────
+   A definition list because that is what this is: a question and what was
+   answered. Two columns while there is room for the question to read as a
+   heading beside its answer, one below 560px where there is not. */
+.tih-body {
+  padding: var(--space-5) var(--space-6);
+}
+
+.tih-list {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.tih-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  gap: var(--space-4);
+  align-items: baseline;
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border);
+}
+
+.tih-row:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.tih-row dt {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  font-weight: var(--weight-medium);
+}
+
+.tih-row dd {
+  margin: 0;
+  font-size: var(--text-base);
+  color: var(--text);
+  font-weight: var(--weight-semibold);
+  /* An answer is whatever the trainee typed, including a paragraph with no
+     spaces in it. `min-width: 0` on the track is what lets it wrap instead of
+     setting a floor the dialog then has to overflow. */
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+/* The photographs get the full width; a column of them beside a label wastes
+   the half of the row that makes them worth opening. */
+.tih-row--photos {
+  grid-template-columns: 1fr;
+  gap: var(--space-2);
+  align-items: stretch;
+}
+
+.tih-thumbs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(104px, 100%), 1fr));
+  gap: var(--space-3);
+}
+
+.tih-thumb {
+  display: block;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  transition: border-color var(--dur) var(--ease);
+}
+
+.tih-thumb:hover,
+.tih-thumb:focus-visible {
+  border-color: var(--primary);
+  outline: none;
+}
+
+.tih-thumb img {
+  display: block;
+  width: 100%;
+  height: 104px;
+  object-fit: cover;
+}
+
+.tih-empty,
+.tih-note {
+  color: var(--text-muted);
+  font-size: var(--text-base);
+  margin: 0;
+}
+
+.tih-note--error {
+  color: var(--error-text);
+}
+
+@media (max-width: 560px) {
+  .tih-body {
+    padding: var(--space-4);
+  }
+
+  /* The question stops sharing a line with its answer. At this width the two
+     tracks come to about 120px each, which turns every long question into a
+     column of single words. */
+  .tih-row {
+    grid-template-columns: 1fr;
+    gap: var(--space-1);
+  }
+}
