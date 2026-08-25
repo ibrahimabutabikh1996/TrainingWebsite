@@ -1162,9 +1162,9 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
                 </p>
 
                 <div className="ui-grid-2">
-                  <InputField label="العنوان العلوي للقسم" fieldKey="off_eyebrow" />
-                  <InputField label="عنوان القسم" fieldKey="off_title" />
-                  <InputField label="نص زر البطاقات" fieldKey="off_card_btn" />
+                  <InputField label="العنوان العلوي للقسم" fieldKey="off_eyebrow" hideable />
+                  <InputField label="عنوان القسم" fieldKey="off_title" hideable />
+                  <InputField label="نص زر البطاقات" fieldKey="off_card_btn" hideable />
                 </div>
 
                 <div className="cms-pricing-grid" style={{ marginTop: 16 }}>
@@ -1188,8 +1188,8 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
                           />
                         </div>
 
-                        <InputField label="العنوان الفرعي للعرض" fieldKey={`off_card${n}_badge`} />
-                        <InputField label="وصف العرض" fieldKey={`off_card${n}_desc`} isTextarea />
+                        <InputField label="العنوان الفرعي للعرض" fieldKey={`off_card${n}_badge`} hideable />
+                        <InputField label="وصف العرض" fieldKey={`off_card${n}_desc`} isTextarea hideable />
 
                         {/* Label, before, after — one price on one line. The
                             "before" figure is optional; leaving it empty simply
@@ -1202,14 +1202,14 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
                           </div>
                         ))}
 
-                        {note && <InputField label="ملاحظة أسفل الأسعار" fieldKey={`off_card${n}_note`} isTextarea />}
+                        {note && <InputField label="ملاحظة أسفل الأسعار" fieldKey={`off_card${n}_note`} isTextarea hideable />}
 
                         <div className="cms-card-divider">
                           <label className="cms-label">مزايا العرض</label>
                           <div className="cms-feature-list">
-                            <InputField label="الميزة الأولى" fieldKey={`off_card${n}_f1`} />
-                            <InputField label="الميزة الثانية" fieldKey={`off_card${n}_f2`} />
-                            <InputField label="الميزة الثالثة" fieldKey={`off_card${n}_f3`} />
+                            <InputField label="الميزة الأولى" fieldKey={`off_card${n}_f1`} hideable />
+                            <InputField label="الميزة الثانية" fieldKey={`off_card${n}_f2`} hideable />
+                            <InputField label="الميزة الثالثة" fieldKey={`off_card${n}_f3`} hideable />
                           </div>
                         </div>
 
@@ -1289,11 +1289,11 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
                 </h3>
                 <div className="cms-section-split">
                   <div className="cms-split-main">
-                    <InputField label="عنوان القسم" fieldKey="coach_title" />
-                    <InputField label="اسم المدرب" fieldKey="coach_name" />
-                    <InputField label="الشهادة الرئيسية" fieldKey="coach_cert" />
-                    <InputField label="النبذة الأولى" fieldKey="coach_bio1" isTextarea />
-                    <InputField label="النبذة الثانية" fieldKey="coach_bio2" isTextarea />
+                    <InputField label="عنوان القسم" fieldKey="coach_title" hideable />
+                    <InputField label="اسم المدرب" fieldKey="coach_name" hideable />
+                    <InputField label="الشهادة الرئيسية" fieldKey="coach_cert" hideable />
+                    <InputField label="النبذة الأولى" fieldKey="coach_bio1" isTextarea hideable />
+                    <InputField label="النبذة الثانية" fieldKey="coach_bio2" isTextarea hideable />
                   </div>
                   <div className="cms-split-side">
                     <ImageUploadField label="صورة المدرب" fieldKey="coach_img_url" recommendedSize="800x1000 (عمودية)" />
@@ -1314,7 +1314,7 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
                 <h3 className="cms-card-title">
                   إدارة خطط العضوية والاشتراكات
                 </h3>
-                <InputField label="عنوان قسم الخطط الرئيسي" fieldKey="mem_title" />
+                <InputField label="عنوان قسم الخطط الرئيسي" fieldKey="mem_title" hideable />
 
                 <div className="cms-pricing-grid" style={{ marginTop: 16 }}>
                   {/* Three cards that differed only in their title, their key
@@ -1342,8 +1342,8 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
                           />
                         </div>
 
-                        <InputField label="العنوان الفرعي للخطة" fieldKey={`card${n}_badge`} />
-                        <InputField label="وصف الخطة" fieldKey={`card${n}_desc`} isTextarea />
+                        <InputField label="العنوان الفرعي للخطة" fieldKey={`card${n}_badge`} hideable />
+                        <InputField label="وصف الخطة" fieldKey={`card${n}_desc`} isTextarea hideable />
 
                         {Array.from({ length: prices }, (_, i) => i + 1).map((p) => (
                           <div key={p} className="cms-price-row">
@@ -1355,9 +1355,9 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
                         <div className="cms-card-divider">
                           <label className="cms-label">ميزات الخطة</label>
                           <div className="cms-feature-list">
-                            <InputField label="الميزة الأولى" fieldKey={`card${n}_f1`} />
-                            <InputField label="الميزة الثانية" fieldKey={`card${n}_f2`} />
-                            <InputField label="الميزة الثالثة" fieldKey={`card${n}_f3`} />
+                            <InputField label="الميزة الأولى" fieldKey={`card${n}_f1`} hideable />
+                            <InputField label="الميزة الثانية" fieldKey={`card${n}_f2`} hideable />
+                            <InputField label="الميزة الثالثة" fieldKey={`card${n}_f3`} hideable />
                           </div>
                         </div>
 
@@ -1395,8 +1395,8 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
                 </h3>
                 <div className="cms-section-split">
                   <div className="cms-split-main">
-                    <InputField label="عنوان قسم التواصل (العنوان الصغير)" fieldKey="contact_eyebrow" />
-                    <InputField label="العنوان الرئيسي للتواصل" fieldKey="contact_title" />
+                    <InputField label="عنوان قسم التواصل (العنوان الصغير)" fieldKey="contact_eyebrow" hideable />
+                    <InputField label="العنوان الرئيسي للتواصل" fieldKey="contact_title" hideable />
 
                     {/* 260px floor: the phone field's own segments, icon,
                         separators and padding need ~265px, so the previous
