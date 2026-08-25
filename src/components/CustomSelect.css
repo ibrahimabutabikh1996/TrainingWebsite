@@ -133,3 +133,62 @@
   align-items: center;
   justify-content: center;
 }
+
+/* ── The filter box ────────────────────────────────────────────────────────
+   Only drawn when a call site asks for it (`searchable`), so every other
+   select in the app renders exactly what it rendered before this existed.
+
+   Sticky, not a sibling above the list: `.custom-select-dropdown` is both the
+   panel and the scroller, and every select in the app already depends on that.
+   `top: -4px` cancels the panel's own 4px padding so the box sits flush with
+   the top edge as the options pass under it, and the negative margins let it
+   run the full width rather than inside the padding. */
+.custom-select-search {
+  position: sticky;
+  top: -4px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: -4px -4px 4px -4px;
+  padding: 8px 10px;
+  background-color: var(--bg2);
+  border-bottom: 1px solid var(--border);
+}
+
+.custom-select-search-icon {
+  font-size: 18px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  display: flex;
+}
+
+.custom-select-search input {
+  flex: 1;
+  /* A flex item's automatic minimum is its content width, which a long
+     placeholder would otherwise impose on the whole panel. */
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-family: inherit;
+  /* 16px. Anything smaller and iOS zooms the page in when the field takes
+     focus, which on a phone leaves the panel half off-screen. */
+  font-size: 1rem;
+  padding: 2px 0;
+}
+
+.custom-select-search input::placeholder {
+  color: var(--text-muted);
+}
+
+/* Both empty states — the list that has nothing in it, and the search that
+   matched nothing. Was an inline style on the first; same values, so the panel
+   looks exactly as it did. */
+.custom-select-empty {
+  padding: 10px;
+  color: var(--text-muted);
+  text-align: center;
+  font-size: 0.9rem;
+}

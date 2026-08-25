@@ -692,7 +692,13 @@ export default function AdminCoursesClient({
               فأي تعديل عليها لاحقاً يخصّه وحده ولا يمسّ الكورس الأصلي ولا بقية المشتركين.
             </p>
             <div style={{ marginBottom: 24 }}>
+              {/* The one list in the panel as long as the subscriber roll, and
+                  the coach is looking for one person in it by name. Every other
+                  select here offers a handful of fixed choices and is left
+                  alone. */}
               <CustomSelect
+                searchable
+                searchPlaceholder="ابحث باسم المشترك..."
                 value={selectedTraineeId}
                 onChange={setSelectedTraineeId}
                 placeholder="-- اختر مشترك --"
