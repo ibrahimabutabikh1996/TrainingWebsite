@@ -12,6 +12,7 @@ import { useParallax } from "@/hooks/useParallax";
 import { normalizeLegacyName } from "@/lib/planNames";
 import { PromotionalPopup } from "@/components/PromotionalPopup";
 import { PreviewBar } from "@/components/ui/PreviewBar";
+import { usePreviewGuard } from "@/hooks/usePreviewGuard";
 
 /* Baseline copy. Anything the coach edits in the CMS overrides these at runtime
    through the [data-i18n] pass below. */
@@ -265,6 +266,12 @@ export default function LandingClient({
   const currentUsername = useCurrentUsername();
   const isLoggedIn = !isPreview && currentUsername !== null;
 
+  /* Nothing on a preview may be operated — see @/hooks/usePreviewGuard, which
+     is where the effect that used to do this below now lives. The second
+     argument keeps the legacy `?preview=true` path armed exactly as it was:
+     this page still reads its draft on that flag, and the two have to agree. */
+  usePreviewGuard(isPreview, true);
+
   const handleLogout = (e: React.MouseEvent) => {
     e.preventDefault();
     logout();
@@ -502,51 +509,9 @@ export default function LandingClient({
       });
     }
 
-    /* Nothing on a preview may be operated.
-     *
-     * A click was already intercepted here. The two additions are the ways a
-     * link or a button is reached without one: Enter or Space on a focused
-     * control, and a form submit — a keyboard user could otherwise sign out of
-     * the panel from inside a preview of the page.
-     *
-     * The promotional popup is the single exemption, and it has to be. It covers
-     * the page and locks scrolling behind it, exactly as it does for a visitor,
-     * and a visitor can close it. Blocked along with everything else it would
-     * end the preview at the moment it appeared. */
-    if (
-      typeof window !== "undefined" &&
-      (isPreview || window.location.search.includes("preview=true"))
-    ) {
-      const operable = (target: EventTarget | null) =>
-        target instanceof Element &&
-        target.closest(".promo-popup-overlay, .cms-preview-bar") !== null;
-
-      const blockClicks = (e: MouseEvent) => {
-        if (operable(e.target)) return;
-        e.preventDefault();
-        e.stopPropagation();
-      };
-      const blockKeys = (e: KeyboardEvent) => {
-        if (e.key !== "Enter" && e.key !== " ") return;
-        if (operable(e.target)) return;
-        e.preventDefault();
-        e.stopPropagation();
-      };
-      const blockSubmit = (e: Event) => {
-        e.preventDefault();
-        e.stopPropagation();
-      };
-
-      // Capture phase to intercept before any other listener
-      document.addEventListener("click", blockClicks, true);
-      document.addEventListener("keydown", blockKeys, true);
-      document.addEventListener("submit", blockSubmit, true);
-      return () => {
-        document.removeEventListener("click", blockClicks, true);
-        document.removeEventListener("keydown", blockKeys, true);
-        document.removeEventListener("submit", blockSubmit, true);
-      };
-    }
+    /* The blocking that used to sit here moved to `usePreviewGuard`, called at
+       the top of this component, so the sign-in preview runs the same code
+       rather than a second copy of it. Semantics are unchanged. */
   }, [isPreview]);
 
   useEffect(() => {
@@ -567,6 +532,27 @@ export default function LandingClient({
           if (RICH_TEXT_KEYS.has(key)) setRichText(el, String(val));
           else setText(el, String(val));
         }
+      });
+
+      /* Fields the coach has switched off.
+       *
+       * One pass over the same `[data-i18n]` nodes the loop above just filled,
+       * because every one of those attributes already names the element that
+       * carries the field — `data-i18n="hero_btn"` is on the button itself, not
+       * on a span inside it, so hiding the node hides the control rather than
+       * leaving an empty one. That is what makes this general instead of
+       * thirty-nine special cases.
+       *
+       * Written on every pass, both ways, never only when the flag is set: a
+       * "hide it if false" loop cannot put anything back, so switching a field
+       * on again would leave it hidden until a reload. The same reasoning as
+       * the `_was` pass below.
+       *
+       * Absent means shown, so a field nobody has ever touched is untouched. */
+      document.querySelectorAll<HTMLElement>("[data-i18n]").forEach((el) => {
+        const key = el.getAttribute("data-i18n") as string;
+        const flag = activeData[`${key}_active`] ?? content[`${key}_active`];
+        el.hidden = flag === "false";
       });
 
       /* The "before the discount" figures on the offers cards.

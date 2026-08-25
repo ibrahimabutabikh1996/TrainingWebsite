@@ -8,6 +8,7 @@ import { LoginForm } from "@/components/auth/LoginForm";
 import { PreviewBar } from "@/components/ui/PreviewBar";
 import { safeMediaUrl } from "@/lib/richText";
 import { getLandingContent } from "@/app/admin/cms/actions";
+import { usePreviewGuard } from "@/hooks/usePreviewGuard";
 
 interface Props {
   /**
@@ -42,6 +43,9 @@ interface Props {
  */
 export function LoginScreen({ isPreview = false, initialCmsData = null }: Props) {
   const [cmsData, setCmsData] = useState<JsonRecord | null>(initialCmsData);
+
+  /* A preview looks; it does not act. See @/hooks/usePreviewGuard. */
+  usePreviewGuard(isPreview);
 
   useEffect(() => {
     async function loadCMS() {
@@ -148,8 +152,15 @@ export function LoginScreen({ isPreview = false, initialCmsData = null }: Props)
         </div>
       </div>
 
-      {/* RIGHT: Form panel */}
-      <div className="panel-form">
+      {/* RIGHT: Form panel.
+          `inert` in a preview, which is the whole panel at once: the two fields
+          cannot be typed into, the submit cannot be reached by mouse or by Tab,
+          and none of it takes focus. It is done here rather than by passing a
+          `disabled` prop down because `LoginForm` is the component that actually
+          authenticates, and the less this feature reaches into it the better —
+          this way it is not touched at all. The panel still *looks* exactly as
+          the visitor sees it, which is the point of previewing it. */}
+      <div className="panel-form" inert={isPreview}>
         <Suspense fallback={<div>جاري التحميل...</div>}>
           <LoginForm />
         </Suspense>

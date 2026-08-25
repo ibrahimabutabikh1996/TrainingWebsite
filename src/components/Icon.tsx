@@ -6,6 +6,7 @@ import {
   CirclePlus, CircleQuestionMark, Clock, CloudCheck, CloudUpload, Copy, CreditCard,
   Croissant, Download, Dumbbell, ExternalLink, Eye, FilePen, FileText, FlaskConical,
   FolderX, FunnelX, GanttChart, Globe, Heading, House, IdCard, Image, Images, Info,
+  EyeOff,
   LockKeyhole, Lock, LogIn, LogOut, Mail, Medal, MessageCircle, Moon, NotebookPen,
   Package, Pencil, Phone, Pill, PersonStanding, Plus, Quote, ReceiptText, Sandwich,
   Save, Search, SearchX, ShieldCheck, SquareMousePointer, StickyNote, Sun, Tag,
@@ -60,7 +61,7 @@ export type IconName =
   | "person_search" | "photo_library" | "play_circle" | "restaurant"
   | "restaurant_menu" | "save" | "search" | "search_off" | "self_improvement"
   | "sticky_note_2" | "upload" | "user_male" | "verified_user" | "view_timeline"
-  | "visibility" | "warning" | "web" | "schedule" | "verified" | "folder_off" | "zoom_in" | "photo_camera"
+  | "visibility" | "visibility_off" | "warning" | "web" | "schedule" | "verified" | "folder_off" | "zoom_in" | "photo_camera"
   | "emoji_events" | "bolt" | "error_outline" | "report_problem" | "file_download"
   | "activity" | "gauge" | "ruler" | "hourglass" | "timer"
   | "history" | "key" | "account_box" | "power_settings_new" | "event_note" | "update" | "restore" | "layers" | "repeat"
@@ -157,6 +158,7 @@ const LUCIDE: Partial<Record<IconName, LucideIcon>> = {
   verified_user: ShieldCheck,
   view_timeline: GanttChart,
   visibility: Eye,
+  visibility_off: EyeOff,
   warning: TriangleAlert,
   web: Globe,
   schedule: Clock,

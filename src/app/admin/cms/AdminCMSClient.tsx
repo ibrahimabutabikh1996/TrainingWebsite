@@ -67,13 +67,39 @@ interface CropArea { x: number; y: number; width: number; height: number }
 
 const CMSContext = React.createContext<JsonRecord>({});
 
-const InputField = ({ label, fieldKey, isTextarea = false, forceDir }: { label: string, fieldKey: string, isTextarea?: boolean, forceDir?: "rtl" | "ltr" }) => {
+/** The content key that says whether a field's element is shown to visitors.
+ *  Same shape and same reading as the section switches — absent means shown, so
+ *  every field that has never been touched keeps behaving exactly as it did. */
+export const visibilityKey = (fieldKey: string) => `${fieldKey}_active`;
+
+const InputField = ({ label, fieldKey, isTextarea = false, forceDir, hideable = false }: { label: string, fieldKey: string, isTextarea?: boolean, forceDir?: "rtl" | "ltr", hideable?: boolean }) => {
   const { currentContent, setContent } = React.useContext(CMSContext);
   const defaultText = DEFAULT_TEXTS[fieldKey] || "";
+  const shown = currentContent[visibilityKey(fieldKey)] !== "false";
 
   return (
     <div className="cms-form-group">
-      <label className="cms-label">{label}</label>
+      {/* The label and, where the field may be turned off, the eye beside it.
+          `hideable` is opt-in rather than the default: this is one shared
+          component behind all 39 text fields, and switching them all on at once
+          would put a control on rows where hiding the element makes no sense —
+          a price with no figure, a card left with an empty body. The four Hero
+          rows carry it now; adding a fifth is one word on that row. */}
+      <div className="cms-label-row">
+        <label className="cms-label">{label}</label>
+        {hideable && (
+          <button
+            type="button"
+            className={`cms-visibility-toggle${shown ? "" : " is-hidden"}`}
+            onClick={() => setContent(visibilityKey(fieldKey), shown ? "false" : "true")}
+            aria-pressed={!shown}
+            title={shown ? "إخفاء هذا العنصر من الصفحة" : "إظهار هذا العنصر في الصفحة"}
+          >
+            <Icon name={shown ? "visibility" : "visibility_off"} />
+            <span>{shown ? "ظاهر" : "مخفي"}</span>
+          </button>
+        )}
+      </div>
       {isTextarea ? (
         <textarea
           value={currentContent[fieldKey] || ""}
@@ -1244,10 +1270,10 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
                 </h3>
                 <div className="cms-section-split">
                   <div className="cms-split-main">
-                    <InputField label="العنوان الرئيسي" fieldKey="hero_title" />
-                    <InputField label="العنوان الفرعي" fieldKey="hero_sub" isTextarea />
-                    <InputField label="اقتباس أو نص قصير" fieldKey="hero_quote" />
-                    <InputField label="نص الزر" fieldKey="hero_btn" />
+                    <InputField label="العنوان الرئيسي" fieldKey="hero_title" hideable />
+                    <InputField label="العنوان الفرعي" fieldKey="hero_sub" isTextarea hideable />
+                    <InputField label="اقتباس أو نص قصير" fieldKey="hero_quote" hideable />
+                    <InputField label="نص الزر" fieldKey="hero_btn" hideable />
                   </div>
                   <div className="cms-split-side">
                     <ImageUploadField label="صورة خلفية القسم" fieldKey="hero_bg_url" recommendedSize="1920x1080 (أفقية)" />

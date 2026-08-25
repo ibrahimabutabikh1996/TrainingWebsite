@@ -14,6 +14,24 @@ body {
     overflow-wrap: break-word;
 }
 
+/* `hidden` means hidden.
+   The attribute is a platform primitive, but the UA rule behind it is
+   `display: none` at the very bottom of the cascade — so any author rule that
+   sets a `display` silently defeats it, and the element stays on screen with no
+   sign of why. This project has already met that: `.price-was[hidden]` exists
+   solely because `.price-was` sets a `display` of its own.
+
+   `!important` is the only tool for it. There is no selector that can be
+   written here which beats an arbitrary `display` declared on an arbitrary
+   element later, so this is not a specificity fight over styling — it is the
+   platform behaviour restored, which is why every reset in circulation carries
+   this exact line. Verified a no-op for what already uses the attribute: the
+   only elements are the "before the discount" prices, which were already being
+   hidden correctly by their own rule. */
+[hidden] {
+    display: none !important;
+}
+
 /* Replaced media never outgrows its column.
    `:where()` keeps this at zero specificity, which is the whole point: every
    explicit size already in the stylesheets — `.coach-img { height: 400px }`,
