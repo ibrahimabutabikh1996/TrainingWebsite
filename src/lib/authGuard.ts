@@ -11,10 +11,13 @@
  * All three read the same signed cookie and go through the same verification,
  * so there is one definition of "signed in" and one of "is the coach".
  *
- * The middleware turns unauthenticated visitors away before any of this runs,
- * but it is a convenience, not the boundary: a route reached by any other path
- * still has to prove the caller for itself, which is why these calls sit inside
- * the handlers rather than only in `src/middleware.ts`.
+ * The proxy turns unauthenticated visitors away before any of this runs, but it
+ * is a convenience, not the boundary: a route reached by any other path still
+ * has to prove the caller for itself, which is why these calls sit inside the
+ * handlers rather than only in `src/proxy.ts`.
+ *
+ * That file is what older comments and Next's own older docs call `middleware`
+ * — Next 16 renamed the convention, and `src/middleware.ts` does not exist here.
  */
 
 import "server-only";

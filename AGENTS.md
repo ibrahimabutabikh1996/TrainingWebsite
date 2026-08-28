@@ -219,14 +219,21 @@ Headings larger than `--text-3xl` (landing hero, section titles, big statistics)
 
 # Typography
 
-Two variable fonts ship in `public/fonts`, self-hosted via `@font-face` in `globals.css`. There is no third font.
+**One variable font, Cairo.** It is self-hosted from `public/fonts/Cairo-Variable.woff2` through the single `@font-face` in `globals.css`, at weights 200–1000. There is no second font.
 
-* **Baloo 2** — `--font-primary`, `--font-display`, `--font-editorial`. Weights 100–900.
-* **Cairo** — `--font-arabic` / `--font-ar`. Weights 200–1000.
+This section used to describe two: Baloo 2 for Latin and Cairo for Arabic. Baloo is gone. It was 177 KB downloaded to be almost entirely unused, because the `:lang(ar)` rule below overrode it with Cairo on every page the site actually serves.
 
-Because the interface is Arabic, `:root:lang(ar)` remaps all three Latin variables to Cairo, and a `:lang(ar) *:not(.app-icon)` rule forces the Arabic face, zeroes letter-spacing, and enables tabular lining numerals. In practice **Cairo is what renders**; the display/editorial variables exist so an LTR build can differentiate later.
+All five font variables point at Cairo on bare `:root` — `--font-primary`, `--font-display`, `--font-editorial`, `--font-arabic`, `--font-ar`. The five names are kept because the stylesheets are written against them and because an LTR build could differentiate later; today they resolve to one family, so **which one you reach for changes nothing that renders**. `:root:lang(ar)` still remaps the three Latin names to `--font-arabic`, and `:lang(ar) *:not(.app-icon)` still forces the face, zeroes letter-spacing and enables tabular lining numerals. Both are no-ops for the family now and load-bearing for the numerals and spacing.
 
-Never hardcode a font stack. Use `var(--font-primary)` / `var(--font-display)`, or `font-family: inherit` inside a component.
+Never hardcode a font stack. Use `var(--font-primary)` / `var(--font-display)`, or `font-family: inherit` inside a component. **A file sitting in `public/fonts` is not a font you may use** — only a family with an `@font-face` rule is loadable, and naming any other resolves silently to the system face rather than failing. That directory has held unreferenced leftovers before, and pinning a component to one of them is a bug that renders as "this paragraph is in the wrong font" with nothing in the console to say why. Check `globals.css` for the rule before naming a family, not the directory listing.
+
+Three things in the font block exist for WebKit and must not be tidied away:
+
+* **The duplicated `src` entry.** The same file is announced twice, as `woff2-variations` and then as `woff2`. WebKit before Safari 14 will not use a variable font announced as plain `woff2`; nothing else recognises `woff2-variations`. Each engine matches the entry it understands and skips the other.
+* **The file name has no comma in it.** It was `Cairo-VariableFont_slnt,wght.woff2`, and a comma inside `url()` is the `src` property's own argument separator. Every engine that parsed it as one token was fine; nothing forces them to.
+* **The `slnt` axis is pinned.** `html { font-variation-settings: "slnt" 0 }`, and again as `inherit` on `input, textarea, select, button, optgroup, option` — the browser's `font` shorthand resets the property on form controls, so the pin stops at the edge of every field without it. Cairo's slant axis defaults to 0 and Chrome honours that for `font-style: normal`; WebKit does not, and drew the whole site leaning on iPhone. Measured on the device, not inferred.
+
+Relatedly, `em, i, cite, dfn, address, var` are reset to `font-style: normal`. With Cairo that italic is a real slant rather than the no-op it is in a face with no slanted cut, and these are the tags the coach can introduce from the content manager without touching CSS.
 
 ---
 

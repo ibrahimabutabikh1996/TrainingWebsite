@@ -12,8 +12,9 @@
  * and a few hundred trainees. The cost is that a token cannot be revoked before
  * it expires — see `SESSION_TTL_SECONDS` for how long that window is.
  *
- * Deliberately free of `next/headers`: the middleware runs on the Edge runtime
- * and imports this module, so everything here sticks to Web Crypto and the Web
+ * Deliberately free of `next/headers`: the proxy — `src/proxy.ts`, which is what
+ * Next 16 renamed the middleware convention to — runs on the Edge runtime and
+ * imports this module, so everything here sticks to Web Crypto and the Web
  * base64 helpers, both of which exist in Node and on the Edge alike. Reading and
  * writing the cookie itself lives in `@/lib/authGuard`, which is Node-only.
  */
