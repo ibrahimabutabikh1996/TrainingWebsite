@@ -479,6 +479,19 @@ html {
     font-variation-settings: "slnt" 0;
 }
 
+/* …and again for form controls, which do not receive it.
+ *
+ * The browser's own stylesheet gives inputs, buttons and selects the `font`
+ * shorthand, and that shorthand resets `font-variation-settings` to `normal` —
+ * so the pin above stops at the edge of every field. The site already says
+ * `font-family: inherit` on these in a dozen places for the same reason; this
+ * is the axis half of that. Measured before the fix: body carried "slnt" 0
+ * while input and button both read `normal`, and on iPhone the fields were the
+ * text still leaning. */
+input, textarea, select, button, optgroup, option {
+    font-variation-settings: inherit;
+}
+
 body {
     font-family: var(--font-primary);
 }
