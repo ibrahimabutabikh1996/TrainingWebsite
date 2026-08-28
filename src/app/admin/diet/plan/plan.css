@@ -181,7 +181,7 @@
 }
 
 .dplan-macro-val {
-  font-family: var(--font-display, 'Baloo 2', sans-serif);
+  font-family: var(--font-display, 'Cairo', sans-serif);
   font-size: var(--text-xl);
   line-height: 1;
   margin-bottom: 4px;

@@ -67,7 +67,7 @@ export default function ExportProfileClient({
         minHeight: "100vh",
         background: "#F5F2ED",
         color: "#050505",
-        fontFamily: "'Cairo', 'Baloo 2', sans-serif",
+        fontFamily: "'Cairo', sans-serif",
         direction: "rtl",
         padding: "40px 20px",
       }}

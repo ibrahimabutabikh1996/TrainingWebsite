@@ -195,11 +195,11 @@ html {
     --input-focus: var(--primary);
     --error-bg: rgba(248, 113, 113, 0.12);
     --success-bg: rgba(34, 197, 94, 0.12);
-    --font-primary: 'Baloo 2 Local', 'Baloo 2', sans-serif;
-    --font-display: 'Baloo 2 Local', 'Baloo 2', sans-serif;
-    --font-editorial: 'Baloo 2 Local', 'Baloo 2', sans-serif;
-    --font-arabic: 'Cairo Local', 'Cairo', sans-serif;
-    --font-ar: 'Cairo Local', 'Cairo', sans-serif;
+    --font-primary: 'Cairo', sans-serif;
+    --font-display: 'Cairo', sans-serif;
+    --font-editorial: 'Cairo', sans-serif;
+    --font-arabic: 'Cairo', sans-serif;
+    --font-ar: 'Cairo', sans-serif;
 }
 
 /* ==========================================================================
@@ -424,43 +424,43 @@ html {
     }
 }
 
-/* --- Global Typography System --- */
-@font-face {
-    font-family: 'Baloo 2 Local';
-    src: url('/fonts/Baloo2-VariableFont_wght.woff2') format('woff2');
-    font-weight: 100 900;
-    font-style: normal;
-    font-display: swap;
-}
-@font-face {
-    font-family: 'Baloo 2';
-    src: url('/fonts/Baloo2-VariableFont_wght.woff2') format('woff2');
-    font-weight: 100 900;
-    font-style: normal;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'Cairo Local';
-    src: url('/fonts/Cairo-VariableFont_slnt,wght.woff2') format('woff2');
-    font-weight: 200 1000;
-    font-style: normal;
-    font-display: swap;
-}
+/* --- Global Typography System ---
+ *
+ * One family, Cairo, for both scripts. The site used to load Baloo 2 for Latin
+ * and Cairo for Arabic, which is two variable fonts (320 KB) to draw one
+ * interface — and on an Arabic page the `:lang(ar)` rule below overrode Baloo
+ * with Cairo anyway, so the second file was downloaded to be almost entirely
+ * unused.
+ *
+ * Two things here exist for Safari, where the Arabic text was falling back to
+ * the system font while Chrome and Android were fine:
+ *
+ * The file name. It was `Cairo-VariableFont_slnt,wght.woff2` — a comma inside a
+ * url(), which is the argument separator of the `src` property itself. Every
+ * engine that parsed it as one token was fine; nothing forces them to. The name
+ * carries no information a reader needs, so it is gone.
+ *
+ * The two `src` entries, pointing at the same file. WebKit before Safari 14
+ * (iOS 13 and older) will not use a variable font announced as plain `woff2` —
+ * it wants `woff2-variations`, a format string that no current engine
+ * recognises. Announcing both, old first, means each browser matches the entry
+ * it understands and skips the other. `font-display: swap` keeps text readable
+ * while it loads either way. */
 @font-face {
     font-family: 'Cairo';
-    src: url('/fonts/Cairo-VariableFont_slnt,wght.woff2') format('woff2');
+    src: url('/fonts/Cairo-Variable.woff2') format('woff2-variations'),
+         url('/fonts/Cairo-Variable.woff2') format('woff2');
     font-weight: 200 1000;
     font-style: normal;
     font-display: swap;
 }
 
 :root {
-    --font-primary: 'Baloo 2 Local', 'Baloo 2', sans-serif;
-    --font-display: 'Baloo 2 Local', 'Baloo 2', sans-serif;
-    --font-editorial: 'Baloo 2 Local', 'Baloo 2', sans-serif;
-    --font-arabic: 'Cairo Local', 'Cairo', sans-serif;
-    --font-ar: 'Cairo Local', 'Cairo', sans-serif;
+    --font-primary: 'Cairo', sans-serif;
+    --font-display: 'Cairo', sans-serif;
+    --font-editorial: 'Cairo', sans-serif;
+    --font-arabic: 'Cairo', sans-serif;
+    --font-ar: 'Cairo', sans-serif;
 }
 
 body {

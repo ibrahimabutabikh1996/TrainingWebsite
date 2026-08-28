@@ -164,7 +164,8 @@ export default function ExportWorkoutClient({
           font-style: normal;
           font-weight: 200 1000;
           font-display: swap;
-          src: url('/fonts/Cairo-VariableFont_slnt,wght.woff2') format('woff2');
+          src: url('/fonts/Cairo-Variable.woff2') format('woff2-variations'),
+               url('/fonts/Cairo-Variable.woff2') format('woff2');
         }
 
         * {
