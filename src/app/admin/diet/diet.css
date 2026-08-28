@@ -374,9 +374,14 @@
   line-height: var(--leading-snug);
   word-wrap: break-word;
   overflow-wrap: break-word;
-  /* Was pinned to 'Amiri' — a font this project no longer ships, so it silently
-     fell through to DM Sans and rendered Arabic in a different face from every
-     other heading. */
+  /* Both of these were pinned to 'Amiri', 'DM Sans' — two families this project
+     does not declare. Neither has an @font-face rule, so the stack fell all the
+     way through to the system sans and drew this card in a different face from
+     every other one in the panel.
+
+     The heading was corrected on its own once, and the paragraph three rules
+     below was left holding the identical pin. They are fixed together here for
+     that reason: the defect was the stack, not the element. */
   font-family: var(--font-primary);
   transition: color var(--dur) var(--ease);
 }
@@ -391,12 +396,14 @@
   color: var(--text-muted);
   line-height: var(--leading-snug);
   word-wrap: break-word;
-  font-family: 'Amiri', 'DM Sans', sans-serif;
-  transition: color 0.25s ease;
+  font-family: var(--font-primary);
+  transition: color var(--dur) var(--ease);
 }
 
 .diet-card-minimal:hover .diet-card-minimal-text p {
-  color: var(--text-secondary, #9A9490);
+  /* The token is defined on :root and always resolves; the literal fallback it
+     carried was an off-palette grey that nothing else in the system uses. */
+  color: var(--text-secondary);
 }
 
 .diet-card-minimal-actions {
@@ -413,7 +420,7 @@
   border-radius: var(--radius-sm);
   background: transparent;
   border: 1px solid transparent;
-  color: var(--text-muted, #6B6560);
+  color: var(--text-muted);
   display: flex;
   align-items: center;
   justify-content: center;

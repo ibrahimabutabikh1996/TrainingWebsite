@@ -77,7 +77,7 @@ export default function DashboardPage() {
   if (error || !profile) {
     return (
       <div className="dashboard-page" style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh" }}>
-        <p style={{ fontSize: "1.1rem", fontWeight: 500, color: "var(--error)" }}>{error || "لم يتم العثور على الملف"}</p>
+        <p style={{ fontSize: "1.1rem", fontWeight: 500, color: "var(--error-text)" }}>{error || "لم يتم العثور على الملف"}</p>
       </div>
     );
   }
@@ -313,13 +313,13 @@ export default function DashboardPage() {
             and in both cases the trainee needs to know their form arrived. */}
         {renewalPending && (
           <div style={{
-            background: "linear-gradient(135deg, color-mix(in srgb, #F59E0B 16%, var(--bg2)), var(--bg2))",
-            border: "1px solid color-mix(in srgb, #F59E0B 45%, var(--border))",
-            borderInlineStart: "5px solid #F59E0B",
+            background: "linear-gradient(135deg, color-mix(in srgb, var(--warning) 16%, var(--bg2)), var(--bg2))",
+            border: "1px solid color-mix(in srgb, var(--warning) 45%, var(--border))",
+            borderInlineStart: "5px solid var(--warning)",
             borderRadius: "var(--radius-xl)",
             padding: "24px 28px",
             marginBottom: "28px",
-            boxShadow: "0 8px 32px color-mix(in srgb, #F59E0B 12%, rgba(0, 0, 0, 0.35))",
+            boxShadow: "0 8px 32px color-mix(in srgb, var(--warning) 12%, rgba(0, 0, 0, 0.35))",
             display: "flex",
             alignItems: "flex-start",
             gap: "18px",
@@ -329,8 +329,8 @@ export default function DashboardPage() {
               width: "52px",
               height: "52px",
               borderRadius: "var(--radius-xl)",
-              background: "color-mix(in srgb, #F59E0B 20%, var(--bg3))",
-              color: "#F59E0B",
+              background: "color-mix(in srgb, var(--warning) 20%, var(--bg3))",
+              color: "var(--warning-text)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -343,7 +343,7 @@ export default function DashboardPage() {
               <h3 style={{ margin: "0 0 8px 0", fontSize: "1.3rem", fontWeight: 800, color: "var(--text)", display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
                 <span>طلب التجديد قيد المراجعة</span>
                 {typeof renewalRequestedMonth === "number" && (
-                  <span style={{ fontSize: "0.78rem", background: "#F59E0B", color: "#1a1a1a", padding: "3px 10px", borderRadius: "var(--radius-pill)", fontWeight: 800 }}>
+                  <span style={{ fontSize: "0.78rem", background: "var(--warning)", color: "var(--text-inverse)", padding: "3px 10px", borderRadius: "var(--radius-pill)", fontWeight: 800 }}>
                     الشهر {renewalRequestedMonth}
                   </span>
                 )}
@@ -364,13 +364,13 @@ export default function DashboardPage() {
             submission and a button that cannot work is worse than no button. */}
         {isSubscriptionExpired && (
           <div style={{
-            background: "linear-gradient(135deg, color-mix(in srgb, #EF4444 16%, var(--bg2)), var(--bg2))",
-            border: "1px solid color-mix(in srgb, #EF4444 45%, var(--border))",
-            borderInlineStart: "5px solid #EF4444",
+            background: "linear-gradient(135deg, color-mix(in srgb, var(--error) 16%, var(--bg2)), var(--bg2))",
+            border: "1px solid color-mix(in srgb, var(--error) 45%, var(--border))",
+            borderInlineStart: "5px solid var(--error)",
             borderRadius: "var(--radius-xl)",
             padding: "24px 28px",
             marginBottom: "28px",
-            boxShadow: "0 8px 32px color-mix(in srgb, #EF4444 12%, rgba(0, 0, 0, 0.35))",
+            boxShadow: "0 8px 32px color-mix(in srgb, var(--error) 12%, rgba(0, 0, 0, 0.35))",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
@@ -382,21 +382,21 @@ export default function DashboardPage() {
                 width: "52px",
                 height: "52px",
                 borderRadius: "var(--radius-xl)",
-                background: "color-mix(in srgb, #EF4444 20%, var(--bg3))",
-                color: "#EF4444",
+                background: "color-mix(in srgb, var(--error) 20%, var(--bg3))",
+                color: "var(--error-text)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 fontSize: "30px",
                 flexShrink: 0,
-                boxShadow: "0 4px 14px color-mix(in srgb, #EF4444 25%, transparent)"
+                boxShadow: "0 4px 14px color-mix(in srgb, var(--error) 25%, transparent)"
               }}>
                 <Icon name="lock" />
               </div>
               <div>
                 <h3 style={{ margin: "0 0 8px 0", fontSize: "1.35rem", fontWeight: 800, color: "var(--text)", display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
                   <span>انتهت صلاحية اشتراكك الحالي</span>
-                  <span style={{ fontSize: "0.78rem", background: "#EF4444", color: "#fff", padding: "3px 10px", borderRadius: "var(--radius-pill)", fontWeight: 700 }}>وضع المعاينة فقط (View Only)</span>
+                  <span style={{ fontSize: "0.78rem", background: "var(--error)", color: "var(--text-inverse)", padding: "3px 10px", borderRadius: "var(--radius-pill)", fontWeight: 700 }}>وضع المعاينة فقط (View Only)</span>
                 </h3>
                 <p style={{ margin: "0", fontSize: "0.98rem", color: "var(--text-muted)", lineHeight: 1.65 }}>
                   لقد وصلت إلى نهاية فترة اشتراكك التدريبي (30 يوماً). جميع التمارين، الأوزان، والجداول متاحة الآن <b>للمعاينة والمراجعة فقط</b> ولا يمكن التعديل عليها أو إضافة أرقام جديدة. لاستكمال تدريبك والحصول على خطة جديدة، يُرجى تجديد الاشتراك.
@@ -412,8 +412,8 @@ export default function DashboardPage() {
                   padding: "14px 24px",
                   borderRadius: "var(--radius-lg)",
                   background: "var(--bg3)",
-                  border: "1px dashed color-mix(in srgb, #F59E0B 55%, var(--border))",
-                  color: "#F59E0B",
+                  border: "1px dashed color-mix(in srgb, var(--warning) 55%, var(--border))",
+                  color: "var(--warning-text)",
                   fontWeight: 800,
                   fontSize: "0.98rem"
                 }}>
@@ -425,8 +425,8 @@ export default function DashboardPage() {
                 href={`/form?renew=true&profileId=${profile.id}`}
                 className="dash-primary-btn"
                 style={{
-                  background: "#EF4444",
-                  color: "#FFFFFF",
+                  background: "var(--error)",
+                  color: "var(--text-inverse)",
                   padding: "14px 28px",
                   fontSize: "1.05rem",
                   fontWeight: 800,
@@ -435,7 +435,7 @@ export default function DashboardPage() {
                   display: "inline-flex",
                   alignItems: "center",
                   gap: "10px",
-                  boxShadow: "0 6px 24px color-mix(in srgb, #EF4444 45%, transparent)"
+                  boxShadow: "0 6px 24px color-mix(in srgb, var(--error) 45%, transparent)"
                 }}
               >
                 <Icon name="lock_reset" style={{ fontSize: "24px" }} />
@@ -508,11 +508,11 @@ export default function DashboardPage() {
                         تاريخ الاشتراك: {profile.created_at ? formatDate(new Date(profile.created_at)) : "مسجل"}
                       </span>
                       {isSubscriptionExpired ? (
-                        <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: "0.85rem", fontWeight: "700", color: "var(--error, #EF4444)", background: "color-mix(in srgb, var(--error, #EF4444) 15%, transparent)", padding: "4px 12px", borderRadius: "var(--radius-pill)" }}>
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: "0.85rem", fontWeight: "700", color: "var(--error-text)", background: "color-mix(in srgb, var(--error) 15%, transparent)", padding: "4px 12px", borderRadius: "var(--radius-pill)" }}>
                           <Icon name="warning" style={{ fontSize: "14px" }} /> منتهي الصلاحية (معاينة فقط)
                         </span>
                       ) : (
-                        <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: "0.85rem", fontWeight: "700", color: "var(--success, #10b981)", background: "color-mix(in srgb, var(--success, #10b981) 15%, transparent)", padding: "4px 12px", borderRadius: "var(--radius-pill)" }}>
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: "0.85rem", fontWeight: "700", color: "var(--success-text)", background: "color-mix(in srgb, var(--success) 15%, transparent)", padding: "4px 12px", borderRadius: "var(--radius-pill)" }}>
                           <Icon name="check_circle" style={{ fontSize: "14px" }} /> الحساب فعال
                         </span>
                       )}
