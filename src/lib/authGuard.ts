@@ -353,8 +353,18 @@ export async function startSession(
     maxAge: ttl,
   });
 
-  /* Readable by script, and worth nothing on its own — see USER_HINT_COOKIE. */
-  store.set(USER_HINT_COOKIE, encodeURIComponent(account.username), {
+  /* Readable by script, and worth nothing on its own — see USER_HINT_COOKIE.
+   *
+   * The value goes in raw: Next's cookie serializer percent-encodes it on the
+   * way out, and `@/lib/clientSession` decodes once on the way in. Encoding it
+   * here as well stored the coach's name as `...%2540gmail.com`, which decoded
+   * back to `...%40gmail.com` and matched no entry in `ADMIN_USERNAMES`. The
+   * session itself was unaffected — it carries the username in the signed token
+   * — so the coach reached /admin at sign-in and every screen that asked the
+   * browser who they were got a stranger: the landing page's panel link and the
+   * password screen's back link both pointed at the trainee dashboard, and
+   * `/dashboard` no longer bounced them to their own panel. */
+  store.set(USER_HINT_COOKIE, account.username, {
     httpOnly: false,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",

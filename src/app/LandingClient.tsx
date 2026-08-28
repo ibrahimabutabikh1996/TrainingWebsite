@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { getLandingContent } from "./admin/cms/actions";
 import { useAuth } from "@/hooks/useAuth";
-import { useCurrentUsername } from "@/lib/clientSession";
+import { isAdminUsername, useCurrentUsername } from "@/lib/clientSession";
 import { RICH_TEXT_KEYS, safeMediaUrl, setRichText, setText } from "@/lib/richText";
 import { optimizedCssUrl, optimizedSrc, optimizedSrcSet } from "@/lib/imageOptim";
 import { useParallax } from "@/hooks/useParallax";
@@ -265,6 +265,14 @@ export default function LandingClient({
      itself, which is a conditional hook. */
   const currentUsername = useCurrentUsername();
   const isLoggedIn = !isPreview && currentUsername !== null;
+
+  /* The coach's panel lives at /admin, the trainee's at /dashboard, and this
+     link used to name the second one for everybody. A signed-in coach clicking
+     it landed on the trainee dashboard — the proxy has no reason to turn them
+     away from it, so the wrong screen simply opened. Which panel to draw is a
+     drawing decision, which is exactly what the username hint is for; the
+     server still decides what either screen may show. */
+  const panelHref = isAdminUsername(currentUsername) ? "/admin" : "/dashboard";
 
   /* Nothing on a preview may be operated — see @/hooks/usePreviewGuard, which
      is where the effect that used to do this below now lives. The second
@@ -887,7 +895,7 @@ export default function LandingClient({
                 style={{ display: "flex", gap: "8px", flexDirection: "column" }}
               >
                 <Link
-                  href="/dashboard"
+                  href={panelHref}
                   className="nav-cta"
                   style={{
                     background: "transparent",
@@ -914,7 +922,7 @@ export default function LandingClient({
           {isLoggedIn ? (
             <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
               <Link
-                href="/dashboard"
+                href={panelHref}
                 className="nav-cta"
                 style={{
                   background: "transparent",
@@ -1003,7 +1011,7 @@ export default function LandingClient({
             <div className="hero-btns">
               {isLoggedIn ? (
                 <>
-                  <Link href="/dashboard" className="btn-secondary">
+                  <Link href={panelHref} className="btn-secondary">
                     الانتقال الى لوحة التحكم
                   </Link>
                   <button onClick={handleLogout} className="btn-primary">
