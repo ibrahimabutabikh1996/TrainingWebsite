@@ -1,0 +1,124 @@
+/* The two screens a visitor sees when something has gone wrong.
+ *
+ * Shared by `not-found.tsx`, `error.tsx` and `global-error.tsx`, because the
+ * three say different things in the same shape and the alternative is the same
+ * forty lines written three times.
+ *
+ * A stylesheet rather than a `<style>` block on the element: `loading.tsx` does
+ * it the other way and that is fine for one file, but three of them would be
+ * three copies of the same rules with nothing keeping them in step.
+ */
+
+.boundary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  /* The viewport unit that accounts for a phone's collapsing address bar, where
+     100vh is taller than the screen and pushes the button under the chrome. */
+  min-height: 100dvh;
+  width: 100%;
+  padding: var(--space-6);
+  /* Painted explicitly. `global-error.tsx` replaces the root layout, so nothing
+     else has set a background by the time this renders. */
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-primary);
+}
+
+.boundary-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-5);
+  max-width: 30rem;
+}
+
+.boundary-logo {
+  width: 120px;
+  height: auto;
+  opacity: 0.85;
+}
+
+/* The status, as a figure. Large enough to read as the subject of the page and
+   quiet enough not to shout — it is information, not an alarm. */
+.boundary-code {
+  margin: 0;
+  font-size: clamp(3rem, 12vw, 4.5rem);
+  font-weight: var(--weight-bold);
+  line-height: 1;
+  color: var(--primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.boundary-title {
+  margin: 0;
+  font-size: var(--text-xl);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+  color: var(--text);
+  text-wrap: balance;
+}
+
+.boundary-text {
+  margin: 0;
+  font-size: var(--text-base);
+  line-height: var(--leading-relaxed);
+  color: var(--text-secondary);
+}
+
+/* The reference a person can quote when they report this. Latin characters and
+   digits inside Arabic copy, so it carries its own direction. */
+.boundary-digest {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  direction: ltr;
+  unicode-bidi: isolate;
+  word-break: break-all;
+}
+
+.boundary-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  justify-content: center;
+  margin-block-start: var(--space-2);
+}
+
+.boundary-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-6);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--primary);
+  background: var(--primary);
+  color: var(--text-inverse);
+  font-family: inherit;
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+
+.boundary-btn:hover {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+}
+
+/* The quieter of the two, so the pair reads as one primary action and one way
+   out rather than as two equal choices. */
+.boundary-btn--ghost {
+  background: var(--primary-dim);
+  border-color: var(--border-primary);
+  color: var(--primary-on-tint);
+}
+
+.boundary-btn--ghost:hover {
+  background: color-mix(in srgb, var(--primary) 16%, transparent);
+  border-color: var(--primary);
+}

@@ -55,6 +55,7 @@ const eslintConfig = defineConfig([
       "src/components/form/Fields.tsx",
       // Brand marks on loading screens and page chrome
       "src/app/loading.tsx",
+      "src/app/not-found.tsx",
       "src/app/admin/loading.tsx",
       "src/app/admin/layout.tsx",
       "src/app/dashboard/page.tsx",
@@ -66,6 +67,21 @@ const eslintConfig = defineConfig([
       "src/components/auth/LoginScreen.tsx",
     ],
     rules: { "@next/next/no-img-element": "off" },
+  },
+
+  /* The one place a plain <a> to an internal route is the right element.
+   *
+   * `global-error.tsx` renders when the root layout itself threw, and it
+   * replaces the whole document — its own <html> and <body>. `<Link>` performs
+   * a client-side navigation through the router that lives in the tree which
+   * has just failed, which is the one route out of here that cannot be relied
+   * on. A plain anchor asks the server for a fresh document instead, and a
+   * fresh document is exactly the recovery this screen is offering.
+   *
+   * Scoped to the single file on purpose: everywhere else, the rule is right. */
+  {
+    files: ["src/app/global-error.tsx"],
+    rules: { "@next/next/no-html-link-for-pages": "off" },
   },
 
   /* Four places read something that only exists in the browser — saved
