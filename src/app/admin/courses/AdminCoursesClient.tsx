@@ -505,7 +505,7 @@ export default function AdminCoursesClient({
 
                       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                         {!day.exercises || day.exercises.length === 0 ? (
-                          <div style={{ color: "var(--admin-outline)", fontSize: "0.85rem", fontStyle: "italic", padding: "6px 0" }}>
+                          <div style={{ color: "var(--admin-outline)", fontSize: "0.85rem", padding: "6px 0" }}>
                             لا توجد تمارين مضافة في هذا اليوم.
                           </div>
                         ) : (

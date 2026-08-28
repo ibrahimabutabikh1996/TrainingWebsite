@@ -645,7 +645,10 @@ body::before {
 }
 .hero-quote {
   font-family: var(--font-editorial);
-  font-style: italic;
+  /* Upright. Cairo carries a real `slnt` axis, so `italic` here was not the
+     no-op it is with a font that has no slanted cut — the coach's motto leaned,
+     and Arabic has no italic to lean into. The quotation marks in ::before and
+     the lighter colour already set this line apart from the copy around it. */
   font-size: clamp(16px, 2vw, 21px);
   color: rgba(248, 250, 252, 0.65);
   max-width: 520px;
@@ -1610,7 +1613,8 @@ body::before {
   font-size: var(--text-md);
   color: var(--text);
   line-height: 1.8;
-  font-style: italic;
+  /* Same reason as .hero-quote: these are Arabic testimonials, and a slanted
+     Arabic face is a Latin convention borrowed onto a script that has none. */
 }
 .testimonial-author {
   display: flex;
