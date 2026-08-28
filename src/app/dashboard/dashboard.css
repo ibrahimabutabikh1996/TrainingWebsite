@@ -543,6 +543,9 @@
   border-radius: var(--radius-pill);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15), 0 0 0 1px color-mix(in srgb, var(--primary) 10%, transparent);
   z-index: 100;
+  /* The bar holds two children now — the brand and the tab row — and the phone
+     rule below has always set a gap for them. This is its desktop counterpart. */
+  gap: 12px;
 }
 
 .dash-brand-header {
@@ -551,11 +554,22 @@
 }
 
 .dash-collapsed-logo-tile {
-  width: 52px;
+  /* Wider than tall, because the mark is: mainLogo.png is 2048x824, and the
+     square this rule used to describe drew it 36px across and 14px high — a
+     smear at the end of the bar. The tile keeps the tabs' height and takes the
+     width the emblem needs to reach its 26px cap. */
+  width: 84px;
   height: 52px;
+  padding: 0 8px;
+  /* The tab row beside it is `width: 100%`, which would otherwise take this
+     tile's width off it on the narrowest screens. */
+  flex: none;
   border-radius: var(--radius-md);
-  background: var(--primary-dim);
-  border: 1px solid var(--border-primary);
+  /* Not the primary tint the active tab wears: this is a link back to the
+     public site, and dressing it like the selected tab reads as a fifth tab
+     that is somehow always on. Neutral until hovered. */
+  background: transparent;
+  border: 1px solid var(--border);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -661,8 +675,9 @@
     height: var(--tap-min);
   }
   .dash-collapsed-logo-tile {
-    width: var(--tap-min);
+    width: 72px;
     height: var(--tap-min);
+    padding: 0 6px;
   }
   .dash-nav-link .app-icon, .dash-logout-btn .app-icon {
     font-size: 22px;

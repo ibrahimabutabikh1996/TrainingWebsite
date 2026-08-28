@@ -188,6 +188,29 @@ export default function DashboardPage() {
       {/* Bottom Navbar */}
       <nav className="dash-bottom-nav">
 
+        {/* The brand, and the way back to the public site — first in source, so
+            in RTL it sits at the right end of the pill, where the panel's own
+            logo sits. The square mark rather than the horizontal lockup: this
+            bar is a centred pill sized to its contents, and a 200px wordmark
+            inside it would pull the icon row off centre on every screen.
+            `.dash-brand-header` and `.dash-collapsed-logo-tile` were already in
+            dashboard.css, phone size and all, with nothing rendering them. */}
+        <Link
+          href="/"
+          title="العودة للصفحة الرئيسية"
+          className="dash-brand-header dash-collapsed-logo-tile"
+          aria-label="العودة للصفحة الرئيسية"
+        >
+          <img
+            src={optimizedSrc("/images/logo/mainLogo.png", 96)}
+            srcSet={optimizedSrcSet("/images/logo/mainLogo.png", [96, 128])}
+            sizes="84px"
+            alt="Ibrahim Abutabikh"
+            decoding="async"
+            style={{ width: "100%", height: "auto", maxHeight: "26px", objectFit: "contain", display: "block" }}
+          />
+        </Link>
+
         {/* Center Nav Links */}
         <div className="dash-nav-container" style={{ width: "100%", justifyContent: "space-around", maxWidth: "500px", margin: "0 auto" }}>
           {tabs.map((tab) => {
