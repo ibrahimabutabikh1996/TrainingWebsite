@@ -38,7 +38,7 @@ export async function GET(request: Request) {
 
     if (!profile) {
       return NextResponse.json(
-        { error: "لم يتم العثور على ملف الكابتن لهذا المستخدم" },
+        { error: "لم يتم العثور على بيانات المتدرب" },
         { status: 404 }
       );
     }

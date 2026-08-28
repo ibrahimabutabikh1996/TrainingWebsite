@@ -19,5 +19,7 @@
 export const ADMIN_USERNAMES: readonly string[] = ["admin", "mkm94admin", "ibrahimabutabikh1996@gmail.com"];
 
 export function isAdminUsername(username: string | null | undefined): boolean {
-  return typeof username === "string" && ADMIN_USERNAMES.includes(username);
+  if (typeof username !== "string") return false;
+  const lower = username.toLowerCase();
+  return ADMIN_USERNAMES.some(u => u.toLowerCase() === lower);
 }
