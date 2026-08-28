@@ -463,8 +463,34 @@ html {
     --font-ar: 'Cairo', sans-serif;
 }
 
+/* Pin the slant axis, for WebKit.
+ *
+ * Cairo is a variable font with two axes, `wght` and `slnt`, and `slnt`
+ * defaults to 0 — upright. Chrome and Chrome on Android honour that and hold
+ * the axis at 0 for `font-style: normal`; WebKit does not, and drew the whole
+ * site leaning on iPhone while every other device was fine. Measured on the
+ * device: the same file, declared the same way, renders upright there only when
+ * the axis is named.
+ *
+ * `font-variation-settings` inherits, so declaring it once here reaches every
+ * element. Naming `slnt` alone leaves `wght` where it was — driven by
+ * `font-weight`, so headings stay heavy and captions stay light. */
+html {
+    font-variation-settings: "slnt" 0;
+}
+
 body {
     font-family: var(--font-primary);
+}
+
+/* The browser's own stylesheet italicises these, and with Cairo that is a real
+   slant rather than the no-op it is in a face with no slanted cut. The site's
+   own italics were removed for that reason; these are the ones the coach can
+   introduce without touching CSS — an <em> typed into the content manager, or
+   markup pasted into a testimonial. `.hero-content h1 em` already did this for
+   the one <em> the page ships with; the rest of them needed saying too. */
+em, i, cite, dfn, address, var {
+    font-style: normal;
 }
 
 html:lang(ar) body, html:lang(ar) {
