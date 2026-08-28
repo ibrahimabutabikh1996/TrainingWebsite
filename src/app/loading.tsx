@@ -22,7 +22,7 @@ export default function Loading() {
           justify-content: center;
           min-height: 100vh;
           width: 100%;
-          background-color: var(--background, #0A121A);
+          background-color: var(--background);
           font-family: 'Cairo', sans-serif;
         }
 
@@ -34,7 +34,7 @@ export default function Loading() {
         }
 
         .loading-text {
-          color: var(--primary, #60A5FA);
+          color: var(--primary);
           font-size: 1.5rem;
           letter-spacing: 1px;
           animation: pulse-text 2s ease-in-out infinite;

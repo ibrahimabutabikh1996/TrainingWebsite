@@ -939,7 +939,7 @@
 
 .form-page .gate-note {
   margin: 10px 0 0;
-  color: var(--text-muted, var(--text-secondary));
+  color: var(--text-muted);
   font-size: 0.82rem;
   text-align: center;
 }

@@ -388,7 +388,7 @@ html {
     --admin-primary: var(--primary);
     --admin-on-surface: var(--text);
     --admin-outline: var(--muted2);
-    --admin-error: var(--error, #ef4444);
+    --admin-error: var(--error);
 
     --admin-bg: var(--bg);
     --admin-bg-2: var(--bg2);

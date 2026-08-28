@@ -207,9 +207,9 @@ export function normalizeFoodCategory(category?: string): string {
 
 export function getCategoryBadge(category: string): { icon: IconName; image: string; color: string; bg: string; border: string; label: string } {
   const monoStyle = {
-    color: "var(--mono-icon-color, #FFFFFF)",
-    bg: "color-mix(in srgb, var(--mono-icon-color, #FFFFFF) 8%, transparent)",
-    border: "color-mix(in srgb, var(--mono-icon-color, #FFFFFF) 22%, transparent)",
+    color: "var(--mono-icon-color)",
+    bg: "color-mix(in srgb, var(--mono-icon-color) 8%, transparent)",
+    border: "color-mix(in srgb, var(--mono-icon-color) 22%, transparent)",
   };
   switch (category) {
     case "مصادر البروتين":

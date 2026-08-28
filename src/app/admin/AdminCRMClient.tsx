@@ -287,7 +287,7 @@ export default function AdminCRMClient({
                 onClick={() => setShowNotifications(true)}
                 style={{ position: "relative", background: "var(--bg3)", padding: "12px", borderRadius: "var(--radius-lg)", border: "1px solid var(--border)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
               >
-                <Icon name="notifications_active" style={{ fontSize: "24px", color: "var(--warning)" }} />
+                <Icon name="notifications_active" style={{ fontSize: "24px", color: "var(--warning-text)" }} />
                 {updateNotifications.length > 0 && (
                   <span style={{ position: "absolute", top: "-6px", insetInlineEnd: "-6px", background: "var(--error)", color: "var(--text-inverse)", fontSize: "0.75rem", fontWeight: "bold", width: "22px", height: "22px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>
                     {updateNotifications.length}
@@ -302,11 +302,11 @@ export default function AdminCRMClient({
           </div>
 
           {showNotifications && (
-            <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "var(--overlay-scrim, rgba(0,0,0,0.6))", backdropFilter: "blur(4px)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
+            <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "var(--overlay-scrim)", backdropFilter: "blur(4px)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
               <div style={{ background: "var(--bg2)", borderRadius: "var(--radius-xl)", width: "100%", maxWidth: "600px", maxHeight: "80vh", display: "flex", flexDirection: "column", boxShadow: "var(--elev-3)", border: "1px solid var(--border)" }}>
                 <div style={{ padding: "20px", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <h3 style={{ margin: 0, color: "var(--text)", display: "flex", alignItems: "center", gap: "8px" }}>
-                    <Icon name="notifications_active" style={{ color: "var(--warning)" }} />
+                    <Icon name="notifications_active" style={{ color: "var(--warning-text)" }} />
                     تنبيهات بتحديث الأنظمة
                   </h3>
                   <button onClick={() => setShowNotifications(false)} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", padding: "4px", display: "flex", alignItems: "center" }}>
@@ -425,7 +425,7 @@ export default function AdminCRMClient({
                            as a stranger — which is the one thing this flow must
                            never do. */
                         <div
-                          style={{ position: 'absolute', top: -2, insetInlineEnd: -2, width: 12, height: 12, background: data.is_renewal ? '#F59E0B' : 'var(--error)', borderRadius: '50%', border: '2px solid var(--bg2)' }}
+                          style={{ position: 'absolute', top: -2, insetInlineEnd: -2, width: 12, height: 12, background: data.is_renewal ? 'var(--warning)' : 'var(--error)', borderRadius: '50%', border: '2px solid var(--bg2)' }}
                           title={data.is_renewal ? "طلب تجديد اشتراك" : "مشترك جديد"}
                         ></div>
                       )}
@@ -444,7 +444,7 @@ export default function AdminCRMClient({
                       {data.renewal_pending === true && (
                         <span
                           className="crm-tag"
-                          style={{ background: "color-mix(in srgb, #F59E0B 20%, var(--bg3))", color: "#F59E0B", border: "1px solid color-mix(in srgb, #F59E0B 45%, var(--border))", fontWeight: 800 }}
+                          style={{ background: "color-mix(in srgb, var(--warning) 20%, var(--bg3))", color: "var(--warning-text)", border: "1px solid color-mix(in srgb, var(--warning) 45%, var(--border))", fontWeight: 800 }}
                           title="أرسل طلب تجديد وينتظر موافقتك"
                         >
                           تجديد بانتظار المراجعة

@@ -673,7 +673,7 @@ export default function AdminBuilderClient({
               onClick={confirmDeleteDay}
               style={{
                 background: "var(--error)",
-                color: "#fff",
+                color: "var(--text-inverse)",
                 border: "none",
                 padding: "10px 24px",
                 borderRadius: "var(--radius-md)",

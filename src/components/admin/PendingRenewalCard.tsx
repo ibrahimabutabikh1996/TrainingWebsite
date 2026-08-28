@@ -105,9 +105,9 @@ export default function PendingRenewalCard({ profileId, data, planNames }: Props
     <div
       className="crm-modal-section"
       style={{
-        background: "linear-gradient(135deg, color-mix(in srgb, #F59E0B 14%, var(--bg2)), var(--bg2))",
-        border: "1px solid color-mix(in srgb, #F59E0B 45%, var(--border))",
-        borderInlineStart: "5px solid #F59E0B",
+        background: "linear-gradient(135deg, color-mix(in srgb, var(--warning) 14%, var(--bg2)), var(--bg2))",
+        border: "1px solid color-mix(in srgb, var(--warning) 45%, var(--border))",
+        borderInlineStart: "5px solid var(--warning)",
         borderRadius: "var(--radius-xl)",
         padding: "24px 28px",
         display: "flex",
@@ -121,8 +121,8 @@ export default function PendingRenewalCard({ profileId, data, planNames }: Props
             width: "52px",
             height: "52px",
             borderRadius: "var(--radius-xl)",
-            background: "color-mix(in srgb, #F59E0B 22%, var(--bg3))",
-            color: "#F59E0B",
+            background: "color-mix(in srgb, var(--warning) 22%, var(--bg3))",
+            color: "var(--warning-text)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -149,7 +149,7 @@ export default function PendingRenewalCard({ profileId, data, planNames }: Props
               <span
                 style={{
                   fontSize: "0.78rem",
-                  background: "#F59E0B",
+                  background: "var(--warning)",
                   color: "#1a1a1a",
                   padding: "3px 10px",
                   borderRadius: "var(--radius-pill)",
@@ -242,7 +242,7 @@ export default function PendingRenewalCard({ profileId, data, planNames }: Props
               onClick={approve}
               disabled={busy}
               className="crm-btn-primary"
-              style={{ padding: "12px 22px", fontSize: "0.95rem", background: "#10B981", border: "none", color: "#fff" }}
+              style={{ padding: "12px 22px", fontSize: "0.95rem", background: "var(--success)", border: "none", color: "var(--text-inverse)" }}
             >
               <Icon name="check_circle" style={{ fontSize: 20 }} />
               <span>{busy ? "جارٍ التجديد..." : "تأكيد — أضف الشهر"}</span>
@@ -264,7 +264,7 @@ export default function PendingRenewalCard({ profileId, data, planNames }: Props
               onClick={reject}
               disabled={busy}
               className="crm-btn-primary"
-              style={{ padding: "12px 22px", fontSize: "0.95rem", background: "var(--error, #ef4444)", border: "none", color: "#fff" }}
+              style={{ padding: "12px 22px", fontSize: "0.95rem", background: "var(--error)", border: "none", color: "var(--text-inverse)" }}
             >
               <Icon name="block" style={{ fontSize: 20 }} />
               <span>{busy ? "جارٍ الرفض..." : "تأكيد الرفض"}</span>
@@ -286,7 +286,7 @@ export default function PendingRenewalCard({ profileId, data, planNames }: Props
               onClick={() => setArmed("approve")}
               disabled={busy}
               className="crm-btn-primary"
-              style={{ padding: "12px 24px", fontSize: "0.98rem", fontWeight: 800, background: "#10B981", border: "none", color: "#fff" }}
+              style={{ padding: "12px 24px", fontSize: "0.98rem", fontWeight: 800, background: "var(--success)", border: "none", color: "var(--text-inverse)" }}
             >
               <Icon name="verified" style={{ fontSize: 20 }} />
               <span>موافقة وتجديد الاشتراك</span>

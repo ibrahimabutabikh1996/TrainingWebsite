@@ -136,7 +136,7 @@ export const PromotionalPopup: React.FC<PromotionalPopupProps> = ({
           {endDate && (
             <div className="promo-popup-timer">
               {isExpired ? (
-                <div style={{ color: "var(--error)", fontWeight: "bold" }}>انتهى العرض</div>
+                <div style={{ color: "var(--error-text)", fontWeight: "bold" }}>انتهى العرض</div>
               ) : timeLeft ? (
                 <>
                   <div className="promo-timer-box">

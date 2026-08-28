@@ -817,7 +817,7 @@
 }
 
 .home-workout-counter .num {
-  font-family: var(--font-display, inherit);
+  font-family: var(--font-display);
   font-size: 3rem;
   font-weight: var(--weight-bold);
   line-height: 1;

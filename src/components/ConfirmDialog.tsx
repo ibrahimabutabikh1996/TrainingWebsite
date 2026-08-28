@@ -59,7 +59,7 @@ export function ConfirmDialog() {
             type="button"
             onClick={() => settleConfirm(true)}
             className="crm-btn-primary"
-            style={danger ? { flex: 1, background: "var(--error, #ef4444)", color: "white" } : { flex: 1 }}
+            style={danger ? { flex: 1, background: "var(--error)", color: "var(--text-inverse)" } : { flex: 1 }}
           >
             {confirmLabel ?? (danger ? "نعم، احذف" : "متابعة")}
           </button>
@@ -71,7 +71,7 @@ export function ConfirmDialog() {
           {message}
         </p>
         {danger && (
-          <p style={{ margin: "16px 0 0", color: "var(--error, #ef4444)", fontSize: "0.85rem" }}>
+          <p style={{ margin: "16px 0 0", color: "var(--error-text)", fontSize: "0.85rem" }}>
             لا يمكن التراجع عن هذا الإجراء.
           </p>
         )}

@@ -259,7 +259,7 @@ export function CustomDatePicker({ value, minDate, maxDate, onlyToday = false, d
                 onClick={handleClear}
                 style={{
                   background: "transparent",
-                  color: "var(--error, #ef4444)",
+                  color: "var(--error-text)",
                   border: "none",
                   padding: "6px 10px",
                   fontSize: "0.85rem",

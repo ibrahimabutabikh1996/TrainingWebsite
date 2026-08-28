@@ -195,7 +195,7 @@ export default function WorkoutProgress({
                           {improved && (
                             <span
                               title={`تقدّم من ${first} إلى ${last} كغم`}
-                              style={{ color: "var(--success)", marginInlineStart: 6 }}
+                              style={{ color: "var(--success-text)", marginInlineStart: 6 }}
                             >
                               ▲
                             </span>

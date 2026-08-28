@@ -51,15 +51,15 @@ function MetricCard({
     labelColor = "var(--primary)";
     iconColor = "var(--primary)";
   } else if (alertColor === "red") {
-    bgColor = "color-mix(in srgb, #EF4444 10%, var(--bg3))";
-    borderColor = "color-mix(in srgb, #EF4444 45%, var(--border))";
-    labelColor = "#EF4444";
-    iconColor = "#EF4444";
+    bgColor = "color-mix(in srgb, var(--error) 10%, var(--bg3))";
+    borderColor = "color-mix(in srgb, var(--error) 45%, var(--border))";
+    labelColor = "var(--error)";
+    iconColor = "var(--error)";
   } else if (alertColor === "orange") {
-    bgColor = "color-mix(in srgb, #F59E0B 12%, var(--bg3))";
-    borderColor = "color-mix(in srgb, #F59E0B 45%, var(--border))";
-    labelColor = "#F59E0B";
-    iconColor = "#F59E0B";
+    bgColor = "color-mix(in srgb, var(--warning) 12%, var(--bg3))";
+    borderColor = "color-mix(in srgb, var(--warning) 45%, var(--border))";
+    labelColor = "var(--warning)";
+    iconColor = "var(--warning)";
   }
 
   return (
@@ -81,7 +81,7 @@ function MetricCard({
         e.currentTarget.style.borderColor = "var(--primary)";
         e.currentTarget.style.transform = "translateY(-3px)";
         e.currentTarget.style.boxShadow = "0 8px 24px color-mix(in srgb, var(--primary) 16%, rgba(0,0,0,0.35))";
-        e.currentTarget.style.background = highlight ? "color-mix(in srgb, var(--primary) 16%, var(--bg3))" : "var(--bg4, rgba(255,255,255,0.05))";
+        e.currentTarget.style.background = highlight ? "color-mix(in srgb, var(--primary) 16%, var(--bg3))" : "var(--bg4)";
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.borderColor = borderColor;
@@ -171,7 +171,7 @@ export function TraineeProfileDetails({ profile }: TraineeProfileDetailsProps) {
     const diff = targetWeightNum - currentWeightNum;
     if (diff < 0) {
       weightGoalBadge = (
-        <span style={{ background: "rgba(34, 197, 94, 0.15)", color: "#22C55E", padding: "4px 10px", borderRadius: "var(--radius-xl)", fontSize: "0.8rem", fontWeight: 700 }}>
+        <span style={{ background: "rgba(34, 197, 94, 0.15)", color: "var(--success-text)", padding: "4px 10px", borderRadius: "var(--radius-xl)", fontSize: "0.8rem", fontWeight: 700 }}>
           هدف نزول {Math.abs(diff).toFixed(1)} كغم
         </span>
       );

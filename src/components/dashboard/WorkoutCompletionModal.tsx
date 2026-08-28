@@ -269,9 +269,9 @@ export function WorkoutCompletionModal({ isOpen, dayNumber, onClose }: WorkoutCo
 
           <span
             style={{
-              background: "color-mix(in srgb, var(--success, #22c55e) 15%, var(--bg3))",
-              color: "var(--success, #22c55e)",
-              border: "1px solid color-mix(in srgb, var(--success, #22c55e) 30%, transparent)",
+              background: "color-mix(in srgb, var(--success) 15%, var(--bg3))",
+              color: "var(--success-text)",
+              border: "1px solid color-mix(in srgb, var(--success) 30%, transparent)",
               padding: "5px 12px",
               borderRadius: "var(--radius-pill)",
               fontSize: "0.84rem",

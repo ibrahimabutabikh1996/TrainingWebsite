@@ -45,7 +45,7 @@ function DeleteControl({
           onClick={onConfirm}
           disabled={pending}
           className="crm-btn-primary"
-          style={{ padding: "6px 12px", fontSize: "0.8rem", background: "var(--error, #ef4444)", border: "none", color: "#fff" }}
+          style={{ padding: "6px 12px", fontSize: "0.8rem", background: "var(--error)", border: "none", color: "var(--text-inverse)" }}
         >
           {pending ? "جارٍ الحذف..." : "تأكيد الحذف نهائياً"}
         </button>

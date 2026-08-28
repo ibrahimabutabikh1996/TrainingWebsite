@@ -982,7 +982,7 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
           style: {
             background: '#141414',
             color: 'var(--text)',
-            border: '1px solid var(--admin-primary, var(--primary))',
+            border: '1px solid var(--admin-primary)',
             padding: '16px 24px',
             borderRadius: "var(--radius-lg)",
             boxShadow: '0 20px 40px rgba(0,0,0,0.7), 0 0 20px rgba(var(--primary-rgb), 0.15)',

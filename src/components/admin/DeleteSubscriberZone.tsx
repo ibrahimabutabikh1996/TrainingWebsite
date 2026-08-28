@@ -42,11 +42,11 @@ export default function DeleteSubscriberZone({ profileId }: { profileId: string 
     <div
       className="crm-modal-section"
       style={{
-        background: "var(--bg2, #0F0F0F)",
+        background: "var(--bg2)",
         padding: "28px",
         borderRadius: "var(--radius-xl)",
         border: "1px solid var(--border)",
-        borderInlineStart: "5px solid var(--error, #ef4444)",
+        borderInlineStart: "5px solid var(--error)",
         marginTop: "32px",
         display: "flex",
         flexDirection: "column",
@@ -64,7 +64,7 @@ export default function DeleteSubscriberZone({ profileId }: { profileId: string 
           onClick={() => setIsOpen(!isOpen)}
           style={{
             background: "color-mix(in srgb, var(--error) 15%, transparent)",
-            color: "var(--error)",
+            color: "var(--error-text)",
             border: "1px solid color-mix(in srgb, var(--error) 30%, transparent)",
             padding: "10px 20px",
             borderRadius: "var(--radius-md)",
@@ -142,8 +142,8 @@ export default function DeleteSubscriberZone({ profileId }: { profileId: string 
             <button
               type="submit"
               style={{
-                background: "var(--error, #ef4444)",
-                color: "#fff",
+                background: "var(--error)",
+                color: "var(--text-inverse)",
                 border: "none",
                 padding: "10px 24px",
                 borderRadius: "var(--radius-md)",

@@ -503,9 +503,9 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
               <div
                 className="wl-locked"
                 style={{
-                  background: "color-mix(in srgb, #EF4444 14%, var(--bg2))",
-                  borderColor: "color-mix(in srgb, #EF4444 45%, transparent)",
-                  color: "#EF4444",
+                  background: "color-mix(in srgb, var(--error) 14%, var(--bg2))",
+                  borderColor: "color-mix(in srgb, var(--error) 45%, transparent)",
+                  color: "var(--error-text)",
                   marginBottom: "16px",
                   padding: "16px 20px",
                   borderRadius: "var(--radius-lg)",
@@ -517,7 +517,7 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
               >
                 <Icon
                   name="visibility"
-                  style={{ fontSize: "24px", color: "#EF4444" }}
+                  style={{ fontSize: "24px", color: "var(--error-text)" }}
                 />
                 <span>
                   انتهت فترة اشتراكك الحالية (30 يوماً). البرنامج والتمارين
@@ -901,7 +901,7 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
                                     <Icon
                                       name="check_circle"
                                       style={{
-                                        color: "var(--success, #22c55e)",
+                                        color: "var(--success-text)",
                                         fontSize: "20px",
                                       }}
                                       title="تم إكمال التمرين"
@@ -1281,7 +1281,7 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
                                               display: "inline-flex",
                                               alignItems: "center",
                                               gap: "4px",
-                                              color: "var(--error)",
+                                              color: "var(--error-text)",
                                               fontSize: "0.85rem",
                                               fontWeight: 700,
                                             }}
@@ -1296,7 +1296,7 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
                                               display: "inline-flex",
                                               alignItems: "center",
                                               gap: "4px",
-                                              color: "var(--success, #22c55e)",
+                                              color: "var(--success-text)",
                                               fontSize: "0.85rem",
                                               fontWeight: 700,
                                             }}
@@ -1353,13 +1353,13 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
                     />
                     {isSessionEditable &&
                       noteStates[session.id] === "saved" && (
-                        <label style={{ color: "var(--success)" }}>
+                        <label style={{ color: "var(--success-text)" }}>
                           تم حفظ الملاحظة
                         </label>
                       )}
                     {isSessionEditable &&
                       noteStates[session.id] === "error" && (
-                        <label style={{ color: "var(--error)" }}>
+                        <label style={{ color: "var(--error-text)" }}>
                           فشل حفظ الملاحظة
                         </label>
                       )}
@@ -1418,13 +1418,13 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
                         style={{
                           background: canFinishWorkout
                             ? getDayAccent(activeDay)
-                            : "var(--bg3, #141414)",
+                            : "var(--bg3)",
                           color: canFinishWorkout
                             ? "var(--text-inverse)"
-                            : "var(--text-muted, #666)",
+                            : "var(--text-muted)",
                           border: canFinishWorkout
                             ? "none"
-                            : "1.5px dashed var(--border, rgba(255,255,255,0.1))",
+                            : "1.5px dashed var(--border)",
                           padding: "16px 36px",
                           fontSize: "1.15rem",
                           fontWeight: 800,
@@ -1519,7 +1519,7 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
               backdropFilter: "blur(20px)",
               WebkitBackdropFilter: "blur(20px)",
               border: `1px solid ${toastAlert.type === "warning" ? "rgba(245, 158, 11, 0.4)" : "rgba(239, 68, 68, 0.4)"}`,
-              borderInlineStart: `5px solid ${toastAlert.type === "warning" ? "#F59E0B" : "#EF4444"}`,
+              borderInlineStart: `5px solid ${toastAlert.type === "warning" ? "var(--warning)" : "var(--error)"}`,
               padding: "18px 22px",
               borderRadius: "var(--radius-xl)",
               boxShadow: `0 20px 50px rgba(0, 0, 0, 0.85), 0 0 35px ${toastAlert.type === "warning" ? "rgba(245, 158, 11, 0.16)" : "rgba(239, 68, 68, 0.16)"}`,
@@ -1544,7 +1544,7 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                color: toastAlert.type === "warning" ? "#F59E0B" : "#EF4444",
+                color: toastAlert.type === "warning" ? "var(--warning-text)" : "var(--error-text)",
                 boxShadow: `0 0 16px ${toastAlert.type === "warning" ? "rgba(245, 158, 11, 0.15)" : "rgba(239, 68, 68, 0.15)"}`,
                 flexShrink: 0,
                 marginTop: "2px",

@@ -454,7 +454,7 @@ export default function DietPlanBuilder({
                                   const baseGrams = 100;
                                   const displayWeight = item.weight != null ? Math.round(item.weight * 10) / 10 : Math.round(item.qty * baseGrams * 10) / 10;
                                   return (
-                                    <div style={{ display: "inline-flex", alignItems: "center", gap: "10px", flexWrap: "wrap", background: "color-mix(in srgb, var(--bg2, #0F0F0F) 85%, transparent)", padding: "6px 12px", borderRadius: "var(--radius-lg)", border: "1px solid color-mix(in srgb, var(--primary, #C9A84C) 25%, rgba(255,255,255,0.08))", boxShadow: "inset 0 1px 3px rgba(0,0,0,0.4)" }}>
+                                    <div style={{ display: "inline-flex", alignItems: "center", gap: "10px", flexWrap: "wrap", background: "color-mix(in srgb, var(--bg2) 85%, transparent)", padding: "6px 12px", borderRadius: "var(--radius-lg)", border: "1px solid color-mix(in srgb, var(--primary) 25%, rgba(255,255,255,0.08))", boxShadow: "inset 0 1px 3px rgba(0,0,0,0.4)" }}>
                                       {/* Weight/Amount & Unit Input */}
                                       <div className="dplan-qty" style={{ margin: 0, gap: "6px", display: "inline-flex", alignItems: "center" }}>
                                         <input
@@ -660,7 +660,7 @@ function SourcePicker({
                       alignItems: "center",
                       gap: "14px",
                       padding: "12px 14px",
-                      background: "var(--bg2, #0F0F0F)",
+                      background: "var(--bg2)",
                       border: "1px solid rgba(255, 255, 255, 0.06)",
                       borderRadius: "var(--radius-lg)",
                       transition: "all 0.25s ease",
@@ -691,7 +691,7 @@ function SourcePicker({
                       <img src={s.image_url || badge.image} alt={s.name} loading="lazy" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
                     </div>
                     <span className="dplan-picker-name" style={{ flex: 1, display: "flex", flexDirection: "column", gap: "4px" }}>
-                      <strong style={{ fontSize: "1rem", color: "var(--text, #F0EDE8)", fontWeight: 800 }}>{s.name}</strong>
+                      <strong style={{ fontSize: "1rem", color: "var(--text)", fontWeight: 800 }}>{s.name}</strong>
                       <small style={{ color: badge.color, fontWeight: 700, fontSize: "0.78rem" }}>
                         ● {badge.label}
                       </small>

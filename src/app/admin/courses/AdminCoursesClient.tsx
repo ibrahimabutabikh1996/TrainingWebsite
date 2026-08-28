@@ -749,14 +749,14 @@ export default function AdminCoursesClient({
             {/* Name the affected trainees — the old copy warned about unassigning
                 "المتدربين" without saying whether any actually existed. */}
             {assignedTo(showDeleteConfirm).length > 0 && (
-              <p style={{ margin: "0 0 16px 0", padding: "12px", borderRadius: 4, background: "color-mix(in srgb, var(--error, #ef4444) 10%, transparent)", border: "1px solid color-mix(in srgb, var(--error, #ef4444) 30%, transparent)", color: "var(--admin-on-surface)", fontSize: "0.88rem", lineHeight: 1.7 }}>
+              <p style={{ margin: "0 0 16px 0", padding: "12px", borderRadius: 4, background: "color-mix(in srgb, var(--error) 10%, transparent)", border: "1px solid color-mix(in srgb, var(--error) 30%, transparent)", color: "var(--admin-on-surface)", fontSize: "0.88rem", lineHeight: 1.7 }}>
                 هذا الكورس معيَّن حالياً إلى {arabicCount(assignedTo(showDeleteConfirm).length, TRAINEE)}:{" "}
                 <strong>{assignedTo(showDeleteConfirm).join("، ")}</strong>
                 <br />
                 سيفقد البرنامج التدريبي عند الحذف.
               </p>
             )}
-            <p style={{ margin: "0 0 24px 0", color: "var(--error, #ef4444)", fontSize: "0.85rem" }}>
+            <p style={{ margin: "0 0 24px 0", color: "var(--error-text)", fontSize: "0.85rem" }}>
               لا يمكن التراجع عن هذا الإجراء.
             </p>
             <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
@@ -772,7 +772,7 @@ export default function AdminCoursesClient({
                 onClick={handleDeleteCourse}
                 disabled={isActionLoading}
                 className="crm-btn-primary"
-                style={{ flex: 1, background: "var(--error, #ef4444)", color: "white" }}
+                style={{ flex: 1, background: "var(--error)", color: "var(--text-inverse)" }}
               >
                 {isActionLoading ? "جاري الحذف..." : "نعم، احذف"}
               </button>

@@ -103,8 +103,8 @@
   width: 8px;
   height: 8px;
   border-radius: var(--radius-pill);
-  background: var(--warning, #f59e0b);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--warning, #f59e0b) 25%, transparent);
+  background: var(--warning);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--warning) 25%, transparent);
 }
 
 /* ---- Plan toolbar ---- */
@@ -154,9 +154,9 @@
 }
 
 .dplan-delete-plan:hover {
-  border-color: var(--error, #ef4444);
+  border-color: var(--error);
   color: var(--error-text);
-  background: var(--error-bg, rgba(239, 68, 68, 0.1));
+  background: var(--error-bg);
 }
 
 .dplan-delete-plan .app-icon { font-size: 18px; }
@@ -181,7 +181,7 @@
 }
 
 .dplan-macro-val {
-  font-family: var(--font-display, 'Cairo', sans-serif);
+  font-family: var(--font-display);
   font-size: var(--text-xl);
   line-height: 1;
   margin-bottom: 4px;

@@ -150,12 +150,12 @@ export default function AccountManager({ profileId, existingAccount: initialAcco
     const remaining = daysRemaining(effectiveEndsAt);
 
     const statusBg = isSuspended
-      ? "color-mix(in srgb, #f59e0b 15%, transparent)"
+      ? "color-mix(in srgb, var(--warning) 15%, transparent)"
       : isExpired
-      ? "color-mix(in srgb, #ef4444 15%, transparent)"
-      : "color-mix(in srgb, #10b981 15%, transparent)";
+      ? "color-mix(in srgb, var(--error) 15%, transparent)"
+      : "color-mix(in srgb, var(--success) 15%, transparent)";
       
-    const statusColor = isSuspended ? "#f59e0b" : isExpired ? "#ef4444" : "#10b981";
+    const statusColor = isSuspended ? "var(--warning)" : isExpired ? "var(--error)" : "var(--success)";
     const statusText = isSuspended
       ? "حساب موقوف إدارياً"
       : isExpired
@@ -173,10 +173,10 @@ export default function AccountManager({ profileId, existingAccount: initialAcco
       <div
         className="crm-modal-section"
         style={{
-          background: "var(--bg2, #0F0F0F)",
+          background: "var(--bg2)",
           padding: "28px",
           borderRadius: "var(--radius-xl)",
-          border: "1px solid var(--border, rgba(255,255,255,0.08))",
+          border: "1px solid var(--border)",
           borderInlineStart: `5px solid ${statusColor}`,
           boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
           display: "flex",
@@ -270,7 +270,7 @@ export default function AccountManager({ profileId, existingAccount: initialAcco
                 fontSize: "0.92rem",
                 fontWeight: 600,
                 borderRadius: "var(--radius-md)",
-                color: isSuspended ? "#10b981" : "#ef4444",
+                color: isSuspended ? "var(--success-text)" : "var(--error-text)",
                 borderColor: isSuspended ? "rgba(16, 185, 129, 0.4)" : "rgba(239, 68, 68, 0.4)",
               }}
             >
@@ -285,7 +285,7 @@ export default function AccountManager({ profileId, existingAccount: initialAcco
           <form
             onSubmit={handleChangePassword}
             style={{
-              background: "var(--bg3, #141414)",
+              background: "var(--bg3)",
               padding: "20px 24px",
               borderRadius: "var(--radius-lg)",
               border: "1px solid var(--border)",
@@ -361,7 +361,7 @@ export default function AccountManager({ profileId, existingAccount: initialAcco
           {/* Card 1: Username & Access Details */}
           <div
             style={{
-              background: "var(--bg3, #141414)",
+              background: "var(--bg3)",
               padding: "22px",
               borderRadius: "var(--radius-xl)",
               border: "1px solid var(--border)",
@@ -382,7 +382,7 @@ export default function AccountManager({ profileId, existingAccount: initialAcco
 
             <div
               style={{
-                background: "var(--bg2, #080808)",
+                background: "var(--bg2)",
                 padding: "14px 18px",
                 borderRadius: "var(--radius-lg)",
                 border: "1px solid var(--border)",
@@ -393,7 +393,7 @@ export default function AccountManager({ profileId, existingAccount: initialAcco
               }}
             >
               <span style={{ fontSize: "0.95rem", color: "var(--text-muted)", fontWeight: 600 }}>اسم المستخدم:</span>
-              <span style={{ fontSize: "1.1rem", fontWeight: 800, color: "var(--primary, #C9A84C)", letterSpacing: "0.5px" }}>
+              <span style={{ fontSize: "1.1rem", fontWeight: 800, color: "var(--primary)", letterSpacing: "0.5px" }}>
                 {account.username}
               </span>
             </div>
@@ -402,7 +402,7 @@ export default function AccountManager({ profileId, existingAccount: initialAcco
           {/* Card 2: Validity & Time Horizon */}
           <div
             style={{
-              background: "var(--bg3, #141414)",
+              background: "var(--bg3)",
               padding: "22px",
               borderRadius: "var(--radius-xl)",
               border: "1px solid var(--border)",
@@ -413,7 +413,7 @@ export default function AccountManager({ profileId, existingAccount: initialAcco
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-              <div style={{ width: 42, height: 42, borderRadius: "var(--radius-lg)", background: isExpired ? "color-mix(in srgb, #ef4444 15%, transparent)" : "color-mix(in srgb, #10b981 15%, transparent)", color: isExpired ? "#ef4444" : "#10b981", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "22px", flexShrink: 0 }}>
+              <div style={{ width: 42, height: 42, borderRadius: "var(--radius-lg)", background: isExpired ? "color-mix(in srgb, var(--error) 15%, transparent)" : "color-mix(in srgb, var(--success) 15%, transparent)", color: isExpired ? "var(--error-text)" : "var(--success-text)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "22px", flexShrink: 0 }}>
                 <Icon name="schedule" />
               </div>
               <div>
@@ -423,7 +423,7 @@ export default function AccountManager({ profileId, existingAccount: initialAcco
 
             <div
               style={{
-                background: "var(--bg2, #080808)",
+                background: "var(--bg2)",
                 padding: "14px 18px",
                 borderRadius: "var(--radius-lg)",
                 border: "1px solid var(--border)",
@@ -440,7 +440,7 @@ export default function AccountManager({ profileId, existingAccount: initialAcco
                   style={{
                     fontWeight: 800,
                     fontSize: "0.95rem",
-                    color: isExpired ? "#ef4444" : "#10b981",
+                    color: isExpired ? "var(--error-text)" : "var(--success-text)",
                   }}
                 >
                   {isExpired
@@ -478,7 +478,7 @@ export default function AccountManager({ profileId, existingAccount: initialAcco
             {/* Activation Month Card */}
             <div
               style={{
-                background: "var(--bg3, #141414)",
+                background: "var(--bg3)",
                 padding: "16px 20px",
                 borderRadius: "var(--radius-lg)",
                 border: "1px solid var(--border)",
@@ -507,7 +507,7 @@ export default function AccountManager({ profileId, existingAccount: initialAcco
               <div
                 key={idx}
                 style={{
-                  background: "var(--bg3, #141414)",
+                  background: "var(--bg3)",
                   padding: "16px 20px",
                   borderRadius: "var(--radius-lg)",
                   border: "1px solid var(--border)",
@@ -518,9 +518,9 @@ export default function AccountManager({ profileId, existingAccount: initialAcco
                   overflow: "hidden",
                 }}
               >
-                <div style={{ position: "absolute", top: 0, right: 0, width: "4px", height: "100%", background: "#10b981" }} />
+                <div style={{ position: "absolute", top: 0, right: 0, width: "4px", height: "100%", background: "var(--success)" }} />
                 <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "var(--text)", fontWeight: 700, fontSize: "0.98rem" }}>
-                  <Icon name="calendar_today" style={{ color: "#10b981", fontSize: "20px" }} />
+                  <Icon name="calendar_today" style={{ color: "var(--success-text)", fontSize: "20px" }} />
                   <span>{r.label}</span>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginInlineStart: "28px" }}>

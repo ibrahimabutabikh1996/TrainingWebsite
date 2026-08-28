@@ -726,7 +726,7 @@ body::before {
   height: 44px;
   padding: 0;
   border: 1px solid var(--border-strong);
-  border-radius: var(--radius-circle, 50%);
+  border-radius: var(--radius-circle);
   background: var(--nav-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);

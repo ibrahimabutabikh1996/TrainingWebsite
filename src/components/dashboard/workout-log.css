@@ -112,8 +112,8 @@
   margin-bottom: 15px;
   padding: 12px 14px;
   border-radius: var(--radius-lg);
-  border: 1px dashed var(--border-primary, var(--border));
-  background: var(--bg2, rgba(255, 255, 255, 0.02));
+  border: 1px dashed var(--border-primary);
+  background: var(--bg2);
 }
 
 .wl-day-muscles-lbl {
