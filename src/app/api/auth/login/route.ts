@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { comparePassword, hashPassword, isBcryptHash } from "@/lib/auth";
+import { comparePassword, isBcryptHash } from "@/lib/auth";
 import { startSession } from "@/lib/authGuard";
 import { clearAttempts, clientAddress, consumeAttempt } from "@/lib/rateLimit";
 
@@ -79,59 +79,54 @@ export async function POST(request: Request) {
       );
     }
 
-    let isMatch = false;
-    /* Only compare as plaintext if the stored value is not a bcrypt hash at all,
-       so a stolen hash cannot be replayed as the password itself.
+    /* A stored value that is not a bcrypt hash is no longer compared.
      *
-     * The test itself now lives in `@/lib/auth`. It was written out here and at
-     * two other call sites, and the three had drifted: this one covered `$2y$`
-     * and the other two did not. One definition, so they cannot disagree again. */
-    const isBcrypt = isBcryptHash(account.password);
+     * It used to be, as a string equality — the last route by which a password
+     * held in plaintext was an accepted credential. The branch was written to
+     * carry a finite set of rows left over from before hashing, and it drained
+     * itself: a correct plaintext password was rehashed on the way through, so
+     * the set only ever shrank. Every write path — registration, the coach's
+     * reset, a trainee changing their own — has produced bcrypt throughout.
+     *
+     * What replaces it is a refusal, not a comparison. That is the safe
+     * direction to fail in: the worst case is an account that cannot sign in
+     * and must be reset with `scripts/reset-password.mjs`, against a worst case
+     * of a password sitting readable in a column that a leaked connection
+     * string, a restored backup or the query log this app used to keep would
+     * each have handed over.
+     *
+     * Logged loudly and distinctly, because a refusal nobody can explain is
+     * worse than the bug. If this line ever appears, that account needs a reset
+     * — it is not a wrong password, and the person typing it cannot tell. */
+    if (!isBcryptHash(account.password)) {
+      console.error(
+        `[login] account ${account.id} has a password that is not a bcrypt hash; ` +
+          `refusing rather than comparing it as text. Reset it with scripts/reset-password.mjs.`
+      );
+      return NextResponse.json({ error: REFUSED }, { status: 401 });
+    }
 
-    if (isBcrypt) {
-      /* Matches the handling in /api/auth/change-password: a bcrypt fault must not
-         be reported as a wrong password, or the two screens would both reject a
-         correct password with no trace of the real cause. */
-      try {
-        isMatch = await comparePassword(password, account.password);
-      } catch (error) {
-        console.error(`bcrypt comparison failed for account ${account.id}:`, error);
-        return NextResponse.json(
-          { error: "حدث خطأ أثناء تسجيل الدخول" },
-          { status: 500 }
-        );
-      }
-    } else {
-      isMatch = (password === account.password);
+    let isMatch = false;
+    /* Matches the handling in /api/auth/change-password: a bcrypt fault must not
+       be reported as a wrong password, or the two screens would both reject a
+       correct password with no trace of the real cause. */
+    try {
+      isMatch = await comparePassword(password, account.password);
+    } catch (error) {
+      console.error(`bcrypt comparison failed for account ${account.id}:`, error);
+      return NextResponse.json(
+        { error: "حدث خطأ أثناء تسجيل الدخول" },
+        { status: 500 }
+      );
     }
 
     if (!isMatch) {
       return NextResponse.json({ error: REFUSED }, { status: 401 });
     }
 
-    /* A correct password against a row that was never hashed: hash it now.
-     *
-     * Every write path — registration, the coach's reset, the trainee's own
-     * change — has produced bcrypt for some time, so the plaintext rows are a
-     * finite set left over from before that. Nothing was draining it, which
-     * meant the branch above had to stay forever and every one of those rows
-     * stayed readable to anyone who reached the table. Upgrading on the one
-     * occasion the plaintext is legitimately in hand empties the set as its
-     * owners sign in, and makes deleting that branch a decision about a number
-     * that is going down rather than an open question.
-     *
-     * Failure here is not the trainee's problem: they gave the right password.
-     * Log it and let them in — the next sign-in tries again. */
-    if (!isBcrypt) {
-      try {
-        await prisma.accounts.update({
-          where: { id: account.id },
-          data: { password: await hashPassword(password) },
-        });
-      } catch (error) {
-        console.error(`Failed to upgrade legacy password for account ${account.id}:`, error);
-      }
-    }
+    /* The rehash-on-sign-in that used to sit here is gone with the branch it
+       served. It could only ever fire for a password that had just been
+       compared as text, and nothing is compared as text any more. */
 
     /* Signed in — so the attempts that led here were not an attack. Clearing
        them means a trainee who mistyped twice this morning is not a few keys

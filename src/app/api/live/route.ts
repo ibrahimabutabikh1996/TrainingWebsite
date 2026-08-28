@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
-import { getSession, sessionOwnsProfile } from "@/lib/authGuard";
+import { requireUser, sessionOwnsProfile } from "@/lib/authGuard";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -133,8 +133,27 @@ async function panelFingerprint(): Promise<string> {
 }
 
 export async function GET(request: NextRequest) {
-  const session = await getSession();
-  if (!session) return NextResponse.json({ error: "يجب تسجيل الدخول" }, { status: 401 });
+  /* `requireUser`, not `getSession`.
+   *
+   * This was the one guarded path still reading the cookie without asking
+   * whether the credential behind it had been withdrawn. `getSession` checks a
+   * signature and an expiry and nothing else, so a trainee the coach had
+   * suspended, or one holding a token issued before their password changed,
+   * went on polling until the token aged out — a week, or a month with
+   * "remember me". Every other route in the app closed that gap; this one was
+   * missed because it answers with a hash and looked like it had nothing to
+   * leak.
+   *
+   * It costs one query on a path that is polled every few seconds, which is the
+   * reason to weigh it rather than the reason not to do it. Two of the three
+   * scopes were already paying for a second query — `sessionOwnsProfile` for a
+   * trainee watching a profile, and the ownership lookup for `me` — and the
+   * refusal now travels as the same 401/403 the rest of the API uses, which the
+   * client's poller already backs off from. A suspended trainee's tab therefore
+   * goes quiet instead of asking forever. */
+  const auth = await requireUser();
+  if (!auth.ok) return auth.response;
+  const session = auth.session;
 
   const scope = request.nextUrl.searchParams.get("scope") ?? "me";
   const id = request.nextUrl.searchParams.get("id");

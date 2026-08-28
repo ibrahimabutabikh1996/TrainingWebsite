@@ -1,5 +1,25 @@
 import type { NextConfig } from "next";
 
+/* The Supabase project this build points at, parsed once.
+ *
+ * Two consumers with two different needs: the image optimiser wants the bare
+ * hostname for its `remotePatterns` entry, and the Content-Security-Policy
+ * wants the full origin — scheme included, which is what a CSP source
+ * expression is. Both read the same environment variable, so both are derived
+ * here rather than parsed twice and drifting.
+ *
+ * A missing or malformed variable yields null on both, and each consumer says
+ * below what it does without one. */
+const supabaseUrl = (() => {
+  try {
+    return new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "");
+  } catch {
+    return null;
+  }
+})();
+
+const supabaseOrigin = supabaseUrl?.origin ?? null;
+
 /* Sent on every response. Each of these was absent, and the absences show up
    only in the cases they exist to cover.
 
@@ -21,6 +41,70 @@ import type { NextConfig } from "next";
    is worth having, but it needs to be built against what the pages actually
    load, and guessing at one is how a site ships with its own stylesheets
    blocked. */
+/* The full policy, built against what the pages actually load.
+ *
+ * This was `frame-ancestors 'none'` and nothing else. The note that used to sit
+ * here said a complete policy "needs to be built against what the pages
+ * actually load, and guessing at one is how a site ships with its own
+ * stylesheets blocked" — which was right, and is what this is. Every directive
+ * below was chosen from a specific thing in this codebase, and the loose ones
+ * are loose for a stated reason rather than by default.
+ *
+ *   script-src   'self' and inline. Next injects inline bootstrap and streaming
+ *                scripts, and there is no nonce to give them without routing
+ *                every response through the proxy. What matters is what is NOT
+ *                here: no `https:`, so no external script can be loaded at all,
+ *                and no `unsafe-eval`. Inline execution stays possible; pulling
+ *                in an attacker's script does not.
+ *
+ *   style-src    'self' and inline, and this one is not negotiable today: the
+ *                interface carries over a thousand `style={{ }}` attributes,
+ *                plus `<style jsx global>` and two `<style>` blocks in the
+ *                export pages. Every one of them is an inline style.
+ *
+ *   img-src      `https:` rather than an allowlist. The content manager stores
+ *                whatever address the coach gives it — `safeMediaUrl` accepts
+ *                any http(s) URL — so an allowlist would silently blank images
+ *                the coach had every reason to expect. `data:` and `blob:` are
+ *                for the crop preview, which renders the chosen file before it
+ *                has been uploaded anywhere.
+ *
+ *   media-src    Same reasoning: the landing page plays video and audio the CMS
+ *                points at, and `blob:` covers a locally previewed file.
+ *
+ *   frame-src    `https:`, for the exercise videos. `getEmbedUrl` recognises
+ *                Drive and YouTube and hands back anything else unchanged, so
+ *                the set of hosts is whatever the coach has pasted into the
+ *                library. `safeVideoUrl` already refuses everything that is not
+ *                http(s) before it reaches an iframe; this stops the http half.
+ *
+ *   connect-src  The tight one, and the one that matters most next to
+ *                script-src. Everything this app fetches is same-origin except
+ *                the uploads, which go straight to Supabase storage from the
+ *                browser. A script that did run could not post what it read to
+ *                anywhere else.
+ *
+ * The last four are cheap and absolute: nothing here embeds a plugin, sets a
+ * <base>, submits a form off-site, or should ever be framed. */
+const CSP = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob: https:",
+  "media-src 'self' blob: https:",
+  "font-src 'self'",
+  "frame-src https:",
+  ...(supabaseOrigin
+    ? [`connect-src 'self' ${supabaseOrigin}`]
+    : /* No Supabase URL at build time: same-origin only, which is what the app
+         can do without storage anyway. */
+      ["connect-src 'self'"]),
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+].join("; ");
+
 const SECURITY_HEADERS = [
   {
     key: "Strict-Transport-Security",
@@ -32,7 +116,7 @@ const SECURITY_HEADERS = [
   /* Nothing here should ever be framed; the panel and the dashboard both act on
      a single click, which is exactly what clickjacking needs. */
   { key: "X-Frame-Options", value: "DENY" },
-  { key: "Content-Security-Policy", value: "frame-ancestors 'none'" },
+  { key: "Content-Security-Policy", value: CSP },
   /* Trainee ids and profile ids travel in query strings on the export pages.
      The default policy would put the full address in the Referer of anything
      those pages load. */
@@ -56,13 +140,7 @@ const SECURITY_HEADERS = [
  * If the variable is missing at build time the pattern is simply absent and the
  * optimiser refuses those addresses — the pictures fall back to nothing rather
  * than to something unchecked. */
-const supabaseImageHost = (() => {
-  try {
-    return new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").hostname;
-  } catch {
-    return null;
-  }
-})();
+const supabaseImageHost = supabaseUrl?.hostname ?? null;
 
 const nextConfig: NextConfig = {
   images: {
