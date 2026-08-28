@@ -24,9 +24,21 @@ const globalForPrisma = global as unknown as { prisma: PrismaClient };
  * The transaction pooler does the real multiplexing, so this only needs to cover
  * the queries one instance runs concurrently — node-postgres defaults to 10,
  * which is generous for a single trainee's dashboard and ruinous when a platform
- * runs twenty instances of it. Serverless deployments should set this to 1.
+ * runs twenty instances of it.
+ *
+ * A serverless deployment wants 1, and now gets it without being told: on Vercel
+ * every instance handles one request at a time, so a second connection is one
+ * the pooler is holding open for nobody. That used to be a line in this comment
+ * saying deployments "should set this to 1" — which is a note, not a default,
+ * and a note is only as good as whoever reads it before the first busy evening.
+ * `DATABASE_URL` already points at the transaction pooler, so the multiplexing
+ * that a bigger local pool would buy is happening a layer down regardless.
+ *
+ * `DATABASE_POOL_MAX` still wins where it is set, in either environment.
  */
-const POOL_MAX = Number(process.env.DATABASE_POOL_MAX ?? 5);
+const POOL_MAX = Number(
+  process.env.DATABASE_POOL_MAX ?? (process.env.VERCEL ? 1 : 5)
+);
 
 function connectionString(): string {
   const pooled = process.env.DATABASE_URL;
