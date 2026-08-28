@@ -777,6 +777,35 @@
   overflow: hidden;
 }
 
+/* Two cards that do not want the card padding, as classes rather than as style
+   attributes on the elements.
+ *
+ * Both were written inline, and an inline padding beats the phone rule below at
+ * every specificity — so these two were the only cards on the page that did not
+ * tighten at 768px, which is the seam that rule's own comment says it exists to
+ * prevent. Written with the base class repeated so they outrank that rule on
+ * purpose and by two classes to one, rather than by sitting further down the
+ * file where a later edit could move them. */
+
+/* The empty state: a dashed placeholder holding an icon and two lines. It wants
+   room around them, so it sets its own vertical padding — and still tightens on
+   a phone, which is the whole point of not being an inline style. */
+.home-stat-card.home-stat-card--empty {
+  padding: var(--space-10) var(--space-6);
+  text-align: center;
+  background: transparent;
+  border-style: dashed;
+  border-color: var(--border-strong);
+  box-shadow: none;
+}
+
+/* The chart card. Recharts draws its own inner margin, so a padded container
+   spends the gutter twice and the plot loses width it has no way to reclaim.
+   Flush at every width, deliberately. */
+.home-stat-card.home-stat-card--flush {
+  padding: 0;
+}
+
 .home-stat-card:hover {
   border-color: var(--border-strong);
   box-shadow: var(--elev-2);
@@ -1108,6 +1137,13 @@
   .dashboard-card,
   .home-stat-card {
     padding: var(--space-4);
+  }
+
+  /* The empty state tightens with them. Two classes, to outrank the two-class
+     desktop rule above — a single class would lose to it and the placeholder
+     would keep its desktop gutters here. */
+  .home-stat-card.home-stat-card--empty {
+    padding: var(--space-8) var(--space-4);
   }
 
   .dashboard-card-title {

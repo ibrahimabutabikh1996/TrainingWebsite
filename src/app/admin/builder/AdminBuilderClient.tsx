@@ -558,7 +558,7 @@ export default function AdminBuilderClient({
                             </div>
 
                             <div className="bldr-row-controls" style={{ flexWrap: "wrap", overflowX: "auto" }}>
-                              <div className="bldr-pill" style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(repValues.length, 4)}, 1fr)`, width: "100%", gap: "8px" }}>
+                              <div className="bldr-pill bldr-pill--grid" style={{ gridTemplateColumns: `repeat(${Math.min(repValues.length, 4)}, 1fr)` }}>
                                 {repValues.map((rep, rIndex) => (
                                   <label key={rIndex} className="bldr-rep" style={{ width: "100%" }}>
                                     <span>{rIndex + 1}</span>

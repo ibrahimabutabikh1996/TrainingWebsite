@@ -178,9 +178,21 @@
   margin: 0;
 }
 
+/* The gap here says 16px because that is what this group has always rendered.
+ *
+ * It read `32px`, and below in the 640px block it read `var(--space-6)`. Neither
+ * ever applied: there is exactly one element with this class in the codebase and
+ * it carried `gap: 16px` as a style attribute, which beats both. The rules
+ * described a layout nobody had seen.
+ *
+ * So the value moves here rather than the element changing to match a number
+ * that was never on screen. `align-items` comes with it for the same reason —
+ * it was inline too, and the group holds a button next to a stat block, which
+ * need centring against each other. */
 .crm-hero-stats-group {
   display: flex;
-  gap: 32px;
+  align-items: center;
+  gap: var(--space-4);
 }
 
 .crm-hero-stat {
@@ -948,9 +960,11 @@ details[open].crm-modal-section > summary .accordion-icon {
     font-size: 2rem;
   }
 
-  .crm-hero-stats-group {
-    gap: var(--space-6);
-  }
+  /* No gap override here any more. The one it had was 24px against a 32px base,
+     a proportional step for a base that was itself never rendered — carrying it
+     forward against the real 16px would widen the group on phones, which is the
+     opposite of what this block is for. It tightens if it ever needs to; it
+     should not do so as a side effect of correcting the base. */
 
   .crm-card-avatar {
     width: 44px;

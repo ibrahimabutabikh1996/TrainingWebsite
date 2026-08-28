@@ -115,7 +115,7 @@ export default function WeightLog({ profile, readonly, embedded, onSaveSuccess }
       )}
 
       {!readonly && (
-        <div className="home-stat-card" style={{ padding: "var(--space-6)", marginBottom: "var(--space-10)", overflow: "visible" }}>
+        <div className="home-stat-card" style={{ marginBottom: "var(--space-10)", overflow: "visible" }}>
           <h3 style={{ margin: "0 0 var(--space-6) 0", fontSize: "1.2rem", color: "var(--text)", display: "flex", alignItems: "center", gap: "8px" }}>
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--primary-on-tint)" }}><circle cx="12" cy="5" r="3"/><path d="M6.5 8a2 2 0 0 0-1.905 1.46L2.1 18.5A2 2 0 0 0 4 21h16a2 2 0 0 0 1.925-2.54L19.4 9.5A2 2 0 0 0 17.48 8Z"/></svg>
             إضافة وزن جديد
@@ -181,13 +181,7 @@ export default function WeightLog({ profile, readonly, embedded, onSaveSuccess }
         </h3>
         
         {weightLogs.length === 0 ? (
-          <div className="home-stat-card" style={{ 
-            textAlign: "center", 
-            padding: "var(--space-10) var(--space-6)", 
-            background: "transparent", 
-            border: "1px dashed var(--border-strong)",
-            boxShadow: "none"
-          }}>
+          <div className="home-stat-card home-stat-card--empty">
             <Icon name="monitor_weight" style={{ fontSize: "56px", color: "var(--text-muted)", marginBottom: "var(--space-4)", opacity: 0.5 }} />
             <p style={{ color: "var(--text-secondary)", fontSize: "1.15rem", margin: "0 0 8px 0", fontWeight: 600 }}>لم تقم بتسجيل أي أوزان حتى الآن.</p>
             <p style={{ color: "var(--text-muted)", fontSize: "0.95rem", margin: 0 }}>ابدأ بتسجيل وزنك الأول في النموذج أعلاه لتتبع تقدمك.</p>
@@ -196,7 +190,7 @@ export default function WeightLog({ profile, readonly, embedded, onSaveSuccess }
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "var(--space-6)", alignItems: "stretch" }}>
             
             {/* Chart Area */}
-            <div className="home-stat-card" style={{ flex: "2 1 0", padding: "var(--space-6)", display: "flex", flexDirection: "column" }}>
+            <div className="home-stat-card" style={{ flex: "2 1 0" }}>
               <h4 style={{ margin: "0 0 var(--space-6) 0", color: "var(--text)", fontSize: "1.1rem" }}>مسار الوزن</h4>
               <div style={{ flex: 1, minHeight: "300px" }}>
                 {/* An explicit height rather than `100%`.
@@ -225,7 +219,7 @@ export default function WeightLog({ profile, readonly, embedded, onSaveSuccess }
             </div>
 
             {/* Table Area */}
-            <div className="home-stat-card" style={{ flex: "1 1 0", padding: 0, overflow: "hidden", display: "flex", flexDirection: "column", maxHeight: "400px" }}>
+            <div className="home-stat-card home-stat-card--flush" style={{ flex: "1 1 0", overflow: "hidden", maxHeight: "400px" }}>
               <div style={{ padding: "var(--space-5) var(--space-6)", borderBottom: "1px solid var(--border)", background: "var(--bg2)", zIndex: 2 }}>
                 <h4 style={{ margin: 0, color: "var(--text)", fontSize: "1.1rem" }}>سجل القراءات</h4>
               </div>

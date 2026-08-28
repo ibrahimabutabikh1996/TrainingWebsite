@@ -367,6 +367,22 @@
 
 .bldr-pill input.bldr-rest-val { width: 62px; }
 
+/* The rep row: the one pill laid out as a grid rather than a flex line, so its
+   boxes share the width evenly instead of each taking its content's.
+ *
+ * `display`, `width` and `gap` were all set inline. The first two are a real
+   per-instance override and belong somewhere a stylesheet can see them; the
+   third was a copy of the base `gap: 8px` that existed only to be overridden,
+   and in doing so it beat the phone rule further down — so this pill kept 8px
+   where every other one tightens to 6px.
+ *
+ * The column count stays inline, because it is `repeat(n, 1fr)` where n is how
+ * many rep values the exercise has. That is data, not style. */
+.bldr-pill--grid {
+  display: grid;
+  width: 100%;
+}
+
 /* ---- Exercise picker rows ---- */
 
 /* .dplan-picker-list > li > button already sets the row geometry; these are the

@@ -282,7 +282,7 @@ export default function AdminCRMClient({
             <div className="crm-hero-title-group">
               <h1 className="crm-hero-title">ادارة المشتركين</h1>
             </div>
-            <div className="crm-hero-stats-group" style={{ display: "flex", gap: "16px", alignItems: "center" }}>
+            <div className="crm-hero-stats-group">
               <button 
                 onClick={() => setShowNotifications(true)}
                 style={{ position: "relative", background: "var(--bg3)", padding: "12px", borderRadius: "var(--radius-lg)", border: "1px solid var(--border)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}

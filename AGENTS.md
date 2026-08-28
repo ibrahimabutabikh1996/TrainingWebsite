@@ -215,6 +215,27 @@ Headings larger than `--text-3xl` (landing hero, section titles, big statistics)
 
 `globals.css` also sets a zero-specificity `:focus-visible` outline on all interactive elements, so a component that defines nothing still gets a visible ring.
 
+## Breakpoints
+
+**Four widths. Write new rules at these and nowhere else.**
+
+| Width | Meaning |
+| ----- | ------- |
+| `480px` | small phone |
+| `640px` | phone |
+| `768px` | tablet, and the boundary the dashboard and the panel both turn on |
+| `1024px` | small laptop |
+
+Pair them as `max-width: 640px` and `min-width: 641px` when a rule needs both sides; that off-by-one pair is deliberate and is not a fifth breakpoint.
+
+The stylesheets currently hold **eighteen** distinct widths, not four: 380, 400, 480, 520, 560, 640, 641, 680, 720, 768, 820, 900, 901, 992, 1000, 1024, 1080, 1180. Two thirds of all rules already sit on 640 and 768; the rest appear once or twice each.
+
+This is not a tidiness complaint. It is the mechanism behind a specific and repeated experience — *"I fixed this and it came back."* A fix written at 640 does not cover a rule someone else wrote at 680, so the same visual fault reappears in the band between them and reads as a regression. It is not a regression; it is a second fault that was never touched, in a band nobody checked.
+
+Migrating an existing rule from an odd width to a scale one **changes where the layout switches**, so it is a visual change and needs looking at, at that width, on that screen. Do it when you are already working in that file and can see the result. Do not sweep them.
+
+
+
 ---
 
 # Typography
