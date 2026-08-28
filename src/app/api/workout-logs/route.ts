@@ -11,12 +11,24 @@ const MAX_WEIGHT = 1000;
 const isValidUUID = (v: string) =>
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
 
+/** Rows one GET may return. See the note on the query below. */
+const MAX_LOGS = 2000;
+
 /**
- * GET /api/workout-logs?profileId=…            → that trainee's whole history
+ * GET /api/workout-logs?profileId=…            → that trainee's recent history
  * GET /api/workout-logs?profileId=…&date=today → just today's entries
  *
- * Used by the trainee view to pre-fill what they already logged today, and by
- * the coach view to show progression across sessions.
+ * The comment here used to say this served the trainee view and the coach view.
+ * Neither is true any more, and it is worth writing down rather than leaving as
+ * a description of a call that no longer happens: the dashboard reads its
+ * weights through /api/training-cycles, which returns them nested under each
+ * session, and the coach's profile page queries `workout_logs` directly in
+ * `AdminSubscriptionTimeline`. Nothing in this repository fetches this path —
+ * only the POST below is called.
+ *
+ * It is still a live authenticated endpoint, which is why it is bounded rather
+ * than deleted. Deleting it is a decision about whether anything outside this
+ * repository calls it, and that is not a question the code can answer.
  */
 export async function GET(request: Request) {
   try {
@@ -37,6 +49,12 @@ export async function GET(request: Request) {
         ...(date === "today" ? { session_date: new Date(todayISODate()) } : {}),
       },
       orderBy: [{ session_date: "desc" }, { exercise_name: "asc" }, { set_index: "asc" }],
+      /* A ceiling, because there was none and the table only grows: four
+         workouts a week of six exercises at four sets is about five thousand
+         rows a year, and every one of them was serialised into a single
+         response. Newest first, so a truncated answer is the useful end of the
+         history rather than the forgotten one. */
+      take: MAX_LOGS,
       select: {
         id: true,
         day_id: true,

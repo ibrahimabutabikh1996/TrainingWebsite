@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { Prisma } from "@prisma/client";
 import { requireAdminPage } from "@/lib/authGuard";
 import AdminCRMClient from "./AdminCRMClient";
 import LiveRefresh from "@/components/LiveRefresh";
@@ -75,21 +76,51 @@ export default async function AdminDashboardPage() {
     created_at: Date;
     data: unknown;
     is_suspended: boolean;
-    accounts: { username: string } | null;
   }> = [];
 
   try {
-    profiles = await prisma.profiles.findMany({
-      orderBy: { created_at: "desc" },
-      select: {
-        id: true,
-        username: true,
-        created_at: true,
-        data: true,
-        is_suspended: true,
-        accounts: { select: { username: true } },
-      },
-    });
+    /* The eight keys are picked in Postgres, not here.
+     *
+     * `select: { data: true }` reads the whole intake record for every
+     * subscriber — every measurement, every injury, and `history`, which holds a
+     * full copy of all of it for each month the trainee has renewed. That is a
+     * transfer that grows with each renewal of each person, spent on a table
+     * that draws eight fields. Filtering it in JavaScript, as this did, only
+     * moves the cost: the rows have already crossed the wire by then.
+     *
+     * Prisma cannot select part of a JSON column, so this is raw. It stays one
+     * query and one round trip.
+     *
+     * The CASE is the careful part. `data` is free-form and `readBlob` below
+     * has always allowed for a row holding JSON *as a string* rather than as an
+     * object — double-encoded somewhere in this app's history. Unwrapping that
+     * in SQL would mean parsing a string that might not parse, and a raised
+     * exception aborts the statement rather than returning `{}` the way
+     * `readBlob` does. So object rows take the fast path and anything else is
+     * handed back untouched, exactly as it arrives today, for `listFieldsOnly`
+     * to deal with. The odd row costs what it always cost; every ordinary one
+     * now costs eight keys. */
+    profiles = await prisma.$queryRaw<typeof profiles>`
+      SELECT
+        p.id,
+        COALESCE(a.username, p.username) AS username,
+        p.created_at,
+        p.is_suspended,
+        CASE
+          WHEN jsonb_typeof(p.data) = 'object' THEN COALESCE(
+            (
+              SELECT jsonb_object_agg(e.k, e.v)
+              FROM jsonb_each(p.data) AS e(k, v)
+              WHERE e.k IN (${Prisma.join([...LIST_FIELDS])})
+            ),
+            '{}'::jsonb
+          )
+          ELSE p.data
+        END AS data
+      FROM public.profiles p
+      LEFT JOIN public.accounts a ON a.id = p.user_id
+      ORDER BY p.created_at DESC
+    `;
   } catch (error) {
     console.error("Failed to fetch profiles for admin CRM:", error);
   }
@@ -97,8 +128,13 @@ export default async function AdminDashboardPage() {
   // Pass JSON serializable profiles
   const serializedProfiles = profiles.map(p => ({
     id: p.id,
-    username: p.accounts?.username || p.username,
+    /* The account row carries the current username and the profile row can hold
+       a stale copy; the COALESCE above already preferred the account's. */
+    username: p.username,
     created_at: p.created_at.toISOString(),
+    /* Still filtered here. The query narrows the ordinary row to these keys
+       already, so this is a no-op for it — and it is what reads the one shape
+       SQL deliberately left alone. */
     data: listFieldsOnly(p.data),
     // Authoritative flag, from the column rather than the JSON blob.
     is_suspended: p.is_suspended,

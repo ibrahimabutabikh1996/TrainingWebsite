@@ -1,5 +1,4 @@
 import { NextResponse, type NextRequest } from "next/server";
-import crypto from "node:crypto";
 import { prisma } from "@/lib/db";
 import { getSession, sessionOwnsProfile } from "@/lib/authGuard";
 
@@ -39,9 +38,6 @@ export const runtime = "nodejs";
 const isValidUUID = (v: string) =>
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
 
-const fingerprint = (parts: unknown[]) =>
-  crypto.createHash("sha1").update(JSON.stringify(parts)).digest("hex").slice(0, 16);
-
 /** The unchanging answer for "you may not ask", so a refusal costs no query. */
 const DENIED = NextResponse.json({ error: "غير مصرح" }, { status: 403 });
 
@@ -51,75 +47,89 @@ const DENIED = NextResponse.json({ error: "غير مصرح" }, { status: 403 });
    the diets prescribed to them. Aggregates rather than rows — the point is to
    notice a change, not to describe it. */
 async function profileFingerprint(profileId: string): Promise<string> {
-  const [profile, logs, cycles, diets] = await Promise.all([
-    prisma.profiles.findUnique({
-      where: { id: profileId },
-      select: { data: true, current_course_id: true, subscription_ends_at: true, is_suspended: true },
-    }),
-    prisma.workout_logs.aggregate({
-      where: { profile_id: profileId },
-      _count: { _all: true },
-      /* `logged_at`, not `session_date`: the first is when the row was written,
-         the second is the day being recorded and can be backdated. A set
-         corrected an hour later changes neither the count nor the date. */
-      _max: { logged_at: true },
-    }),
-    prisma.training_cycles.aggregate({
-      where: { profile_id: profileId },
-      _count: { _all: true },
-      _max: { created_at: true, completed_at: true },
-    }),
-    prisma.diet_plans.aggregate({
-      where: { profile_id: profileId },
-      _count: { _all: true },
-      _max: { updated_at: true },
-    }),
-  ]);
+  /* One statement, and the trainee's record never leaves Postgres.
+   *
+   * This was four queries in a `Promise.all` — concurrent on a machine with
+   * spare connections, and strictly serial on Vercel, where `DATABASE_POOL_MAX`
+   * is 1 by design. Four round trips every five seconds, per open tab.
+   *
+   * The `data` column was the worse half. It was *selected* so that Node could
+   * hash it: the whole intake record, every archived month inside `history`,
+   * across the wire on every poll, to produce forty hex characters. `md5()` in
+   * Postgres produces the same answer from the same bytes without moving them.
+   *
+   * `::text` on a jsonb column renders it in a normalised form, so the digest
+   * is stable for a value that has not changed — which is the only property
+   * this needs. It is a change-detector, not a checksum anyone verifies. */
+  const [row] = await prisma.$queryRaw<Array<{ fp: string | null }>>`
+    SELECT
+      md5(
+        COALESCE(md5(p.data::text), '') || ':' ||
+        COALESCE(p.current_course_id::text, '') || ':' ||
+        COALESCE(p.subscription_ends_at::text, '') || ':' ||
+        p.is_suspended::text || ':' ||
+        /* logged_at, not session_date: the first is when the row was written,
+           the second is the day being recorded and can be backdated. A set
+           corrected an hour later changes neither the count nor the date. */
+        (SELECT count(*)::text || ':' || COALESCE(max(logged_at)::text, '')
+           FROM public.workout_logs WHERE profile_id = p.id) || ':' ||
+        (SELECT count(*)::text || ':' || COALESCE(max(created_at)::text, '')
+                || ':' || COALESCE(max(completed_at)::text, '')
+           FROM public.training_cycles WHERE profile_id = p.id) || ':' ||
+        (SELECT count(*)::text || ':' || COALESCE(max(updated_at)::text, '')
+           FROM public.diet_plans WHERE profile_id = p.id)
+      ) AS fp
+    FROM public.profiles p
+    WHERE p.id = ${profileId}::uuid
+  `;
 
-  if (!profile) return "absent";
-
-  /* `data` is hashed, not returned. It is the largest thing here and the one
-     that changes most often — a weekly weight lands inside it. */
-  return fingerprint([
-    crypto.createHash("sha1").update(JSON.stringify(profile.data ?? null)).digest("hex"),
-    profile.current_course_id,
-    profile.subscription_ends_at,
-    profile.is_suspended,
-    logs._count._all, logs._max.logged_at,
-    cycles._count._all, cycles._max.created_at, cycles._max.completed_at,
-    diets._count._all, diets._max.updated_at,
-  ]);
+  /* No row means the profile is gone — answered as its own constant so the
+     caller's poller sees a change rather than an error. */
+  if (!row?.fp) return "absent";
+  return row.fp.slice(0, 16);
 }
 
 /* The coach's own screens: the subscriber list, the libraries, the content the
    site is built from. Counts and high-water marks only. */
 async function panelFingerprint(): Promise<string> {
-  const [profiles, courses, exercises, sources, diets, content] = await Promise.all([
-    prisma.profiles.aggregate({ _count: { _all: true }, _max: { created_at: true } }),
-    prisma.courses.aggregate({ _count: { _all: true }, _max: { created_at: true } }),
-    prisma.exercises.aggregate({ _count: { _all: true } }),
-    prisma.nutrition_sources.aggregate({ _count: { _all: true } }),
-    prisma.diet_plans.aggregate({ _count: { _all: true }, _max: { updated_at: true } }),
-    prisma.site_settings.aggregate({ _max: { updated_at: true } }),
-  ]);
+  /* Six aggregates and a full table read, folded into one statement.
+   *
+   * The read was the expensive part and the easiest to overlook: every
+   * subscriber row, ordered, serialised to JSON in Node and hashed — to detect
+   * that one of them had been suspended or had asked to renew. That is a cost
+   * that grows with the subscriber list, paid every five seconds by every open
+   * panel tab, and on Vercel it queued behind the six aggregates rather than
+   * running beside them.
+   *
+   * `string_agg` with `ORDER BY` builds the same per-row digest inside
+   * Postgres, and only the md5 comes back. A count alone would not do: a
+   * renewal request or a suspension changes a row without changing any count,
+   * which is why the rows were being read in the first place. */
+  const [row] = await prisma.$queryRaw<Array<{ fp: string }>>`
+    SELECT md5(
+      (SELECT count(*)::text || ':' || COALESCE(max(created_at)::text, '')
+         FROM public.profiles) || '|' ||
+      (SELECT count(*)::text || ':' || COALESCE(max(created_at)::text, '')
+         FROM public.courses) || '|' ||
+      (SELECT count(*)::text FROM public.exercises) || '|' ||
+      (SELECT count(*)::text FROM public.nutrition_sources) || '|' ||
+      (SELECT count(*)::text || ':' || COALESCE(max(updated_at)::text, '')
+         FROM public.diet_plans) || '|' ||
+      (SELECT COALESCE(max(updated_at)::text, '') FROM public.site_settings) || '|' ||
+      COALESCE((
+        SELECT md5(string_agg(
+          p.id::text || ':' ||
+          COALESCE(p.current_course_id::text, '') || ':' ||
+          COALESCE(p.subscription_ends_at::text, '') || ':' ||
+          p.is_suspended::text,
+          '|' ORDER BY p.id
+        ))
+        FROM public.profiles p
+      ), '')
+    ) AS fp
+  `;
 
-  /* A renewal request or a suspension changes a row without changing any count,
-     so the subscriber rows carry their own digest. Narrow select: this is the
-     panel's list view, and the list view already knows these fields. */
-  const rows = await prisma.profiles.findMany({
-    select: { id: true, current_course_id: true, subscription_ends_at: true, is_suspended: true },
-    orderBy: { id: "asc" },
-  });
-
-  return fingerprint([
-    profiles._count._all, profiles._max.created_at,
-    courses._count._all, courses._max.created_at,
-    exercises._count._all,
-    sources._count._all,
-    diets._count._all, diets._max.updated_at,
-    content._max.updated_at,
-    crypto.createHash("sha1").update(JSON.stringify(rows)).digest("hex"),
-  ]);
+  return (row?.fp ?? "none").slice(0, 16);
 }
 
 export async function GET(request: NextRequest) {
