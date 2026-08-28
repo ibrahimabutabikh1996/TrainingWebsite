@@ -321,7 +321,7 @@ try {
     );
     console.log(`  remaining for this run: ${left.n}`);
     if (Number(left.n) !== 0) exitCode = 1;
-    fs.existsSync(MANIFEST) && fs.unlinkSync(MANIFEST);
+    if (fs.existsSync(MANIFEST)) fs.unlinkSync(MANIFEST);
   } catch (e) {
     console.error(`  CLEANUP FAILED — manifest kept at ${MANIFEST}: ${e.message}`);
     exitCode = 1;

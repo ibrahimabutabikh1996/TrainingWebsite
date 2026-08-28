@@ -58,8 +58,12 @@ const eslintConfig = defineConfig([
       "src/app/admin/loading.tsx",
       "src/app/admin/layout.tsx",
       "src/app/dashboard/page.tsx",
-      "src/app/form/page.tsx",
-      "src/app/login/page.tsx",
+      /* These two name the client halves, not the pages: /form and /login are
+         server components whose header and loading screen live in
+         FormClient and LoginScreen. The entries used to name the page files,
+         which hold no <img> at all any more and were exempting nothing. */
+      "src/app/form/FormClient.tsx",
+      "src/components/auth/LoginScreen.tsx",
     ],
     rules: { "@next/next/no-img-element": "off" },
   },

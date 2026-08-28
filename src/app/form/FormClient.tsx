@@ -38,7 +38,13 @@ function FormNavbar() {
     <nav id="navbar" className="scrolled">
       <Link href="/" className="nav-logo" title="Ibrahim Abutabikh Logo">
         <span className="nav-logo-mark" style={{ width: "auto", maxWidth: "min(280px, 100%)" }}>
-          <img src="/images/logo/hLogo.png" alt="Ibrahim Abutabikh Logo" style={{ maxHeight: "48px", height: "100%", width: "auto", objectFit: "contain", display: "block" }} />
+          <img
+            src={optimizedSrc("/images/logo/hLogo.png", 384)}
+            srcSet={optimizedSrcSet("/images/logo/hLogo.png", [384, 640, 828])}
+            sizes="280px"
+            alt="Ibrahim Abutabikh Logo"
+            style={{ maxHeight: "48px", height: "100%", width: "auto", objectFit: "contain", display: "block" }}
+          />
         </span>
       </Link>
       <div className="nav-actions">

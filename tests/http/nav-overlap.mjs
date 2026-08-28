@@ -56,7 +56,6 @@ try {
         const barTop = bar.getBoundingClientRect().top;
         const rows = [];
         const chain = (el)=>{const p=[];let n=el;for(let i=0;n&&i<4;i++,n=n.parentElement){const c=(n.getAttribute("class")||"").trim().split(/\s+/).filter(Boolean).slice(0,2).join(".");p.unshift(n.tagName.toLowerCase()+(c?"."+c:""));}return p.join(" > ");};
-        let worst = null;
         for (const el of document.querySelectorAll(".admin-main-content *")) {
           if (el.children.length > 0) continue;              // leaves only
           const r = el.getBoundingClientRect();

@@ -431,7 +431,7 @@ try {
     console.log(`  remaining for this run: ${left.n}`);
     if (Number(left.n) !== 0) exitCode = 1;
 
-    fs.existsSync(MANIFEST) && fs.unlinkSync(MANIFEST);
+    if (fs.existsSync(MANIFEST)) fs.unlinkSync(MANIFEST);
   } catch (e) {
     console.error(`  CLEANUP FAILED — not widening the delete. Manifest kept at ${MANIFEST}`);
     console.error(`  ${e.message}`);

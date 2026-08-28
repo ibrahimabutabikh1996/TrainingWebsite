@@ -7,6 +7,7 @@ import { t } from "@/lib/translations";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { PreviewBar } from "@/components/ui/PreviewBar";
 import { safeMediaUrl } from "@/lib/richText";
+import { optimizedSrc, optimizedSrcSet } from "@/lib/imageOptim";
 import { getLandingContent } from "@/app/admin/cms/actions";
 import { usePreviewGuard } from "@/hooks/usePreviewGuard";
 
@@ -124,7 +125,13 @@ export function LoginScreen({ isPreview = false, initialCmsData = null }: Props)
               register button are accounted for, and an inline style cannot be
               narrowed by a media query. */}
           <div className="image-logo-mark" style={{ height: "48px", maxWidth: "min(280px, 100%)" }}>
-            <img src="/images/logo/hLogo.png" alt="Ibrahim Abutabikh Logo" style={{ maxHeight: "48px", height: "100%", width: "auto", objectFit: "contain", display: "block" }} />
+            <img
+              src={optimizedSrc("/images/logo/hLogo.png", 384)}
+              srcSet={optimizedSrcSet("/images/logo/hLogo.png", [384, 640, 828])}
+              sizes="280px"
+              alt="Ibrahim Abutabikh Logo"
+              style={{ maxHeight: "48px", height: "100%", width: "auto", objectFit: "contain", display: "block" }}
+            />
           </div>
         </Link>
 
