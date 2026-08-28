@@ -83,9 +83,53 @@ export function credentialError(username: unknown, password: unknown): string | 
  * @param password The plaintext password to hash
  * @returns The hashed password
  */
+/** The bcrypt cost for every hash this app writes, and the one the timing
+ *  equalizer below has to match. Named once so the two cannot drift. */
+export const BCRYPT_COST = 10;
+
 export async function hashPassword(password: string): Promise<string> {
-  const saltRounds = 10;
-  return await bcrypt.hash(password, saltRounds);
+  return await bcrypt.hash(password, BCRYPT_COST);
+}
+
+/* A real bcrypt hash that no password is meant to match — kept only to be
+ * compared against, so that a code path with no stored hash to check still
+ * spends bcrypt's time.
+ *
+ * Sign-in leaked which usernames exist through its response time, not its words.
+ * The message was already one sentence for "no such user" and for "wrong
+ * password" — but an absent username returned before bcrypt ran, while a real
+ * one paid for the comparison first, and bcrypt is deliberately slow. Measured:
+ * 341ms for a real username against a wrong password, 165ms for one that does
+ * not exist. A 175ms answer to a question the sentence refused to answer.
+ *
+ * `/api/auth/login` closes it by doing the same work either way — one profile
+ * lookup and one bcrypt comparison, against a real hash when there is one and
+ * against this otherwise. The cost must equal `BCRYPT_COST`; a hash written at a
+ * different cost would compare in a different time and reopen the gap. Regenerate
+ * with, and keep the cost in step:
+ *   node -e "console.log(require('bcrypt').hashSync('x', 10))"
+ */
+const TIMING_EQUALIZER_HASH =
+  "$2b$10$zWdwdaFunmec4Bl.wBRgJO97x8yOBUha9qczStxQsSyZl98xMP8RK";
+
+/**
+ * Runs one bcrypt comparison whose only product is bcrypt's delay, so a caller
+ * with no real hash to check is indistinguishable in time from one that had.
+ * The boolean it returns is meaningless and exists only so the call is not
+ * optimised away; the caller discards it.
+ */
+export async function equalizePasswordTiming(password: unknown): Promise<boolean> {
+  try {
+    return await bcrypt.compare(
+      typeof password === "string" ? password : "",
+      TIMING_EQUALIZER_HASH
+    );
+  } catch {
+    /* A fault here must not change the outcome — the caller was going to refuse
+       regardless, and the point of this call was the time it takes, not its
+       answer. */
+    return false;
+  }
 }
 
 /**

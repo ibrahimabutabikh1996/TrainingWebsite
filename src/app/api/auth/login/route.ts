@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { comparePassword, isBcryptHash } from "@/lib/auth";
+import { comparePassword, equalizePasswordTiming, isBcryptHash } from "@/lib/auth";
 import { startSession } from "@/lib/authGuard";
 import { clearAttempts, clientAddress, consumeAttempt } from "@/lib/rateLimit";
 
@@ -54,20 +54,58 @@ export async function POST(request: Request) {
       );
     }
 
+    /* From here to the password verdict, both a real account and an absent one
+       do the same work in the same order — one profile lookup and one bcrypt
+       comparison — so that the response time answers nothing that the unified
+       message withholds. See `equalizePasswordTiming` and TIMING_EQUALIZER_HASH
+       in `@/lib/auth` for the measurement that made this necessary. The verdict
+       is only formed at the end, once the work is done. */
     const account = await prisma.accounts.findUnique({
       where: { username },
     });
 
+    /* Always one profile lookup, whether or not the account exists — the absent
+       case queries a user id that cannot match rather than skipping the query,
+       so the round trip count does not depend on the answer.
+
+       Newest first, matching /api/profile: that is the profile the dashboard
+       will load, so it is the one whose suspension has to be honoured here. */
+    const NIL_UUID = "00000000-0000-0000-0000-000000000000";
+    const profile = await prisma.profiles.findFirst({
+      where: { user_id: account?.id ?? NIL_UUID },
+      orderBy: { created_at: "desc" },
+    });
+
+    /* Always one bcrypt comparison. Against the stored hash when there is a
+       usable one, and against the equalizer hash otherwise — an absent account,
+       or the anomaly of a stored value that is not a bcrypt hash. `passwordOk`
+       is only trusted below, and only when the account is real and hashed. */
+    const usableHash = account && isBcryptHash(account.password);
+    let passwordOk = false;
+    try {
+      passwordOk = usableHash
+        ? await comparePassword(password, account.password)
+        : await equalizePasswordTiming(password);
+    } catch (error) {
+      console.error(
+        `bcrypt comparison failed${account ? ` for account ${account.id}` : ""}:`,
+        error
+      );
+      return NextResponse.json(
+        { error: "حدث خطأ أثناء تسجيل الدخول" },
+        { status: 500 }
+      );
+    }
+
+    /* The verdicts, formed only now.
+     *
+     * An absent account and a wrong password are the same refusal, in the same
+     * time. A suspended account is told so on purpose — a person who cannot sign
+     * in needs to know why, and that this reveals the account exists is a
+     * deliberate, long-standing choice, not a leak this is trying to close. */
     if (!account) {
       return NextResponse.json({ error: REFUSED }, { status: 401 });
     }
-
-    /* Newest first, matching /api/profile: that is the profile the dashboard will
-       load, so it is the one whose suspension has to be honoured here. */
-    const profile = await prisma.profiles.findFirst({
-      where: { user_id: account.id },
-      orderBy: { created_at: "desc" },
-    });
 
     /* Read the suspension flag from its column. It used to be looked up inside
        the JSON blob, where a renamed or misspelled key would have silently let
@@ -79,26 +117,16 @@ export async function POST(request: Request) {
       );
     }
 
-    /* A stored value that is not a bcrypt hash is no longer compared.
-     *
-     * It used to be, as a string equality — the last route by which a password
-     * held in plaintext was an accepted credential. The branch was written to
-     * carry a finite set of rows left over from before hashing, and it drained
-     * itself: a correct plaintext password was rehashed on the way through, so
-     * the set only ever shrank. Every write path — registration, the coach's
-     * reset, a trainee changing their own — has produced bcrypt throughout.
-     *
-     * What replaces it is a refusal, not a comparison. That is the safe
-     * direction to fail in: the worst case is an account that cannot sign in
-     * and must be reset with `scripts/reset-password.mjs`, against a worst case
-     * of a password sitting readable in a column that a leaked connection
-     * string, a restored backup or the query log this app used to keep would
-     * each have handed over.
-     *
-     * Logged loudly and distinctly, because a refusal nobody can explain is
-     * worse than the bug. If this line ever appears, that account needs a reset
-     * — it is not a wrong password, and the person typing it cannot tell. */
-    if (!isBcryptHash(account.password)) {
+    /* A stored value that is not a bcrypt hash is no longer compared as a
+     * password. It used to be, as a string equality — the last route by which a
+     * password held in plaintext was an accepted credential. That branch drained
+     * itself and every write path produces bcrypt now; what is left is a
+     * refusal, logged distinctly because a refusal nobody can explain is worse
+     * than the bug. If this line appears, that account needs a reset with
+     * `scripts/reset-password.mjs` — it is not a wrong password, and the person
+     * typing it cannot tell. The equalizer comparison above already spent
+     * bcrypt's time, so this refusal is not a faster answer than any other. */
+    if (!usableHash) {
       console.error(
         `[login] account ${account.id} has a password that is not a bcrypt hash; ` +
           `refusing rather than comparing it as text. Reset it with scripts/reset-password.mjs.`
@@ -106,21 +134,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: REFUSED }, { status: 401 });
     }
 
-    let isMatch = false;
-    /* Matches the handling in /api/auth/change-password: a bcrypt fault must not
-       be reported as a wrong password, or the two screens would both reject a
-       correct password with no trace of the real cause. */
-    try {
-      isMatch = await comparePassword(password, account.password);
-    } catch (error) {
-      console.error(`bcrypt comparison failed for account ${account.id}:`, error);
-      return NextResponse.json(
-        { error: "حدث خطأ أثناء تسجيل الدخول" },
-        { status: 500 }
-      );
-    }
-
-    if (!isMatch) {
+    if (!passwordOk) {
       return NextResponse.json({ error: REFUSED }, { status: 401 });
     }
 
