@@ -293,6 +293,43 @@ export default function ExportWorkoutClient({
           overflow-wrap: anywhere;
         }
 
+        /* On a phone, fit the whole A4 sheet to the screen instead of letting it
+           overflow.
+
+           The sheet is a fixed 210mm — about 794px — with everything inside it
+           positioned in millimetres against that width, so it cannot be reflowed
+           to a narrow screen without coming apart. On a 375px phone it simply ran
+           off the right edge and the reader saw a slice of it. Scaling the whole
+           thing down keeps every proportion and shows the full page, small but
+           complete, which is what was asked for.
+
+           The zoom property, rather than a transform scale, on purpose: it scales
+           the layout box too, so there is no leftover empty band beside or below
+           the shrunken sheet and no horizontal scrollbar. Where zoom is not
+           supported the sheet just keeps its size — the same view as today, so
+           nothing regresses.
+
+           Screen only. The PDF is produced with page.pdf(), which renders with
+           print media, so none of this reaches it — it stays true A4. The widths
+           step down with the sheet's own fit points, not the site's layout
+           breakpoints, because what has to fit here is a fixed 794px object, not
+           a fluid column. (No back-tick marks in this comment: it lives inside a
+           template-literal style block, where a back-tick would end the string.) */
+        @media screen and (max-width: 820px) {
+          .pdf-export-wrapper { padding: 12px 5px !important; }
+          .pdf-page-card { zoom: 0.84; }
+        }
+        @media screen and (max-width: 680px) { .pdf-page-card { zoom: 0.69; } }
+        @media screen and (max-width: 560px) { .pdf-page-card { zoom: 0.59; } }
+        @media screen and (max-width: 480px) { .pdf-page-card { zoom: 0.53; } }
+        @media screen and (max-width: 430px) { .pdf-page-card { zoom: 0.51; } }
+        @media screen and (max-width: 414px) { .pdf-page-card { zoom: 0.48; } }
+        @media screen and (max-width: 390px) { .pdf-page-card { zoom: 0.46; } }
+        @media screen and (max-width: 375px) { .pdf-page-card { zoom: 0.44; } }
+        @media screen and (max-width: 360px) { .pdf-page-card { zoom: 0.42; } }
+        @media screen and (max-width: 345px) { .pdf-page-card { zoom: 0.40; } }
+        @media screen and (max-width: 330px) { .pdf-page-card { zoom: 0.37; } }
+
         @media print {
           body, .pdf-export-wrapper {
             background: transparent !important;

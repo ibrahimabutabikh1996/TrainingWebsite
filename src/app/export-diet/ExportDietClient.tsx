@@ -203,6 +203,27 @@ export default function ExportDietClient({
           border-bottom: 0.5mm solid #0F4E79;
         }
 
+        /* Fit the fixed 210mm sheet to a phone screen — see the fuller note in
+           ExportWorkoutClient. The zoom property scales the layout box, so the
+           several diet sheets stack tightly with no gaps between them rather than
+           each reserving a full A4 height. Screen only; the PDF renders with
+           print media and keeps its true A4 size. (No back-ticks here: this
+           comment sits inside a template-literal style block.) */
+        @media screen and (max-width: 820px) {
+          .pdf-export-wrapper { padding: 12px 5px !important; }
+          .pdf-page-card { zoom: 0.84; }
+        }
+        @media screen and (max-width: 680px) { .pdf-page-card { zoom: 0.69; } }
+        @media screen and (max-width: 560px) { .pdf-page-card { zoom: 0.59; } }
+        @media screen and (max-width: 480px) { .pdf-page-card { zoom: 0.53; } }
+        @media screen and (max-width: 430px) { .pdf-page-card { zoom: 0.51; } }
+        @media screen and (max-width: 414px) { .pdf-page-card { zoom: 0.48; } }
+        @media screen and (max-width: 390px) { .pdf-page-card { zoom: 0.46; } }
+        @media screen and (max-width: 375px) { .pdf-page-card { zoom: 0.44; } }
+        @media screen and (max-width: 360px) { .pdf-page-card { zoom: 0.42; } }
+        @media screen and (max-width: 345px) { .pdf-page-card { zoom: 0.40; } }
+        @media screen and (max-width: 330px) { .pdf-page-card { zoom: 0.37; } }
+
         @media print {
           @page {
             size: A4;
