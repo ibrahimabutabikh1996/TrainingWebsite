@@ -49,6 +49,7 @@ const eslintConfig = defineConfig([
       "src/app/admin/diet/plan/DietPlanBuilder.tsx",
       "src/app/export-profile/ExportProfileClient.tsx",
       "src/components/PromotionalPopup.tsx",
+      "src/components/VideoPlayer.tsx",
       "src/components/admin/ProfileMonthlyRecord.tsx",
       "src/components/admin/TraineeIntakeHelp.tsx",
       "src/components/dashboard/TraineeProfileDetails.tsx",

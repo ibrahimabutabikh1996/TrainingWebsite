@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { preconnect } from "react-dom";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -20,6 +21,7 @@ import { Icon } from "@/components/Icon";
 import { CustomSelect } from "@/components/CustomSelect";
 import { formatTimestamp } from "@/lib/trainingDates";
 import { getEmbedUrl, safeVideoUrl } from "@/lib/videoEmbed";
+import VideoPlayer from "@/components/VideoPlayer";
 import "../crm.css";
 import "./courses.css";
 import { normalizeArabic, arabicIncludes } from "@/lib/arabicSearch";
@@ -43,6 +45,11 @@ export default function AdminCoursesClient({
    *  programmes saved before an exercise carried its own `video_url`. */
   exerciseVideos?: Record<string, string>,
 }) {
+  /* Same two hosts the exercise library opens early, for the same reason: the
+     player here is one click away from a course the coach is already reading. */
+  preconnect("https://drive.google.com");
+  preconnect("https://drive.usercontent.google.com");
+
   const router = useRouter();
   /* Only the id is held in state. Keeping the whole course object meant the
      drawer kept rendering a stale snapshot after router.refresh() — an edit or
@@ -646,14 +653,7 @@ export default function AdminCoursesClient({
           zIndex={10000}
         >
           {videoUrl && getEmbedUrl(videoUrl) ? (
-            <div style={{ position: "relative", width: "100%", aspectRatio: "16 / 9", background: "#000" }}>
-              <iframe
-                src={getEmbedUrl(videoUrl)!}
-                allow="autoplay; encrypted-media; picture-in-picture"
-                allowFullScreen
-                style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none" }}
-              />
-            </div>
+            <VideoPlayer key={videoUrl} url={videoUrl} title="معاينة الفيديو" />
           ) : videoUrl ? (
             <p style={{ padding: "var(--space-6)", textAlign: "center", color: "var(--text-muted)" }}>
               رابط الفيديو غير صالح — عدّله من صفحة التمارين.

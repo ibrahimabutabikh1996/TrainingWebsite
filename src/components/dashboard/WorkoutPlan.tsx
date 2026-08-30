@@ -8,6 +8,7 @@ import { isCustomExercise } from "@/types/admin";
 import { useNow } from "@/hooks/useNow";
 import { formatDayAndDate } from "@/lib/trainingDates";
 import { safeVideoUrl } from "@/lib/videoEmbed";
+import VideoPlayer from "@/components/VideoPlayer";
 import "./workout-log.css";
 import { CustomDatePicker } from "@/components/dashboard/CustomDatePicker";
 import { WorkoutCompletionModal } from "@/components/dashboard/WorkoutCompletionModal";
@@ -969,130 +970,33 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
                                 marginBottom: "16px",
                               }}
                             >
+                              {/* Was an <iframe> per exercise, built here by a
+                                  second copy of the address translation that
+                                  lives in @/lib/videoEmbed — and mounted for
+                                  every row of the day at once, whether or not
+                                  the trainee had scrolled to it. Each of those
+                                  frames was Drive's viewer application, on a
+                                  phone, several times over.
+
+                                  The player fetches the file itself where it
+                                  can and defers the frame where it cannot, and
+                                  `preload="metadata"` is the part that matters
+                                  in a list: the still is what loads, not the
+                                  video. Same box, same border, same 16/9 —
+                                  `aspect-ratio` now rather than the padding
+                                  trick, which is the same geometry. */}
                               <div
                                 style={{
                                   borderRadius: "var(--radius-lg)",
                                   overflow: "hidden",
                                   border: "1px solid var(--border)",
-                                  position: "relative",
-                                  paddingBottom: "56.25%",
-                                  height: 0,
                                 }}
                               >
-                                {(() => {
-                                  /* Refused rather than rendered when it is not
-                                     an http(s) address. The column is the
-                                     coach's to write and this page is the
-                                     trainee's to read, so an unchecked value
-                                     here is one person's input in another
-                                     person's session. Rows stored before the
-                                     panel validated this field can still hold
-                                     anything. */
-                                  const url = safeVideoUrl(ex.video_url);
-                                  if (!url) return null;
-
-                                  const isDirect =
-                                    /\.(mp4|webm|ogg|mov)$/i.test(
-                                      url.split("?")[0],
-                                    );
-                                  if (isDirect) {
-                                    return (
-                                      <video
-                                        src={url}
-                                        controls
-                                        playsInline
-                                        style={{
-                                          position: "absolute",
-                                          top: 0,
-                                          left: 0,
-                                          width: "100%",
-                                          height: "100%",
-                                          objectFit: "cover",
-                                          background: "#000",
-                                        }}
-                                      />
-                                    );
-                                  }
-
-                                  let embedUrl = url;
-                                  if (
-                                    url.includes("youtube.com") ||
-                                    url.includes("youtu.be")
-                                  ) {
-                                    let videoId = "";
-                                    if (url.includes("v="))
-                                      videoId = url
-                                        .split("v=")[1]
-                                        .split("&")[0];
-                                    else if (url.includes("youtu.be/"))
-                                      videoId = url
-                                        .split("youtu.be/")[1]
-                                        ?.split("?")[0];
-                                    else if (url.includes("shorts/"))
-                                      videoId = url
-                                        .split("shorts/")[1]
-                                        ?.split("?")[0];
-                                    else if (url.includes("embed/"))
-                                      videoId = url
-                                        .split("embed/")[1]
-                                        ?.split("?")[0];
-
-                                    if (videoId)
-                                      embedUrl = `https://www.youtube.com/embed/${videoId}`;
-                                  } else if (url.includes("vimeo.com")) {
-                                    const vimeoId = url
-                                      .split("vimeo.com/")[1]
-                                      ?.split("?")[0]
-                                      ?.split("/")[0];
-                                    if (vimeoId)
-                                      embedUrl = `https://player.vimeo.com/video/${vimeoId}`;
-                                  } else if (
-                                    url.includes("instagram.com/p/") ||
-                                    url.includes("instagram.com/reel/")
-                                  ) {
-                                    const igUrl = url
-                                      .split("?")[0]
-                                      .replace(/\/$/, "");
-                                    embedUrl = `${igUrl}/embed`;
-                                  } else if (url.includes("drive.google.com")) {
-                                    let driveId = "";
-                                    if (url.includes("/file/d/")) {
-                                      driveId = url
-                                        .split("/file/d/")[1]
-                                        ?.split("/")[0]
-                                        ?.split("?")[0];
-                                    } else if (url.includes("id=")) {
-                                      try {
-                                        driveId =
-                                          new URL(url).searchParams.get("id") ||
-                                          "";
-                                      } catch {}
-                                    }
-                                    if (driveId)
-                                      embedUrl = `https://drive.google.com/file/d/${driveId}/preview`;
-                                  } else if (url.includes("tiktok.com")) {
-                                    // TikTok links usually require their own oEmbed player or a script.
-                                    // Direct iframe often fails unless formatted carefully, but we try raw or leave it.
-                                  }
-
-                                  return (
-                                    <iframe
-                                      src={embedUrl}
-                                      style={{
-                                        position: "absolute",
-                                        top: 0,
-                                        left: 0,
-                                        width: "100%",
-                                        height: "100%",
-                                        border: 0,
-                                        background: "#000",
-                                      }}
-                                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                      allowFullScreen
-                                      title={ex.name_ar}
-                                    />
-                                  );
-                                })()}
+                                <VideoPlayer
+                                  url={ex.video_url}
+                                  title={ex.name_ar}
+                                  preload="metadata"
+                                />
                               </div>
                               <div
                                 style={{

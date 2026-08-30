@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { preconnect } from "react-dom";
 import { Toaster } from "react-hot-toast";
 import { Exercise } from "@/types/admin";
 import MuscleTabs from "../components/MuscleTabs";
@@ -8,11 +9,20 @@ import ExerciseFormModal from "./ExerciseFormModal";
 import AdminModal from "../components/AdminModal";
 import { useExercises, CATEGORIES } from "./useExercises";
 import { getEmbedUrl } from "@/lib/videoEmbed";
+import VideoPlayer from "@/components/VideoPlayer";
 import { Icon } from "@/components/Icon";
 import "../crm.css";
 import "./exercises.css";
 
 export default function AdminExercisesClient({ initialExercises }: { initialExercises: Exercise[] }) {
+  /* The two hosts a Drive video comes from, opened while the page is still
+     being read rather than when a card is clicked. A cold DNS lookup and TLS
+     handshake are a few hundred milliseconds on a phone, and they were being
+     paid after the dialog had already opened — which is time spent looking at
+     an empty player. */
+  preconnect("https://drive.google.com");
+  preconnect("https://drive.usercontent.google.com");
+
   const {
     exercises,
     search, setSearch,
@@ -243,14 +253,9 @@ export default function AdminExercisesClient({ initialExercises }: { initialExer
             pointed at, which is what a row stored before the API validated this
             field may still hold. Nothing is framed in that case. */}
         {videoUrl && getEmbedUrl(videoUrl) ? (
-          <div style={{ position: "relative", width: "100%", aspectRatio: "16 / 9", background: "#000" }}>
-            <iframe
-              src={getEmbedUrl(videoUrl)!}
-              allow="autoplay; encrypted-media; picture-in-picture"
-              allowFullScreen
-              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none" }}
-            />
-          </div>
+          /* Keyed on the address so opening a second video starts a player
+             from scratch rather than reusing the first one's loading state. */
+          <VideoPlayer key={videoUrl} url={videoUrl} title="معاينة الفيديو" />
         ) : videoUrl ? (
           <p style={{ padding: "var(--space-6)", textAlign: "center", color: "var(--text-muted)" }}>
             رابط الفيديو غير صالح — عدّله من نموذج التمرين.

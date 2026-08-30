@@ -1,0 +1,74 @@
+/* ─── Video preview (src/components/VideoPlayer.tsx) ──────────────────────
+   The geometry is the one the exercise library's dialog already used — full
+   width, 16/9 — so the dialog is the same size it was. What changed is the
+   ground: it was `#000`, which is the black screen a coach saw for as long as
+   Drive's viewer took to start. */
+
+.vp-stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: var(--bg2);
+}
+
+.vp-media {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+  /* Transparent rather than black: the stage above is what shows through the
+     bars beside a portrait video, and it is themed. */
+  background: transparent;
+}
+
+/* `contain`, so a video filmed on a phone is letterboxed whole instead of
+   being cropped to the 16/9 box. Drive's viewer does the same. */
+video.vp-media {
+  object-fit: contain;
+}
+
+.vp-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg2);
+  /* The player underneath keeps its controls — this only ever covers, never
+     intercepts. */
+  pointer-events: none;
+}
+
+.vp-poster {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.vp-spinner {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  border: 3px solid color-mix(in srgb, var(--text) 18%, transparent);
+  border-top-color: var(--primary);
+  border-radius: var(--radius-circle);
+  animation: vpSpin 0.8s linear infinite;
+}
+
+/* A still frame with a spinner turning on top of it needs the frame dimmed a
+   little, or the spinner is lost in whatever the still happens to be. */
+.vp-poster + .vp-spinner {
+  box-shadow: 0 0 0 100vmax color-mix(in srgb, var(--bg) 55%, transparent);
+}
+
+@keyframes vpSpin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vp-spinner { animation-duration: 2.4s; }
+}
