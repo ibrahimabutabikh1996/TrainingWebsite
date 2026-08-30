@@ -1172,7 +1172,7 @@ export default function LandingClient({
                         <TestimonialMedia
                           type={t.type}
                           url={t.media_url}
-                          alt={t.author_name || "رأي مشترك"}
+                          alt={t.author_name || "نتيجة مشترك"}
                         />
                       )}
 

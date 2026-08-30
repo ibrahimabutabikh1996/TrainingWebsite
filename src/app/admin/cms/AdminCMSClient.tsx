@@ -389,12 +389,12 @@ const TestimonialsEditor = () => {
         </div>
         <button type="button" onClick={addTestimonial} className="cms-btn-primary">
           <Icon name="add" />
-          <span>إضافة رأي جديد</span>
+          <span>إضافة نتيجة جديدة</span>
         </button>
       </div>
 
       {testimonials.length === 0 ? (
-        <p className="cms-empty">لا توجد آراء مضافة حالياً. سيتم عرض الأمثلة الافتراضية في الموقع.</p>
+        <p className="cms-empty">لا توجد نتائج مضافة حالياً. سيتم عرض الأمثلة الافتراضية في الموقع.</p>
       ) : (
         <div className="cms-testimonial-list">
           {testimonials.map((t, idx) => {
@@ -411,7 +411,7 @@ const TestimonialsEditor = () => {
                   <div className="cms-testimonial-id">
                     <div className="cms-testimonial-num">{idx + 1}</div>
                     <div style={{ minWidth: 0 }}>
-                      <div className="cms-testimonial-name">{t.author_name || "رأي جديد (بدون اسم)"}</div>
+                      <div className="cms-testimonial-name">{t.author_name || "نتيجة جديدة (بدون اسم)"}</div>
                       <div className="cms-testimonial-meta">
                         النوع: {t.type === 'text' ? 'نص فقط' : t.type === 'image' ? 'صورة' : t.type === 'video' ? 'فيديو' : 'صوت'}
                       </div>
@@ -491,7 +491,7 @@ const TestimonialsEditor = () => {
                         </div>
                         {t.media_url && (
                           <div className="cms-media-preview">
-                            {t.type === "image" && <img src={previewSrc(t.media_url, 384)} alt={t.author_name ? `صورة رأي ${t.author_name}` : "معاينة الصورة المرفقة"} loading="lazy" decoding="async" />}
+                            {t.type === "image" && <img src={previewSrc(t.media_url, 384)} alt={t.author_name ? `صورة نتيجة ${t.author_name}` : "معاينة الصورة المرفقة"} loading="lazy" decoding="async" />}
                             {t.type === "video" && <video src={t.media_url} controls />}
                             {t.type === "audio" && <audio src={t.media_url} controls />}
                           </div>
@@ -500,13 +500,13 @@ const TestimonialsEditor = () => {
                     )}
 
                     <div className="cms-form-group" style={{ marginBottom: 0 }}>
-                      <label className="cms-label">نص الرأي</label>
+                      <label className="cms-label">نص النتيجة</label>
                       <textarea
                         value={t.text || ""}
                         onChange={(e) => updateTestimonial(idx, "text", e.target.value)}
                         className="cms-textarea"
                         rows={3}
-                        placeholder="اكتب قصة نجاح أو رأي المشترك هنا..."
+                        placeholder="اكتب قصة نجاح أو نتيجة المشترك هنا..."
                       />
                     </div>
 
