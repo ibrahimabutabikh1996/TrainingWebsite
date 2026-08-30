@@ -54,8 +54,10 @@ const supabaseOrigin = supabaseUrl?.origin ?? null;
  *                scripts, and there is no nonce to give them without routing
  *                every response through the proxy. What matters is what is NOT
  *                here: no `https:`, so no external script can be loaded at all,
- *                and no `unsafe-eval`. Inline execution stays possible; pulling
- *                in an attacker's script does not.
+ *                and no `unsafe-eval` in anything served to a visitor. Inline
+ *                execution stays possible; pulling in an attacker's script does
+ *                not. See `isDev` below for the one arm that adds `unsafe-eval`
+ *                and cannot be reached by a deployed build.
  *
  *   style-src    'self' and inline, and this one is not negotiable today: the
  *                interface carries over a thousand `style={{ }}` attributes,
@@ -86,9 +88,23 @@ const supabaseOrigin = supabaseUrl?.origin ?? null;
  *
  * The last four are cheap and absolute: nothing here embeds a plugin, sets a
  * <base>, submits a form off-site, or should ever be framed. */
+/* `next dev` only.
+ *
+ * React's development build calls eval() — it is how the error overlay
+ * reconstructs a callstack from another environment, among other debugging
+ * features — and the dev server evaluates modules the same way. Under this
+ * header the browser refuses, and every page in development answers with
+ * "eval() is not supported in this environment" instead of running. The
+ * production build never calls eval(), so it never needed the permission.
+ *
+ * `next build` and `next start` both set NODE_ENV to "production", so this is
+ * false for anything that reaches a visitor: the deployed policy is the same
+ * string it was before this existed. Nothing else in the header moves. */
+const isDev = process.env.NODE_ENV !== "production";
+
 const CSP = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline'",
+  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
   "media-src 'self' blob: https:",
