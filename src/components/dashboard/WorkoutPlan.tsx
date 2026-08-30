@@ -985,19 +985,20 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
                                   video. Same box, same border, same 16/9 —
                                   `aspect-ratio` now rather than the padding
                                   trick, which is the same geometry. */}
-                              <div
-                                style={{
-                                  borderRadius: "var(--radius-lg)",
-                                  overflow: "hidden",
-                                  border: "1px solid var(--border)",
-                                }}
-                              >
-                                <VideoPlayer
-                                  url={ex.video_url}
-                                  title={ex.name_ar}
-                                  preload="metadata"
-                                />
-                              </div>
+                              {/* The border and radius this used to wrap the
+                                  player in are the player's own now: it takes
+                                  the shape of the clip, and these clips are
+                                  portrait, so a full-width box would have been
+                                  drawn around a narrow video with nothing in
+                                  the corners. Capped shorter than a dialog's
+                                  player — every exercise of the day has one of
+                                  these, and the day still has to scroll. */}
+                              <VideoPlayer
+                                url={ex.video_url}
+                                title={ex.name_ar}
+                                preload="metadata"
+                                maxHeight="52vh"
+                              />
                               <div
                                 style={{
                                   display: "flex",

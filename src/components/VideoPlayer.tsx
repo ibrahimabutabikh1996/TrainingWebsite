@@ -37,6 +37,7 @@ export default function VideoPlayer({
   url,
   title,
   preload = "auto",
+  maxHeight = "70vh",
 }: {
   url: string;
   title?: string;
@@ -44,6 +45,10 @@ export default function VideoPlayer({
    *  "metadata" for one of many sitting in a list, where fetching every video
    *  in full is the cost the list cannot afford. */
   preload?: "auto" | "metadata";
+  /** How tall the player may grow once it takes the shape of a portrait clip.
+   *  A dialog opened to watch one video can afford most of the screen; a list
+   *  with an exercise under every row cannot, or the day becomes unscrollable. */
+  maxHeight?: string;
 }) {
   const embedUrl = getEmbedUrl(url);
   const fileId = driveFileId(url);
@@ -55,7 +60,34 @@ export default function VideoPlayer({
   /* Anything else was an iframe already and starts as one. */
   const [useFrame, setUseFrame] = useState(!directUrl);
   const [ready, setReady] = useState(false);
+  /* Width over height, once something has said what it is. */
+  const [aspect, setAspect] = useState<number | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  /* The still is measured rather than merely displayed, because it is the only
+     thing that knows the shape of a Drive video before Drive's viewer has
+     started — the thumbnail comes back at the clip's own dimensions. These are
+     filmed on a phone and are overwhelmingly portrait, so a 16/9 frame spent
+     most of itself on bars beside the exercise.
+
+     Loaded through its own Image rather than off the <img> below: that element
+     lives inside the loading overlay and is gone the moment the player is
+     ready, which on a cached frame can be before its load event is handled.
+     Both ask for the same address, so this costs no second request. */
+  useEffect(() => {
+    if (!poster) return;
+    let live = true;
+    const img = new Image();
+    img.onload = () => {
+      if (live && img.naturalWidth > 0 && img.naturalHeight > 0) {
+        setAspect(img.naturalWidth / img.naturalHeight);
+      }
+    };
+    img.src = poster;
+    return () => {
+      live = false;
+    };
+  }, [poster]);
 
   /* A stalled request is the case an `error` event does not cover: no bytes,
      no failure, no end to the waiting. Eight seconds with `readyState` still
@@ -77,8 +109,20 @@ export default function VideoPlayer({
      renders nothing rather than an empty stage. */
   if (!embedUrl) return null;
 
+  /* 16/9 until something says otherwise: a YouTube or Vimeo frame has no still
+     to measure and is that shape anyway. `max-width` is what keeps a portrait
+     clip inside `maxHeight` — capping the height directly would leave the box
+     its full width and put the bars straight back. */
+  const ratio = aspect ?? 16 / 9;
+
   return (
-    <div className="vp-stage">
+    <div
+      className="vp-stage"
+      style={{
+        aspectRatio: String(ratio.toFixed(4)),
+        maxWidth: `calc(${maxHeight} * ${ratio.toFixed(4)})`,
+      }}
+    >
       {useFrame ? (
         <iframe
           className="vp-media"
@@ -102,7 +146,14 @@ export default function VideoPlayer({
           controls
           playsInline
           preload={preload}
-          onLoadedMetadata={() => setReady(true)}
+          onLoadedMetadata={(e) => {
+            /* A media file has no thumbnail to measure, so it says so itself. */
+            const el = e.currentTarget;
+            if (el.videoWidth > 0 && el.videoHeight > 0) {
+              setAspect(el.videoWidth / el.videoHeight);
+            }
+            setReady(true);
+          }}
           onError={() => {
             setReady(false);
             setUseFrame(true);

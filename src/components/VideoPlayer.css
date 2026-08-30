@@ -7,9 +7,21 @@
 .vp-stage {
   position: relative;
   width: 100%;
+  /* Both of these are set inline from the clip's measured shape — see
+     VideoPlayer.tsx. The values here are what a frame with nothing to measure
+     falls back to. */
   aspect-ratio: 16 / 9;
+  max-width: calc(70vh * 1.7778);
+  /* A portrait clip is narrower than whatever holds it, so it sits in the
+     middle of that space rather than against one edge of it. */
+  margin-inline: auto;
   overflow: hidden;
   background: var(--bg2);
+  /* The outline belongs to the player now that the player is the video's own
+     shape. It used to sit on a wrapper at the call site, which after this
+     change would have drawn a full-width box around a narrow portrait clip. */
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
 }
 
 .vp-media {
@@ -23,8 +35,9 @@
   background: transparent;
 }
 
-/* `contain`, so a video filmed on a phone is letterboxed whole instead of
-   being cropped to the 16/9 box. Drive's viewer does the same. */
+/* The stage is the clip's own shape, so there is normally nothing to letterbox.
+   `contain` is what guarantees that stays true if the measurement is a little
+   off or absent — the whole frame is shown either way, never cropped. */
 video.vp-media {
   object-fit: contain;
 }
