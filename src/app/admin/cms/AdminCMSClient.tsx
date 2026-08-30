@@ -384,7 +384,7 @@ const TestimonialsEditor = () => {
     <div className="cms-section-card">
       <div className="cms-media-head">
         <div className="cms-media-head-text">
-          <h3 className="cms-card-title">أراء المشتركين</h3>
+          <h3 className="cms-card-title">نتائج المشتركين</h3>
           <p className="cms-media-info">إدارة التقييمات وقصص النجاح التي تظهر في الصفحة الرئيسية.</p>
         </div>
         <button type="button" onClick={addTestimonial} className="cms-btn-primary">
@@ -1076,7 +1076,7 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
                 { id: "hero", label: "الرئيسية (Hero)" },
                 { id: "coach", label: "قسم المدرب" },
                 { id: "membership", label: "الخطط والاشتراكات" },
-                { id: "testimonials", label: "آراء المشتركين" },
+                { id: "testimonials", label: "نتائج المشتركين" },
                 { id: "contact", label: "معلومات التواصل" },
                 { id: "login", label: "صفحة الدخول" },
                 /* Two different things used to answer to "العروض": this tab, which
@@ -1127,7 +1127,7 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
                   {([
                     { key: "section_coach_active", label: "قسم المدرب" },
                     { key: "section_membership_active", label: "الباقات والاشتراكات" },
-                    { key: "section_testimonials_active", label: "آراء المشتركين" },
+                    { key: "section_testimonials_active", label: "نتائج المشتركين" },
                     { key: "section_offers_active", label: "العروض الخاصة" },
                     { key: "section_contact_active", label: "معلومات التواصل" },
                   ] satisfies { key: string; label: string }[]).map(({ key, label }) => (
