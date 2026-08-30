@@ -456,6 +456,32 @@ export default function LandingClient({
     };
   }, []);
 
+  /* Arriving with a section already named in the address.
+   *
+   * `#membership` in the URL is honoured by the browser on a full page load —
+   * the section is in the server-rendered HTML, so it is there to be found —
+   * but not when the router brings someone here from another route. The two
+   * "تسجيل جديد" buttons on the sign-in page are `<Link href="/#membership">`,
+   * and a client-side navigation renders this page a few hundred milliseconds
+   * after the router has already looked for that element and not found it.
+   * Measured: the id does not exist at 400ms and does at 700ms. The address
+   * ends up correct and the page stays at the top.
+   *
+   * So the page honours its own hash once it exists. On a full load this runs
+   * after the browser has already arrived and scrolls to the same place, which
+   * costs nothing; on a client-side navigation it is the only thing that will.
+   *
+   * `instant` rather than the smooth used for in-page links: this is an
+   * arrival, and it matches what a full page load already does. Anything the
+   * hash does not name, or names but is switched off in the content manager
+   * and therefore `display: none`, is left alone. */
+  useEffect(() => {
+    const id = window.location.hash.slice(1);
+    if (!id) return;
+    const target = document.getElementById(decodeURIComponent(id));
+    target?.scrollIntoView({ behavior: "instant" });
+  }, []);
+
   /* The rules themselves moved to @/lib/planNames. They were written out here
      when this page was the only thing reading those fields; the form, the
      WhatsApp message, the subscriber list and the PDF export read them too now,
