@@ -385,7 +385,7 @@ const TestimonialsEditor = () => {
       <div className="cms-media-head">
         <div className="cms-media-head-text">
           <h3 className="cms-card-title">نتائج المشتركين</h3>
-          <p className="cms-media-info">إدارة التقييمات وقصص النجاح التي تظهر في الصفحة الرئيسية.</p>
+          <p className="cms-media-info">إدارة النتائج وقصص النجاح التي تظهر في الصفحة الرئيسية.</p>
         </div>
         <button type="button" onClick={addTestimonial} className="cms-btn-primary">
           <Icon name="add" />
