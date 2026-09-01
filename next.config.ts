@@ -206,6 +206,33 @@ const nextConfig: NextConfig = {
     minimumCacheTTL: 60 * 60 * 24 * 30,
   },
 
+  /* The browser the two PDF routes print with, which the trace does not find
+     on its own.
+   *
+   * `@sparticuz/chromium` is a Chromium built to fit in a Lambda, and it ships
+   * as compressed archives under `bin/` — `chromium.br` alone is 64 MB. The
+   * package is already external (Next lists it and `puppeteer-core` among its
+   * built-in server externals, so nothing bundles them), and tracing follows
+   * its JavaScript correctly. What tracing cannot follow is a path computed at
+   * runtime: `executablePath()` reaches for those archives by name, and nothing
+   * in the source says so in a way a static analysis can see.
+   *
+   * The result was a function that carried the library and not the browser.
+   * Verified in the build output rather than guessed: the trace manifest for
+   * `/api/export-workout/pdf` listed all eight of the package's JavaScript
+   * files and zero `.br` files. On Vercel that is an extraction failure inside
+   * `executablePath()`, which the route catches and answers as a 500 — the
+   * "تحميل النظام التدريبي PDF" button spinning on "جاري التجهيز..." forever.
+   *
+   * Both routes are listed because both print through the same helper and both
+   * traced the same way. `bin/**` rather than the one archive: the fonts and
+   * the al2023 shim beside it are read the same way, and a Chromium that starts
+   * without its fonts renders an Arabic sheet as empty boxes. */
+  outputFileTracingIncludes: {
+    "/api/export-workout/pdf": ["./node_modules/@sparticuz/chromium/bin/**"],
+    "/api/export-diet/pdf": ["./node_modules/@sparticuz/chromium/bin/**"],
+  },
+
   /* `X-Powered-By: Next.js` on every response names the stack for anyone
      deciding which exploits to try first. It buys nothing. */
   poweredByHeader: false,
