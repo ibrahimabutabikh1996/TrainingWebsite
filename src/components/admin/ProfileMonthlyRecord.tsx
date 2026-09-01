@@ -84,8 +84,13 @@ function DeleteControl({
   );
 }
 
+/* `-u-nu-latn` picks the numbering system, and it is the only reason this is
+   not the bare "ar-IQ" it used to be: that locale's default numbering is
+   `arab`, so a date printed here came out as "16 آب 2026" written with
+   Arabic-Indic digits — ١٦ and ٢٠٢٦ — while every other number in the panel is
+   Latin. The month name is still Arabic; only the digits change. */
 const arDate = (iso: string | null) =>
-  iso ? new Date(iso).toLocaleDateString("ar-IQ", { year: "numeric", month: "long", day: "numeric" }) : null;
+  iso ? new Date(iso).toLocaleDateString("ar-IQ-u-nu-latn", { year: "numeric", month: "long", day: "numeric" }) : null;
 
 /**
  * One month, standing on its own.

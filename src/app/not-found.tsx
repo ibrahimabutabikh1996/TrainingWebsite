@@ -29,7 +29,7 @@ export default function NotFound() {
           alt=""
           className="boundary-logo"
         />
-        <p className="boundary-code">٤٠٤</p>
+        <p className="boundary-code">404</p>
         <h1 className="boundary-title">الصفحة غير موجودة</h1>
         <p className="boundary-text">
           الرابط الذي فتحته غير صحيح، أو أن الصفحة نُقلت أو حُذفت. تأكد من العنوان

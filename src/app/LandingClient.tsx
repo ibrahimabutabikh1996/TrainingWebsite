@@ -40,12 +40,12 @@ const defaultContent: JsonRecord = {
   coach_name: "إبراهيم أبو طبيخ",
   coach_cert: "مدرب شخصي وأخصائي تغذية معتمد لنخبة الرياضيين",
   coach_bio1:
-    "مع أكثر من ١٠ سنوات من الخبرة في تحويل الأجسام، أتخصص في تصميم أنظمة غذائية وبرامج تدريبية مخصصة بدقة عالية. فلسفتي بسيطة: الانضباط، البرمجة الذكية، ولا أعذار.",
+    "مع أكثر من 10 سنوات من الخبرة في تحويل الأجسام، أتخصص في تصميم أنظمة غذائية وبرامج تدريبية مخصصة بدقة عالية. فلسفتي بسيطة: الانضباط، البرمجة الذكية، ولا أعذار.",
   coach_bio2:
     "لقد نجحت في تدريب مئات العملاء بدءاً من الرياضيين المحترفين إلى المدراء التنفيذيين المشغولين، مساعداً إياهم في الوصول إلى ذروة لياقتهم البدنية.",
-  coach_stat1_num: "+١٠",
+  coach_stat1_num: "+10",
   coach_stat1_text: "سنوات خبرة",
-  coach_stat2_num: "+٥٠٠",
+  coach_stat2_num: "+500",
   coach_stat2_text: "تحولات",
   coach_stat3_num: "ISSA",
   coach_stat3_text: "معتمد",
@@ -56,11 +56,11 @@ const defaultContent: JsonRecord = {
   card1_desc:
     "مناسبة للأشخاص الملتزمين الذين يحتاجون فقط إلى التوجيه الصحيح في التدريب والنظام الغذائي.",
   card1_p1_label: "عرض جدول تدريب + نظام غذائي",
-  card1_p1_val: "٢٥,٠٠٠ د.ع",
+  card1_p1_val: "25,000 د.ع",
   card1_p2_label: "جدول تدريب فقط",
-  card1_p2_val: "١٥,٠٠٠ د.ع",
+  card1_p2_val: "15,000 د.ع",
   card1_p3_label: "نظام غذائي فقط",
-  card1_p3_val: "١٥,٠٠٠ د.ع",
+  card1_p3_val: "15,000 د.ع",
   card1_f1: "جدول تدريب ممتاز",
   card1_f2: "نظام غذائي ممتاز",
   card1_f3: "اعتمد على نفسك",
@@ -70,11 +70,11 @@ const defaultContent: JsonRecord = {
   card2_desc:
     "مناسبة للأشخاص الذين يجدون صعوبة في الالتزام ويحتاجون إلى خطة منظمة وخطة المتابعة الأسبوعية للوصول إلى أهدافهم.",
   card2_p1_label: "الشهر الأول",
-  card2_p1_val: "٥٠,٠٠٠ د.ع",
+  card2_p1_val: "50,000 د.ع",
   card2_p2_label: "الشهر الثاني (تجديد)",
-  card2_p2_val: "٣٠,٠٠٠ د.ع",
+  card2_p2_val: "30,000 د.ع",
   card2_p3_label: "الشهر الثالث (يتضمن دليل ما بعد الدايت)",
-  card2_p3_val: "٥٠,٠٠٠ د.ع",
+  card2_p3_val: "50,000 د.ع",
   card2_f1: "قواعد غذائية خاصة",
   card2_f2: "خطة المتابعة الأسبوعية",
   card2_f3: "تنظيم أسلوب حياتك",
@@ -82,12 +82,12 @@ const defaultContent: JsonRecord = {
   card3_badge: "خطة المتابعة اليومية",
   card3_desc:
     "هذه هي الطريقة الأكثر ضماناً للوصول إلى هدفك. المتابعة اليومية ستساعدك على الالتزام. مثالية للأشخاص الذين جربوا كل شيء ولم يستطيعوا الالتزام.",
-  card3_p1_label: "خطة نظام غذائي كاملة لمدة ٣ أشهر",
-  card3_p1_val: "٣٠٠,٠٠٠ د.ع",
+  card3_p1_label: "خطة نظام غذائي كاملة لمدة 3 أشهر",
+  card3_p1_val: "300,000 د.ع",
   card3_p2_label: "دفع شهري (شهر واحد)",
-  card3_p2_val: "١٢٠,٠٠٠ د.ع",
+  card3_p2_val: "120,000 د.ع",
   card3_note:
-    "إذا واصلت بالدفع الشهري، ستحصل على خصم ٦٠,٠٠٠ د.ع في الشهر الثالث.",
+    "إذا واصلت بالدفع الشهري، ستحصل على خصم 60,000 د.ع في الشهر الثالث.",
   card3_f1: "خطة المتابعة اليومية",
   card3_f2: "التزام مضمون",
   card3_f3: "أضمن طريق للوصول لهدفك",
@@ -117,7 +117,7 @@ const defaultContent: JsonRecord = {
   off_card2_p1_val: "40,000 د.ع",
   off_card2_p2_label: "القسط الاول (مقدم)",
   off_card2_p2_val: "25,000 د.ع",
-  off_card2_p3_label: "القسط الثاني (يدفع بعد ١٥ يوم من الاشتراك)",
+  off_card2_p3_label: "القسط الثاني (يدفع بعد 15 يوم من الاشتراك)",
   off_card2_p3_val: "15,000 د.ع",
   off_card2_f1: "تغذية ومكملات غذائية",
   off_card2_f2: "تمارين احترافية",
@@ -126,7 +126,7 @@ const defaultContent: JsonRecord = {
   off_card3_badge: "خطة المتابعة اليومية",
   off_card3_desc:
     "لمن هم مستعدون لصعود المسرح والمنافسة على الألقاب. تدريبات وبرامج تغذية مصممة خصيصاً للوصول لأفضل نتيجة في وقت قياسي والتفوق بالمرحلة.",
-  off_card3_p1_label: "نظام غذائي وتدريب ومتابعة لمدة ٣ شهور",
+  off_card3_p1_label: "نظام غذائي وتدريب ومتابعة لمدة 3 شهور",
   off_card3_p1_val: "150,000 د.ع",
   off_card3_p2_label: "نظام تجهيز (لمدة شهرين)",
   off_card3_p2_val: "120,000 د.ع",
@@ -1134,7 +1134,7 @@ export default function LandingClient({
                 </p>
                 <div className="coach-bio">
                   <p data-i18n="coach_bio1">
-                    مع أكثر من ١٠ سنوات من الخبرة في تحويل الأجسام، أتخصص في
+                    مع أكثر من 10 سنوات من الخبرة في تحويل الأجسام، أتخصص في
                     تصميم أنظمة غذائية وبرامج تدريبية مخصصة بدقة عالية. فلسفتي
                     بسيطة: الانضباط، البرمجة الذكية، ولا أعذار.
                   </p>
@@ -1146,11 +1146,11 @@ export default function LandingClient({
                 </div>
                 <ul className="coach-stats">
                   <li>
-                    <strong data-i18n="coach_stat1_num">+١٠</strong>
+                    <strong data-i18n="coach_stat1_num">+10</strong>
                     <span data-i18n="coach_stat1_text">سنوات خبرة</span>
                   </li>
                   <li>
-                    <strong data-i18n="coach_stat2_num">+٥٠٠</strong>
+                    <strong data-i18n="coach_stat2_num">+500</strong>
                     <span data-i18n="coach_stat2_text">تحولات</span>
                   </li>
                   <li>
@@ -1277,7 +1277,7 @@ export default function LandingClient({
                       className="price-amount highlight"
                       data-i18n="card1_p1_val"
                     >
-                      ٢٥,٠٠٠ د.ع
+                      25,000 د.ع
                     </span>
                   </div>
                   <div className="price-row">
@@ -1285,7 +1285,7 @@ export default function LandingClient({
                       جدول تدريب فقط
                     </span>
                     <span className="price-amount" data-i18n="card1_p2_val">
-                      ١٥,٠٠٠ د.ع
+                      15,000 د.ع
                     </span>
                   </div>
                   <div className="price-row">
@@ -1293,7 +1293,7 @@ export default function LandingClient({
                       نظام غذائي فقط
                     </span>
                     <span className="price-amount" data-i18n="card1_p3_val">
-                      ١٥,٠٠٠ د.ع
+                      15,000 د.ع
                     </span>
                   </div>
                   <ul className="membership-features">
@@ -1339,7 +1339,7 @@ export default function LandingClient({
                       className="price-amount highlight"
                       data-i18n="card2_p1_val"
                     >
-                      ٥٠,٠٠٠ د.ع
+                      50,000 د.ع
                     </span>
                   </div>
                   <div className="price-row">
@@ -1347,7 +1347,7 @@ export default function LandingClient({
                       الشهر الثاني (تجديد)
                     </span>
                     <span className="price-amount" data-i18n="card2_p2_val">
-                      ٣٠,٠٠٠ د.ع
+                      30,000 د.ع
                     </span>
                   </div>
                   <div className="price-row" style={{ marginBottom: 24 }}>
@@ -1359,7 +1359,7 @@ export default function LandingClient({
                       الشهر الثالث (يتضمن دليل ما بعد الدايت)
                     </span>
                     <span className="price-amount" data-i18n="card2_p3_val">
-                      ٥٠,٠٠٠ د.ع
+                      50,000 د.ع
                     </span>
                   </div>
                   <ul className="membership-features">
@@ -1400,13 +1400,13 @@ export default function LandingClient({
                   </p>
                   <div className="price-row">
                     <span className="price-label" data-i18n="card3_p1_label">
-                      خطة نظام غذائي كاملة لمدة ٣ أشهر
+                      خطة نظام غذائي كاملة لمدة 3 أشهر
                     </span>
                     <span
                       className="price-amount highlight"
                       data-i18n="card3_p1_val"
                     >
-                      ٣٠٠,٠٠٠ د.ع
+                      300,000 د.ع
                     </span>
                   </div>
                   <div className="price-row" style={{ marginBottom: 0 }}>
@@ -1414,11 +1414,11 @@ export default function LandingClient({
                       دفع شهري (شهر واحد)
                     </span>
                     <span className="price-amount" data-i18n="card3_p2_val">
-                      ١٢٠,٠٠٠ د.ع
+                      120,000 د.ع
                     </span>
                   </div>
                   <div className="price-note" data-i18n="card3_note">
-                    إذا واصلت بالدفع الشهري، ستحصل على خصم ٦٠,٠٠٠ د.ع في الشهر
+                    إذا واصلت بالدفع الشهري، ستحصل على خصم 60,000 د.ع في الشهر
                     الثالث.
                   </div>
                   <ul className="membership-features">
@@ -1619,7 +1619,7 @@ export default function LandingClient({
                       style={{ flex: 1, paddingInlineEnd: 12, lineHeight: 1.4 }}
                       data-i18n="off_card2_p3_label"
                     >
-                      القسط الثاني (يدفع بعد ١٥ يوم من الاشتراك)
+                      القسط الثاني (يدفع بعد 15 يوم من الاشتراك)
                     </span>
                     <span
                       className="price-was"
@@ -1673,7 +1673,7 @@ export default function LandingClient({
                       className="price-label"
                       data-i18n="off_card3_p1_label"
                     >
-                      نظام غذائي وتدريب ومتابعة لمدة ٣ شهور
+                      نظام غذائي وتدريب ومتابعة لمدة 3 شهور
                     </span>
                     <span
                       className="price-was"

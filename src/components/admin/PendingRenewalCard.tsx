@@ -306,7 +306,7 @@ export default function PendingRenewalCard({ profileId, data, planNames }: Props
       </div>
 
       <p style={{ margin: 0, fontSize: "0.85rem", color: "var(--text-muted)", lineHeight: 1.7 }}>
-        الموافقة تضيف <b>٣٠ يوماً</b> فوق ما تبقّى من اشتراكه الحالي — لا تُلغى الأيام المتبقية.
+        الموافقة تضيف <b>30 يوماً</b> فوق ما تبقّى من اشتراكه الحالي — لا تُلغى الأيام المتبقية.
         والرفض يغلق الطلب دون أن يسحب يوماً واحداً، ويسمح للمتدرب بإرسال طلب مصحّح.
       </p>
     </div>
