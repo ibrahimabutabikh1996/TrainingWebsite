@@ -10,9 +10,69 @@ import { RICH_TEXT_KEYS, safeMediaUrl, setRichText, setText } from "@/lib/richTe
 import { optimizedCssUrl, optimizedSrc, optimizedSrcSet } from "@/lib/imageOptim";
 import { useParallax } from "@/hooks/useParallax";
 import { normalizeLegacyName } from "@/lib/planNames";
+import { planCardFrom, isShown, CARD_LIST_DEFAULTS, type PlanCard } from "@/lib/planCards";
 import { PromotionalPopup } from "@/components/PromotionalPopup";
 import { PreviewBar } from "@/components/ui/PreviewBar";
 import { usePreviewGuard } from "@/hooks/usePreviewGuard";
+
+/* The services table, the note and the features of one card.
+ *
+ * These three lists were written out as fixed markup six times — three plans
+ * and three offers — with a `data-i18n` key on every span, and the DOM pass
+ * filled them in. That is why a card could not gain a row: the nodes existed
+ * before the content did, so the count lived in the markup rather than in what
+ * the coach had written.
+ *
+ * They render from the content itself now, the way the testimonials on this
+ * page already do. No `data-i18n` on anything below: that pass writes over
+ * whatever it finds, and these belong to React.
+ *
+ * The one piece of geometry that has to be carried across is the last row's
+ * gap. `.price-row:last-of-type` gives it 24px, which is right when features
+ * follow — but where a note follows, the note carries that gap itself and the
+ * row above it must give the space back. That was the inline `marginBottom: 0`
+ * on the third plan and the third offer, and it is the same rule here. */
+function CardLists({ card, showServices, showNote, showFeatures }: {
+  card: PlanCard;
+  showServices: boolean;
+  showNote: boolean;
+  showFeatures: boolean;
+}) {
+  const note = showNote && card.note.trim() !== "" ? card.note : "";
+
+  return (
+    <>
+      {showServices &&
+        card.services.map((row, i) => (
+          <div
+            key={i}
+            className="price-row"
+            style={note && i === card.services.length - 1 ? { marginBottom: 0 } : undefined}
+          >
+            <span className="price-label">{row.label}</span>
+            {row.was ? (
+              <span className="price-was" aria-label="السعر قبل الخصم">
+                {row.was}
+              </span>
+            ) : null}
+            <span className={row.highlight ? "price-amount highlight" : "price-amount"}>
+              {row.value}
+            </span>
+          </div>
+        ))}
+
+      {note ? <div className="price-note">{note}</div> : null}
+
+      {showFeatures && card.features.length > 0 ? (
+        <ul className="membership-features">
+          {card.features.map((feature, i) => (
+            <li key={i}>{feature}</li>
+          ))}
+        </ul>
+      ) : null}
+    </>
+  );
+}
 
 /* Baseline copy. Anything the coach edits in the CMS overrides these at runtime
    through the [data-i18n] pass below. */
@@ -55,42 +115,19 @@ const defaultContent: JsonRecord = {
   card1_badge: "خطة ذاتية التوجيه",
   card1_desc:
     "مناسبة للأشخاص الملتزمين الذين يحتاجون فقط إلى التوجيه الصحيح في التدريب والنظام الغذائي.",
-  card1_p1_label: "عرض جدول تدريب + نظام غذائي",
-  card1_p1_val: "25,000 د.ع",
-  card1_p2_label: "جدول تدريب فقط",
-  card1_p2_val: "15,000 د.ع",
-  card1_p3_label: "نظام غذائي فقط",
-  card1_p3_val: "15,000 د.ع",
-  card1_f1: "جدول تدريب ممتاز",
-  card1_f2: "نظام غذائي ممتاز",
-  card1_f3: "اعتمد على نفسك",
+  /* The services, features and notes the six cards fall back to. Shared with
+     the content manager so the editor reads the same copy the page renders —
+     see @/lib/planCards. */
+  ...CARD_LIST_DEFAULTS,
   card_btn: "اختر الخطة",
   card2_alt: "خطة المتابعة الأسبوعية",
   card2_badge: "خطة المتابعة الأسبوعية",
   card2_desc:
     "مناسبة للأشخاص الذين يجدون صعوبة في الالتزام ويحتاجون إلى خطة منظمة وخطة المتابعة الأسبوعية للوصول إلى أهدافهم.",
-  card2_p1_label: "الشهر الأول",
-  card2_p1_val: "50,000 د.ع",
-  card2_p2_label: "الشهر الثاني (تجديد)",
-  card2_p2_val: "30,000 د.ع",
-  card2_p3_label: "الشهر الثالث (يتضمن دليل ما بعد الدايت)",
-  card2_p3_val: "50,000 د.ع",
-  card2_f1: "قواعد غذائية خاصة",
-  card2_f2: "خطة المتابعة الأسبوعية",
-  card2_f3: "تنظيم أسلوب حياتك",
   card3_alt: "خطة المتابعة اليومية",
   card3_badge: "خطة المتابعة اليومية",
   card3_desc:
     "هذه هي الطريقة الأكثر ضماناً للوصول إلى هدفك. المتابعة اليومية ستساعدك على الالتزام. مثالية للأشخاص الذين جربوا كل شيء ولم يستطيعوا الالتزام.",
-  card3_p1_label: "خطة نظام غذائي كاملة لمدة 3 أشهر",
-  card3_p1_val: "300,000 د.ع",
-  card3_p2_label: "دفع شهري (شهر واحد)",
-  card3_p2_val: "120,000 د.ع",
-  card3_note:
-    "إذا واصلت بالدفع الشهري، ستحصل على خصم 60,000 د.ع في الشهر الثالث.",
-  card3_f1: "خطة المتابعة اليومية",
-  card3_f2: "التزام مضمون",
-  card3_f3: "أضمن طريق للوصول لهدفك",
   testi_eyebrow: "قصص نجاح حقيقية",
   testi_title: "نتائج المشتركين",
   off_eyebrow: "اكتشف العروض",
@@ -99,42 +136,15 @@ const defaultContent: JsonRecord = {
   off_card1_badge: "خطة ذاتية التوجيه",
   off_card1_desc:
     "برنامج تدريبي للمبتدئين يركز أساسيات بناء القوة وتوجيهك خطوة بخطوة في رحلتك الرياضية الأولى.",
-  off_card1_p1_label: "نظام غذائي ورياضي + خطة المتابعة اليومية",
-  off_card1_p1_val: "30,000 د.ع",
-  off_card1_p2_label: "نظام غذائي فقط",
-  off_card1_p2_val: "20,000 د.ع",
-  off_card1_p3_label: "نظام رياضي فقط",
-  off_card1_p3_val: "15,000 د.ع",
-  off_card1_f1: "جدول تدريبي مخصص",
-  off_card1_f2: "نظام غذائي متكامل",
-  off_card1_f3: "متابعة على مدار اليوم",
   off_card_btn: "اشترك الآن",
   off_card2_alt: "عرض المتابعة الأسبوعية",
   off_card2_badge: "خطة المتابعة الأسبوعية",
   off_card2_desc:
     "برنامج تدريبي مكثف مصمم خصيصاً لمن يطمحون للوصول إلى أعلى مستويات اللياقة البدنية وبناء كتل عضلية.",
-  off_card2_p1_label: "المبلغ كامل",
-  off_card2_p1_val: "40,000 د.ع",
-  off_card2_p2_label: "القسط الاول (مقدم)",
-  off_card2_p2_val: "25,000 د.ع",
-  off_card2_p3_label: "القسط الثاني (يدفع بعد 15 يوم من الاشتراك)",
-  off_card2_p3_val: "15,000 د.ع",
-  off_card2_f1: "تغذية ومكملات غذائية",
-  off_card2_f2: "تمارين احترافية",
-  off_card2_f3: "متابعة يومية دقيقة",
   off_card3_alt: "عرض المتابعة اليومية",
   off_card3_badge: "خطة المتابعة اليومية",
   off_card3_desc:
     "لمن هم مستعدون لصعود المسرح والمنافسة على الألقاب. تدريبات وبرامج تغذية مصممة خصيصاً للوصول لأفضل نتيجة في وقت قياسي والتفوق بالمرحلة.",
-  off_card3_p1_label: "نظام غذائي وتدريب ومتابعة لمدة 3 شهور",
-  off_card3_p1_val: "150,000 د.ع",
-  off_card3_p2_label: "نظام تجهيز (لمدة شهرين)",
-  off_card3_p2_val: "120,000 د.ع",
-  off_card3_note:
-    "ملاحظة: السعر المذكور للتجهيز يشمل فقط المتابعة ولا يتضمن المستلزمات.",
-  off_card3_f1: "تجهيز بطولات",
-  off_card3_f2: "برمجة يومية",
-  off_card3_f3: "أنظمة تجهيز لمراحل متقدمة",
   contact_eyebrow: "تواصل معنا",
   contact_title: "معلومات التواصل",
   contact_phone_label: "رقم الهاتف",
@@ -1269,38 +1279,12 @@ export default function LandingClient({
                     مناسبة للأشخاص الملتزمين الذين يحتاجون فقط إلى التوجيه
                     الصحيح في التدريب والنظام الغذائي.
                   </p>
-                  <div className="price-row">
-                    <span className="price-label" data-i18n="card1_p1_label">
-                      عرض جدول تدريب + نظام غذائي
-                    </span>
-                    <span
-                      className="price-amount highlight"
-                      data-i18n="card1_p1_val"
-                    >
-                      25,000 د.ع
-                    </span>
-                  </div>
-                  <div className="price-row">
-                    <span className="price-label" data-i18n="card1_p2_label">
-                      جدول تدريب فقط
-                    </span>
-                    <span className="price-amount" data-i18n="card1_p2_val">
-                      15,000 د.ع
-                    </span>
-                  </div>
-                  <div className="price-row">
-                    <span className="price-label" data-i18n="card1_p3_label">
-                      نظام غذائي فقط
-                    </span>
-                    <span className="price-amount" data-i18n="card1_p3_val">
-                      15,000 د.ع
-                    </span>
-                  </div>
-                  <ul className="membership-features">
-                    <li data-i18n="card1_f1">جدول تدريب ممتاز</li>
-                    <li data-i18n="card1_f2">نظام غذائي ممتاز</li>
-                    <li data-i18n="card1_f3">اعتمد على نفسك</li>
-                  </ul>
+                  <CardLists
+                    card={planCardFrom(activeData, "card1", defaultContent)}
+                    showServices={isShown(activeData, "card1_services")}
+                    showNote={isShown(activeData, "card1_note")}
+                    showFeatures={isShown(activeData, "card1_features")}
+                  />
                   <Link
                     href="/form?plan=plan1"
                     className="btn-card plan1-btn"
@@ -1331,42 +1315,12 @@ export default function LandingClient({
                     مناسبة للأشخاص الذين يجدون صعوبة في الالتزام ويحتاجون إلى
                     خطة منظمة وخطة المتابعة الأسبوعية للوصول إلى أهدافهم.
                   </p>
-                  <div className="price-row">
-                    <span className="price-label" data-i18n="card2_p1_label">
-                      الشهر الأول
-                    </span>
-                    <span
-                      className="price-amount highlight"
-                      data-i18n="card2_p1_val"
-                    >
-                      50,000 د.ع
-                    </span>
-                  </div>
-                  <div className="price-row">
-                    <span className="price-label" data-i18n="card2_p2_label">
-                      الشهر الثاني (تجديد)
-                    </span>
-                    <span className="price-amount" data-i18n="card2_p2_val">
-                      30,000 د.ع
-                    </span>
-                  </div>
-                  <div className="price-row" style={{ marginBottom: 24 }}>
-                    <span
-                      className="price-label"
-                      style={{ flex: 1, paddingInlineEnd: 12, lineHeight: 1.4 }}
-                      data-i18n="card2_p3_label"
-                    >
-                      الشهر الثالث (يتضمن دليل ما بعد الدايت)
-                    </span>
-                    <span className="price-amount" data-i18n="card2_p3_val">
-                      50,000 د.ع
-                    </span>
-                  </div>
-                  <ul className="membership-features">
-                    <li data-i18n="card2_f1">قواعد غذائية خاصة</li>
-                    <li data-i18n="card2_f2">خطة المتابعة الأسبوعية</li>
-                    <li data-i18n="card2_f3">تنظيم أسلوب حياتك</li>
-                  </ul>
+                  <CardLists
+                    card={planCardFrom(activeData, "card2", defaultContent)}
+                    showServices={isShown(activeData, "card2_services")}
+                    showNote={isShown(activeData, "card2_note")}
+                    showFeatures={isShown(activeData, "card2_features")}
+                  />
                   <Link
                     href="/form?plan=plan2"
                     className="btn-card plan2-btn"
@@ -1398,34 +1352,12 @@ export default function LandingClient({
                     اليومية ستساعدك على الالتزام. مثالية للأشخاص الذين جربوا كل
                     شيء ولم يستطيعوا الالتزام.
                   </p>
-                  <div className="price-row">
-                    <span className="price-label" data-i18n="card3_p1_label">
-                      خطة نظام غذائي كاملة لمدة 3 أشهر
-                    </span>
-                    <span
-                      className="price-amount highlight"
-                      data-i18n="card3_p1_val"
-                    >
-                      300,000 د.ع
-                    </span>
-                  </div>
-                  <div className="price-row" style={{ marginBottom: 0 }}>
-                    <span className="price-label" data-i18n="card3_p2_label">
-                      دفع شهري (شهر واحد)
-                    </span>
-                    <span className="price-amount" data-i18n="card3_p2_val">
-                      120,000 د.ع
-                    </span>
-                  </div>
-                  <div className="price-note" data-i18n="card3_note">
-                    إذا واصلت بالدفع الشهري، ستحصل على خصم 60,000 د.ع في الشهر
-                    الثالث.
-                  </div>
-                  <ul className="membership-features">
-                    <li data-i18n="card3_f1">خطة المتابعة اليومية</li>
-                    <li data-i18n="card3_f2">التزام مضمون</li>
-                    <li data-i18n="card3_f3">أضمن طريق للوصول لهدفك</li>
-                  </ul>
+                  <CardLists
+                    card={planCardFrom(activeData, "card3", defaultContent)}
+                    showServices={isShown(activeData, "card3_services")}
+                    showNote={isShown(activeData, "card3_note")}
+                    showFeatures={isShown(activeData, "card3_features")}
+                  />
                   <Link
                     href="/form?plan=plan3"
                     className="btn-card plan3-btn"
@@ -1478,71 +1410,12 @@ export default function LandingClient({
                     برنامج تدريبي للمبتدئين يركز أساسيات بناء القوة وتوجيهك خطوة
                     بخطوة في رحلتك الرياضية الأولى.
                   </p>
-                  <div className="price-row">
-                    <span
-                      className="price-label"
-                      data-i18n="off_card1_p1_label"
-                    >
-                      نظام غذائي ورياضي + خطة المتابعة اليومية
-                    </span>
-                    <span
-                      className="price-was"
-                      data-i18n="off_card1_p1_was"
-                      aria-label="السعر قبل الخصم"
-                      hidden={!activeData.off_card1_p1_was}
-                    >
-                      {typeof activeData.off_card1_p1_was === "string" ? activeData.off_card1_p1_was : ""}
-                    </span>
-                    <span
-                      className="price-amount highlight"
-                      data-i18n="off_card1_p1_val"
-                    >
-                      30,000 د.ع
-                    </span>
-                  </div>
-                  <div className="price-row">
-                    <span
-                      className="price-label"
-                      data-i18n="off_card1_p2_label"
-                    >
-                      نظام غذائي فقط
-                    </span>
-                    <span
-                      className="price-was"
-                      data-i18n="off_card1_p2_was"
-                      aria-label="السعر قبل الخصم"
-                      hidden={!activeData.off_card1_p2_was}
-                    >
-                      {typeof activeData.off_card1_p2_was === "string" ? activeData.off_card1_p2_was : ""}
-                    </span>
-                    <span className="price-amount" data-i18n="off_card1_p2_val">
-                      20,000 د.ع
-                    </span>
-                  </div>
-                  <div className="price-row">
-                    <span
-                      className="price-label"
-                      data-i18n="off_card1_p3_label"
-                    >
-                      نظام رياضي فقط
-                    </span>
-                    <span
-                      className="price-was"
-                      data-i18n="off_card1_p3_was"
-                      aria-label="السعر قبل الخصم"
-                      hidden={!activeData.off_card1_p3_was}
-                    >
-                      {typeof activeData.off_card1_p3_was === "string" ? activeData.off_card1_p3_was : ""}
-                    </span>
-                    <span className="price-amount" data-i18n="off_card1_p3_val">
-                      15,000 د.ع
-                    </span>
-                  </div>
-                  <ul className="membership-features">
-                    <li data-i18n="off_card1_f1">جدول تدريبي مخصص</li>
-                    <li data-i18n="off_card1_f2">نظام غذائي متكامل</li>
-                    <li data-i18n="off_card1_f3">متابعة على مدار اليوم</li>
-                  </ul>
+                  <CardLists
+                    card={planCardFrom(activeData, "off_card1", defaultContent)}
+                    showServices={isShown(activeData, "off_card1_services")}
+                    showNote={isShown(activeData, "off_card1_note")}
+                    showFeatures={isShown(activeData, "off_card1_features")}
+                  />
                   <Link
                     href="/form?plan=offer1"
                     className="btn-card plan1-btn"
@@ -1572,72 +1445,12 @@ export default function LandingClient({
                     برنامج تدريبي مكثف مصمم خصيصاً لمن يطمحون للوصول إلى أعلى
                     مستويات اللياقة البدنية وبناء كتل عضلية.
                   </p>
-                  <div className="price-row">
-                    <span
-                      className="price-label"
-                      data-i18n="off_card2_p1_label"
-                    >
-                      المبلغ كامل
-                    </span>
-                    <span
-                      className="price-was"
-                      data-i18n="off_card2_p1_was"
-                      aria-label="السعر قبل الخصم"
-                      hidden={!activeData.off_card2_p1_was}
-                    >
-                      {typeof activeData.off_card2_p1_was === "string" ? activeData.off_card2_p1_was : ""}
-                    </span>
-                    <span
-                      className="price-amount highlight"
-                      data-i18n="off_card2_p1_val"
-                    >
-                      40,000 د.ع
-                    </span>
-                  </div>
-                  <div className="price-row">
-                    <span
-                      className="price-label"
-                      data-i18n="off_card2_p2_label"
-                    >
-                      القسط الاول (مقدم)
-                    </span>
-                    <span
-                      className="price-was"
-                      data-i18n="off_card2_p2_was"
-                      aria-label="السعر قبل الخصم"
-                      hidden={!activeData.off_card2_p2_was}
-                    >
-                      {typeof activeData.off_card2_p2_was === "string" ? activeData.off_card2_p2_was : ""}
-                    </span>
-                    <span className="price-amount" data-i18n="off_card2_p2_val">
-                      25,000 د.ع
-                    </span>
-                  </div>
-                  <div className="price-row" style={{ marginBottom: 24 }}>
-                    <span
-                      className="price-label"
-                      style={{ flex: 1, paddingInlineEnd: 12, lineHeight: 1.4 }}
-                      data-i18n="off_card2_p3_label"
-                    >
-                      القسط الثاني (يدفع بعد 15 يوم من الاشتراك)
-                    </span>
-                    <span
-                      className="price-was"
-                      data-i18n="off_card2_p3_was"
-                      aria-label="السعر قبل الخصم"
-                      hidden={!activeData.off_card2_p3_was}
-                    >
-                      {typeof activeData.off_card2_p3_was === "string" ? activeData.off_card2_p3_was : ""}
-                    </span>
-                    <span className="price-amount" data-i18n="off_card2_p3_val">
-                      15,000 د.ع
-                    </span>
-                  </div>
-                  <ul className="membership-features">
-                    <li data-i18n="off_card2_f1">تغذية ومكملات غذائية</li>
-                    <li data-i18n="off_card2_f2">تمارين احترافية</li>
-                    <li data-i18n="off_card2_f3">متابعة يومية دقيقة</li>
-                  </ul>
+                  <CardLists
+                    card={planCardFrom(activeData, "off_card2", defaultContent)}
+                    showServices={isShown(activeData, "off_card2_services")}
+                    showNote={isShown(activeData, "off_card2_note")}
+                    showFeatures={isShown(activeData, "off_card2_features")}
+                  />
                   <Link
                     href="/form?plan=offer2"
                     className="btn-card plan2-btn"
@@ -1668,56 +1481,12 @@ export default function LandingClient({
                     وبرامج تغذية مصممة خصيصاً للوصول لأفضل نتيجة في وقت قياسي
                     والتفوق بالمرحلة.
                   </p>
-                  <div className="price-row">
-                    <span
-                      className="price-label"
-                      data-i18n="off_card3_p1_label"
-                    >
-                      نظام غذائي وتدريب ومتابعة لمدة 3 شهور
-                    </span>
-                    <span
-                      className="price-was"
-                      data-i18n="off_card3_p1_was"
-                      aria-label="السعر قبل الخصم"
-                      hidden={!activeData.off_card3_p1_was}
-                    >
-                      {typeof activeData.off_card3_p1_was === "string" ? activeData.off_card3_p1_was : ""}
-                    </span>
-                    <span
-                      className="price-amount highlight"
-                      data-i18n="off_card3_p1_val"
-                    >
-                      150,000 د.ع
-                    </span>
-                  </div>
-                  <div className="price-row" style={{ marginBottom: 0 }}>
-                    <span
-                      className="price-label"
-                      data-i18n="off_card3_p2_label"
-                    >
-                      نظام تجهيز (لمدة شهرين)
-                    </span>
-                    <span
-                      className="price-was"
-                      data-i18n="off_card3_p2_was"
-                      aria-label="السعر قبل الخصم"
-                      hidden={!activeData.off_card3_p2_was}
-                    >
-                      {typeof activeData.off_card3_p2_was === "string" ? activeData.off_card3_p2_was : ""}
-                    </span>
-                    <span className="price-amount" data-i18n="off_card3_p2_val">
-                      120,000 د.ع
-                    </span>
-                  </div>
-                  <div className="price-note" data-i18n="off_card3_note">
-                    ملاحظة: السعر المذكور للتجهيز يشمل فقط المتابعة ولا يتضمن
-                    المستلزمات.
-                  </div>
-                  <ul className="membership-features">
-                    <li data-i18n="off_card3_f1">تجهيز بطولات</li>
-                    <li data-i18n="off_card3_f2">برمجة يومية</li>
-                    <li data-i18n="off_card3_f3">أنظمة تجهيز لمراحل متقدمة</li>
-                  </ul>
+                  <CardLists
+                    card={planCardFrom(activeData, "off_card3", defaultContent)}
+                    showServices={isShown(activeData, "off_card3_services")}
+                    showNote={isShown(activeData, "off_card3_note")}
+                    showFeatures={isShown(activeData, "off_card3_features")}
+                  />
                   <Link
                     href="/form?plan=offer3"
                     className="btn-card plan3-btn"
