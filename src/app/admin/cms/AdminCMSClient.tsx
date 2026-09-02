@@ -12,6 +12,7 @@ import { Icon } from "@/components/Icon";
 import { previewSrc } from "@/lib/imageOptim";
 import { Overlay } from "@/components/ui/Overlay";
 import { CustomSelect } from "@/components/CustomSelect";
+import { planCardFrom, CARD_LIST_DEFAULTS, MAX_CARD_ROWS, type PlanRow } from "@/lib/planCards";
 import "./cms.css";
 
 const DEFAULT_TEXTS: Record<string, string> = {
@@ -330,6 +331,230 @@ const ImageUploadField = ({ label, fieldKey, recommendedSize }: { label: string,
         </div>
       </div>
     </div>
+  );
+};
+
+/* The eye that turns one part of a card off, for the parts that are lists
+   rather than single fields.
+ *
+ * `InputField` carries its own copy of this for the text rows it renders. The
+ * services table, the note and the features are not text rows, so they need the
+ * same control standing on its own — same key convention (`<key>_active`), same
+ * "absent means shown" reading, so the page needs no new rule to honour it. */
+const SectionVisibility = ({ fieldKey, title }: { fieldKey: string; title: string }) => {
+  const { currentContent, setContent } = React.useContext(CMSContext);
+  const shown = currentContent[visibilityKey(fieldKey)] !== "false";
+
+  return (
+    <button
+      type="button"
+      className={`cms-visibility-toggle${shown ? "" : " is-hidden"}`}
+      onClick={() => setContent(visibilityKey(fieldKey), shown ? "false" : "true")}
+      aria-pressed={!shown}
+      title={shown ? `إخفاء ${title} من الصفحة` : `إظهار ${title} في الصفحة`}
+    >
+      <Icon name={shown ? "visibility" : "visibility_off"} />
+      <span>{shown ? "ظاهر" : "مخفي"}</span>
+    </button>
+  );
+};
+
+/* One card's services, note and features — the three parts whose length the
+   coach decides.
+ *
+ * These were fixed fields: two or three price rows and exactly three features,
+ * decided in the markup of both this screen and the page. The panel and the
+ * page disagreed about how many, which is how the second plan came to render a
+ * third price nothing here could edit.
+ *
+ * Reading goes through `planCardFrom`, so a card still stored as numbered keys
+ * opens with exactly the rows the page is showing — including the ones that
+ * come from the shared defaults rather than from the database. That matters
+ * more than it looks: two of the offer cards have nothing of their own stored,
+ * and an editor that read only the saved row would have opened them empty and
+ * then saved that emptiness over live content.
+ *
+ * Writing always produces the list shape. The first save of any card is its
+ * migration; the numbered keys it came from are left where they are, read by
+ * nothing, rather than deleted underneath a page that may still be open. */
+const CardListsEditor = ({ prefix, allowWas }: { prefix: string; allowWas: boolean }) => {
+  const { currentContent, setContent } = React.useContext(CMSContext);
+  const card = planCardFrom(currentContent as JsonRecord, prefix, CARD_LIST_DEFAULTS);
+  const { services, features } = card;
+
+  const writeServices = (rows: PlanRow[]) => setContent(`${prefix}_services`, rows);
+  const writeFeatures = (list: string[]) => setContent(`${prefix}_features`, list);
+
+  /* Swap with the neighbour, or do nothing at either end. */
+  function moved<T>(list: T[], index: number, direction: 1 | -1): T[] {
+    const target = index + direction;
+    if (target < 0 || target >= list.length) return list;
+    const next = [...list];
+    next[index] = list[target];
+    next[target] = list[index];
+    return next;
+  }
+
+  const patchRow = (index: number, patch: Partial<PlanRow>) =>
+    writeServices(services.map((row, i) => (i === index ? { ...row, ...patch } : row)));
+
+  const rowActions = (index: number, list: unknown[], onMove: (d: 1 | -1) => void, onDelete: () => void) => (
+    <div className="cms-list-actions">
+      <button type="button" className="cms-row-btn" onClick={() => onMove(-1)} disabled={index === 0} title="تحريك لأعلى" aria-label="تحريك لأعلى">↑</button>
+      <button type="button" className="cms-row-btn" onClick={() => onMove(1)} disabled={index === list.length - 1} title="تحريك لأسفل" aria-label="تحريك لأسفل">↓</button>
+      <button type="button" className="cms-row-btn is-danger" onClick={onDelete} title="حذف السطر" aria-label="حذف السطر">
+        <Icon name="delete" />
+      </button>
+    </div>
+  );
+
+  return (
+    <>
+      <div className="cms-card-divider">
+        <div className="cms-label-row">
+          <label className="cms-label">خدمات الخطة والأسعار</label>
+          <SectionVisibility fieldKey={`${prefix}_services`} title="جدول الخدمات" />
+        </div>
+
+        {services.length === 0 ? (
+          <p className="cms-empty">لا توجد خدمات — أضف السطر الأول.</p>
+        ) : (
+          services.map((row, i) => (
+            <div className="cms-list-row" key={i}>
+              <div className={allowWas ? "cms-price-row is-triple" : "cms-price-row"}>
+                <div className="cms-form-group">
+                  <input
+                    type="text"
+                    className="cms-input"
+                    dir="rtl"
+                    value={row.label}
+                    placeholder="اسم الخدمة"
+                    onChange={(e) => patchRow(i, { label: e.target.value })}
+                    aria-label={`اسم الخدمة ${i + 1}`}
+                  />
+                </div>
+                <div className="cms-form-group">
+                  <input
+                    type="text"
+                    className="cms-input"
+                    dir="rtl"
+                    value={row.value}
+                    placeholder="السعر"
+                    onChange={(e) => patchRow(i, { value: e.target.value })}
+                    aria-label={`سعر الخدمة ${i + 1}`}
+                  />
+                </div>
+                {allowWas && (
+                  <div className="cms-form-group">
+                    <input
+                      type="text"
+                      className="cms-input"
+                      dir="rtl"
+                      value={row.was ?? ""}
+                      placeholder="قبل الخصم (اختياري)"
+                      onChange={(e) => patchRow(i, { was: e.target.value })}
+                      aria-label={`السعر قبل الخصم للخدمة ${i + 1}`}
+                    />
+                  </div>
+                )}
+              </div>
+              <div className="cms-list-actions">
+                {/* The coloured figure. It used to be whichever row came first,
+                    so nothing could emphasise a second price or leave a card
+                    with none emphasised at all. */}
+                <button
+                  type="button"
+                  className={`cms-row-btn${row.highlight ? " is-on" : ""}`}
+                  onClick={() => patchRow(i, { highlight: !row.highlight })}
+                  aria-pressed={Boolean(row.highlight)}
+                  title={row.highlight ? "إلغاء تمييز السعر" : "تمييز السعر بلون بارز"}
+                  aria-label="تمييز السعر"
+                >
+                  <Icon name="bolt" />
+                </button>
+                <button type="button" className="cms-row-btn" onClick={() => writeServices(moved(services, i, -1))} disabled={i === 0} title="تحريك لأعلى" aria-label="تحريك لأعلى">↑</button>
+                <button type="button" className="cms-row-btn" onClick={() => writeServices(moved(services, i, 1))} disabled={i === services.length - 1} title="تحريك لأسفل" aria-label="تحريك لأسفل">↓</button>
+                <button type="button" className="cms-row-btn is-danger" onClick={() => writeServices(services.filter((_, k) => k !== i))} title="حذف السطر" aria-label="حذف السطر">
+                  <Icon name="delete" />
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+
+        <button
+          type="button"
+          className="cms-btn-secondary"
+          onClick={() => writeServices([...services, { label: "", value: "" }])}
+          disabled={services.length >= MAX_CARD_ROWS}
+          title={services.length >= MAX_CARD_ROWS ? `الحد الأقصى ${MAX_CARD_ROWS} أسطر` : "إضافة سطر خدمة"}
+        >
+          <Icon name="add" />
+          <span>إضافة سطر</span>
+        </button>
+      </div>
+
+      <div className="cms-card-divider">
+        <div className="cms-label-row">
+          <label className="cms-label">ملاحظة بارزة</label>
+          <SectionVisibility fieldKey={`${prefix}_note`} title="الملاحظة" />
+        </div>
+        <textarea
+          className="cms-textarea"
+          rows={2}
+          dir="rtl"
+          value={typeof currentContent[`${prefix}_note`] === "string" ? (currentContent[`${prefix}_note`] as string) : card.note}
+          placeholder="تظهر في صندوق بارز أسفل الأسعار — اتركها فارغة لإخفائها"
+          onChange={(e) => setContent(`${prefix}_note`, e.target.value)}
+        />
+      </div>
+
+      <div className="cms-card-divider">
+        <div className="cms-label-row">
+          <label className="cms-label">مميزات الخطة</label>
+          <SectionVisibility fieldKey={`${prefix}_features`} title="المميزات" />
+        </div>
+
+        {features.length === 0 ? (
+          <p className="cms-empty">لا توجد مميزات — أضف الأولى.</p>
+        ) : (
+          <div className="cms-feature-list">
+            {features.map((feature, i) => (
+              <div className="cms-list-row" key={i}>
+                <div className="cms-form-group" style={{ marginBottom: 0, flex: 1 }}>
+                  <input
+                    type="text"
+                    className="cms-input"
+                    dir="rtl"
+                    value={feature}
+                    placeholder={`الميزة ${i + 1}`}
+                    onChange={(e) => writeFeatures(features.map((f, k) => (k === i ? e.target.value : f)))}
+                    aria-label={`الميزة ${i + 1}`}
+                  />
+                </div>
+                {rowActions(
+                  i,
+                  features,
+                  (d) => writeFeatures(moved(features, i, d)),
+                  () => writeFeatures(features.filter((_, k) => k !== i)),
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        <button
+          type="button"
+          className="cms-btn-secondary"
+          onClick={() => writeFeatures([...features, ""])}
+          disabled={features.length >= MAX_CARD_ROWS}
+          title={features.length >= MAX_CARD_ROWS ? `الحد الأقصى ${MAX_CARD_ROWS} مميزات` : "إضافة ميزة"}
+        >
+          <Icon name="add" />
+          <span>إضافة ميزة</span>
+        </button>
+      </div>
+    </>
   );
 };
 
@@ -714,7 +939,7 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
      parameter said `string`, so every testimonial write cast itself to `any` to
      get past it — six casts to work around one signature that was too narrow
      for what the function already did. */
-  const setContent = (key: string, value: string | Testimonial[]) => {
+  const setContent = (key: string, value: string | Testimonial[] | PlanRow[] | string[]) => {
     setContentAr({ ...contentAr, [key]: value });
   };
 
@@ -1169,10 +1394,10 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
 
                 <div className="cms-pricing-grid" style={{ marginTop: 16 }}>
                   {([
-                    { n: 1, title: "العرض الأول", prices: 3, note: false },
-                    { n: 2, title: "العرض الثاني", prices: 3, note: false },
-                    { n: 3, title: "العرض الثالث", prices: 2, note: true },
-                  ] as const).map(({ n, title, prices, note }) => {
+                    { n: 1, title: "العرض الأول" },
+                    { n: 2, title: "العرض الثاني" },
+                    { n: 3, title: "العرض الثالث" },
+                  ] as const).map(({ n, title }) => {
                     const activeKey = `off_card${n}_active`;
                     const isActive = currentContent[activeKey] !== "false";
                     return (
@@ -1193,25 +1418,10 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
 
                         {/* Label, before, after — one price on one line. The
                             "before" figure is optional; leaving it empty simply
-                            shows the price with nothing struck through. */}
-                        {Array.from({ length: prices }, (_, i) => i + 1).map((p) => (
-                          <div key={p} className="cms-price-row is-triple">
-                            <InputField label={`تسمية السعر ${["الأول", "الثاني", "الثالث"][p - 1]}`} fieldKey={`off_card${n}_p${p}_label`} />
-                            <InputField label="قبل الخصم (اختياري)" fieldKey={`off_card${n}_p${p}_was`} />
-                            <InputField label="بعد الخصم" fieldKey={`off_card${n}_p${p}_val`} />
-                          </div>
-                        ))}
-
-                        {note && <InputField label="ملاحظة أسفل الأسعار" fieldKey={`off_card${n}_note`} isTextarea hideable />}
-
-                        <div className="cms-card-divider">
-                          <label className="cms-label">مزايا العرض</label>
-                          <div className="cms-feature-list">
-                            <InputField label="الميزة الأولى" fieldKey={`off_card${n}_f1`} hideable />
-                            <InputField label="الميزة الثانية" fieldKey={`off_card${n}_f2`} hideable />
-                            <InputField label="الميزة الثالثة" fieldKey={`off_card${n}_f3`} hideable />
-                          </div>
-                        </div>
+                            shows the price with nothing struck through. The note
+                            is offered on every offer card now, not only the
+                            third: it was a field one card happened to have. */}
+                        <CardListsEditor prefix={`off_card${n}`} allowWas />
 
                         <InputField label="النص البديل للصورة" fieldKey={`off_card${n}_alt`} />
                         <ImageUploadField label={`صورة ${title}`} fieldKey={`off_card${n}_img_url`} recommendedSize="600x600 (مربعة)" />
@@ -1323,10 +1533,10 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
                       with the same 12px gap where card 1 had 8px. Same keys,
                       same `!== "false"` reading, same fields — one shape. */}
                   {([
-                    { n: 1, title: "الخطة الأولى (بدون متابعة)", label: "الأولى", prices: 3 },
-                    { n: 2, title: "الخطة الثانية (خطة المتابعة الأسبوعية)", label: "الثانية", prices: 2 },
-                    { n: 3, title: "الخطة الثالثة (خطة المتابعة اليومية)", label: "الثالثة", prices: 2 },
-                  ] as const).map(({ n, title, label, prices }) => {
+                    { n: 1, title: "الخطة الأولى (بدون متابعة)", label: "الأولى" },
+                    { n: 2, title: "الخطة الثانية (خطة المتابعة الأسبوعية)", label: "الثانية" },
+                    { n: 3, title: "الخطة الثالثة (خطة المتابعة اليومية)", label: "الثالثة" },
+                  ] as const).map(({ n, title, label }) => {
                     const activeKey = `card${n}_active`;
                     const isActive = currentContent[activeKey] !== "false";
                     return (
@@ -1345,21 +1555,7 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
                         <InputField label="العنوان الفرعي للخطة" fieldKey={`card${n}_badge`} hideable />
                         <InputField label="وصف الخطة" fieldKey={`card${n}_desc`} isTextarea hideable />
 
-                        {Array.from({ length: prices }, (_, i) => i + 1).map((p) => (
-                          <div key={p} className="cms-price-row">
-                            <InputField label={`تسمية السعر ${["الأول", "الثاني", "الثالث"][p - 1]}`} fieldKey={`card${n}_p${p}_label`} />
-                            <InputField label={`قيمة السعر ${["الأول", "الثاني", "الثالث"][p - 1]}`} fieldKey={`card${n}_p${p}_val`} />
-                          </div>
-                        ))}
-
-                        <div className="cms-card-divider">
-                          <label className="cms-label">ميزات الخطة</label>
-                          <div className="cms-feature-list">
-                            <InputField label="الميزة الأولى" fieldKey={`card${n}_f1`} hideable />
-                            <InputField label="الميزة الثانية" fieldKey={`card${n}_f2`} hideable />
-                            <InputField label="الميزة الثالثة" fieldKey={`card${n}_f3`} hideable />
-                          </div>
-                        </div>
+                        <CardListsEditor prefix={`card${n}`} allowWas={false} />
 
                         <ImageUploadField label={`صورة الخطة ${label}`} fieldKey={`card${n}_img_url`} recommendedSize="600x600 (مربعة)" />
                       </div>

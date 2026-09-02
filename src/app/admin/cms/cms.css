@@ -1534,3 +1534,63 @@
     min-height: var(--tap-min);
   }
 }
+
+/* ─── Editable card lists (services and features) ─────────────────────────
+   The rows the coach can add to and take away from, in the plans and offers
+   tabs. The fields themselves reuse `.cms-price-row`, which already lays a
+   label and a price — and, with `.is-triple`, a struck-through "before" — on
+   one line. What is new is the strip of controls beside each row. */
+
+.cms-list-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+/* The fields take the space; the buttons take what they need. Without this the
+   grid inside would collapse to its content and leave the inputs unreadable on
+   a narrow panel. */
+.cms-list-row > .cms-price-row {
+  flex: 1;
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+.cms-list-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  /* The inputs beside these carry the label row's height above them in some
+     places and not others; this keeps the buttons on the fields rather than
+     floating above them. */
+  padding-top: 1px;
+}
+
+/* The highlight toggle when it is on — the row whose price is drawn in the
+   accent colour on the page. Same treatment as a pressed control elsewhere in
+   the panel rather than a new one. */
+.cms-row-btn.is-on {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: var(--text-inverse);
+}
+
+.cms-row-btn.is-on:hover:not(:disabled) {
+  background: var(--primary-hover);
+  color: var(--text-inverse);
+}
+
+@media (max-width: 640px) {
+  /* Below this the three price fields already stack, and a column of buttons
+     beside a column of fields wastes the width. */
+  .cms-list-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .cms-list-actions {
+    justify-content: flex-end;
+  }
+}
