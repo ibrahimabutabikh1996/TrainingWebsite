@@ -12,7 +12,16 @@ import { Icon } from "@/components/Icon";
 import { previewSrc } from "@/lib/imageOptim";
 import { Overlay } from "@/components/ui/Overlay";
 import { CustomSelect } from "@/components/CustomSelect";
-import { planCardFrom, CARD_LIST_DEFAULTS, MAX_CARD_ROWS, type PlanRow } from "@/lib/planCards";
+import {
+  planCardFrom,
+  CARD_LIST_DEFAULTS,
+  MAX_CARD_ROWS,
+  planOrderFrom,
+  planNumberOf,
+  nextPlanId,
+  planAccent,
+  type PlanRow,
+} from "@/lib/planCards";
 import "./cms.css";
 
 const DEFAULT_TEXTS: Record<string, string> = {
@@ -356,6 +365,149 @@ const SectionVisibility = ({ fieldKey, title }: { fieldKey: string; title: strin
       <Icon name={shown ? "visibility" : "visibility_off"} />
       <span>{shown ? "ظاهر" : "مخفي"}</span>
     </button>
+  );
+};
+
+/* What an unnamed plan card is called until the coach names it.
+ *
+ * It used to be the card's id — "الخطة 8" for `card8` — which is a number the
+ * coach has no reason to know and every reason to misread: a deleted plan's
+ * number is never handed out again, so a coach with five plans could be looking
+ * at "الخطة 8" and reasonably conclude something was broken.
+ *
+ * Its position in the row instead, which is the thing actually on the screen.
+ * The offers tab beside this one already names its three cards this way.
+ *
+ * The id keeps doing the work it is good at, out of sight: it is what the plan
+ * is stored under and what a subscriber's profile records. Only the label
+ * changes. */
+const PLAN_POSITION_NAMES = [
+  "الأولى", "الثانية", "الثالثة", "الرابعة", "الخامسة",
+  "السادسة", "السابعة", "الثامنة", "التاسعة", "العاشرة",
+];
+
+const planPlaceholderName = (index: number) =>
+  index < PLAN_POSITION_NAMES.length
+    ? `الخطة ${PLAN_POSITION_NAMES[index]}`
+    : `الخطة ${index + 1}`;
+
+/* A row of editor cards that scrolls, with a button at each end.
+ *
+ * The plans are a list the coach adds to, and the grid answered a fifth card by
+ * wrapping it onto a second row — which on this screen means a card as tall as
+ * the pane appearing below the fold, with nothing to say it is there. The cards
+ * keep their width and the row scrolls instead.
+ *
+ * The buttons sit above the row rather than beside it, which is the one thing
+ * this differs from the same control on the landing page. An editor card is as
+ * tall as the fields it holds, so a button centred on it would be halfway down
+ * the page and out of sight; above the row it is where the eye already is.
+ *
+ * No fade at the edges. The landing page softens its cut because a visitor is
+ * looking at a finished thing; here a card sliced by the edge is a card the
+ * coach can still see the fields of, and dimming it would only make it harder
+ * to read.
+ */
+const CardScroller = ({ children }: { children: React.ReactNode }) => {
+  const rowRef = React.useRef<HTMLDivElement | null>(null);
+  const [state, setState] = React.useState({ scrollable: false, atStart: true, atEnd: true });
+
+  /* Right-to-left, and the two conventions browsers have used for a scroller in
+     that direction disagree about where the start edge is — one counts down
+     into negatives, the other down from the maximum. Both are read into the
+     same "distance from the beginning". */
+  const startOf = (el: HTMLElement) => {
+    const max = el.scrollWidth - el.clientWidth;
+    if (getComputedStyle(el).direction !== "rtl") return el.scrollLeft;
+    return el.scrollLeft <= 0 ? -el.scrollLeft : max - el.scrollLeft;
+  };
+
+  React.useEffect(() => {
+    const el = rowRef.current;
+    if (!el) return;
+
+    const measure = () => {
+      const max = el.scrollWidth - el.clientWidth;
+      const start = startOf(el);
+      setState({ scrollable: max > 2, atStart: start <= 1, atEnd: start >= max - 1 });
+    };
+
+    measure();
+    el.addEventListener("scroll", measure, { passive: true });
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    /* The number of cards changes as the coach adds and removes plans, and a
+       child changing does not resize the row itself. */
+    const children = new MutationObserver(measure);
+    children.observe(el, { childList: true });
+
+    return () => {
+      el.removeEventListener("scroll", measure);
+      observer.disconnect();
+      children.disconnect();
+    };
+  }, []);
+
+  const scrollBy = (direction: 1 | -1) => {
+    const el = rowRef.current;
+    if (!el) return;
+    const card = el.querySelector<HTMLElement>(".cms-pricing-card");
+    const step = card ? card.getBoundingClientRect().width + 14 : el.clientWidth;
+    const physical = getComputedStyle(el).direction === "rtl" ? -direction : direction;
+    el.scrollBy({ left: physical * step, behavior: "smooth" });
+  };
+
+  /* A card that has just been added is brought into view.
+   *
+   * Without this, "إضافة خطة جديدة" appears to do nothing: the new card goes on
+   * the end of the row, the row is already full, and the view stays where it
+   * was. The coach presses the button, the page does not change, and the only
+   * hint that anything happened is a scrollbar that was probably there already.
+   *
+   * Keyed on the count growing rather than on any change, so deleting a card or
+   * reordering the row leaves the view where the coach put it. */
+  const count = React.Children.count(children);
+  const previousCount = React.useRef(count);
+
+  React.useEffect(() => {
+    const el = rowRef.current;
+    if (el && count > previousCount.current) {
+      /* `inline: "end"` reaches the far edge whichever way the row runs, and
+         `block: "nearest"` keeps it from scrolling the page vertically to a
+         card that is already on screen. */
+      el.lastElementChild?.scrollIntoView({ behavior: "smooth", inline: "end", block: "nearest" });
+    }
+    previousCount.current = count;
+  }, [count]);
+
+  return (
+    <div className="cms-scroller">
+      <div className="cms-scroll-controls" hidden={!state.scrollable}>
+        <button
+          type="button"
+          className="cms-row-btn"
+          onClick={() => scrollBy(-1)}
+          disabled={state.atStart}
+          title="السابق"
+          aria-label="عرض البطاقات السابقة"
+        >
+          ›
+        </button>
+        <button
+          type="button"
+          className="cms-row-btn"
+          onClick={() => scrollBy(1)}
+          disabled={state.atEnd}
+          title="التالي"
+          aria-label="عرض البطاقات التالية"
+        >
+          ‹
+        </button>
+      </div>
+      <div className="cms-pricing-grid cms-pricing-grid--scroll" ref={rowRef}>
+        {children}
+      </div>
+    </div>
   );
 };
 
@@ -1392,7 +1544,7 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
                   <InputField label="نص زر البطاقات" fieldKey="off_card_btn" hideable />
                 </div>
 
-                <div className="cms-pricing-grid" style={{ marginTop: 16 }}>
+                <CardScroller>
                   {([
                     { n: 1, title: "العرض الأول" },
                     { n: 2, title: "العرض الثاني" },
@@ -1428,7 +1580,7 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
                       </div>
                     );
                   })}
-                </div>
+                </CardScroller>
               </div>
             )}
 
@@ -1526,23 +1678,64 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
                 </h3>
                 <InputField label="عنوان قسم الخطط الرئيسي" fieldKey="mem_title" hideable />
 
-                <div className="cms-pricing-grid" style={{ marginTop: 16 }}>
-                  {/* Three cards that differed only in their title, their key
-                      prefix and how many prices they carry. They were written
-                      out three times, which is how card 2 and card 3 ended up
-                      with the same 12px gap where card 1 had 8px. Same keys,
-                      same `!== "false"` reading, same fields — one shape. */}
-                  {([
-                    { n: 1, title: "الخطة الأولى (بدون متابعة)", label: "الأولى" },
-                    { n: 2, title: "الخطة الثانية (خطة المتابعة الأسبوعية)", label: "الثانية" },
-                    { n: 3, title: "الخطة الثالثة (خطة المتابعة اليومية)", label: "الثالثة" },
-                  ] as const).map(({ n, title, label }) => {
-                    const activeKey = `card${n}_active`;
+                {/* The plans the coach has, in their order. This was three
+                    entries written out here — which made three the ceiling,
+                    since a fourth plan needed a fourth entry in this file. The
+                    set lives in `plan_order` now; a document that has never
+                    named one answers with the three that were here.
+
+                    Deleting takes the card out of that list and leaves
+                    `cardN_badge` where it is. That is deliberate: a subscriber
+                    filed under `plan4` still has `plan4` in their profile, and
+                    their record, their sheet and the subscriber list all read
+                    the name from the content. Removing it would leave every one
+                    of them showing a blank where their package should be.
+                    `resolvePlanDisplayNames` is the half of that pair which
+                    reads these leftovers. */}
+                {(() => {
+                  const order = planOrderFrom(currentContent as JsonRecord);
+                  const move = (index: number, direction: 1 | -1) => {
+                    const target = index + direction;
+                    if (target < 0 || target >= order.length) return;
+                    const next = [...order];
+                    next[index] = order[target];
+                    next[target] = order[index];
+                    setContent("plan_order", next);
+                  };
+
+                  return (
+                <>
+                <CardScroller>
+                  {order.map((id, index) => {
+                    const n = planNumberOf(id) ?? index + 1;
+                    const title = (typeof currentContent[`${id}_badge`] === "string" && (currentContent[`${id}_badge`] as string).trim() !== "")
+                      ? (currentContent[`${id}_badge`] as string)
+                      : planPlaceholderName(index);
+                    const accent = planAccent(n);
+                    const activeKey = `${id}_active`;
                     const isActive = currentContent[activeKey] !== "false";
                     return (
-                      <div className="cms-pricing-card" key={n}>
+                      <div className="cms-pricing-card" key={id}>
                         <div className="cms-pricing-head">
-                          <div className="cms-pricing-header">{title}</div>
+                          <div className="cms-pricing-header">
+                            {/* The colour this plan is painted in on the site,
+                                so the coach can see which card they are editing
+                                without opening the preview. Generated past the
+                                third — see `planAccent`. */}
+                            <span
+                              aria-hidden="true"
+                              style={{
+                                display: "inline-block",
+                                width: 10,
+                                height: 10,
+                                borderRadius: "50%",
+                                background: accent.fill,
+                                marginInlineEnd: 8,
+                                verticalAlign: "middle",
+                              }}
+                            />
+                            {title}
+                          </div>
                           <Switch
                             checked={isActive}
                             onChange={(checked) =>
@@ -1552,16 +1745,59 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
                           />
                         </div>
 
-                        <InputField label="العنوان الفرعي للخطة" fieldKey={`card${n}_badge`} hideable />
-                        <InputField label="وصف الخطة" fieldKey={`card${n}_desc`} isTextarea hideable />
+                        <InputField label="اسم الخطة" fieldKey={`${id}_badge`} hideable />
+                        <InputField label="وصف الخطة" fieldKey={`${id}_desc`} isTextarea hideable />
 
-                        <CardListsEditor prefix={`card${n}`} allowWas={false} />
+                        <CardListsEditor prefix={id} allowWas={false} />
 
-                        <ImageUploadField label={`صورة الخطة ${label}`} fieldKey={`card${n}_img_url`} recommendedSize="600x600 (مربعة)" />
+                        <ImageUploadField label={`صورة ${title}`} fieldKey={`${id}_img_url`} recommendedSize="600x600 (مربعة)" />
+
+                        <div className="cms-list-actions" style={{ justifyContent: "flex-end", marginTop: 12 }}>
+                          <button type="button" className="cms-row-btn" onClick={() => move(index, -1)} disabled={index === 0} title="تقديم الخطة" aria-label="تقديم الخطة">↑</button>
+                          <button type="button" className="cms-row-btn" onClick={() => move(index, 1)} disabled={index === order.length - 1} title="تأخير الخطة" aria-label="تأخير الخطة">↓</button>
+                          <button
+                            type="button"
+                            className="cms-row-btn is-danger"
+                            onClick={() => {
+                              if (!window.confirm(`حذف «${title}» من الموقع؟\n\nالمشتركون المسجّلون فيها يحتفظون باسمها في ملفاتهم.`)) return;
+                              setContent("plan_order", order.filter((_, k) => k !== index));
+                            }}
+                            title="حذف الخطة"
+                            aria-label="حذف الخطة"
+                          >
+                            <Icon name="delete" />
+                          </button>
+                        </div>
                       </div>
                     );
                   })}
-                </div>
+                </CardScroller>
+
+                <button
+                  type="button"
+                  className="cms-btn-secondary"
+                  style={{ marginTop: 16 }}
+                  onClick={() => {
+                    const id = nextPlanId(currentContent as JsonRecord, order);
+                    /* The number is never one a deleted plan used, so a
+                       subscriber filed under it cannot be refiled under a
+                       package they never bought — see `nextPlanId`. */
+                    setContentAr((prev: JsonRecord) => ({
+                      ...prev,
+                      plan_order: [...order, id],
+                      [`${id}_badge`]: "",
+                      [`${id}_desc`]: "",
+                      [`${id}_services`]: [],
+                      [`${id}_features`]: [],
+                    }));
+                  }}
+                >
+                  <Icon name="add" />
+                  <span>إضافة خطة جديدة</span>
+                </button>
+                </>
+                  );
+                })()}
               </div>
             )}
 

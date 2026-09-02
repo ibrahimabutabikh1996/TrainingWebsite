@@ -5,7 +5,7 @@ import { readIntakeData } from "@/lib/intakeData";
 import { asMeals, type DietPlan } from "@/types/diet";
 import { toISODate } from "@/lib/trainingCycle";
 import { activityLabel, answerLabel, answerList } from "@/lib/formLabels";
-import { planNameFrom, resolvePlanNames } from "@/lib/planNames";
+import { planNameFrom, resolvePlanDisplayNames } from "@/lib/planNames";
 import { getLandingContent } from "@/app/admin/cms/actions";
 import ExportProfileClient from "./ExportProfileClient";
 import { notFound } from "next/navigation";
@@ -134,7 +134,7 @@ export default async function ExportProfilePage({
 
   const traineeName = String(data.fullname || profile.username || "المشترك");
   /* From the panel, so an exported PDF names the package the way the site does. */
-  const planNames = resolvePlanNames(
+  const planNames = resolvePlanDisplayNames(
     (await getLandingContent())?.content_ar as JsonRecord | undefined
   );
   const plan = planNameFrom(planNames, data.plan, "خطة تدريب وتغذية");

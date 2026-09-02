@@ -10,7 +10,16 @@ import { RICH_TEXT_KEYS, safeMediaUrl, setRichText, setText } from "@/lib/richTe
 import { optimizedCssUrl, optimizedSrc, optimizedSrcSet } from "@/lib/imageOptim";
 import { useParallax } from "@/hooks/useParallax";
 import { normalizeLegacyName } from "@/lib/planNames";
-import { planCardFrom, isShown, CARD_LIST_DEFAULTS, type PlanCard } from "@/lib/planCards";
+import {
+  planCardFrom,
+  isShown,
+  CARD_LIST_DEFAULTS,
+  planOrderFrom,
+  planNumberOf,
+  planValueOf,
+  planAccent,
+  type PlanCard,
+} from "@/lib/planCards";
 import { PromotionalPopup } from "@/components/PromotionalPopup";
 import { PreviewBar } from "@/components/ui/PreviewBar";
 import { usePreviewGuard } from "@/hooks/usePreviewGuard";
@@ -40,14 +49,25 @@ function CardLists({ card, showServices, showNote, showFeatures }: {
 }) {
   const note = showNote && card.note.trim() !== "" ? card.note : "";
 
+  /* A row the coach has started and not filled in is not drawn.
+   *
+   * The lists hold exactly what the editor holds, blanks included, because the
+   * editor needs an empty row to put a field on. The page has never shown one:
+   * the numbered keys it read before skipped a price whose label and figure
+   * were both empty, and a feature with nothing in it. Same rule, applied where
+   * the drawing happens rather than where the reading does. */
+  const services = showServices
+    ? card.services.filter((row) => row.label.trim() !== "" || row.value.trim() !== "" || (row.was ?? "").trim() !== "")
+    : [];
+  const features = showFeatures ? card.features.filter((feature) => feature.trim() !== "") : [];
+
   return (
     <>
-      {showServices &&
-        card.services.map((row, i) => (
+      {services.map((row, i) => (
           <div
             key={i}
             className="price-row"
-            style={note && i === card.services.length - 1 ? { marginBottom: 0 } : undefined}
+            style={note && i === services.length - 1 ? { marginBottom: 0 } : undefined}
           >
             <span className="price-label">{row.label}</span>
             {row.was ? (
@@ -63,9 +83,9 @@ function CardLists({ card, showServices, showNote, showFeatures }: {
 
       {note ? <div className="price-note">{note}</div> : null}
 
-      {showFeatures && card.features.length > 0 ? (
+      {features.length > 0 ? (
         <ul className="membership-features">
-          {card.features.map((feature, i) => (
+          {features.map((feature, i) => (
             <li key={i}>{feature}</li>
           ))}
         </ul>
@@ -73,6 +93,16 @@ function CardLists({ card, showServices, showNote, showFeatures }: {
     </>
   );
 }
+
+/* What a plan card shows before the coach has uploaded a picture for it.
+ *
+ * The three hand-written cards each carried a different stock photograph in
+ * their markup, which only worked while the set of cards was written out by
+ * hand. `setImageSrc` replaces this the moment `cardN_img_url` holds anything,
+ * so it is what a card with no picture of its own falls back to — including a
+ * card the coach has only just created. */
+const PLAN_CARD_FALLBACK_IMAGE =
+  "https://images.unsplash.com/photo-1540497077202-7c8a3999166f?w=600&q=80&fit=crop";
 
 /* Baseline copy. Anything the coach edits in the CMS overrides these at runtime
    through the [data-i18n] pass below. */
@@ -509,6 +539,73 @@ export default function LandingClient({
   const [cmsData, setCmsData] = useState<JsonRecord | null>(initialCmsData || null);
   const activeData = { ...defaultContent, ...(cmsData || initialCmsData || {}) };
 
+  /* Scrolling the plan row.
+   *
+   * The cards keep their width and the row scrolls, so the two arrows have to
+   * know three things: whether there is anything to scroll at all, and whether
+   * either end has been reached. Measured from the element rather than counted
+   * from the number of plans — the card width is a CSS calculation and the
+   * viewport decides how many fit.
+   *
+   * `scrollLeft` is the awkward part. This page is RTL, and the two conventions
+   * browsers have used for a right-to-left scroller disagree about where the
+   * start edge is: one counts down from zero into negatives, the other counts
+   * down from the maximum. `scrollStart` below reads either into the same
+   * "distance travelled from the beginning", so the buttons behave the same
+   * whichever the browser does. */
+  const planRowRef = useRef<HTMLDivElement | null>(null);
+  const [planScroll, setPlanScroll] = useState({ scrollable: false, atStart: true, atEnd: true });
+
+  const scrollStart = (el: HTMLElement) => {
+    const max = el.scrollWidth - el.clientWidth;
+    if (getComputedStyle(el).direction !== "rtl") return el.scrollLeft;
+    return el.scrollLeft <= 0 ? -el.scrollLeft : max - el.scrollLeft;
+  };
+
+  useEffect(() => {
+    const el = planRowRef.current;
+    if (!el) return;
+
+    const measure = () => {
+      const max = el.scrollWidth - el.clientWidth;
+      const start = scrollStart(el);
+      setPlanScroll({
+        /* A pixel of slack: a fractional layout can leave a scrollWidth a hair
+           over the client width with nothing actually off the edge. */
+        scrollable: max > 2,
+        atStart: start <= 1,
+        atEnd: start >= max - 1,
+      });
+    };
+
+    measure();
+    el.addEventListener("scroll", measure, { passive: true });
+
+    /* The card width is a percentage of the row, so the answer changes with the
+       window — and with the number of plans, which is why this is keyed on the
+       content below rather than run once. */
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+
+    return () => {
+      el.removeEventListener("scroll", measure);
+      observer.disconnect();
+    };
+  }, [cmsData]);
+
+  /* One card plus its gap, so a press lands the next card where the last one
+     was rather than at an arbitrary offset. `scrollBy` takes a physical
+     direction, so on this page "forward" is to the left. */
+  const scrollPlans = (direction: 1 | -1) => {
+    const el = planRowRef.current;
+    if (!el) return;
+    const card = el.querySelector<HTMLElement>(".membership-card");
+    const step = card ? card.getBoundingClientRect().width + 24 : el.clientWidth;
+    const physical = getComputedStyle(el).direction === "rtl" ? -direction : direction;
+    el.scrollBy({ left: physical * step, behavior: "smooth" });
+  };
+
+
   /* Written by the content manager's testimonials tab. Narrowed here rather than
      trusted: the column is free-form JSON, so a hand-edited or older row can
      hold anything, and the section below maps over this directly. */
@@ -662,9 +759,12 @@ export default function LandingClient({
         const PORTRAIT_SIZES = "(max-width: 680px) 92vw, 520px";
 
         setImageSrc("coach-img-el", activeData.coach_img_url, PORTRAIT_SIZES);
-        setImageSrc("card1-img-el", activeData.card1_img_url, CARD_SIZES);
-        setImageSrc("card2-img-el", activeData.card2_img_url, CARD_SIZES);
-        setImageSrc("card3-img-el", activeData.card3_img_url, CARD_SIZES);
+        /* One per plan on offer rather than three by name — the set is content
+           now, and a fourth card's picture is as much the coach's as the first
+           card's. */
+        for (const id of planOrderFrom(activeData)) {
+          setImageSrc(`${id}-img-el`, activeData[`${id}_img_url`], CARD_SIZES);
+        }
         /* The offers cards' images. They were left pointing at the stock photos
            hard-coded in the markup — three requests to images.unsplash.com on
            every visit, for pictures the coach had no way to replace. */
@@ -753,9 +853,10 @@ export default function LandingClient({
           }
         };
 
-        handleCardActivation("data-plan-card", 1, activeData.card1_active !== "false");
-        handleCardActivation("data-plan-card", 2, activeData.card2_active !== "false");
-        handleCardActivation("data-plan-card", 3, activeData.card3_active !== "false");
+        for (const id of planOrderFrom(activeData)) {
+          const n = planNumberOf(id);
+          if (n !== null) handleCardActivation("data-plan-card", n, activeData[`${id}_active`] !== "false");
+        }
 
         /* The offers cards get the same "غير متوفرة حالياً" treatment as the
            plans, from their own switches in the content manager. */
@@ -1258,115 +1359,138 @@ export default function LandingClient({
               </div>
               <div className="primary-divider"></div>
             </div>
-            <div className="membership-grid">
-              {/* Card 1 */}
-              <div className="membership-card reveal" data-plan-card="1">
-                <div className="membership-card-media">
-                  <img
-                    id="card1-img-el"
-                    className="membership-card-img" data-parallax="0.06" data-parallax-max="20"
-                    loading="lazy"
-                    src="https://images.unsplash.com/photo-1540497077202-7c8a3999166f?w=600&q=80&fit=crop"
-                    alt="خطة ذاتية التوجيه"
-                    data-i18n-alt="card1_alt"
-                  />
-                </div>
-                <div className="membership-card-body">
-                  <div className="membership-badge" data-i18n="card1_badge">
-                    خطة ذاتية التوجيه
-                  </div>
-                  <p className="membership-desc" data-i18n="card1_desc">
-                    مناسبة للأشخاص الملتزمين الذين يحتاجون فقط إلى التوجيه
-                    الصحيح في التدريب والنظام الغذائي.
-                  </p>
-                  <CardLists
-                    card={planCardFrom(activeData, "card1", defaultContent)}
-                    showServices={isShown(activeData, "card1_services")}
-                    showNote={isShown(activeData, "card1_note")}
-                    showFeatures={isShown(activeData, "card1_features")}
-                  />
-                  <Link
-                    href="/form?plan=plan1"
-                    className="btn-card plan1-btn"
-                    data-i18n="card_btn"
-                  >
-                    اختر الخطة
-                  </Link>
-                </div>
-              </div>
+            {/* The row and the two controls beside it. The wrapper is what the
+                buttons are positioned against; it adds no box of its own. */}
+            <div className="membership-scroller">
+              <button
+                type="button"
+                className="membership-nav membership-nav--prev"
+                onClick={() => scrollPlans(-1)}
+                disabled={planScroll.atStart}
+                hidden={!planScroll.scrollable}
+                aria-label="عرض الخطط السابقة"
+              >
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                className="membership-nav membership-nav--next"
+                onClick={() => scrollPlans(1)}
+                disabled={planScroll.atEnd}
+                hidden={!planScroll.scrollable}
+                aria-label="عرض الخطط التالية"
+              >
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <polyline points="15 18 9 12 15 6" />
+                </svg>
+              </button>
+            <div
+              /* A side fades while it still has cards behind it — both
+                 at once in the middle of the row. Same two flags the
+                 buttons read, so the fade and the disabled state can
+                 never disagree about where the row is. */
+              className={`membership-grid membership-grid--scroll${planScroll.atStart ? "" : " is-faded-start"}${planScroll.atEnd ? "" : " is-faded-end"}`}
+              ref={planRowRef}
+            >
+              {/* One card per plan the coach has on offer.
+                  These were three blocks written out by hand, identical but
+                  for a number, and the number was the ceiling: a fourth plan
+                  meant a fourth block. `plan_order` decides the set now, and a
+                  document that has never named one answers with the three that
+                  were here — so this renders exactly what it used to until
+                  somebody adds to it.
 
-              {/* Card 2 */}
-              <div className="membership-card featured reveal" data-plan-card="2">
-                <div className="membership-card-media">
-                  <img
-                    id="card2-img-el"
-                    className="membership-card-img" data-parallax="0.06" data-parallax-max="20"
-                    loading="lazy"
-                    src="https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=600&q=80&fit=crop"
-                    alt="خطة المتابعة الأسبوعية"
-                    data-i18n-alt="card2_alt"
-                  />
-                </div>
-                <div className="membership-card-body">
-                  <div className="membership-badge" data-i18n="card2_badge">
-                    خطة المتابعة الأسبوعية
-                  </div>
-                  <p className="membership-desc" data-i18n="card2_desc">
-                    مناسبة للأشخاص الذين يجدون صعوبة في الالتزام ويحتاجون إلى
-                    خطة منظمة وخطة المتابعة الأسبوعية للوصول إلى أهدافهم.
-                  </p>
-                  <CardLists
-                    card={planCardFrom(activeData, "card2", defaultContent)}
-                    showServices={isShown(activeData, "card2_services")}
-                    showNote={isShown(activeData, "card2_note")}
-                    showFeatures={isShown(activeData, "card2_features")}
-                  />
-                  <Link
-                    href="/form?plan=plan2"
-                    className="btn-card plan2-btn"
-                    data-i18n="card_btn"
-                  >
-                    اختر الخطة
-                  </Link>
-                </div>
-              </div>
+                  The accent is set here rather than by the `:nth-child` rules
+                  in landing.css. Those still stand and still say the same thing
+                  for the first three, but they are positional and there are
+                  only three of them; an inline custom property is per-plan,
+                  outranks them, and is the only way a fourth card gets a
+                  colour at all. `planAccent` answers with the hand-written
+                  values for 1 to 3, so nothing here moves. */}
+              {planOrderFrom(activeData).map((id, index) => {
+                const n = planNumberOf(id) ?? index + 1;
+                const accent = planAccent(n);
+                const badge = typeof activeData[`${id}_badge`] === "string" ? (activeData[`${id}_badge`] as string) : "";
+                const desc = typeof activeData[`${id}_desc`] === "string" ? (activeData[`${id}_desc`] as string) : "";
 
-              {/* Card 3 */}
-              <div className="membership-card reveal" data-plan-card="3">
-                <div className="membership-card-media">
-                  <img
-                    id="card3-img-el"
-                    className="membership-card-img" data-parallax="0.06" data-parallax-max="20"
-                    loading="lazy"
-                    src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=600&q=80&fit=crop"
-                    alt="خطة المتابعة اليومية"
-                    data-i18n-alt="card3_alt"
-                  />
-                </div>
-                <div className="membership-card-body">
-                  <div className="membership-badge" data-i18n="card3_badge">
-                    خطة المتابعة اليومية
-                  </div>
-                  <p className="membership-desc" data-i18n="card3_desc">
-                    هذه هي الطريقة الأكثر ضماناً للوصول إلى هدفك. المتابعة
-                    اليومية ستساعدك على الالتزام. مثالية للأشخاص الذين جربوا كل
-                    شيء ولم يستطيعوا الالتزام.
-                  </p>
-                  <CardLists
-                    card={planCardFrom(activeData, "card3", defaultContent)}
-                    showServices={isShown(activeData, "card3_services")}
-                    showNote={isShown(activeData, "card3_note")}
-                    showFeatures={isShown(activeData, "card3_features")}
-                  />
-                  <Link
-                    href="/form?plan=plan3"
-                    className="btn-card plan3-btn"
-                    data-i18n="card_btn"
+                return (
+                  <div
+                    /* `featured` lifts whichever card sits in the middle of the
+                       row, which is where the eye lands. It was written on the
+                       second of three; it follows the position rather than the
+                       plan so a coach reordering their packages does not have
+                       to think about it. */
+                    className={`membership-card${index === 1 ? " featured" : ""} reveal`}
+                    data-plan-card={n}
+                    key={id}
+                    style={{
+                      "--primary": accent.fill,
+                      "--primary-rgb": accent.rgb,
+                      "--primary-on-tint": "#8fc1ff",
+                      "--border-primary": `rgba(${accent.rgb}, 0.35)`,
+                      "--primary-dim": `rgba(${accent.rgb}, 0.12)`,
+                      "--plan-text": accent.text,
+                    } as React.CSSProperties}
                   >
-                    اختر الخطة
-                  </Link>
-                </div>
-              </div>
+                    <div className="membership-card-media">
+                      <img
+                        id={`${id}-img-el`}
+                        className="membership-card-img"
+                        data-parallax="0.06"
+                        data-parallax-max="20"
+                        loading="lazy"
+                        src={PLAN_CARD_FALLBACK_IMAGE}
+                        alt={badge}
+                        data-i18n-alt={`${id}_alt`}
+                      />
+                    </div>
+                    <div className="membership-card-body">
+                      <div className="membership-badge" data-i18n={`${id}_badge`}>
+                        {badge}
+                      </div>
+                      <p className="membership-desc" data-i18n={`${id}_desc`}>
+                        {desc}
+                      </p>
+                      <CardLists
+                        card={planCardFrom(activeData, id, defaultContent)}
+                        showServices={isShown(activeData, `${id}_services`)}
+                        showNote={isShown(activeData, `${id}_note`)}
+                        showFeatures={isShown(activeData, `${id}_features`)}
+                      />
+                      <Link
+                        href={`/form?plan=${planValueOf(id)}`}
+                        className={`btn-card plan${n}-btn`}
+                        data-i18n="card_btn"
+                      >
+                        اختر الخطة
+                      </Link>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
             </div>
           </div>
         </section>

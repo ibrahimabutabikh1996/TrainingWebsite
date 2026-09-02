@@ -1,6 +1,7 @@
 import type { JsonRecord } from "@/types";
 import { translations } from "@/lib/translations";
 import { PLAN_KEYS, PLAN_VALUES } from "@/lib/formLabels";
+import { planOrderFrom, planValueOf, planNumberOf } from "@/lib/planCards";
 
 /* What each plan and offer is called, taken from the content manager.
  *
@@ -84,6 +85,53 @@ export function resolvePlanNames(content: JsonRecord | null | undefined): PlanNa
       names[plan] = normalizeLegacyName(written.trim());
     }
   }
+
+  /* Plans past the three the dictionary knows about. The coach can add any
+     number of cards now, and a card the panel created has no entry in
+     `PLAN_KEYS` and none in `translations` — its name exists only where the
+     coach typed it. Read from the order rather than from every `cardN_badge`
+     in the document, so this map holds what is on offer and nothing else: it
+     is the list the form's plan picker is built from, and a package the coach
+     has taken down should not still be selectable. */
+  for (const id of planOrderFrom(content)) {
+    const written = content[`${id}_badge`];
+    if (typeof written === "string" && written.trim() !== "") {
+      names[planValueOf(id)] = normalizeLegacyName(written.trim());
+    }
+  }
+
+  return names;
+}
+
+/**
+ * The same, plus the packages that are no longer offered.
+ *
+ * A plan the coach deletes disappears from the cards and from the picker, but
+ * the subscribers who bought it do not disappear with it: their profile still
+ * says `plan4`, and their record, their sheet and the subscriber list all have
+ * to keep calling it what they bought. Deleting a plan therefore leaves its
+ * name behind — this reads those leftovers, so nothing that displays a stored
+ * plan ever falls back to showing the bare key or an empty tag.
+ *
+ * Anything showing a plan somebody is already on wants this. The form's picker
+ * wants `resolvePlanNames`, which is the list of what can still be bought.
+ */
+export function resolvePlanDisplayNames(content: JsonRecord | null | undefined): PlanNames {
+  const names = resolvePlanNames(content);
+  if (!content) return names;
+
+  for (const key of Object.keys(content)) {
+    const m = /^card(\d+)_badge$/.exec(key);
+    if (!m) continue;
+    const n = planNumberOf(`card${m[1]}`);
+    if (n === null) continue;
+    const plan = `plan${n}`;
+    if (names[plan]) continue;
+    const written = content[key];
+    if (typeof written === "string" && written.trim() !== "") {
+      names[plan] = normalizeLegacyName(written.trim());
+    }
+  }
   return names;
 }
 
@@ -135,13 +183,21 @@ export interface PlanOption {
 export function planOptions(names: PlanNames): PlanOption[] {
   const labelFor = (value: string) => planNameFrom(names, value, value);
 
+  /* Whatever the resolver knows about, rather than a fixed six. `PLAN_VALUES`
+     is still the floor — a document with no plans of its own answers with the
+     three the dictionary carries — but a coach who has added a fourth needs it
+     in the picker, and one who has taken the third down needs it gone. */
+  const values = PLAN_VALUES.filter((v) => v in names).concat(
+    Object.keys(names).filter((v) => !PLAN_VALUES.includes(v)),
+  );
+
   const seen = new Map<string, number>();
-  for (const value of PLAN_VALUES) {
+  for (const value of values) {
     const label = labelFor(value);
     seen.set(label, (seen.get(label) ?? 0) + 1);
   }
 
-  return PLAN_VALUES.map((value) => {
+  return values.map((value) => {
     const label = labelFor(value);
     const shared = (seen.get(label) ?? 0) > 1;
     return {

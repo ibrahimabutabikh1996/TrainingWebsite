@@ -6,6 +6,7 @@ import { Profile } from "@/types/admin";
 import { Toaster, toast } from "react-hot-toast";
 import { PLAN_COLOUR_SLOT } from "@/lib/formLabels";
 import { planNameFrom, planOptions, type PlanNames } from "@/lib/planNames";
+import { planTagStyle } from "@/lib/planCards";
 import { Icon } from "@/components/Icon";
 import { CustomSelect } from "@/components/CustomSelect";
 import { useNow } from "@/hooks/useNow";
@@ -453,11 +454,18 @@ export default function AdminCRMClient({
                       {/* The third copy of the plan-to-colour chain, which had
                           no arm for the offers. Shared now, so the tag is
                           coloured from the same table the timeline reads. */}
-                      <span className={`crm-tag ${
-                        PLAN_COLOUR_SLOT[String(data.plan)]
-                          ? `plan-${PLAN_COLOUR_SLOT[String(data.plan)]}`
-                          : data.plan ? 'primary-tag' : ''
-                      }`}>
+                      <span
+                        className={`crm-tag ${
+                          PLAN_COLOUR_SLOT[String(data.plan)]
+                            ? `plan-${PLAN_COLOUR_SLOT[String(data.plan)]}`
+                            : data.plan ? 'primary-tag' : ''
+                        }`}
+                        /* A plan past the third has no class in crm.css to
+                           match, so it carries its generated colour with it.
+                           Null for the first three, which keep the stylesheet's
+                           own rules. */
+                        style={planTagStyle(String(data.plan)) ?? undefined}
+                      >
                         {planNameFrom(planNames, data.plan, "غير محدد")}
                       </span>
                       {data.plan_type && (

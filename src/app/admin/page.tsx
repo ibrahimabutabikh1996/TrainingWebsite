@@ -5,7 +5,7 @@ import AdminCRMClient from "./AdminCRMClient";
 import LiveRefresh from "@/components/LiveRefresh";
 import type { JsonRecord } from "@/types";
 import { getLandingContent } from "./cms/actions";
-import { resolvePlanNames } from "@/lib/planNames";
+import { resolvePlanDisplayNames } from "@/lib/planNames";
 
 export const dynamic = "force-dynamic";
 
@@ -142,7 +142,7 @@ export default async function AdminDashboardPage() {
 
   /* The packages as the coach named them, so the subscriber list, its filter
      and the CSV it exports all say what the panel says. */
-  const planNames = resolvePlanNames(
+  const planNames = resolvePlanDisplayNames(
     (await getLandingContent())?.content_ar as JsonRecord | undefined
   );
 

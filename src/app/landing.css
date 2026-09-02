@@ -1242,7 +1242,15 @@ body::before {
 
 .membership-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  /* Was `repeat(3, 1fr)`, which is the right answer only while there are
+     exactly three cards. The plans are a list the coach adds to now, and a
+     fourth card against a three-column track either overflowed the row or
+     dropped underneath it at full width. `auto-fit` with a floor lays out
+     three across exactly as before at this width — the cards are wider than
+     280px in every column count the old rule produced — and wraps a fourth
+     onto a second row instead of breaking the first. The offers section keeps
+     its own grid and is untouched. */
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 24px;
 }
 /* `--border` against `--bg2` is #162235 on #15212E — a contrast ratio of 1.02:1,
@@ -2684,5 +2692,188 @@ body.offers-active .nav-links a[href="#offers"]::after {
   #membership,
   #contact {
     padding: 56px 0;
+  }
+}
+
+/* ─── Scrolling between plans ─────────────────────────────────────────────
+ *
+ * The plans are a list the coach adds to, and a grid answers a fourth card by
+ * making all four narrower — 283px where three sat at 385px. The cards keep
+ * their own width now and the row scrolls instead.
+ *
+ * Everything here is behind `min-width: 1001px` on purpose. Below that the
+ * existing rules put the cards in two columns and then one, at full width,
+ * which is the right answer on a phone and is not something a horizontal
+ * scroller improves. Nothing in this block can be reached there.
+ *
+ * The base `.membership-grid` is untouched: the offers section uses the same
+ * class, and only the plans carry the modifier. */
+@media (min-width: 1001px) {
+  .membership-scroller {
+    position: relative;
+  }
+
+  .membership-grid--scroll {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    /* Room at both ends, so the row is not clipped hard against the edge of its
+       own box — a card sliced flush at the boundary is what read as a fault.
+       The padding pushes the clip out into the gutter, where there is nothing
+       to cut.
+
+       The negative margin is what keeps the cards their own size. Padding on a
+       flex container comes out of the content box, so `calc((100% - 48px) / 3)`
+       would have measured 32px less and quietly narrowed every card; widening
+       the box by the same amount it was padded leaves the arithmetic — and the
+       row's alignment with the section above it — exactly where it was.
+
+       `scroll-padding` tells snapping about the same gap, so a card comes to
+       rest inside the padding rather than under it. */
+    padding-inline: 16px;
+    margin-inline: -16px;
+    scroll-padding-inline: 16px;
+    /* The cards lift 2px and cast a shadow on hover, and an overflow box clips
+       what leaves it — without this the lift is shaved off at the top. */
+    padding-block: 8px;
+    margin-block: -8px;
+    /* The two buttons are the control; a scrollbar under the cards as well is
+       one affordance too many. Both spellings, because the standard property
+       and WebKit's pseudo-element are not the same thing. */
+    scrollbar-width: none;
+  }
+
+  .membership-grid--scroll::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* The edge, softened — over the padding above and a little of the card
+   * beyond it, so the row ends in a gradient rather than a straight cut.
+   *
+   * On both sides at once whenever both have something behind them, which is
+   * every position except the two ends. It comes off a side that is flush,
+   * because a fade there would dim a card for no reason — the first card at
+   * rest is not hidden behind anything.
+   *
+   * The page is right-to-left, so the start edge is the right one and the end
+   * edge is the left; the gradients below are written for that.
+   *
+   * `mask-image` rather than an overlay: an overlay would need the section's
+   * background baked into it and would sit above the cards, swallowing hover
+   * and clicks near the edge. */
+  .membership-grid--scroll {
+    --edge-fade: 64px;
+  }
+
+  /* Both ends have more to show. */
+  .membership-grid--scroll.is-faded-start.is-faded-end {
+    mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      #000 var(--edge-fade),
+      #000 calc(100% - var(--edge-fade)),
+      transparent 100%
+    );
+  }
+
+  /* Scrolled away from the beginning: the cards behind are off to the right. */
+  .membership-grid--scroll.is-faded-start:not(.is-faded-end) {
+    mask-image: linear-gradient(
+      to right,
+      #000 0,
+      #000 calc(100% - var(--edge-fade)),
+      transparent 100%
+    );
+  }
+
+  /* More to come: the cards ahead are off to the left. */
+  .membership-grid--scroll.is-faded-end:not(.is-faded-start) {
+    mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      #000 var(--edge-fade),
+      #000 100%
+    );
+  }
+
+  /* Three across, which is what the section has always shown — the same
+     arithmetic the old `repeat(3, 1fr)` did, written for a flex track: the row
+     less its two gaps, split three ways. A fourth card does not shrink these,
+     it waits off the edge. */
+  .membership-grid--scroll > .membership-card {
+    flex: 0 0 calc((100% - 48px) / 3);
+    scroll-snap-align: start;
+  }
+
+  .membership-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 2;
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    border-radius: var(--radius-circle);
+    background: var(--bg2);
+    border: 1px solid var(--border-strong);
+    color: var(--text-secondary);
+    cursor: pointer;
+    box-shadow: var(--elev-2);
+    transition:
+      background-color var(--dur) var(--ease),
+      border-color var(--dur) var(--ease),
+      color var(--dur) var(--ease),
+      opacity var(--dur) var(--ease);
+  }
+
+  /* `.membership-inner` holds 48px of padding either side at every width this
+     block can be reached at, so the buttons sit in that gutter rather than over
+     a card. They are beside the row, not on top of it. */
+  .membership-nav--prev {
+    inset-inline-start: -46px;
+  }
+
+  .membership-nav--next {
+    inset-inline-end: -46px;
+  }
+
+  .membership-nav:hover:not(:disabled) {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: var(--bg3);
+  }
+
+  .membership-nav:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
+
+  /* Kept in the layout rather than removed, so the row does not shift sideways
+     as the ends are reached. */
+  .membership-nav:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
+
+  .membership-nav .app-icon {
+    font-size: 22px;
+  }
+}
+
+/* Nothing to scroll. */
+.membership-nav[hidden] {
+  display: none;
+}
+
+/* Below the scroller's own breakpoint the cards are in two columns and then
+   one, at full width, with nothing off the edge — so there is nothing for these
+   to do. Hidden in the stylesheet rather than left to the measured state: every
+   rule that gives them a size and a position lives in the block above, so below
+   it they would otherwise be two unstyled buttons sitting in the flow. */
+@media (max-width: 1000px) {
+  .membership-nav {
+    display: none;
   }
 }

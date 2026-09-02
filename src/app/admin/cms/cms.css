@@ -1594,3 +1594,69 @@
     justify-content: flex-end;
   }
 }
+
+/* ─── Scrolling a row of editor cards ─────────────────────────────────────
+ *
+ * The plans tab holds as many cards as the coach has plans, and the grid
+ * answered the fifth by wrapping it onto a second row — a full-height editor
+ * card below the fold with nothing to announce it. The row scrolls instead and
+ * the cards keep a readable width.
+ *
+ * No fade at the edges, unlike the same control on the landing page. There a
+ * visitor is looking at a finished thing and a hard cut reads as a fault; here
+ * a card clipped by the edge is a card the coach can still read the fields of,
+ * and dimming it would only make that harder. */
+.cms-scroller {
+  position: relative;
+}
+
+/* Above the row, not beside it: an editor card is as tall as the fields it
+   carries, so a button centred on one would be halfway down the page. */
+.cms-scroll-controls {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.cms-scroll-controls[hidden] {
+  display: none;
+}
+
+@media (min-width: 769px) {
+  .cms-pricing-grid--scroll {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    /* Room at the ends so the row is not clipped flush against its own box,
+       and the negative margin to give it back — padding on a flex container
+       comes out of the content box, and the card width below is measured from
+       it, so without the second half every card would quietly narrow. */
+    padding-inline: 12px;
+    margin-inline: -12px;
+    scroll-padding-inline: 12px;
+    /* The two buttons are the control. */
+    scrollbar-width: none;
+  }
+
+  .cms-pricing-grid--scroll::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Three across where the pane allows it — the row less its two 14px gaps,
+     split three ways — and never narrower than a card whose fields are still
+     readable. Below that floor the row simply starts scrolling sooner. */
+  .cms-pricing-grid--scroll > .cms-pricing-card {
+    flex: 0 0 calc((100% - 28px) / 3);
+    min-width: 300px;
+    scroll-snap-align: start;
+  }
+}
+
+/* One column below the breakpoint — nothing to scroll, so no control. */
+@media (max-width: 768px) {
+  .cms-scroll-controls {
+    display: none;
+  }
+}

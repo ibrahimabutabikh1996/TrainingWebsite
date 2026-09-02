@@ -8,7 +8,8 @@ import PendingRenewalCard from "@/components/admin/PendingRenewalCard";
 import DeleteSubscriberZone from "@/components/admin/DeleteSubscriberZone";
 import AdminSubscriptionTimeline from "@/components/admin/AdminSubscriptionTimeline";
 import { activityLabel, PLAN_COLOUR_SLOT } from "@/lib/formLabels";
-import { planNameFrom, resolvePlanNames } from "@/lib/planNames";
+import { planNameFrom, resolvePlanDisplayNames } from "@/lib/planNames";
+import { planTagStyle } from "@/lib/planCards";
 import { getLandingContent } from "@/app/admin/cms/actions";
 import "../../crm.css";
 import type { JsonRecord } from "@/types";
@@ -43,7 +44,7 @@ export default async function ProfileDetailsPage({ params }: { params: Promise<{
 
   /* What the packages are called, from the panel rather than from a fixed copy
      in the code — the same names the card, the form and the sign-up email use. */
-  const planNames = resolvePlanNames(
+  const planNames = resolvePlanDisplayNames(
     (await getLandingContent())?.content_ar as JsonRecord | undefined
   );
 
@@ -139,7 +140,7 @@ export default async function ProfileDetailsPage({ params }: { params: Promise<{
                 {/* The class was built by string surgery on the value — `"plan1".replace("plan", "plan-")`.
                     It produced the right class for exactly the three values it was written for and
                     left "offer1" untouched, naming a class that has no rules. */}
-                {data.plan && <span className={`crm-tag ${PLAN_COLOUR_SLOT[String(data.plan)] ? `plan-${PLAN_COLOUR_SLOT[String(data.plan)]}` : ''}`} style={{ padding: '6px 14px', fontSize: '0.85rem' }}>{planNameFrom(planNames, data.plan)}</span>}
+                {data.plan && <span className={`crm-tag ${PLAN_COLOUR_SLOT[String(data.plan)] ? `plan-${PLAN_COLOUR_SLOT[String(data.plan)]}` : ''}`} style={{ padding: '6px 14px', fontSize: '0.85rem', ...(planTagStyle(String(data.plan)) ?? {}) }}>{planNameFrom(planNames, data.plan)}</span>}
                 {data.activity && <span className="crm-tag" style={{ padding: '6px 14px', fontSize: '0.85rem' }}>{activityLabel(data.activity)}</span>}
               </div>
             </div>
