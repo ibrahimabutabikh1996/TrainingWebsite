@@ -12,6 +12,7 @@ import { Icon } from "@/components/Icon";
 import { previewSrc } from "@/lib/imageOptim";
 import { Overlay } from "@/components/ui/Overlay";
 import { CustomSelect } from "@/components/CustomSelect";
+import { confirmDialog } from "@/lib/confirmDialog";
 import {
   planCardFrom,
   CARD_LIST_DEFAULTS,
@@ -1773,8 +1774,19 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
                           <button
                             type="button"
                             className="cms-row-btn is-danger"
-                            onClick={() => {
-                              if (!window.confirm(`حذف «${title}» من الموقع؟\n\nالمشتركون المسجّلون فيها يحتفظون باسمها في ملفاتهم.`)) return;
+                            onClick={async () => {
+                              /* The panel's own dialog rather than the browser's,
+                                 the way every other "are you sure?" here already
+                                 asks — this was the last `window.confirm` left in
+                                 the app. The question is the heading and the
+                                 reassurance is the body, because the dialog draws
+                                 its message as a paragraph and a paragraph
+                                 collapses the blank line that used to separate
+                                 the two. See @/lib/confirmDialog. */
+                              if (!(await confirmDialog(
+                                "المشتركون المسجّلون فيها يحتفظون باسمها في ملفاتهم.",
+                                { title: `حذف «${title}» من الموقع؟`, danger: true }
+                              ))) return;
                               setContent("plan_order", order.filter((_, k) => k !== index));
                             }}
                             title="حذف الخطة"
