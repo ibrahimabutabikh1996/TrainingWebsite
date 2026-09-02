@@ -24,38 +24,19 @@ import { planOrderFrom, planValueOf, planNumberOf } from "@/lib/planCards";
 
 export type PlanNames = Record<string, string>;
 
-/* Names the panel still has stored, and what they are shown as.
+/* The three plans were renamed once without the stored row being rewritten, and
+ * a table here translated the old names on the way to the screen ever since.
+ * That table is gone, and the stored row now holds the names themselves.
  *
- * The three plans were renamed at some point without the stored row being
- * rewritten, so `site_settings` holds "متابعة شهرية" to this day and the landing
- * page has been translating it on the way to the screen ever since.
+ * It had to go, not merely because it was stale. It rewrote four exact strings
+ * wherever they appeared, so those four were names the coach could not use: the
+ * panel accepted "متابعة يومية", saved it, showed it back — and the page printed
+ * "خطة المتابعة اليومية" instead. A field the coach edits and the site ignores
+ * is worse than a wrong default, and it had spread beyond the names: a feature
+ * line on the third plan was being rewritten too.
  *
- * That translation used to live as a local function inside LandingClient, which
- * was fine while the landing page was the only thing reading those fields. It is
- * not any more: the form, the WhatsApp message, the subscriber list and the PDF
- * export all read them now, and every one of them would have shown the coach
- * "متابعة شهرية" while the card beside it said "خطة ذاتية التوجيه". One table,
- * imported by both.
- *
- * Delete an entry once the stored row is corrected — this is a migration that
- * never happened, not a permanent mapping. */
-const LEGACY_NAMES: Record<string, string> = {
-  "متابعة شهرية": "خطة ذاتية التوجيه",
-  "خطط ذاتية التوجيه": "خطة ذاتية التوجيه",
-  /* "الأسبوعية", with the hamza. The rule this replaces wrote "الاسبوعية"
-     without one, and since the stored row still holds the legacy value, that
-     spelling was what the card on the landing page actually showed — while the
-     panel's own default, the dictionary and every other mention in the project
-     spell it with the hamza. A one-character typo in a table nothing else read.
-     (`scripts/strip_hamzas.ts` is unrelated: it normalises exercise names.) */
-  "متابعة اسبوعية": "خطة المتابعة الأسبوعية",
-  "متابعة يومية": "خطة المتابعة اليومية",
-};
-
-/** One stored value, as it should be shown. Anything unrecognised passes through. */
-export function normalizeLegacyName(value: string): string {
-  return LEGACY_NAMES[value] ?? value;
-}
+ * The four stored values were corrected in the same change, so nothing about
+ * the page moved. */
 
 /** The names with no content row behind them — a fresh install. */
 export const DEFAULT_PLAN_NAMES: PlanNames = Object.fromEntries(
@@ -82,7 +63,7 @@ export function resolvePlanNames(content: JsonRecord | null | undefined): PlanNa
     if (typeof written === "string" && written.trim() !== "") {
       /* Through the same rewrite the card goes through, or the form would name
          a package differently from the button the person just clicked. */
-      names[plan] = normalizeLegacyName(written.trim());
+      names[plan] = written.trim();
     }
   }
 
@@ -96,7 +77,7 @@ export function resolvePlanNames(content: JsonRecord | null | undefined): PlanNa
   for (const id of planOrderFrom(content)) {
     const written = content[`${id}_badge`];
     if (typeof written === "string" && written.trim() !== "") {
-      names[planValueOf(id)] = normalizeLegacyName(written.trim());
+      names[planValueOf(id)] = written.trim();
     }
   }
 
@@ -129,7 +110,7 @@ export function resolvePlanDisplayNames(content: JsonRecord | null | undefined):
     if (names[plan]) continue;
     const written = content[key];
     if (typeof written === "string" && written.trim() !== "") {
-      names[plan] = normalizeLegacyName(written.trim());
+      names[plan] = written.trim();
     }
   }
   return names;

@@ -9,7 +9,6 @@ import { isAdminUsername, useCurrentUsername } from "@/lib/clientSession";
 import { RICH_TEXT_KEYS, safeMediaUrl, setRichText, setText } from "@/lib/richText";
 import { optimizedCssUrl, optimizedSrc, optimizedSrcSet } from "@/lib/imageOptim";
 import { useParallax } from "@/hooks/useParallax";
-import { normalizeLegacyName } from "@/lib/planNames";
 import {
   planCardFrom,
   isShown,
@@ -195,10 +194,9 @@ const defaultContent: JsonRecord = {
  *
  * The effect that reads the preview draft lists `cmsData` in its dependencies
  * and calls `setCmsData` from inside itself. The value it sets is a fresh object
- * every time — `JSON.parse`, then `normalizeContent`, which spreads into a new
- * record — so the reference always changed, the effect always re-ran, and it
- * parsed and set again: an unbounded render loop, thrown at
- * `setCmsData(payload)`.
+ * every time — `JSON.parse` builds a fresh record on each read — so the
+ * reference always changed, the effect always re-ran, and it parsed and set
+ * again: an unbounded render loop, thrown at `setCmsData(payload)`.
  *
  * It only bit under `?preview=true` with a draft in storage, which is precisely
  * the content manager's preview window.
@@ -522,20 +520,6 @@ export default function LandingClient({
     target?.scrollIntoView({ behavior: "instant" });
   }, []);
 
-  /* The rules themselves moved to @/lib/planNames. They were written out here
-     when this page was the only thing reading those fields; the form, the
-     WhatsApp message, the subscriber list and the PDF export read them too now,
-     and a second copy of the table is how one of them starts showing a name the
-     others stopped using. */
-  const normalizeContent = (data: JsonRecord): JsonRecord => {
-    const updated = { ...data };
-    for (const key in updated) {
-      const value = updated[key];
-      if (typeof value === "string") updated[key] = normalizeLegacyName(value);
-    }
-    return updated;
-  };
-
   const [cmsData, setCmsData] = useState<JsonRecord | null>(initialCmsData || null);
   const activeData = { ...defaultContent, ...(cmsData || initialCmsData || {}) };
 
@@ -645,7 +629,7 @@ export default function LandingClient({
             ? (v as JsonRecord)
             : {};
         if (res) {
-          setCmsData(normalizeContent(asRecord(res.content_ar)));
+          setCmsData(asRecord(res.content_ar));
         }
       });
     }
@@ -919,7 +903,7 @@ export default function LandingClient({
       if (savedData) {
         try {
           const { payload } = JSON.parse(savedData);
-          show(normalizeContent(payload));
+          show(payload);
         } catch {}
       }
 
@@ -928,7 +912,7 @@ export default function LandingClient({
         if (e.key === "cms_preview_data" && e.newValue) {
           try {
             const { payload } = JSON.parse(e.newValue);
-            show(normalizeContent(payload));
+            show(payload);
           } catch {}
         }
       };
@@ -941,7 +925,7 @@ export default function LandingClient({
       const handleMessage = (event: MessageEvent) => {
         if (event.origin !== window.location.origin) return;
         if (event.data?.type === "CMS_PREVIEW") {
-          show(normalizeContent(event.data.payload));
+          show(event.data.payload);
         }
       };
 
