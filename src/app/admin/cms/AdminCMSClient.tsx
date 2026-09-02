@@ -1139,13 +1139,28 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
   };
 
   const getAspectForField = (key?: string) => {
+    /* A plan's picture, whichever plan it belongs to.
+     *
+     * This was three cases — `card1_img_url` to `card3_img_url` — which was
+     * right while there were exactly three plans and silently stopped being
+     * right when they became a list: a fourth plan's picture matched nothing
+     * here and was cropped freehand.
+     *
+     * Portrait rather than the square it used to ask for, because the picture
+     * is no longer a band at the top of the card. It is the card's whole
+     * background now, and a square crop of a tall card is a picture whose
+     * middle is all that survives. 9/16 is the ratio the sign-in background
+     * already uses in this table — a familiar frame to compose in, and
+     * `object-fit: cover` takes care of the rest.
+     *
+     * Anchored, so `off_card1_img_url` does not match: the offers cards were
+     * not asked to change and still crop the way they did. */
+    if (key && /^card\d+_img_url$/.test(key)) return 9 / 16;
+
     switch(key) {
       case "hero_bg_url": return 16 / 9;
       case "coach_img_url":
       case "contact_img_url": return 4 / 5;
-      case "card1_img_url":
-      case "card2_img_url":
-      case "card3_img_url": return 1 / 1;
       case "login_bg_url": return 9 / 16;
       default: return undefined;
     }
@@ -1750,7 +1765,7 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
 
                         <CardListsEditor prefix={id} allowWas={false} />
 
-                        <ImageUploadField label={`صورة ${title}`} fieldKey={`${id}_img_url`} recommendedSize="600x600 (مربعة)" />
+                        <ImageUploadField label={`صورة ${title}`} fieldKey={`${id}_img_url`} recommendedSize="900x1600 (عمودية)" />
 
                         <div className="cms-list-actions" style={{ justifyContent: "flex-end", marginTop: 12 }}>
                           <button type="button" className="cms-row-btn" onClick={() => move(index, -1)} disabled={index === 0} title="تقديم الخطة" aria-label="تقديم الخطة">↑</button>

@@ -2877,3 +2877,60 @@ body.offers-active .nav-links a[href="#offers"]::after {
     display: none;
   }
 }
+
+/* ─── The plan card's picture, behind the whole card ──────────────────────
+ *
+ * It used to sit in a 200px band at the top with the text below it. Now it is
+ * the card's ground: full height, faint, with everything written over it.
+ *
+ * Scoped to `[data-plan-card]` and nothing wider, because the offers section
+ * renders `.membership-card`, `.membership-card-media` and
+ * `.membership-card-img` too — the same three classes — and it was not asked
+ * to change. A rule written against the class alone would have restyled it.
+ *
+ * The opacity is a variable so it can be moved without reading this block. */
+[data-plan-card] {
+  --plan-image-opacity: 0.3;
+}
+
+[data-plan-card] .membership-card-media {
+  position: absolute;
+  inset: 0;
+  /* The 200px above was the band's own height. Out of flow and pinned to all
+     four sides, the card's content decides the height and this follows it. */
+  height: auto;
+  z-index: 0;
+}
+
+[data-plan-card] .membership-card-img {
+  /* The overhang the parallax needs, kept exactly as it was — 50px taller than
+     the window it drifts behind, hung 25px above, against a drift the markup
+     clamps to 20px either way. The window is the whole card now rather than a
+     band, so the height is measured from it instead of being a fixed 250px.
+     The two numbers still move together. */
+  height: calc(100% + 50px);
+  margin-top: -25px;
+  opacity: var(--plan-image-opacity);
+}
+
+/* The text sits on the picture, so the picture has to give way at the two ends
+   where the text is densest: the badge at the top and the button at the bottom.
+   The middle is left alone — that is where the photograph is actually seen. */
+[data-plan-card] .membership-card-media::after {
+  background: linear-gradient(
+    to bottom,
+    rgba(10, 18, 26, 0.75),
+    rgba(10, 18, 26, 0.15) 35%,
+    rgba(10, 18, 26, 0.2) 65%,
+    rgba(10, 18, 26, 0.8)
+  );
+  opacity: 1;
+}
+
+/* Above the picture. Without this the body is a sibling of an absolutely
+   positioned box and the paint order decides which wins, which is not
+   something to leave to the order of two elements in the markup. */
+[data-plan-card] .membership-card-body {
+  position: relative;
+  z-index: 1;
+}
