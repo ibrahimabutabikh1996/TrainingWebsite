@@ -39,8 +39,22 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  /* `data-scroll-behavior` is read by the router, not by the browser.
+   *
+   * `landing.css` sets `scroll-behavior: smooth` on `html` so the home page's
+   * nav links glide to their section, and until Next 16 the router quietly
+   * forced `auto` for the length of a route change so navigation still landed
+   * instantly. Version 16 stopped doing that unless this attribute asks for it,
+   * and warns in development when it finds smooth scrolling without it.
+   *
+   * So this restores what the site already had: a route change jumps, an anchor
+   * gliding within a page does not. The nav links are plain `<a href="#…">` and
+   * never reach the router at all, and the router's own helper returns early for
+   * a hash-only change in any case — see
+   * next/dist/shared/lib/router/utils/disable-smooth-scroll.js, which is both
+   * where the override lives and where the warning is gated to development. */
   return (
-    <html lang="ar" dir="rtl">
+    <html lang="ar" dir="rtl" data-scroll-behavior="smooth">
       <body>
         {children}
         {/* Every upload in the system reports into this one window, so it is
