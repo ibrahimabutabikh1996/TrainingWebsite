@@ -37,6 +37,16 @@ const DEFAULT_TEXTS: Record<string, string> = {
   coach_cert: "مدرب شخصي وخبير تغذية معتمد",
   coach_bio1: "بخبرة تزيد عن 10 سنوات في تحويل الأجسام...",
   coach_bio2: "أنا لا أعطيك خطة فقط؛ أنا أعطيك أسلوب حياة جديد.",
+  /* Placeholders for the three figures under the bio. Taken from
+     `defaultContent` in LandingClient rather than written afresh, because these
+     show through an empty field as what the page is rendering right now — and
+     that is only true if they are the same six strings the page falls back to. */
+  coach_stat1_num: "+10",
+  coach_stat1_text: "سنوات خبرة",
+  coach_stat2_num: "+500",
+  coach_stat2_text: "تحولات",
+  coach_stat3_num: "ISSA",
+  coach_stat3_text: "معتمد",
   mem_title: "الخطط والاشتراكات",
   card1_badge: "خطة ذاتية التوجيه",
   card1_desc: "مناسبة للأشخاص الملتزمين الذين يحتاجون فقط إلى التوجيه الصحيح في التدريب والنظام الغذائي.",
@@ -1672,6 +1682,43 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
                     <InputField label="الشهادة الرئيسية" fieldKey="coach_cert" hideable />
                     <InputField label="النبذة الأولى" fieldKey="coach_bio1" isTextarea hideable />
                     <InputField label="النبذة الثانية" fieldKey="coach_bio2" isTextarea hideable />
+
+                    {/* The three figures under the bio — «+10 سنوات خبرة» and
+                        the two beside it. The landing page has read these six
+                        keys through its `[data-i18n]` pass all along; there was
+                        simply nowhere to type them, so they could only be
+                        changed by editing LandingClient. Nothing on the page
+                        needed touching to make this work.
+
+                        Paired a row at a time rather than dropped into one grid:
+                        `.cms-price-row` auto-fits, so a single grid of six would
+                        put four on a row on a wide panel and split a figure from
+                        its caption. Two per row keeps them together at every
+                        width, and the row carries its own spacing.
+
+                        Not `hideable`, unlike the fields above. Each of these is
+                        half of an `<li>`, and hiding one would leave the other
+                        standing on its own — a caption with no figure. What the
+                        coach wants when a figure has to go is the whole item,
+                        and that is not what a per-field switch would do. */}
+                    <div className="cms-card-divider">
+                      <label className="cms-label">إحصائيات المدرب</label>
+                      <p className="cms-card-note">
+                        الأرقام الثلاثة التي تظهر أسفل النبذة، بالترتيب نفسه من اليمين إلى اليسار.
+                      </p>
+                      <div className="cms-price-row">
+                        <InputField label="القيمة الأولى" fieldKey="coach_stat1_num" />
+                        <InputField label="تسميتها" fieldKey="coach_stat1_text" />
+                      </div>
+                      <div className="cms-price-row">
+                        <InputField label="القيمة الثانية" fieldKey="coach_stat2_num" />
+                        <InputField label="تسميتها" fieldKey="coach_stat2_text" />
+                      </div>
+                      <div className="cms-price-row">
+                        <InputField label="القيمة الثالثة" fieldKey="coach_stat3_num" />
+                        <InputField label="تسميتها" fieldKey="coach_stat3_text" />
+                      </div>
+                    </div>
                   </div>
                   <div className="cms-split-side">
                     <ImageUploadField label="صورة المدرب" fieldKey="coach_img_url" recommendedSize="800x1000 (عمودية)" />
