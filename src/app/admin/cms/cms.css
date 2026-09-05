@@ -1615,11 +1615,28 @@
    label and a price — and, with `.is-triple`, a struck-through "before" — on
    one line. What is new is the strip of controls beside each row. */
 
+/* The buttons sit on the middle of the fields they belong to.
+   `flex-start` put them at the top of the row, which was right while a row's
+   fields could carry a label above them and the buttons had to stay level with
+   the input rather than with the block. Neither row that uses this has a label
+   any more — the service and feature rows label their inputs with placeholders
+   — so all that was left of it was a 30px button pinned to the top of a 49px
+   field and reading 9px high. Measured, not guessed: field centre 65, button
+   centre 56. */
 .cms-list-row {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 8px;
   margin-bottom: 8px;
+}
+
+/* And the nudge that went with `flex-start` comes off, for these rows only.
+   Centring already accounts for the box, so the padding would push the buttons
+   back off the middle by half of itself. Scoped to a direct child of the row
+   because the plans tab uses `.cms-list-actions` on its own, outside any row,
+   where the 1px is still doing its original job. */
+.cms-list-row > .cms-list-actions {
+  padding-top: 0;
 }
 
 /* The fields take the space; the buttons take what they need. Without this the
