@@ -1237,6 +1237,80 @@
   flex: 1;
 }
 
+/* The hero's frame, which has no ratio — see FreeCropStage.tsx. It stands in
+   the same slot as the cropper and so takes the same box; everything below is
+   the frame itself, which react-easy-crop draws for the other five fields and
+   this one has to draw for itself. */
+.cms-freecrop {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  touch-action: none;
+  user-select: none;
+}
+
+.cms-freecrop-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  /* `contain`, so the whole picture is on screen to choose from. `cover` would
+     hide the parts of it the crop is there to reach. */
+  object-fit: contain;
+  pointer-events: none;
+}
+
+/* The frame reads as a hole cut in a dimmed sheet: the first shadow is what
+   darkens everything outside it, in one declaration and without a second
+   element to keep in step with the first.
+
+   Literal white and black here rather than the theme's tokens, and that is the
+   point of the rule. What this edge is drawn against is a photograph the coach
+   just picked, not one of the app's surfaces — so the palette has nothing
+   useful to say about it, and asking it produced exactly the wrong answer:
+   `--text-inverse` is #0F172A in this theme, so the frame came out near-black
+   over a dark overlay and could barely be seen.
+
+   Three lines instead of one, so it survives whatever is behind it: black
+   hugging the outside, white in the middle, black again on the inside. Against
+   a bright sky the black reads; against a dark gym the white does. */
+.cms-freecrop-frame {
+  position: absolute;
+  box-sizing: border-box;
+  border: 2px solid #fff;
+  outline: 1px solid rgba(0, 0, 0, 0.55);
+  box-shadow:
+    0 0 0 100vmax color-mix(in srgb, var(--bg) 62%, transparent),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.55);
+  cursor: move;
+}
+
+/* Same reasoning, and big enough to be a target on a touch screen. */
+.cms-freecrop-handle {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  background: #fff;
+  border: 2px solid rgba(0, 0, 0, 0.65);
+  border-radius: 3px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
+}
+
+/* Each handle sits centred on its own edge or corner.
+   `left`/`right` and not the logical pair, deliberately: this screen is `rtl`,
+   where `inset-inline-start` is the right-hand side — and the handle named `w`
+   drags the frame's left edge because the maths behind it works in `clientX`,
+   which no writing direction changes. Logical properties here would put every
+   handle on the opposite side from the edge it moves. */
+.cms-freecrop-handle.is-nw { top: -8px; left: -8px; cursor: nwse-resize; }
+.cms-freecrop-handle.is-ne { top: -8px; right: -8px; cursor: nesw-resize; }
+.cms-freecrop-handle.is-sw { bottom: -8px; left: -8px; cursor: nesw-resize; }
+.cms-freecrop-handle.is-se { bottom: -8px; right: -8px; cursor: nwse-resize; }
+.cms-freecrop-handle.is-n { top: -8px; left: calc(50% - 8px); cursor: ns-resize; }
+.cms-freecrop-handle.is-s { bottom: -8px; left: calc(50% - 8px); cursor: ns-resize; }
+.cms-freecrop-handle.is-w { left: -8px; top: calc(50% - 8px); cursor: ew-resize; }
+.cms-freecrop-handle.is-e { right: -8px; top: calc(50% - 8px); cursor: ew-resize; }
+
 .cms-crop-bar {
   padding: 16px 20px;
   background: var(--bg2);

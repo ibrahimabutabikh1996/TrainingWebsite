@@ -7,6 +7,7 @@ import { saveLandingContent, listImagesServer, deleteImageServer } from "./actio
 import { uploadMediaWithProgress } from '@/lib/mediaUpload';
 import { Toaster, toast } from 'react-hot-toast';
 import Cropper from 'react-easy-crop';
+import FreeCropStage from "./FreeCropStage";
 import getCroppedImg, { DEFAULT_MAX_EDGE } from '@/lib/cropUtils';
 import { Icon } from "@/components/Icon";
 import { previewSrc } from "@/lib/imageOptim";
@@ -1149,6 +1150,14 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
     }
   };
 
+  /* The fields whose crop has no ratio at all — the frame is dragged to
+     whatever shape the coach wants. Only the hero, and only because it is asked
+     for: its picture is painted `center/cover` across a full-bleed layer, so
+     the page looks right whatever shape arrives and there is nothing for a
+     ratio here to protect. The other fields land in boxes that do care, and
+     they keep the ratios below. */
+  const isFreeCropField = (key?: string) => key === "hero_bg_url";
+
   const getAspectForField = (key?: string) => {
     /* A plan's picture, whichever plan it belongs to.
      *
@@ -1411,18 +1420,30 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
         <Overlay>
           <div className="cms-crop-overlay">
             <div className="cms-crop-stage">
-              <Cropper
-                image={cropImageSrc}
-                crop={crop}
-                zoom={zoom}
-                aspect={cropAspect}
-                onCropChange={setCrop}
-                onCropComplete={onCropComplete}
-                onZoomChange={setZoom}
-              />
+              {/* The hero picks its own rectangle; every other field keeps the
+                  cropper and its ratio. `FreeCropStage` reports the same
+                  `{x, y, width, height}` in source pixels that `onCropComplete`
+                  does, so `handleConfirmCrop` below cannot tell them apart. */}
+              {isFreeCropField(cropFieldKey) ? (
+                <FreeCropStage image={cropImageSrc} onChange={setCroppedAreaPixels} />
+              ) : (
+                <Cropper
+                  image={cropImageSrc}
+                  crop={crop}
+                  zoom={zoom}
+                  aspect={cropAspect}
+                  onCropChange={setCrop}
+                  onCropComplete={onCropComplete}
+                  onZoomChange={setZoom}
+                />
+              )}
             </div>
             <div className="cms-crop-bar">
-              <div className="cms-crop-hint">قم بتحريك وتكبير الصورة لاقتطاع الجزء المناسب. المربع مقيد بالأبعاد الصحيحة.</div>
+              <div className="cms-crop-hint">
+                {isFreeCropField(cropFieldKey)
+                  ? "اسحب أطراف الإطار لتحديد الجزء الذي تريده. لا توجد نسبة مفروضة."
+                  : "قم بتحريك وتكبير الصورة لاقتطاع الجزء المناسب. المربع مقيد بالأبعاد الصحيحة."}
+              </div>
               <div className="cms-crop-actions">
                 <button type="button" onClick={() => setCropModalOpen(false)} className="cms-btn-secondary">
                   إلغاء
