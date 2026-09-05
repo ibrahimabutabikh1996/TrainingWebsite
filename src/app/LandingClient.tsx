@@ -1235,7 +1235,15 @@ export default function LandingClient({
                     إلى ذروة لياقتهم البدنية.
                   </p>
                 </div>
-                <ul className="coach-stats">
+                {/* The six figures inside carry their own switches already: each
+                    one is a `[data-i18n]` node, and the pass that hides those
+                    reads `<key>_active` for any key it finds, so the panel's
+                    eyes needed nothing here. The row as a whole had no switch —
+                    hiding all six left the rule above them, the three columns
+                    and the dividers between them standing over nothing. This is
+                    the same `display` line the sections carry, on the one
+                    element that owns the rule and the columns. */}
+                <ul className="coach-stats" style={{ display: activeData.coach_stats_active === "false" ? "none" : undefined }}>
                   <li>
                     <strong data-i18n="coach_stat1_num">+10</strong>
                     <span data-i18n="coach_stat1_text">سنوات خبرة</span>

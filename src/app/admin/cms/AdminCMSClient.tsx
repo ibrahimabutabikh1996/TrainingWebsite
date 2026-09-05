@@ -1696,27 +1696,45 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
                         its caption. Two per row keeps them together at every
                         width, and the row carries its own spacing.
 
-                        Not `hideable`, unlike the fields above. Each of these is
-                        half of an `<li>`, and hiding one would leave the other
-                        standing on its own — a caption with no figure. What the
-                        coach wants when a figure has to go is the whole item,
-                        and that is not what a per-field switch would do. */}
+                        Each field carries its own eye, and the row carries one
+                        of its own — see the note on the heading below. Worth
+                        knowing before using them: a figure and its caption are
+                        the two halves of one `<li>`, so hiding a single half
+                        leaves the other standing alone, and hiding both leaves
+                        the item itself — an empty column between two dividers.
+                        Neither is a fault to fix here; they are what the two
+                        levels of switch mean. To drop a whole figure, hide the
+                        row and keep two, or clear the fields. */}
                     <div className="cms-card-divider">
-                      <label className="cms-label">إحصائيات المدرب</label>
+                      {/* The eye on the heading turns the whole row off; the six
+                          beside the fields turn off one figure or one caption.
+                          Two levels because they answer different questions — a
+                          coach who has no third figure yet hides that one, and a
+                          coach who wants the bio to end at the paragraphs hides
+                          the row, rule and dividers included.
+
+                          Only the row's switch needed anything on the page. The
+                          six are `[data-i18n]` nodes, and the pass that hides
+                          those already reads `<key>_active` for whatever key it
+                          finds — the same convention `visibilityKey` writes. */}
+                      <div className="cms-label-row">
+                        <label className="cms-label">إحصائيات المدرب</label>
+                        <SectionVisibility fieldKey="coach_stats" title="صف الإحصائيات" />
+                      </div>
                       <p className="cms-card-note">
                         الأرقام الثلاثة التي تظهر أسفل النبذة، بالترتيب نفسه من اليمين إلى اليسار.
                       </p>
                       <div className="cms-price-row">
-                        <InputField label="القيمة الأولى" fieldKey="coach_stat1_num" />
-                        <InputField label="تسميتها" fieldKey="coach_stat1_text" />
+                        <InputField label="القيمة الأولى" fieldKey="coach_stat1_num" hideable />
+                        <InputField label="تسميتها" fieldKey="coach_stat1_text" hideable />
                       </div>
                       <div className="cms-price-row">
-                        <InputField label="القيمة الثانية" fieldKey="coach_stat2_num" />
-                        <InputField label="تسميتها" fieldKey="coach_stat2_text" />
+                        <InputField label="القيمة الثانية" fieldKey="coach_stat2_num" hideable />
+                        <InputField label="تسميتها" fieldKey="coach_stat2_text" hideable />
                       </div>
                       <div className="cms-price-row">
-                        <InputField label="القيمة الثالثة" fieldKey="coach_stat3_num" />
-                        <InputField label="تسميتها" fieldKey="coach_stat3_text" />
+                        <InputField label="القيمة الثالثة" fieldKey="coach_stat3_num" hideable />
+                        <InputField label="تسميتها" fieldKey="coach_stat3_text" hideable />
                       </div>
                     </div>
                   </div>
