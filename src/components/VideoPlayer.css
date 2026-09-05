@@ -7,9 +7,9 @@
 .vp-stage {
   position: relative;
   width: 100%;
-  /* Both of these are set inline from the clip's measured shape — see
-     VideoPlayer.tsx. The values here are what a frame with nothing to measure
-     falls back to. */
+  /* Both of these are still set inline — see VideoPlayer.tsx — but they no
+     longer vary: every clip is framed 16/9 now, whatever shape it was filmed
+     in, so the inline pair and the pair here say the same thing. */
   aspect-ratio: 16 / 9;
   max-width: calc(70vh * 1.7778);
   /* A portrait clip is narrower than whatever holds it, so it sits in the
@@ -35,9 +35,11 @@
   background: transparent;
 }
 
-/* The stage is the clip's own shape, so there is normally nothing to letterbox.
-   `contain` is what guarantees that stays true if the measurement is a little
-   off or absent — the whole frame is shown either way, never cropped. */
+/* The stage is a fixed 16/9 and the clips are not, so letterboxing is now the
+   normal case rather than the exceptional one. `contain` is what decides how:
+   the whole frame is shown, fitted inside the box, with the stage's own ground
+   in the space left over. Never `cover` — that would fill the width by cutting
+   about two thirds off a portrait clip. */
 video.vp-media {
   object-fit: contain;
 }

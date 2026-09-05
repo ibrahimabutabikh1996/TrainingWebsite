@@ -45,9 +45,10 @@ export default function VideoPlayer({
    *  "metadata" for one of many sitting in a list, where fetching every video
    *  in full is the cost the list cannot afford. */
   preload?: "auto" | "metadata";
-  /** How tall the player may grow once it takes the shape of a portrait clip.
-   *  A dialog opened to watch one video can afford most of the screen; a list
-   *  with an exercise under every row cannot, or the day becomes unscrollable. */
+  /** A ceiling on the player's height. It bound when the frame took the shape
+   *  of a portrait clip; at the fixed 16/9 the frame has now it works out wider
+   *  than any container here and so never binds. Kept because it costs nothing
+   *  and is what a per-clip frame would need again. */
   maxHeight?: string;
 }) {
   const embedUrl = getEmbedUrl(url);
@@ -60,7 +61,10 @@ export default function VideoPlayer({
   /* Anything else was an iframe already and starts as one. */
   const [useFrame, setUseFrame] = useState(!directUrl);
   const [ready, setReady] = useState(false);
-  /* Width over height, once something has said what it is. */
+  /* Width over height, once something has said what it is.
+     Measured but no longer read: the frame is a fixed 16/9 now — see `ratio`
+     below for why, and for why this is kept rather than torn out. */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [aspect, setAspect] = useState<number | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -109,11 +113,26 @@ export default function VideoPlayer({
      renders nothing rather than an empty stage. */
   if (!embedUrl) return null;
 
-  /* 16/9 until something says otherwise: a YouTube or Vimeo frame has no still
-     to measure and is that shape anyway. `max-width` is what keeps a portrait
-     clip inside `maxHeight` — capping the height directly would leave the box
-     its full width and put the bars straight back. */
-  const ratio = aspect ?? 16 / 9;
+  /* 16/9, for every clip, whatever shape it was filmed in — asked for so that
+     the panel and the dashboard show one frame size rather than a different one
+     under every exercise.
+   *
+   * This is a deliberate trade and it is worth naming, because the frame no
+   * longer follows the clip. The library is filmed on a phone and is portrait:
+   * six clips sampled from `exercises.video_url` measured 640x1138 each. A 9/16
+   * clip in a 16/9 frame is letterboxed by whoever is drawing it — Drive's
+   * viewer for a Drive file, `object-fit: contain` for a media file — so those
+   * play as a strip down the middle with the rest of the width dark. That is
+   * the cost of a uniform frame, and it is the choice being made here; the
+   * alternative, filling the width, is only reachable by cropping away about
+   * two thirds of a portrait frame.
+   *
+   * `aspect` is still measured and is deliberately not read. It costs nothing —
+   * the still it measures is requested anyway for the loading overlay — and
+   * leaving it in place keeps going back to a per-clip frame a one-line change
+   * rather than a rebuild. `max-width` still caps the height at `maxHeight`,
+   * which at this ratio is far wider than any container and so never binds. */
+  const ratio = 16 / 9;
 
   return (
     <div
