@@ -250,12 +250,19 @@ function TestimonialMedia({
           onError={() => setFailed(true)}
         />
       )}
+      {/* `metadata` rather than `none` below, and only because the shape now
+          depends on it. A video that has loaded nothing reports no natural
+          ratio — measured, not assumed: `videoWidth` and `videoHeight` are both
+          0 — so the stylesheet's `auto` has nothing to resolve against and the
+          card would sit at the fallback until someone pressed play, then jump to
+          the real shape under them. This asks for the headers only, not the
+          clip; the frames still wait for the visitor. */}
       {type === "video" && (
         <video
           className="testimonial-video"
           src={url}
           controls
-          preload="none"
+          preload="metadata"
           onError={() => setFailed(true)}
         />
       )}

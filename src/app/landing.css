@@ -1585,12 +1585,34 @@ body::before {
   align-items: center;
   justify-content: center;
 }
-.testimonial-media-img,
-.testimonial-video {
+.testimonial-media-img {
   width: 100%;
   display: block;
   aspect-ratio: 16/9;
   object-fit: cover;
+}
+
+/* A clip keeps the shape it was filmed in.
+   It used to share the rule above, which put every video in a 16/9 box and
+   filled that box with `cover` — so a testimonial recorded on a phone, which is
+   nearly all of them, was shown with its top and bottom cut away. A face at the
+   top of a portrait frame was cropped out of its own testimonial.
+
+   `auto 16 / 9` is the two-part form of the property: use the video's natural
+   ratio, and fall back to 16/9 only while there is none to use. That fallback
+   is not decoration — a `<video>` with no metadata loaded reports no ratio at
+   all and would otherwise lay out at the 300x150 default, a shape belonging to
+   nothing. `contain` is the guarantee behind both states: whichever ratio the
+   box ends up with, the whole frame is shown inside it and never cropped.
+
+   The image above keeps `cover` deliberately. A still is one of a row of cards
+   and reads better trimmed to a common shape; a video is played, and a played
+   frame with its edges missing is a different thing entirely. */
+.testimonial-video {
+  width: 100%;
+  display: block;
+  aspect-ratio: auto 16 / 9;
+  object-fit: contain;
 }
 .testimonial-audio {
   width: 100%;
