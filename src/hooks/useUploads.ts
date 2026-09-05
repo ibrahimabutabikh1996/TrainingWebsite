@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { IntakeUploadField } from "@/lib/uploadFields";
+import { INTAKE_MAX_BYTES, type IntakeUploadField } from "@/lib/uploadFields";
 import { uploadToSignedUrlWithProgress } from "@/lib/signedUpload";
 import { beginUpload } from "@/lib/uploadProgress";
 
@@ -95,6 +95,30 @@ export function useUploads({ scope, profileId }: UseUploadsOptions) {
       const task = beginUpload(file.name, file.size);
 
       try {
+        /* Refused here, before anything at all leaves the browser.
+         *
+         * This check used to sit four calls further down, after the slot had
+         * been granted — which meant an oversized file opened a session row and
+         * an item row and only then was turned away. Nothing was ever written
+         * to storage, but the two rows stayed, and from the outside that reads
+         * as "it told me the file was too big and kept it anyway".
+         *
+         * A file that breaks the rule now costs one comparison and no request:
+         * no session, no slot, no object, nothing to clean up afterwards. The
+         * number is `INTAKE_MAX_BYTES`, which is the same one `INTAKE_RULE`
+         * gives the server, so the two cannot disagree.
+         *
+         * Still not a boundary — `confirmUpload` downloads the stored object
+         * and measures it for real, and that is what actually decides. This
+         * only stops the honest case from making a mess on its way to being
+         * told no. */
+        if (file.size === 0) {
+          throw new Error("الملف فارغ");
+        }
+        if (file.size > INTAKE_MAX_BYTES) {
+          throw new Error(`حجم الملف يتجاوز ${Math.round(INTAKE_MAX_BYTES / (1024 * 1024))} ميغابايت`);
+        }
+
         const uploadSessionId = await ensureSession();
 
         /* The server names the path and issues a token bound to it. */
@@ -108,13 +132,6 @@ export function useUploads({ scope, profileId }: UseUploadsOptions) {
           throw new Error(body.error || "تعذّر تجهيز الرفع");
         }
         const slot = await slotRes.json();
-
-        /* A local size check purely so the person is told immediately instead of
-           after the bytes have travelled. The server re-measures the stored
-           object; this number is a courtesy, not a limit. */
-        if (typeof slot.maxBytes === "number" && file.size > slot.maxBytes) {
-          throw new Error(`حجم الملف يتجاوز ${Math.round(slot.maxBytes / (1024 * 1024))} ميغابايت`);
-        }
 
         /* Straight to storage, and measured on the way — see
            `@/lib/signedUpload`. The token is bound to the path the server chose

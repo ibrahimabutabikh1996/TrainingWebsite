@@ -1,3 +1,5 @@
+import { INTAKE_MAX_BYTES } from "@/lib/uploadFields";
+
 /* What may be uploaded, and what it is really made of.
  *
  * Both upload paths — the registration form and the content manager — took
@@ -129,7 +131,9 @@ const PHOTO_TYPES = ["jpeg", "png", "webp", "gif", "heic"] as const;
 /** Registration attachments: photos of a body, a lab report, a previous plan. */
 export const INTAKE_RULE: UploadRule = {
   allowed: [...PHOTO_TYPES, "pdf"],
-  maxBytes: 12 * MB,
+  /* Read from `@/lib/uploadFields` because the browser needs this same number
+     before it asks the server for a slot — see the note there. */
+  maxBytes: INTAKE_MAX_BYTES,
   maxFiles: 10,
   maxTotalBytes: 40 * MB,
 };
