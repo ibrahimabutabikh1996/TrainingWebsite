@@ -204,6 +204,22 @@ function FormContent({ planNames }: { planNames: PlanNames }) {
          rather than in an effect keeps it tied to the person's action, so the
          upload begins on the click that chose the file. */
       for (const [key, value] of Object.entries(patch)) {
+        /* Except the receipt, which waits for "بدء الاستمارة".
+         *
+         * Every other attachment is chosen inside the questionnaire by someone
+         * who has already committed to filling it in, so sending it as it is
+         * picked is the right trade. The receipt is chosen on the screen before
+         * that, where the person has committed to nothing — and picking a file
+         * there was enough to open a session row, a slot row and an object in
+         * storage. Removing it with the × then left all three behind for the
+         * sweep, which is not what "cancel" should mean.
+         *
+         * So it is held in `formData` and nowhere else until the button that
+         * opens the questionnaire is pressed — see `onStart` below, which is
+         * where it is sent and where the outcome is waited on. The × before
+         * that point now has nothing to undo. */
+        if (key === "payment_receipt") continue;
+
         if (isIntakeUploadField(key) && Array.isArray(value)) {
           uploads.sync(key, value as File[]);
         }
@@ -316,7 +332,23 @@ function FormContent({ planNames }: { planNames: PlanNames }) {
         onReceipt={(payment_receipt) => update({ payment_receipt })}
         isUploading={uploads.isUploading}
         hasFailed={uploads.failed.length > 0}
-        onStart={() => {
+        /* Where the receipt is actually sent. Held back until here by `update`
+           above, so a slip that was picked and then removed never reached the
+           database at all.
+
+           The gate needs nothing new to show this: `uploads.sync` marks the file
+           `uploading` straight away, so `isUploading` turns the button into its
+           spinner and disables it for the length of the transfer, exactly as it
+           did when the upload had already happened by this point.
+
+           The questionnaire opens only if the transfer succeeded. On a failure
+           this returns and the gate stays put with the file still chosen — the
+           upload window has already said what went wrong, and the gate's own
+           `hasFailed` guard answers the next press. */
+        onStart={async () => {
+          const stored = await uploads.sync("payment_receipt", formData.payment_receipt);
+          if (!stored) return;
+
           window.scrollTo({ top: 0, behavior: "smooth" });
           setPaymentDone(true);
         }}

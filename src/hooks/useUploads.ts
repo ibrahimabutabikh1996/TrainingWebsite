@@ -156,10 +156,12 @@ export function useUploads({ scope, profileId }: UseUploadsOptions) {
 
         patch({ itemId: slot.itemId, state: "done" });
         task.done();
+        return true;
       } catch (error) {
         const message = error instanceof Error ? error.message : "تعذّر الرفع";
         patch({ state: "error", error: message });
         task.fail(message);
+        return false;
       }
     },
     [ensureSession]
@@ -182,12 +184,26 @@ export function useUploads({ scope, profileId }: UseUploadsOptions) {
         return { ...prev, [field]: [...kept, ...added] };
       });
 
+      /* Awaited by a caller that has to know the outcome before it moves on —
+         the payment gate holds the receipt back until "بدء الاستمارة" and then
+         has to decide whether the questionnaire may open. Every other caller
+         ignores this and stays fire-and-forget, which is what a field the person
+         is still filling in wants.
+
+         Only the uploads this call actually started are counted. A file already
+         claimed is one an earlier call is handling, and a field with nothing new
+         resolves `true` immediately — `Promise.all([])` gives an empty array and
+         `every` on it is true. */
+      const started: Promise<boolean>[] = [];
+
       for (const file of files) {
         const key = fileKey(file);
         if (claimed.current.has(key)) continue;
         claimed.current.add(key);
-        void uploadOne(field, file);
+        started.push(uploadOne(field, file));
       }
+
+      return Promise.all(started).then((results) => results.every(Boolean));
     },
     [uploadOne]
   );
