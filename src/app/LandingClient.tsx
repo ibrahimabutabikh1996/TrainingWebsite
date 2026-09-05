@@ -125,7 +125,6 @@ const defaultContent: JsonRecord = {
   coach_eyebrow: "الملف الشخصي الكامل",
   coach_title: "تعرف على المدرب",
   coach_img_alt: "صورة المدرب",
-  coach_badge: "معتمد من ISSA",
   coach_name: "إبراهيم أبو طبيخ",
   coach_cert: "مدرب شخصي وأخصائي تغذية معتمد لنخبة الرياضيين",
   coach_bio1:
@@ -1218,9 +1217,6 @@ export default function LandingClient({
                   data-i18n-alt="coach_img_alt"
                   className="coach-img" data-parallax="0.05" data-parallax-max="18"
                 />
-                <div className="coach-badge" data-i18n="coach_badge">
-                  معتمد من ISSA
-                </div>
               </div>
               <div className="coach-info">
                 <h3 data-i18n="coach_name">إبراهيم أبو طبيخ</h3>
