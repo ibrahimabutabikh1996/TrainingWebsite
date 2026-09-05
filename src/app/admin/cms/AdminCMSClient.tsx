@@ -8,7 +8,7 @@ import { uploadMediaWithProgress } from '@/lib/mediaUpload';
 import { Toaster, toast } from 'react-hot-toast';
 import Cropper from 'react-easy-crop';
 import FreeCropStage from "./FreeCropStage";
-import getCroppedImg, { DEFAULT_MAX_EDGE } from '@/lib/cropUtils';
+import getCroppedImg, { createImage, DEFAULT_MAX_EDGE } from '@/lib/cropUtils';
 import { Icon } from "@/components/Icon";
 import { previewSrc } from "@/lib/imageOptim";
 import { Overlay } from "@/components/ui/Overlay";
@@ -993,6 +993,11 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<CropArea | null>(null);
   const [cropFieldKey, setCropFieldKey] = useState<string | undefined>(undefined);
   const [cropAspect, setCropAspect] = useState<number | undefined>(undefined);
+  /* Set only when the crop started from a picture already in the library, and
+     holding that picture's address. It is what lets the field point back at the
+     original instead of storing a second copy of it — see `handleConfirmCrop`.
+     Null for a file being uploaded now, which has no address yet. */
+  const [cropSourceUrl, setCropSourceUrl] = useState<string | null>(null);
 
   // Modal State
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -1227,6 +1232,9 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
       setCropImageSrc(reader.result?.toString() || null);
       setCropFieldKey(fieldKey);
       setCropAspect(getAspectForField(fieldKey));
+      /* A file off the coach's disk. There is nothing in the bucket to point
+         back at, so this one is stored however it is cropped. */
+      setCropSourceUrl(null);
       setCropModalOpen(true);
       setCrop({ x: 0, y: 0 });
       setZoom(1);
@@ -1243,6 +1251,40 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
     if (!cropImageSrc || !croppedAreaPixels) return;
     try {
       setCropModalOpen(false);
+
+      /* A picture already in the library, taken whole, is used where it lies.
+       *
+       * Every selection from the library used to end here, be re-encoded and be
+       * written to the bucket under a fresh name — `storageFilename` stamps
+       * each upload with the clock and a uuid, so the same photograph chosen
+       * for a second field became a second object, and the library filled with
+       * copies of itself. Nothing was gained by it: the bytes were the same
+       * ones already sitting at `cropSourceUrl`.
+       *
+       * Only when the frame still covers the whole picture, which is the case
+       * this is about — the coach opened the library, picked a photograph and
+       * changed nothing. A real crop is a different picture and is still
+       * stored, because there is nothing to point at that holds it.
+       *
+       * The comparison is against the source's own pixels, which is the unit
+       * `croppedAreaPixels` is already in, with a pixel or two of slack for the
+       * rounding the cropper does. Slack in this direction only ever costs a
+       * hair off an edge that was going to be kept anyway; being too eager
+       * would silently ignore a crop, so the test stays tight. */
+      if (cropSourceUrl && cropFieldKey) {
+        const source = await createImage(cropImageSrc);
+        const whole =
+          Math.abs(croppedAreaPixels.x) <= 2 &&
+          Math.abs(croppedAreaPixels.y) <= 2 &&
+          Math.abs(croppedAreaPixels.width - source.naturalWidth) <= 2 &&
+          Math.abs(croppedAreaPixels.height - source.naturalHeight) <= 2;
+
+        if (whole) {
+          setContentAr((prev: JsonRecord) => ({ ...prev, [cropFieldKey]: cropSourceUrl }));
+          toast.success("تم استخدام الصورة من المكتبة دون تكرارها.");
+          return;
+        }
+      }
       /* Resized here as well as during compression, and on purpose. The crop
          canvas is where the source photograph's own pixel scale enters; leaving
          it uncapped means building a 4000×4000 bitmap in memory and handing it
@@ -1348,6 +1390,9 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
         setCropImageSrc(objectUrl);
         setCropFieldKey(activeMediaSelectField);
         setCropAspect(getAspectForField(activeMediaSelectField));
+        /* Where this picture already lives. Kept so that choosing it and
+           changing nothing can reuse it rather than store it twice. */
+        setCropSourceUrl(url);
         setCropModalOpen(true);
         setCrop({ x: 0, y: 0 });
         setZoom(1);
