@@ -364,7 +364,12 @@
   border-radius: var(--radius-sm);
   border: 1px solid transparent;
   background: transparent;
-  color: var(--text-muted);
+  /* --text-secondary, not --text-muted: these are the card's only controls, and
+     muted put them at 6.35:1 on the card — legible, but read as grey furniture
+     rather than as buttons. The same step the minimal table's header takes for
+     the same reason, and it lands at 10.97:1. Hover still lifts to
+     --primary-on-tint, so the resting state is the only thing that moved. */
+  color: var(--text-secondary);
   cursor: pointer;
   text-decoration: none;
   transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), opacity var(--dur) var(--ease), transform var(--dur) var(--ease);

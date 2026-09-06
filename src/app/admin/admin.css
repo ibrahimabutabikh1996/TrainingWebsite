@@ -157,6 +157,71 @@
   gap: 12px;
 }
 
+/* Icon weight, panel-wide.
+ *
+ * Every icon is a Lucide outline drawn on a 24-unit grid with `stroke-width: 2`
+ * baked in as an attribute. At the 18–20px these buttons ask for, that is a
+ * 1.5–1.7px hairline, and beside Arabic set at weight 600 it reads as a smudge
+ * rather than a glyph — the "+" on the primary buttons especially, where the
+ * antialiasing of a dark hairline on a light fill greys it out. A presentation
+ * attribute loses to any CSS rule, so one declaration re-weights the lot.
+ *
+ * Two selectors because one cannot reach everything: AdminModal portals its
+ * dialog to document.body, so nothing inside it is a descendant of
+ * .admin-layout-wrapper — the same trap the note at the top of this file
+ * records about the --admin-* aliases. ConfirmDialog renders no icons, so it
+ * needs no entry here.
+ *
+ * Scoped to the panel rather than declared on .app-icon globally: the landing
+ * page and the trainee's screens draw the same component and are not part of
+ * this change. */
+.admin-layout-wrapper .app-icon,
+.admin-modal-scrim .app-icon {
+  stroke-width: 2.5;
+}
+
+/* The "+" on the action buttons, which had to become a badge rather than a
+ * heavier glyph.
+ *
+ * Weight alone could not carry it. The button is a --primary fill and the "+"
+ * is --text-inverse, the same colour as the label beside it, so the only thing
+ * distinguishing the two is that one is a 20px outline and the other is a run
+ * of Arabic at weight 600 — and an outline loses that comparison at any stroke
+ * width thin enough to still read as a "+". Raising it from 1.67px to 2.92px
+ * measurably changed the pixels and did not change the impression.
+ *
+ * Colour could not carry it either, and the numbers are worth recording so the
+ * next person does not spend the afternoon on it: on this fill, --text-inverse
+ * measures 7.02:1, white 2.43:1 and --primary-active 2.03:1. Every colour that
+ * looks brighter in the head is dimmer on the button.
+ *
+ * So the glyph gets its own ground. A --text-inverse disc sits at 7.02:1
+ * against the button, and the "+" inside it is --primary — the button's own
+ * colour, which is what keeps the badge reading as part of the button rather
+ * than as something dropped on it. content-box padding grows the 20px icon to
+ * a 26px disc; the button's own padding absorbs it and the row does not move
+ * (measured: 55px tall before and after).
+ *
+ * .diet-btn-secondary is deliberately not in this list. It is a --primary-dim
+ * tint on a dark page, and a --text-inverse disc there would be dark on dark.
+ * It keeps the heavier stroke below and no badge. */
+.co-add-btn .app-icon,
+.diet-add-btn .app-icon,
+.ex-add-btn .app-icon {
+  background: var(--text-inverse);
+  color: var(--primary);
+  border-radius: 50%;
+  padding: 3px;
+  box-sizing: content-box;
+  stroke-width: 3;
+}
+
+/* No badge here, for the reason above — the extra weight is all it takes on a
+ * tinted button whose icon is already carrying the accent colour. */
+.diet-btn-secondary .app-icon {
+  stroke-width: 3.5;
+}
+
 /* Navigation item */
 .admin-nav-link,
 .admin-logout-btn {
