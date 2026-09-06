@@ -24,9 +24,15 @@ export async function GET(request: NextRequest) {
 
   const { searchParams, origin } = request.nextUrl;
 
+  /* Forwarded, not decided here: /export-diet checks both keys for itself —
+     `sessionOwnsProfile` for a prescribed plan, and admin-only for a template,
+     which has no owner to be checked against. This route's job is to hand the
+     headless render the same address and the caller's own cookie. */
   const params: Record<string, string> = {};
   const profileId = searchParams.get("profileId");
   if (profileId) params.profileId = profileId;
+  const groupId = searchParams.get("groupId");
+  if (groupId) params.groupId = groupId;
 
   try {
     const pdf = await renderPagePdf({

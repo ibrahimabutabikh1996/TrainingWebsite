@@ -757,20 +757,37 @@ enum one_time_token_type {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model diet_plans {
   id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  profile_id String   @db.Uuid
+  /// NULL means a general plan — one the coach wrote before deciding who it is
+  /// for, the diet side of a course with no trainee on it. It lives in the diet
+  /// library and reaches a trainee as a COPY, never as a shared row. See
+  /// prisma/manual/2026-09-06-general-diet-plans.sql.
+  profile_id String?  @db.Uuid
+  /// Which template a general plan's choices belong to. Rows sharing one are
+  /// the alternatives of a single template and the library shows them as one
+  /// card. NULL on every prescribed row — profile_id is what groups those, and
+  /// this column is not a second way to do it. See
+  /// prisma/manual/2026-09-06-general-diet-plan-choices.sql.
+  group_id   String?  @db.Uuid
   /// Coach-facing label, e.g. "نظام يوم التمرين".
   name       String
   /// 1-based slot, unique per trainee. How many slots a trainee may hold is an
   /// application rule (see MAX_PLANS_PER_TRAINEE), not a constraint here.
+  /// Meaningless for a general plan, which has no slot to occupy — those stay
+  /// at the default, and the unique index below does not apply to them because
+  /// Postgres treats NULLs in a unique index as distinct.
   position   Int      @default(1) @db.SmallInt
   /// The five meal slots and their items. Items snapshot the nutrition library
   /// rather than joining it — see prisma/manual/2026-07-31-diet-plans.sql.
   meals_data Json     @default("{}")
   created_at DateTime @default(now()) @db.Timestamptz(6)
   updated_at DateTime @default(now()) @updatedAt @db.Timestamptz(6)
-  profiles   profiles @relation(fields: [profile_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  profiles   profiles? @relation(fields: [profile_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([profile_id, position], map: "uq_diet_plans_profile_position")
+  /// The mirror of the index above, for templates: one row per slot per group.
+  /// Partial so it stays off every prescribed row, which has no group to be
+  /// unique within.
+  @@unique([group_id, position], map: "uq_diet_plans_group_position", where: raw("(group_id IS NOT NULL)"))
   @@index([profile_id, position], map: "idx_diet_plans_profile")
   @@schema("public")
 }

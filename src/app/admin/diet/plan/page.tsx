@@ -24,7 +24,7 @@ function parseData(raw: unknown): Record<string, unknown> {
 export default async function DietPlanPage({
   searchParams,
 }: {
-  searchParams: Promise<{ traineeId?: string }>;
+  searchParams: Promise<{ traineeId?: string; groupId?: string }>;
 }) {
   /* The proxy already turned strangers away before this rendered — but a
      matcher is a list of paths, and this page reads every subscriber it can
@@ -32,8 +32,15 @@ export default async function DietPlanPage({
      See @/lib/authGuard. */
   await requireAdminPage();
 
-  const { traineeId } = await searchParams;
+  const { traineeId, groupId } = await searchParams;
   const selectedTraineeId = traineeId && isValidUUID(traineeId) ? traineeId : "";
+
+  /* With no trainee named, this screen writes a general template — a diet with
+     no owner, the way the programme builder saves a course with nobody on it.
+     `?groupId=` edits one that already exists, with both of its choices;
+     without it the coach starts a new one. A trainee in the query wins: the two
+     are different documents and `?traineeId=` is the more specific address. */
+  const generalGroupId = !selectedTraineeId && groupId && isValidUUID(groupId) ? groupId : "";
 
   let trainees: TraineeOption[] = [];
   let sources: NutritionSource[] = [];
@@ -82,6 +89,25 @@ export default async function DietPlanPage({
         position: row.position,
         meals: asMeals(row.meals_data),
       }));
+    } else if (generalGroupId) {
+      /* Both choices of the template, in slot order — the same shape and the
+         same ordering the trainee branch above reads, so the builder's tabs
+         work on either without knowing which it is looking at.
+
+         `profile_id: null` is part of the lookup, not something checked after
+         it: a hand-edited ?groupId= cannot reach a prescribed diet, and no
+         prescribed row carries a group_id in the first place. */
+      const rows = await prisma.diet_plans.findMany({
+        where: { group_id: generalGroupId, profile_id: null },
+        orderBy: { position: "asc" },
+        select: { id: true, name: true, position: true, meals_data: true },
+      });
+      plans = rows.map((row) => ({
+        id: row.id,
+        name: row.name,
+        position: row.position,
+        meals: asMeals(row.meals_data),
+      }));
     }
   } catch (error) {
     console.error("Failed to fetch data for diet plan builder:", error);
@@ -91,13 +117,15 @@ export default async function DietPlanPage({
     <div className="crm-dashboard">
       <div className="crm-main-area">
         <DietPlanBuilder
-          /* Builder state is seeded from these props, so switching trainee has
-             to remount rather than keep the previous trainee's meals on screen. */
-          key={selectedTraineeId || "none"}
+          /* Builder state is seeded from these props, so switching trainee —
+             or moving between general plans — has to remount rather than keep
+             the previous document's meals on screen. */
+          key={selectedTraineeId || `general:${generalGroupId || "new"}`}
           trainees={trainees}
           sources={sources}
           initialPlans={plans}
           initialTraineeId={selectedTraineeId}
+          initialGeneralGroupId={generalGroupId}
         />
       </div>
     </div>

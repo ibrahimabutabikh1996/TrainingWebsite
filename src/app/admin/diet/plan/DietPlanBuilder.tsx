@@ -15,7 +15,12 @@ import {
   type MealsData,
   type Meal,
 } from "@/types/diet";
-import { saveDietPlanAction, deleteDietPlanAction } from "./actions";
+import {
+  saveDietPlanAction,
+  deleteDietPlanAction,
+  saveGeneralDietPlanAction,
+  deleteGeneralDietPlanAction,
+} from "./actions";
 import { Icon } from "@/components/Icon";
 import "../diet.css";
 import "./plan.css";
@@ -49,19 +54,55 @@ export default function DietPlanBuilder({
   sources,
   initialPlans,
   initialTraineeId,
+  initialGeneralGroupId = "",
 }: {
   trainees: TraineeOption[];
   sources: NutritionSource[];
   initialPlans: DietPlan[];
   initialTraineeId: string;
+  /** The general template being edited, if any. Empty while a new one is written. */
+  initialGeneralGroupId?: string;
 }) {
   const router = useRouter();
 
-  const [plans, setPlans] = useState<EditablePlan[]>(initialPlans);
-  const [saved, setSaved] = useState<Record<number, string>>(() => buildSnapshots(initialPlans));
-  const [activePosition, setActivePosition] = useState(initialPlans[0]?.position ?? 1);
+  /* With no trainee named, this screen is writing a general template — a diet
+     with no owner, the way the programme builder saves a course with nobody on
+     it. It holds the same two alternatives a trainee's diet does, numbered by
+     the same `position`, so the tabs, the cap and the dirty tracking below are
+     one piece of code serving both. What differs is only what makes two rows
+     alternatives of each other: profile_id for a trainee, group_id here. */
+  const isGeneral = !initialTraineeId;
+
+  /* `?groupId=` named a template and the server found nothing — it has been
+     deleted since the link was rendered. Seeding a blank one in that case would
+     look like a new template and quietly create a second one on save; say so
+     instead. */
+  const generalMissing = isGeneral && initialGeneralGroupId !== "" && initialPlans.length === 0;
+
+  /* A template the coach has just started has no rows behind it yet, so its
+     first choice is seeded here rather than by the server, which has nothing to
+     send. It carries no id, which is what makes the save below create rather
+     than update — the same distinction `initialCourse?.id` draws in the
+     programme builder. */
+  const seedPlans: EditablePlan[] =
+    isGeneral && !generalMissing && initialPlans.length === 0
+      ? [{ id: null, name: "", position: 1, meals: [] }]
+      : initialPlans;
+
+  const [plans, setPlans] = useState<EditablePlan[]>(seedPlans);
+  /* Seeded from what is on screen, not from what the server sent: a blank
+     general plan nobody has typed into yet is not unsaved work, so it must not
+     arm the save button or the "changes will be lost" question. For a trainee
+     the two are the same list. */
+  const [saved, setSaved] = useState<Record<number, string>>(() => buildSnapshots(seedPlans));
+  const [activePosition, setActivePosition] = useState(seedPlans[0]?.position ?? 1);
   const [pickerMealId, setPickerMealId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  /* Empty until the first save of a brand-new template, which is the one call
+     that mints it. Held in state rather than read from the URL because the two
+     choices are saved in one press and the second must carry the id the first
+     just created — a `router.replace` cannot be awaited into that loop. */
+  const [groupId, setGroupId] = useState(initialGeneralGroupId);
 
   const activePlan = plans.find((p) => p.position === activePosition) ?? null;
 
@@ -151,7 +192,69 @@ export default function DietPlanBuilder({
     }));
   };
 
+  /* The general template's own save. Kept apart from the trainee save below for
+     the same reason the two server actions are: that one upserts each slot on
+     (trainee, position), and a template's slots are keyed by its group instead.
+     The shape of the walk is deliberately identical — dirty choices only, in
+     order, stopping at the first refusal. */
+  const handleSaveGeneral = async () => {
+    const pending = plans.filter((p) => dirtyPositions.includes(p.position));
+    if (pending.length === 0) {
+      toast("لا توجد تعديلات للحفظ");
+      return;
+    }
+    if (pending.some((p) => !p.name.trim())) {
+      toast.error("اسم النظام الغذائي مطلوب");
+      return;
+    }
+    if (pending.some((p) => p.meals.some((m) => !m.name.trim()))) {
+      toast.error("يرجى تسمية جميع الوجبات");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      /* Sequential, and `group` carried forward by hand: the first choice of a
+         brand-new template is the call that mints the group id, and the second
+         has to be told what it was. Promise.all would race them and produce two
+         templates of one choice each. */
+      let group = groupId;
+      const savedNow: Record<number, string> = {};
+      for (const plan of pending) {
+        const res = await saveGeneralDietPlanAction({
+          groupId: group || undefined,
+          planId: plan.id ?? undefined,
+          position: plan.position,
+          name: plan.name.trim(),
+          meals: plan.meals,
+        });
+        if (!res.success) {
+          setSaved((prev) => ({ ...prev, ...savedNow }));
+          toast.error(res.error);
+          return;
+        }
+        if (res.groupId) group = res.groupId;
+        savedNow[plan.position] = snapshot(plan);
+        setPlans((prev) =>
+          prev.map((p) => (p.position === plan.position ? { ...p, id: res.id } : p))
+        );
+      }
+      setSaved((prev) => ({ ...prev, ...savedNow }));
+      setGroupId(group);
+      toast.success("تم حفظ النظام الغذائي العام");
+      /* The URL now names the template that exists, so a reload — or the back
+         button after a visit to the library — reopens it rather than a blank
+         one. `replace`, not `push`: writing the id into the address is not a
+         place the coach navigated to. */
+      if (!groupId && group) router.replace(`/admin/diet/plan?groupId=${group}`);
+      router.refresh();
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleSave = async () => {
+    if (isGeneral) return handleSaveGeneral();
     if (!initialTraineeId) {
       toast.error("اختر المشترك أولاً");
       return;
@@ -203,6 +306,35 @@ export default function DietPlanBuilder({
   const handleDeletePlan = async (plan: EditablePlan) => {
     if (!(await confirmDialog(`هل أنت متأكد من حذف "${plan.name}"؟`, { danger: true }))) return;
 
+    /* One choice of a template, not the template — the library's delete button
+       is what removes the whole card. An unsaved choice has no row yet, exactly
+       as in the trainee branch below. Removing the last one leaves nothing to
+       fall back to, so the coach goes to the library rather than being left in
+       front of an empty builder. */
+    if (isGeneral) {
+      if (plan.id) {
+        const res = await deleteGeneralDietPlanAction({ planId: plan.id });
+        if (!res.success) {
+          toast.error(res.error);
+          return;
+        }
+      }
+
+      const remaining = plans.filter((p) => p.position !== plan.position);
+      if (remaining.length === 0) {
+        toast.success("تم حذف النظام");
+        router.push("/admin/diet/library");
+        return;
+      }
+
+      setPlans(remaining);
+      setSaved(buildSnapshots(remaining));
+      setActivePosition(remaining[0].position);
+      toast.success("تم حذف الخيار");
+      router.refresh();
+      return;
+    }
+
     /* An unsaved draft exists only here, so it never reaches the server. */
     if (plan.id) {
       const res = await deleteDietPlanAction({
@@ -249,18 +381,25 @@ export default function DietPlanBuilder({
 
       <header className="diet-header">
         <div className="diet-header-text">
-          <h1>تصميم النظام الغذائي</h1>
+          {/* Named for what is being written, because the two are different
+              documents: one is prescribed to a person, the other is a plan the
+              library will hold until somebody is given a copy. */}
+          <h1>{isGeneral ? "تصميم نظام غذائي عام" : "تصميم النظام الغذائي"}</h1>
         </div>
 
         <div className="dplan-header-actions">
           <label className="dplan-trainee">
             <span>المشترك</span>
+            {/* The empty option is no longer "you have not chosen yet" — it is a
+                choice, and the one this screen is on when it writes a general
+                plan. Worded the way the programme builder words the same
+                option, so the two screens agree about what it means. */}
             <CustomSelect
               value={initialTraineeId}
               onChange={handleTraineeChange}
-              placeholder="— اختر المشترك —"
+              placeholder="— نظام عام لجميع المشتركين —"
               options={[
-                { value: "", label: "— اختر المشترك —" },
+                { value: "", label: "— نظام عام لجميع المشتركين —" },
                 ...trainees.map((t) => ({ value: t.id, label: t.name })),
               ]}
             />
@@ -269,7 +408,7 @@ export default function DietPlanBuilder({
           <button
             onClick={handleSave}
             className="diet-add-btn"
-            disabled={isSaving || !initialTraineeId || dirtyPositions.length === 0}
+            disabled={isSaving || dirtyPositions.length === 0}
           >
             <Icon name="save" style={{ fontSize: 20 }} />
             <span>
@@ -283,12 +422,7 @@ export default function DietPlanBuilder({
         </div>
       </header>
 
-      {!initialTraineeId ? (
-        <div className="diet-empty">
-          <Icon name="person_search" />
-          <p>اختر المشترك من القائمة أعلاه لبدء تصميم نظامه الغذائي.</p>
-        </div>
-      ) : sources.length === 0 ? (
+      {sources.length === 0 ? (
         <div className="diet-empty">
           <Icon name="restaurant_menu" />
           <p>مكتبة المصادر الغذائية فارغة — أضف مصادر أولاً حتى تتمكن من بناء الوجبات.</p>
@@ -299,33 +433,62 @@ export default function DietPlanBuilder({
         </div>
       ) : (
         <>
-          <div className="dplan-tabs">
-            {plans.map((plan) => (
-              <button
-                key={plan.position}
-                onClick={() => setActivePosition(plan.position)}
-                aria-pressed={plan.position === activePosition}
-                className="dplan-tab"
+          {/* The two alternatives, in both modes. They mean the same thing on
+              either screen — the choice the trainee is given — and are numbered
+              by the same `position`, so this row is one piece of code rather
+              than two. The template it belongs to differs (a person, or a
+              group), and nothing here has to know which. */}
+          {!generalMissing && (
+            <div className="dplan-tabs">
+              {plans.map((plan) => (
+                <button
+                  key={plan.position}
+                  onClick={() => setActivePosition(plan.position)}
+                  aria-pressed={plan.position === activePosition}
+                  className="dplan-tab"
+                >
+                  <span>{plan.name === "النظام الأول" ? "النظام الغذائي الاختيار الأول" :
+                         plan.name === "النظام الثاني" ? "النظام الغذائي الاختيار الثاني" :
+                         plan.name === "النظام الثالث" ? "النظام الغذائي الاختيار الثالث" :
+                         plan.name || defaultPlanName(plan.position)}</span>
+                  {dirtyPositions.includes(plan.position) && (
+                    <span className="dplan-dot" title="تعديلات غير محفوظة" />
+                  )}
+                </button>
+              ))}
+
+              {nextFreePosition(plans) !== null && (
+                <button onClick={handleAddPlan} className="dplan-tab dplan-tab--add">
+                  <Icon name="add" style={{ fontSize: 18 }} />
+                  <span>{plans.length === 0 ? "إنشاء نظام غذائي" : "إضافة نظام ثانٍ"}</span>
+                </button>
+              )}
+            </div>
+          )}
+
+          {isGeneral && !generalMissing && (
+            <p className="dplan-general-note">
+              <Icon name="info" />
+              نظام غذائي عام لا يخصّ مشتركاً بعينه، ويحمل الخيارين تماماً كنظام المشترك. احفظه
+              ليظهر في مكتبة الأنظمة الغذائية، ثم انسخه لمن تشاء من هناك — يصل المشترك بخياريه، ولكل
+              مشترك نسخته الخاصة.
+            </p>
+          )}
+
+          {generalMissing ? (
+            <div className="diet-empty">
+              <Icon name="folder_off" />
+              <p>هذا النظام العام لم يعد موجوداً — ربما حُذف من المكتبة.</p>
+              <a
+                href="/admin/diet/library"
+                className="diet-add-btn"
+                style={{ marginTop: 8, textDecoration: "none" }}
               >
-                <span>{plan.name === "النظام الأول" ? "النظام الغذائي الاختيار الأول" :
-                       plan.name === "النظام الثاني" ? "النظام الغذائي الاختيار الثاني" :
-                       plan.name === "النظام الثالث" ? "النظام الغذائي الاختيار الثالث" :
-                       plan.name || defaultPlanName(plan.position)}</span>
-                {dirtyPositions.includes(plan.position) && (
-                  <span className="dplan-dot" title="تعديلات غير محفوظة" />
-                )}
-              </button>
-            ))}
-
-            {nextFreePosition(plans) !== null && (
-              <button onClick={handleAddPlan} className="dplan-tab dplan-tab--add">
-                <Icon name="add" style={{ fontSize: 18 }} />
-                <span>{plans.length === 0 ? "إنشاء نظام غذائي" : "إضافة نظام ثانٍ"}</span>
-              </button>
-            )}
-          </div>
-
-          {!activePlan ? (
+                <Icon name="nutrition" style={{ fontSize: 20 }} />
+                <span>العودة إلى مكتبة الأنظمة الغذائية</span>
+              </a>
+            </div>
+          ) : !activePlan ? (
             <div className="diet-empty">
               <Icon name="restaurant" />
               <p>

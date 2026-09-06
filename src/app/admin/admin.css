@@ -403,7 +403,7 @@
     height: 44px;
   }
 
-  /* The six destinations are the only part of the bar that may give ground —
+  /* The seven destinations are the only part of the bar that may give ground —
      the logo and the settings button are one box each and already at their
      floor, so they are pinned and the middle absorbs the squeeze. A basis
      rather than a width, so the links divide what is left instead of insisting
@@ -437,12 +437,13 @@
   }
 }
 
-/* Phones narrow enough that eight boxes and their gaps no longer clear 44px
-   each. Only the six destinations give ground — they are one row of the same
+/* Phones narrow enough that nine boxes and their gaps no longer clear 44px
+   each. Only the seven destinations give ground — they are one row of the same
    thing, so they shrink together and stay legible as a set, while the two
    single controls at the ends keep the full target. At 320px that leaves the
-   icons about 34px across and 44px tall, which is the floor the width imposes;
-   from 382px up they are back at 44 square. */
+   icons about 28px across and 44px tall, and about 40px at the top of this
+   range, which is the floor the width imposes; the full 44 square returns from
+   452px up, once the wider gutters above this breakpoint apply. */
 @media (max-width: 400px) {
   .admin-bottom-nav {
     padding-left: calc(6px + env(safe-area-inset-left));

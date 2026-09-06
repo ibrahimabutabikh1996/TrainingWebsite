@@ -41,6 +41,7 @@ export default function AdminLayout({
     { name: "صانع الكورسات", path: "/admin/builder", icon: "fitness_center" },
     { name: "التمارين", path: "/admin/exercises", icon: "biceps_flexed" },
     { name: "النظام الغذائي", path: "/admin/diet", icon: "restaurant_menu" },
+    { name: "مكتبة الأنظمة الغذائية", path: "/admin/diet/library", icon: "nutrition" },
     { name: "محتوى الموقع", path: "/admin/cms", icon: "web" },
   ];
 

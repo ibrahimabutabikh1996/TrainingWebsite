@@ -45,3 +45,31 @@ export const TRAINEE: CountForms = {
   few: "مشتركين",
   many: "مشتركاً",
 };
+
+export const MEAL: CountForms = {
+  one: "وجبة",
+  two: "وجبتان",
+  few: "وجبات",
+  many: "وجبة",
+};
+
+export const ITEM: CountForms = {
+  one: "صنف",
+  two: "صنفان",
+  few: "أصناف",
+  many: "صنفاً",
+};
+
+export const PLAN: CountForms = {
+  one: "نظام",
+  two: "نظامان",
+  few: "أنظمة",
+  many: "نظاماً",
+};
+
+export const CHOICE: CountForms = {
+  one: "خيار",
+  two: "خياران",
+  few: "خيارات",
+  many: "خياراً",
+};

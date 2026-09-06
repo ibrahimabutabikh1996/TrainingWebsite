@@ -10,6 +10,8 @@ interface ExportDietClientProps {
   goal: string;
   dietPlans: DietPlan[];
   profileId?: string | null;
+  /** Set instead of profileId when printing a general template. */
+  groupId?: string | null;
 }
 
 export default function ExportDietClient({
@@ -20,6 +22,7 @@ export default function ExportDietClient({
   goal,
   dietPlans,
   profileId,
+  groupId,
 }: ExportDietClientProps) {
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloaded, setDownloaded] = useState(false);
@@ -27,8 +30,12 @@ export default function ExportDietClient({
   const downloadPDF = async () => {
     setIsDownloading(true);
     try {
+      /* Whichever key this sheet was opened by is the one the PDF route is
+         asked for, so the headless render lands on the same page the coach is
+         looking at. Exactly one is ever set. */
       const params = new URLSearchParams();
       if (profileId) params.set("profileId", profileId);
+      else if (groupId) params.set("groupId", groupId);
 
       const res = await fetch(`/api/export-diet/pdf?${params.toString()}`);
       if (!res.ok) throw new Error(`PDF generation failed: ${res.status}`);
