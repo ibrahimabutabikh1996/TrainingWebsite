@@ -1023,14 +1023,7 @@ export default function LandingClient({
               >
                 <Link
                   href={panelHref}
-                  className="nav-cta"
-                  style={{
-                    background: "transparent",
-                    border: "1px solid var(--border-strong)",
-                    color: "var(--text)",
-                    textAlign: "center",
-                    textDecoration: "none",
-                  }}
+                  className="nav-cta nav-cta-dashboard"
                 >
                   الانتقال الى لوحة التحكم
                 </Link>
@@ -1050,13 +1043,7 @@ export default function LandingClient({
             <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
               <Link
                 href={panelHref}
-                className="nav-cta"
-                style={{
-                  background: "transparent",
-                  border: "1px solid var(--border-strong)",
-                  color: "var(--text)",
-                  textDecoration: "none",
-                }}
+                className="nav-cta nav-cta-dashboard"
               >
                 الانتقال الى لوحة التحكم
               </Link>

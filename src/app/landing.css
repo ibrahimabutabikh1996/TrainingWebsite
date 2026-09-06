@@ -396,17 +396,24 @@ body::before {
 .nav-cta:active {
   transform: translateY(0);
 }
+/* The "go to the panel" link, which sits beside "sign out" in the bar and in
+   the drawer. It differs from a plain .nav-cta in one respect — a neutral
+   border rather than a tinted one — so that is all this says.
+
+   It used to say a good deal more, and none of it ever reached the screen: no
+   markup carried the class. The link wrote `background`, `color` and `border`
+   as inline styles instead, which is what made it look like it had no hover
+   state. It had one — .nav-cta:hover, a few rules above — but an inline
+   declaration outranks any rule in a stylesheet, so every colour that hover
+   paints lost to them and the button stayed as it was. Three of those four
+   inline declarations were restating .nav-cta's own values anyway; only the
+   border colour differed, and it is what this rule now carries.
+
+   `border-color` alone, and no :hover of its own: .nav-cta:hover carries a
+   pseudo-class and so outranks this rule, which is what lets the shared hover
+   paint over the neutral border on the way in. */
 .nav-cta-dashboard {
-  background: var(--primary);
-  color: var(--text-inverse) !important;
-  border-color: var(--primary);
-  font-weight: 700;
-}
-.nav-cta-dashboard:hover {
-  background: var(--primary-hover);
-  color: var(--text-inverse) !important;
-  border-color: var(--primary-hover);
-  transform: translateY(-2px);
+  border-color: var(--border-strong);
 }
 
 .burger-menu {
