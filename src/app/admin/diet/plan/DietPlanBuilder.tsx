@@ -388,7 +388,7 @@ export default function DietPlanBuilder({
         </div>
 
         <div className="dplan-header-actions">
-          <label className="dplan-trainee" style={{ flex: "1 1 300px" }}>
+          <label className="dplan-trainee" style={{ minWidth: "min(300px, 100vw - 96px)" }}>
             <span>المشترك</span>
             {/* The empty option is no longer "you have not chosen yet" — it is a
                 choice, and the one this screen is on when it writes a general
