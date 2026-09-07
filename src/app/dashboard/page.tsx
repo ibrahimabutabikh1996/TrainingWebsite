@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 
 import { TraineeProfileDetails } from "@/components/dashboard/TraineeProfileDetails";
 import { WorkoutPlan } from "@/components/dashboard/WorkoutPlan";
+import { DietPlan } from "@/components/dashboard/DietPlan";
 import WeightLog from "@/components/dashboard/WeightLog";
 import "./dashboard.css";
 import Link from "next/link";
@@ -99,6 +100,7 @@ export default function DashboardPage() {
   /* Define the 4 tabs in exact order from Right to Left (in RTL mode) */
   const tabs: TabConfig[] = [
     { id: "settings", label: "المزيد", icon: "settings" },
+    { id: "diet", label: "النظام الغذائي", icon: "restaurant" },
     { id: "workout", label: "البرنامج التدريبي", icon: "fitness_center" },
     { id: "home", label: "الرئيسية", icon: "home" },
     { id: "profile", label: "الملف الشخصي", icon: "person" },
@@ -459,6 +461,15 @@ export default function DashboardPage() {
           {isWorkoutUnderReview ? renderProcessingCard("البرنامج التدريبي") : (
             <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
               <WorkoutPlan profile={profile} />
+            </div>
+          )}
+        </div>
+
+        {/* Tab: Diet Plan */}
+        <div style={{ display: activeTab === "diet" ? "block" : "none" }}>
+          {isDietUnderReview ? renderProcessingCard("النظام الغذائي") : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+              <DietPlan profile={profile} />
             </div>
           )}
         </div>
