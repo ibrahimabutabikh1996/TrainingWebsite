@@ -37,10 +37,10 @@ import { prisma } from "@/lib/db";
  */
 
 /** Attempts allowed per key before the shared window closes. */
-const MAX_ATTEMPTS = 8;
+const MAX_ATTEMPTS = 10;
 
 /** How long a window lasts, and therefore how long a lockout lasts. */
-const WINDOW_MINUTES = 15;
+const WINDOW_MINUTES = 10;
 
 /** Stricter, because an instance-local counter sees only part of the traffic. */
 const DEGRADED_MAX_ATTEMPTS = 3;

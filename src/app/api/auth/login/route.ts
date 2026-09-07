@@ -37,8 +37,14 @@ export async function POST(request: Request) {
      *
      * The username is lowercased into the key so `Admin` and `admin` cannot be
      * counted as two separate accounts to guess against. */
+    /* Trimmed once, and used both as the counter key and as the name looked up
+       below. The raw value used to serve both, and a trailing space — which no
+       stored username can carry, `USERNAME_PATTERN` forbids the space — was a
+       name that could never match: every attempt failed whatever the password
+       was, under a counter key of its own that a later success never cleared. */
     const address = clientAddress(request);
-    const userKey = `user:${String(username).toLowerCase().slice(0, 64)}`;
+    const cleanUsername = String(username).trim();
+    const userKey = `user:${cleanUsername.toLowerCase().slice(0, 64)}`;
     const ipKey = `ip:${address}`;
 
     const [byAddress, byUser] = await Promise.all([
@@ -61,7 +67,7 @@ export async function POST(request: Request) {
        in `@/lib/auth` for the measurement that made this necessary. The verdict
        is only formed at the end, once the work is done. */
     const account = await prisma.accounts.findUnique({
-      where: { username },
+      where: { username: cleanUsername },
     });
 
     /* Always one profile lookup, whether or not the account exists — the absent
