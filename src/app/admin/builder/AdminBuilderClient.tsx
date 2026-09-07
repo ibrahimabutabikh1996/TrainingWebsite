@@ -266,7 +266,7 @@ export default function AdminBuilderClient({
         </div>
 
         <div className="dplan-header-actions">
-          <label className="dplan-trainee" style={{ minWidth: "300px" }}>
+          <label className="dplan-trainee" style={{ flex: "1 1 300px" }}>
             <span>المشترك</span>
             <CustomSelect
               value={selectedTrainee}
