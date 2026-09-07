@@ -197,7 +197,7 @@ export function useUploads({ scope, profileId }: UseUploadsOptions) {
       const started: Promise<boolean>[] = [];
 
       for (const file of files) {
-        const key = fileKey(file);
+        const key = `${field}:${fileKey(file)}`;
         if (claimed.current.has(key)) continue;
         claimed.current.add(key);
         started.push(uploadOne(field, file));
@@ -211,7 +211,9 @@ export function useUploads({ scope, profileId }: UseUploadsOptions) {
   /* Keys of files that are gone from the form stop being claimed, so re-adding
      the same file later uploads it again rather than silently doing nothing. */
   useEffect(() => {
-    const live = new Set(Object.values(records).flat().map((r) => r.key));
+    const live = new Set(
+      Object.entries(records).flatMap(([f, list]) => list.map((r) => `${f}:${r.key}`))
+    );
     for (const key of claimed.current) {
       if (!live.has(key)) claimed.current.delete(key);
     }
