@@ -1147,7 +1147,10 @@ export function SubscriptionHistoryTimeline({
                           that opens this panel names the month, and its button
                           reads "إخفاء المعلومات" and calls the same
                           `setSelectedInfoMonth(null)` this one did. The month is
-                          still named — the first tab below carries its label. */}
+                          named by the timeline header above this panel, which is
+                          why the record below no longer opens with a tab of its
+                          own repeating that name: its answers and files are
+                          shown straight away. */}
 
                       {/* The month's answers and files — the very component the
                           standalone "سجل الأشهر" panel was built from, so the two

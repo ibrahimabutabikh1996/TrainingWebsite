@@ -119,8 +119,6 @@ export function MonthSection({
   const [armed, setArmed] = useState<string | null>(null);
 
   const groups = monthGroups(month, { planNames });
-  const answered = answeredCount(groups);
-  const weight = monthWeight(month, { planNames });
 
   const data = month.data;
 
@@ -180,11 +178,8 @@ export function MonthSection({
     });
   };
 
-  const from = arDate(month.startDate);
-  const to = arDate(month.endDate);
-
   return (
-    <details
+    <div
       className="crm-modal-section"
       style={{
         background: "var(--bg2)",
@@ -208,36 +203,7 @@ export function MonthSection({
          All three tabs start closed, so opening a month gives a short list
          rather than a wall. */
     >
-      <summary
-        className="crm-modal-section-title"
-        style={{ margin: 0, display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", cursor: "pointer" }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap", minWidth: 0 }}>
-          <Icon name="calendar_month" style={{ color: "var(--primary)", fontSize: "24px" }} />
-          <span style={{ fontSize: "1.2rem", color: "var(--text)", fontWeight: 700 }}>{month.label}</span>
-          {month.isCurrent && (
-            <span className="crm-tag primary-tag" style={{ fontSize: "0.8rem", padding: "2px 10px", borderRadius: "var(--radius-lg)" }}>
-              الحالي
-            </span>
-          )}
-          {weight && (
-            <span className="crm-tag" style={{ fontSize: "0.8rem", padding: "2px 10px", borderRadius: "var(--radius-lg)" }}>
-              {weight}
-            </span>
-          )}
-          {attachmentCount > 0 && (
-            <span className="crm-tag" style={{ fontSize: "0.8rem", padding: "2px 10px", borderRadius: "var(--radius-lg)" }}>
-              {attachmentCount} مرفقاً
-            </span>
-          )}
-          <span style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>
-            {from && to ? `${from} — ${to}` : from ? `من ${from}` : `${answered} إجابة`}
-          </span>
-        </div>
-        <Icon name="expand_more" className="accordion-icon" style={{ color: "var(--text-muted)" }} />
-      </summary>
-
-      <div style={{ marginTop: "24px", display: "flex", flexDirection: "column", gap: "28px" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
         {groups.length === 0 ? (
           <p style={{ margin: 0, color: "var(--text-muted)", fontSize: "0.9rem" }}>
             لا توجد إجابات محفوظة لهذا الشهر.
@@ -392,7 +358,7 @@ export function MonthSection({
           </div>
         )}
       </div>
-    </details>
+    </div>
   );
 }
 
