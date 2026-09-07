@@ -481,7 +481,7 @@ export default function ExportWorkoutClient({
                     </div>
 
                     {/* Workout Table */}
-                    <table className="table-grid" style={{ marginTop: tableMarginTop, flex: "1 1 auto", height: "100%" }}>
+                    <table className="table-grid" style={{ marginTop: tableMarginTop, flex: "1 1 auto" }}>
                       <thead>
                         <tr style={{ height: "11mm" }}>
                           <th style={{ width: "9mm", padding: "2mm 1mm" }}>ت</th>

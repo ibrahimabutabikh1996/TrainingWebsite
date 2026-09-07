@@ -336,7 +336,7 @@ export default function ExportDietClient({
                       </div>
                     </div>
 
-                    <table className="table-grid" style={{ marginTop: tableMarginTop, flex: "1 1 auto", height: "100%" }}>
+                    <table className="table-grid" style={{ marginTop: tableMarginTop, flex: "1 1 auto" }}>
                       <thead>
                         <tr style={{ height: "11mm" }}>
                           <th style={{ width: "10%", padding: "2mm 1mm" }}>ت</th>
