@@ -92,7 +92,8 @@ export function StepOneBasicInfo({ formData, update, planLocked, planNames }: St
       <TextInput
         label={t("lbl_age")}
         type="number"
-        inputMode="numeric"
+        inputMode="decimal"
+        step="any"
         min={10}
         max={100}
         unit={t("unit_year")}
@@ -105,6 +106,7 @@ export function StepOneBasicInfo({ formData, update, planLocked, planNames }: St
         label={t("lbl_weight")}
         type="number"
         inputMode="decimal"
+        step="any"
         min={30}
         max={300}
         unit={t("unit_kg")}
@@ -116,7 +118,8 @@ export function StepOneBasicInfo({ formData, update, planLocked, planNames }: St
       <TextInput
         label={t("lbl_height")}
         type="number"
-        inputMode="numeric"
+        inputMode="decimal"
+        step="any"
         min={100}
         max={250}
         unit={t("unit_cm")}

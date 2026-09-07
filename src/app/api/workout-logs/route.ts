@@ -94,7 +94,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { profileId, courseId, dayId, exerciseId, exerciseName, setIndex, reps, weight, sessionId } = body;
+    const { profileId, dayId, exerciseId, exerciseName, setIndex, reps, weight, sessionId } = body;
 
     if (!profileId || !isValidUUID(profileId)) {
       return NextResponse.json({ error: "معرّف المشترك غير صالح" }, { status: 400 });
@@ -137,9 +137,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: blocked.error }, { status: blocked.status });
     }
 
-    /* Trust the profile's own course over anything the client sends. */
-    const resolvedCourseId =
-      courseId && isValidUUID(courseId) ? courseId : profile.current_course_id;
+    /* Trust the profile's own course over anything the client sends: a
+       `courseId` in the request body is ignored outright. The ternary that
+       stood here preferred that field instead, which is the reverse of what
+       this comment has always said, and nothing the browser sends has the
+       standing to decide which course a set belongs to. */
+    const resolvedCourseId = profile.current_course_id;
 
     /* Attach the set to its workout, and refuse to write into a cycle that has
        already closed — finished cycles are history, not editable.

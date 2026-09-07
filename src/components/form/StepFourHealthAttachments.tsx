@@ -53,6 +53,7 @@ export function StepFourHealthAttachments({ formData, update }: StepProps) {
               label={t("lbl_meas_arm")}
               type="number"
               inputMode="decimal"
+              step="any"
               unit={t("unit_cm")}
               value={formData.meas_arm}
               onChange={(meas_arm) => update({ meas_arm })}
@@ -62,6 +63,7 @@ export function StepFourHealthAttachments({ formData, update }: StepProps) {
               label={t("lbl_meas_waist")}
               type="number"
               inputMode="decimal"
+              step="any"
               unit={t("unit_cm")}
               value={formData.meas_waist}
               onChange={(meas_waist) => update({ meas_waist })}
@@ -71,6 +73,7 @@ export function StepFourHealthAttachments({ formData, update }: StepProps) {
               label={t("lbl_meas_hips")}
               type="number"
               inputMode="decimal"
+              step="any"
               unit={t("unit_cm")}
               value={formData.meas_hips}
               onChange={(meas_hips) => update({ meas_hips })}
@@ -80,6 +83,7 @@ export function StepFourHealthAttachments({ formData, update }: StepProps) {
               label={t("lbl_meas_leg")}
               type="number"
               inputMode="decimal"
+              step="any"
               unit={t("unit_cm")}
               value={formData.meas_leg}
               onChange={(meas_leg) => update({ meas_leg })}

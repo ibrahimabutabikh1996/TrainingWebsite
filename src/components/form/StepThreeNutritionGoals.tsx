@@ -29,6 +29,7 @@ export function StepThreeNutritionGoals({ formData, update }: StepProps) {
             label={t("lbl_target_weight")}
             type="number"
             inputMode="decimal"
+            step="any"
             min={30}
             max={300}
             unit={t("unit_kg")}

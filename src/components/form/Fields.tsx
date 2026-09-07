@@ -129,6 +129,7 @@ interface TextInputProps {
   full?: boolean;
   min?: number;
   max?: number;
+  step?: number | "any";
   inputMode?: "numeric" | "decimal" | "tel" | "text";
   pattern?: string;
   title?: string;
@@ -148,6 +149,7 @@ export function TextInput({
   full,
   min,
   max,
+  step,
   inputMode,
   pattern,
   title,
@@ -166,6 +168,7 @@ export function TextInput({
           value={value}
           min={min}
           max={max}
+          step={step}
           pattern={pattern}
           title={title}
           autoComplete={autoComplete}
