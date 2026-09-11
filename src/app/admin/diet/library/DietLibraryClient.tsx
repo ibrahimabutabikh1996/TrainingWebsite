@@ -33,16 +33,16 @@ export type LibraryChoice = {
 /**
  * One card in the library.
  *
- * For a prescribed plan that is one row. For a general template it is the whole
- * group — both alternatives folded into one card, because the coach authored
- * them together and hands them over together.
+ * Every alternative folded into one card — a general template's whole group, or
+ * every plan one trainee holds — because the coach authored them together and
+ * hands them over together.
  *
  * The three owner fields are empty on a general template, and that is the only
  * thing distinguishing the two kinds, so `ownerId` is what every branch below
  * tests rather than a separate flag that could disagree with it.
  */
 export type LibraryPlan = {
-  /** The group id for a template, the row id for a prescribed plan. */
+  /** The group id for a template, the owner's id for a prescribed plan. */
   key: string;
   name: string;
   choices: LibraryChoice[];
@@ -53,7 +53,8 @@ export type LibraryPlan = {
   ownerUsername: string;
   /** Empty for a prescribed plan. */
   groupId: string;
-  /** The slot, for a prescribed plan — how its delete addresses the row. */
+  /** The slot of the row this card was opened by. Delete walks `choices` now,
+      each of which carries its own. */
   position: number;
 };
 
@@ -88,6 +89,9 @@ export default function DietLibraryClient({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [showCopyModal, setShowCopyModal] = useState<string | null>(null);
   const [selectedTraineeId, setSelectedTraineeId] = useState<string>("");
+  /* Which choice of the card travels when it is copied to a trainee. Empty is
+     all of them — what the button meant before the coach could narrow it. */
+  const [copyChoiceId, setCopyChoiceId] = useState<string>("");
   const [isActionLoading, setIsActionLoading] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -134,13 +138,23 @@ export default function DietLibraryClient({
          are a deleteMany so removing something already gone is a no-op rather
          than an error to special-case. Which one applies is the same question
          everywhere on this page — does the plan have an owner. A general plan
-         has no (trainee, slot) to be addressed by. */
-      const result = plan.ownerId
-        ? await deleteDietPlanAction({
+         has no (trainee, slot) to be addressed by.
+
+         A prescribed card is every choice its owner holds, so its branch walks
+         them — sequentially and stopping on the first failure, the way the
+         builder saves them, rather than firing the rest into the dark. */
+      let result: { success: boolean; error?: string } = { success: true };
+      if (plan.ownerId) {
+        for (const choice of plan.choices) {
+          result = await deleteDietPlanAction({
             traineeId: plan.ownerId,
-            position: plan.position,
-          })
-        : await deleteGeneralDietGroupAction({ groupId: plan.groupId });
+            position: choice.position,
+          });
+          if (!result.success) break;
+        }
+      } else {
+        result = await deleteGeneralDietGroupAction({ groupId: plan.groupId });
+      }
       if (result.success) {
         toast.success("تم حذف النظام الغذائي بنجاح!", { id: toastId });
         setShowDeleteConfirm(null);
@@ -166,7 +180,9 @@ export default function DietLibraryClient({
 
     try {
       const result = await duplicateDietPlanAction(
-        plan.groupId ? { groupId: plan.groupId } : { planId: plan.key }
+        plan.groupId
+          ? { groupId: plan.groupId }
+          : { planIds: plan.choices.map((choice) => choice.id) }
       );
       if (result.success) {
         toast.success(
@@ -194,13 +210,16 @@ export default function DietLibraryClient({
       const source = planById(showCopyModal);
       if (!source) return;
 
-      /* A template travels whole — every choice in it — while a prescribed plan
-         is the one row. Which of the two is named by whether the card carries a
-         group, the same test the rest of this file makes. */
+      /* The whole card, or the one choice the coach narrowed it to. A template
+         still travels by its group when it travels whole — that is the source
+         the server reads without being handed a list of rows, and it is the
+         test the rest of this file makes. */
       const result = await copyDietPlanToTraineeAction(
-        source.groupId
-          ? { groupId: source.groupId, traineeId: selectedTraineeId }
-          : { planId: source.key, traineeId: selectedTraineeId }
+        copyChoiceId
+          ? { planIds: [copyChoiceId], traineeId: selectedTraineeId }
+          : source.groupId
+            ? { groupId: source.groupId, traineeId: selectedTraineeId }
+            : { planIds: source.choices.map((choice) => choice.id), traineeId: selectedTraineeId }
       );
       if (result.success) {
         toast.success(
@@ -211,6 +230,7 @@ export default function DietLibraryClient({
         );
         setShowCopyModal(null);
         setSelectedTraineeId("");
+        setCopyChoiceId("");
         router.refresh();
       } else {
         toast.error(result.error || "فشل نسخ النظام الغذائي.", { id: toastId });
@@ -405,6 +425,9 @@ export default function DietLibraryClient({
                           className="co-icon-btn"
                           onClick={(e) => {
                             e.stopPropagation();
+                            /* Cleared with the dialog, not only on success: a
+                               choice id belongs to the card it was picked on. */
+                            setCopyChoiceId("");
                             setShowCopyModal(plan.key);
                           }}
                           title="نسخ إلى مشترك"
@@ -520,6 +543,7 @@ export default function DietLibraryClient({
                 </button>
                 <button
                   onClick={() => {
+                    setCopyChoiceId("");
                     setShowCopyModal(selectedPlan.key);
                     setSelectedPlanId(null);
                   }}
@@ -799,6 +823,7 @@ export default function DietLibraryClient({
           onClose={() => {
             setShowCopyModal(null);
             setSelectedTraineeId("");
+            setCopyChoiceId("");
           }}
           title="نسخ النظام الغذائي إلى مشترك"
           icon="person_add"
@@ -817,6 +842,54 @@ export default function DietLibraryClient({
               <br />
               {copySource.ownerId ? `صاحبه حالياً: ${copySource.ownerName}` : "نظام عام — بلا مشترك"}
             </p>
+            {/* Which of the card's choices travels. A card of two needs two free
+                slots, and a trainee already holding a plan has one — so rather
+                than only refusing the copy, the dialog lets the coach name the
+                choice to send. Shown only when there is something to choose
+                between: one choice is just "the plan". */}
+            {copySource.choices.length > 1 && (
+              <div style={{ marginBottom: 24 }}>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "0.95rem",
+                    color: "var(--admin-on-surface)",
+                    marginBottom: 12,
+                    fontWeight: 500,
+                  }}
+                >
+                  ما الذي تنسخه؟
+                </label>
+                <p
+                  style={{
+                    margin: "0 0 12px 0",
+                    fontSize: "0.82rem",
+                    color: "var(--admin-outline)",
+                    lineHeight: 1.7,
+                  }}
+                >
+                  نسخ كل الخيارات يحتاج خانة فارغة لكل خيار. فإن لم تكن لدى المشترك خانات كافية،
+                  اختر خياراً واحداً يُنسخ وحده.
+                </p>
+                <CustomSelect
+                  value={copyChoiceId}
+                  onChange={setCopyChoiceId}
+                  options={[
+                    {
+                      value: "",
+                      label: `كل الخيارات (${arabicCount(copySource.choices.length, CHOICE)})`,
+                    },
+                    ...copySource.choices.map((choice, i) => ({
+                      value: choice.id,
+                      label: `${choice.name || `الخيار ${i + 1}`} — ${arabicCount(
+                        choice.meals.length,
+                        MEAL
+                      )}`,
+                    })),
+                  ]}
+                />
+              </div>
+            )}
             <label
               style={{
                 display: "block",
@@ -870,6 +943,7 @@ export default function DietLibraryClient({
                 onClick={() => {
                   setShowCopyModal(null);
                   setSelectedTraineeId("");
+                  setCopyChoiceId("");
                 }}
                 disabled={isActionLoading}
                 className="crm-btn-secondary"
@@ -927,6 +1001,12 @@ export default function DietLibraryClient({
                 }}
               >
                 هذا النظام يخصّ <strong>{deleteTarget.ownerName}</strong> — وسيفقده عند الحذف.
+                {/* A card is every choice its owner holds, so the delete takes
+                    them all. Said here for the same reason the general branch
+                    below says it: a warning that understates what it removes is
+                    worse than none. */}
+                {deleteTarget.choices.length > 1 &&
+                  ` وسيُحذف بخياراته معاً (${deleteTarget.choices.length}).`}
               </p>
             ) : (
               <p

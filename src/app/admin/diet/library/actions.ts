@@ -34,25 +34,30 @@ const isValidUUID = (value: string) =>
  * their free slot and is how this page duplicates a plan in place.
  */
 export async function copyDietPlanToTraineeAction(input: {
-  /** One prescribed plan, by row. */
-  planId?: string;
+  /** Named rows — a prescribed card's choices, or the one of them the coach
+      narrowed the copy to. */
+  planIds?: string[];
   /** A whole general template — every choice in it. */
   groupId?: string;
   traineeId: string;
 }) {
   if (!(await requireAdminAction())) return DENIED;
 
-  const { planId, groupId, traineeId } = input;
+  const { planIds, groupId, traineeId } = input;
 
   if (!isValidUUID(traineeId)) {
     return { success: false as const, error: "طلب غير صالح" };
   }
+  /* An array reached over HTTP is whatever the request carried, so it is proved
+     to be a list of uuids before it is counted as a source — and capped at the
+     most rows a card can hold, so no request turns this into a bulk read. */
+  const ids = Array.isArray(planIds) ? planIds : [];
   /* Exactly one source. Both would be a caller that does not know what it is
      copying, and neither has nothing to copy. */
-  if (!!planId === !!groupId) {
+  if ((ids.length > 0) === !!groupId) {
     return { success: false as const, error: "طلب غير صالح" };
   }
-  if (planId && !isValidUUID(planId)) {
+  if (ids.length > MAX_PLANS_PER_TRAINEE || !ids.every(isValidUUID)) {
     return { success: false as const, error: "طلب غير صالح" };
   }
   if (groupId && !isValidUUID(groupId)) {
@@ -61,9 +66,10 @@ export async function copyDietPlanToTraineeAction(input: {
 
   try {
     /* A template's choices come across together and in slot order, so the
-       trainee's first choice is the template's first choice. A prescribed
-       source is a single row and reads as a list of one, which is what lets
-       everything below treat the two the same. */
+       trainee's first choice is the template's first choice. Named rows are
+       read in slot order too, for the same reason, and a copy narrowed to one
+       choice is simply a list of one — which is what lets everything below
+       treat every source the same. */
     const [sources, target] = await Promise.all([
       groupId
         ? prisma.diet_plans.findMany({
@@ -72,7 +78,8 @@ export async function copyDietPlanToTraineeAction(input: {
             select: { name: true, meals_data: true },
           })
         : prisma.diet_plans.findMany({
-            where: { id: planId },
+            where: { id: { in: ids } },
+            orderBy: { position: "asc" },
             select: { name: true, meals_data: true },
           }),
       prisma.profiles.findUnique({
@@ -109,7 +116,9 @@ export async function copyDietPlanToTraineeAction(input: {
         error:
           free.length === 0
             ? `لدى المشترك ${arabicCount(MAX_PLANS_PER_TRAINEE, PLAN)} بالفعل — احذف أحدها أولاً`
-            : `هذا القالب يحمل ${arabicCount(sources.length, CHOICE)} ولدى المشترك خانة واحدة فارغة — احذف أحد أنظمته أولاً`,
+            : /* The dialog now carries a select for exactly this case, so the
+                 refusal names it before it names the destructive way out. */
+              `هذا النظام يحمل ${arabicCount(sources.length, CHOICE)} ولدى المشترك خانة واحدة فارغة — اختر خياراً واحداً لنسخه، أو احذف أحد أنظمته أولاً`,
       };
     }
 
@@ -199,20 +208,23 @@ async function uniqueGeneralName(base: string): Promise<string> {
  * touched either way, and neither is anyone already copied from the original.
  */
 export async function duplicateDietPlanAction(input: {
-  /** One prescribed plan, by row. */
-  planId?: string;
+  /** Named rows — every choice of a prescribed card. */
+  planIds?: string[];
   /** A whole general template — every choice in it. */
   groupId?: string;
 }) {
   if (!(await requireAdminAction())) return DENIED;
 
-  const { planId, groupId } = input;
+  const { planIds, groupId } = input;
 
+  /* Proved to be a list of uuids and capped, for the reason the copy action
+     gives where it does the same. */
+  const ids = Array.isArray(planIds) ? planIds : [];
   /* Exactly one source, for the reason the copy action gives. */
-  if (!!planId === !!groupId) {
+  if ((ids.length > 0) === !!groupId) {
     return { success: false as const, error: "طلب غير صالح" };
   }
-  if (planId && !isValidUUID(planId)) {
+  if (ids.length > MAX_PLANS_PER_TRAINEE || !ids.every(isValidUUID)) {
     return { success: false as const, error: "طلب غير صالح" };
   }
   if (groupId && !isValidUUID(groupId)) {
@@ -227,7 +239,8 @@ export async function duplicateDietPlanAction(input: {
           select: { name: true, meals_data: true },
         })
       : await prisma.diet_plans.findMany({
-          where: { id: planId },
+          where: { id: { in: ids } },
+          orderBy: { position: "asc" },
           select: { name: true, meals_data: true },
         });
 

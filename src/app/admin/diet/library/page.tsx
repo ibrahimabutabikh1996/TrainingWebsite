@@ -53,13 +53,13 @@ export default async function DietLibraryPage() {
        health history and body-photo URLs, and all this list needs out of it is
        a name to print on a card. Same rule the plan builder and the course
        builder each state where they map their own trainee lists. */
-    /* A card is a document, and a general template is one document with two
-       alternatives inside it — so its rows are folded together here by the
-       group that makes them alternatives of each other. A prescribed plan stays
-       one card per row: those two are two prescriptions the coach wrote for one
-       person on different days, not one thing authored in a single sitting.
-       `byGroup` keeps insertion order, so the ordering of the query above
-       survives the fold. */
+    /* A card is a document, and a diet is one document with two alternatives
+       inside it — so its rows are folded together here by whatever makes them
+       alternatives of each other. For a general template that is the group; for
+       a prescribed plan it is the trainee, because the builder holds both
+       choices as tabs on one screen and writes them in a single press, and the
+       PDF sheet already reads them back as one document. `byGroup` keeps
+       insertion order, so the ordering of the query above survives the fold. */
     const byGroup = new Map<string, LibraryPlan>();
 
     for (const row of rows) {
@@ -73,10 +73,13 @@ export default async function DietLibraryPage() {
         meals: asMeals(row.meals_data),
       };
 
-      /* Rows written before 2026-09-06-general-diet-plan-choices.sql carry no
-         group, so an ownerless one stands alone under its own id — the same
-         card it was before the column existed. */
-      const groupKey = !owner && row.group_id ? row.group_id : "";
+      /* The owner is what groups a prescribed plan's choices — `group_id` is
+         NULL on those rows and is not a second way to do it, which the schema
+         says where it defines the column. Rows written before
+         2026-09-06-general-diet-plan-choices.sql carry no group either, so an
+         ownerless one stands alone under its own id — the same card it was
+         before the column existed. */
+      const groupKey = owner ? owner.id : row.group_id ?? "";
 
       if (groupKey) {
         const existing = byGroup.get(groupKey);
@@ -106,7 +109,10 @@ export default async function DietLibraryPage() {
         ownerId: owner?.id ?? "",
         ownerName: owner ? fullname || owner.username : "",
         ownerUsername: owner?.username ?? "",
-        groupId: groupKey,
+        /* The group, never the owner standing in for one: `groupKey` is a
+           profile id on a prescribed card, and every branch on the client reads
+           a non-empty `groupId` as "this is a general template". */
+        groupId: owner ? "" : groupKey,
         position: row.position,
       });
     }
