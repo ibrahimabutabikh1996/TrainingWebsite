@@ -165,6 +165,12 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
   const [activeCycleId, setActiveCycleId] = useState<string | null>(null);
   const [activeDay, setActiveDay] = useState(1);
   const [loading, setLoading] = useState(true);
+  /* A date chosen in the picker and not yet filed. Touching the calendar used to
+     write it straight away, which took the recording out of the trainee's hands:
+     the workout is recorded by the finish button, and until it is pressed the
+     choice is a draft. Keyed by session, so each training day keeps its own
+     choice and moving between days needs no resetting. */
+  const [pendingDates, setPendingDates] = useState<Record<string, string>>({});
   /* The day the celebration is about, captured when the button is pressed.
      Recording the last workout of a cycle reshapes the list and sends the screen
      back to day 1, which would otherwise re-label the modal under the trainee. */
@@ -496,11 +502,12 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
   /* Day N of the cycle follows day N of that plan. */
   const template = planDays[activeDay - 1];
   const recorded = session?.performed_on ?? "";
-  /* The day the finish button files this workout under: the one already chosen in
-     the date picker, or today for a day that carries none yet. Pressing the
-     button is enough to record a workout — a trainee who trains and finishes on
-     the spot never has to open the picker at all. */
-  const finishDate = recorded || todayISODate();
+  /* The date waiting to be filed for the day on screen, if one was chosen. */
+  const pendingDate = session ? (pendingDates[session.id] ?? "") : "";
+  /* The day the finish button files this workout under: the one just chosen in
+     the picker, else the one already recorded, else today. A trainee who trains
+     and finishes on the spot never has to open the picker at all. */
+  const finishDate = pendingDate || recorded || todayISODate();
 
   return (
     <div className="dashboard-card">
@@ -713,11 +720,24 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
                     }}
                   >
                     <CustomDatePicker
-                      value={recorded}
+                      value={pendingDate || recorded}
                       disabled={!isSessionEditable}
-                      onChange={(date) =>
-                        saveDate(activeCycle.id, session.id, date)
-                      }
+                      onChange={(date) => {
+                        /* Erasing a recorded date is a correction that stands on
+                           its own, so it is filed at once — the finish button has
+                           no way to store "no date". Choosing one is a draft, and
+                           waits for that button. */
+                        if (date === null) {
+                          setPendingDates((s) => {
+                            const next = { ...s };
+                            delete next[session.id];
+                            return next;
+                          });
+                          saveDate(activeCycle.id, session.id, null);
+                          return;
+                        }
+                        setPendingDates((s) => ({ ...s, [session.id]: date }));
+                      }}
                     />
 
                     {dateStates[session.id] === "saving" && (
@@ -1313,17 +1333,22 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
                           if (!canFinishWorkout) return;
 
                           /* This is what records the workout: a day that carries
-                             a date is done, and weights are optional. Skipped for
-                             a day already filed — its date was chosen in the
-                             picker above and is not to be overwritten here — and
+                             a date is done, and weights are optional. The date
+                             chosen in the picker is filed here and nowhere else,
+                             so nothing is written until this is pressed — and
                              nothing is celebrated if the server refuses. */
-                          if (!recorded) {
+                          if (finishDate !== recorded) {
                             const taken = await saveDate(
                               activeCycle.id,
                               session.id,
                               finishDate,
                             );
                             if (!taken) return;
+                            setPendingDates((s) => {
+                              const next = { ...s };
+                              delete next[session.id];
+                              return next;
+                            });
                           }
 
                           const hasAllWeights =
@@ -1381,12 +1406,7 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
                           name="emoji_events"
                           style={{ fontSize: "26px" }}
                         />
-                        {/* The date is in the label because the button now files
-                            the workout under it: what is about to be recorded is
-                            readable before it is pressed. */}
-                        <span>
-                          إنهاء اليوم {activeDay} — {formatDayAndDate(finishDate)}
-                        </span>
+                        <span>إنهاء اليوم التدريبي</span>
                         <Icon name="verified" style={{ fontSize: "24px" }} />
                       </button>
 
