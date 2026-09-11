@@ -23,6 +23,10 @@ const isValidUUID = (v: string) =>
  *     last. The open cycle is created on the fly if the previous was just
  *     completed.
  *
+ * GET /api/training-cycles?profileId=…&view=dates
+ *   → only the days already recorded as trained: `{ date, day_number,
+ *     cycle_number }` each. For the calendar, which marks days and nothing else.
+ *
  * A cycle is a count of workouts, never a span of dates: `done` out of
  * `days_count` is all that drives it, and it ends the moment those two meet.
  */
@@ -37,6 +41,47 @@ export async function GET(request: Request) {
 
     const auth = await requireProfileAccess(profileId);
     if (!auth.ok) return auth.response;
+
+    /* The dashboard's calendar needs one thing: which days were trained, and
+       which day of the plan each was. Answered on its own rather than out of the
+       full read below, which also carries every cycle's frozen plan and every
+       weight ever recorded — a hundred times the bytes for a grid of marks, paid
+       on every visit to the home tab.
+
+       Deliberately before `ensureCurrentCycle`: looking at a calendar is a read,
+       and must not open a training cycle as a side effect. */
+    if (searchParams.get("view") === "dates") {
+      const trained = await prisma.training_sessions.findMany({
+        where: {
+          performed_on: { not: null },
+          training_cycles: { profile_id: profileId },
+        },
+        orderBy: { performed_on: "asc" },
+        select: {
+          day_number: true,
+          performed_on: true,
+          training_cycles: { select: { cycle_number: true } },
+        },
+      });
+
+      return NextResponse.json({
+        success: true,
+        /* `flatMap` rather than a non-null assertion on `performed_on`: the query
+           already excludes the nulls, and this says so in a way the types agree
+           with. */
+        days: trained.flatMap((s) =>
+          s.performed_on
+            ? [
+                {
+                  date: toISODate(s.performed_on),
+                  day_number: s.day_number,
+                  cycle_number: s.training_cycles.cycle_number,
+                },
+              ]
+            : []
+        ),
+      });
+    }
 
     const current = await ensureCurrentCycle(profileId);
 

@@ -6,11 +6,15 @@ import { createPortal } from "react-dom";
 import { Icon } from "@/components/Icon";
 import { isCustomExercise } from "@/types/admin";
 import { useNow } from "@/hooks/useNow";
-import { formatDayAndDate } from "@/lib/trainingDates";
+import { formatDayAndDate, todayISODate } from "@/lib/trainingDates";
 import { safeVideoUrl } from "@/lib/videoEmbed";
 import VideoPlayer from "@/components/VideoPlayer";
 import "./workout-log.css";
 import { CustomDatePicker } from "@/components/dashboard/CustomDatePicker";
+import {
+  TrainingCalendarMonth,
+  type TrainedDay,
+} from "@/components/dashboard/TrainingCalendarMonth";
 import { WorkoutCompletionModal } from "@/components/dashboard/WorkoutCompletionModal";
 
 type SaveState = "idle" | "saving" | "saved" | "error";
@@ -165,6 +169,14 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
   const [activeCycleId, setActiveCycleId] = useState<string | null>(null);
   const [activeDay, setActiveDay] = useState(1);
   const [loading, setLoading] = useState(true);
+  /* The day the trainee says they trained, chosen from the calendar below and
+     filed by the finish button. Opens on today, which is the answer nearly every
+     time — a workout is recorded as it is done. */
+  const [pickedDate, setPickedDate] = useState<string>(() => todayISODate());
+  /* The day the celebration is about, captured when the button is pressed.
+     Recording the last workout of a cycle reshapes the list and sends the screen
+     back to day 1, which would otherwise re-label the modal under the trainee. */
+  const [celebrationDay, setCelebrationDay] = useState<number | null>(null);
 
   const [weights, setWeights] = useState<Record<string, string>>({});
   const [saved, setSaved] = useState<Record<string, number | null>>({});
@@ -293,6 +305,27 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
   const activeCycle = cycles.find((w) => w.id === activeCycleId) ?? null;
   const editable = !isSubscriptionExpired && (activeCycle?.isEditable ?? false);
 
+  /* Every day already recorded, across every schedule — what the calendar marks.
+     Taken from the cycles this screen has already loaded, so marking a day needs
+     no second read. */
+  const trainedDays = useMemo<TrainedDay[]>(
+    () =>
+      cycles.flatMap((c) =>
+        c.sessions.flatMap((s) =>
+          s.performed_on
+            ? [
+                {
+                  date: s.performed_on,
+                  day_number: s.day_number,
+                  cycle_number: c.cycle_number,
+                },
+              ]
+            : [],
+        ),
+      ),
+    [cycles],
+  );
+
   const saveWeight = useCallback(
     async (
       sessionId: string,
@@ -388,12 +421,16 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
    * Files a workout under the day the trainee says it happened — or takes that
    * date back off. Recording the last workout the plan asks for is what ends the
    * cycle, so the answer tells us whether a new one has just begun.
+   *
+   * Answers whether the date was taken, so the finish button can hold its
+   * celebration back when the server refused — the refusal has already been put
+   * in front of the trainee by then.
    */
   const saveDate = async (
     cycleId: string,
     sessionId: string,
     date: string | null,
-  ) => {
+  ): Promise<boolean> => {
     const cycle = cycles.find((c) => c.id === cycleId);
     const wasComplete = cycle ? !cycle.isCurrent : false;
 
@@ -413,7 +450,7 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
         /* Refused because the cycle closed for good — read the list back so the
            schedule shows as the record it now is. */
         if (res.status === 409) await load();
-        return;
+        return false;
       }
 
       setDateStates((s) => ({ ...s, [sessionId]: "saved" }));
@@ -427,7 +464,7 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
       ) {
         setActiveDay(1);
         await load(true);
-        return;
+        return true;
       }
 
       setCycles((rows) =>
@@ -449,6 +486,7 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
           ),
         ),
       );
+      return true;
     } catch {
       setDateStates((s) => ({ ...s, [sessionId]: "error" }));
       triggerToast(
@@ -456,6 +494,7 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
         "تعذّر الاتصال بالخادم في الوقت الحالي. يُرجى المحاولة مرة أخرى.",
         "error",
       );
+      return false;
     }
   };
 
@@ -540,6 +579,28 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
               <div className="wl-locked">
                 <Icon name="lock" />
                 <span>اكتمل هذا الجدول — محفوظ للمراجعة ولا يمكن تعديله.</span>
+              </div>
+            )}
+
+            {/* The day the workout is filed under, chosen before the day of the
+                plan it belongs to. Only while the schedule can still be written
+                to: on a closed one the marks are the record, and the calendar on
+                the home tab is where that record is read. */}
+            {editable && (
+              <div className="tcal-pick-block">
+                <div className="tcal-pick-head">
+                  <Icon name="calendar_month" />
+                  <span>
+                    اختر يوم التمرين من التقويم، ثم اختر اليوم التدريبي الذي
+                    أدّيته بالأسفل
+                  </span>
+                </div>
+                <TrainingCalendarMonth
+                  days={trainedDays}
+                  mode="pick"
+                  selected={pickedDate}
+                  onSelect={setPickedDate}
+                />
               </div>
             )}
 
@@ -1294,8 +1355,24 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
                       <button
                         type="button"
                         disabled={!canFinishWorkout}
-                        onClick={() => {
+                        onClick={async () => {
                           if (!canFinishWorkout) return;
+
+                          /* This is what records the workout: the day chosen in
+                             the calendar is filed against the day of the plan
+                             being shown, and a day that carries a date is done.
+                             Weights are optional — pressing this is enough.
+
+                             Skipped when the day already carries that same date,
+                             and nothing is celebrated if the server refuses. */
+                          if (recorded !== pickedDate) {
+                            const taken = await saveDate(
+                              activeCycle.id,
+                              session.id,
+                              pickedDate,
+                            );
+                            if (!taken) return;
+                          }
 
                           const hasAllWeights =
                             session && template?.exercises
@@ -1309,6 +1386,7 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
                               ? "تم تسجيل الاوزان"
                               : "لم يتم تسجيل الاوزان",
                           );
+                          setCelebrationDay(activeDay);
 
                           triggerToast(
                             "تم إتمام وتوثيق اليوم التدريبي! 🏆",
@@ -1351,7 +1429,12 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
                           name="emoji_events"
                           style={{ fontSize: "26px" }}
                         />
-                        <span>إنهاء اليوم التدريبي</span>
+                        {/* The date is in the label because the button now files
+                            the workout under it: what is about to be recorded is
+                            readable before it is pressed. */}
+                        <span>
+                          إنهاء اليوم {activeDay} — {formatDayAndDate(pickedDate)}
+                        </span>
                         <Icon name="verified" style={{ fontSize: "24px" }} />
                       </button>
 
@@ -1401,7 +1484,7 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
       {/* Celebratory Modal */}
       <WorkoutCompletionModal
         isOpen={showCelebration}
-        dayNumber={activeDay}
+        dayNumber={celebrationDay ?? activeDay}
         onClose={() => setShowCelebration(false)}
       />
 

@@ -76,6 +76,21 @@ async function profileFingerprint(profileId: string): Promise<string> {
         (SELECT count(*)::text || ':' || COALESCE(max(created_at)::text, '')
                 || ':' || COALESCE(max(completed_at)::text, '')
            FROM public.training_cycles WHERE profile_id = p.id) || ':' ||
+        /* The days the trainee has marked as trained. The line above notices a
+           cycle being opened or closed, which is not the same thing: a day filed
+           in the middle of an open cycle changes neither, and the calendar on the
+           home tab would go on showing yesterday's answer.
+
+           Every (session, date) pair digested rather than max(performed_on),
+           because the maximum does not move when a date is cleared or moved to an
+           earlier day — both of which the calendar has to notice. */
+        (SELECT COALESCE(
+                  md5(string_agg(ts.id::text || '=' || COALESCE(ts.performed_on::text, ''), ',' ORDER BY ts.id)),
+                  ''
+                )
+           FROM public.training_sessions ts
+           JOIN public.training_cycles tc ON tc.id = ts.cycle_id
+          WHERE tc.profile_id = p.id) || ':' ||
         (SELECT count(*)::text || ':' || COALESCE(max(updated_at)::text, '')
            FROM public.diet_plans WHERE profile_id = p.id)
       ) AS fp

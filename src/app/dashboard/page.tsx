@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { TraineeProfileDetails } from "@/components/dashboard/TraineeProfileDetails";
 import { WorkoutPlan } from "@/components/dashboard/WorkoutPlan";
 import { DietPlan } from "@/components/dashboard/DietPlan";
+import { TrainingCalendarCard } from "@/components/dashboard/TrainingCalendarMonth";
 import WeightLog from "@/components/dashboard/WeightLog";
 import "./dashboard.css";
 import Link from "next/link";
@@ -31,12 +32,21 @@ export default function DashboardPage() {
   const { profile, loading, error, reload } = useProfile();
   const router = useRouter();
 
+  /* The training calendar reads its own endpoint rather than `/api/profile`,
+     which carries no record of the days trained. This is how it is told to read
+     again: bumped when the live poller sees a change, and when the home tab is
+     opened — so a workout just filed on the workout tab is marked here. */
+  const [calendarReloadKey, setCalendarReloadKey] = useState(0);
+
   /* The coach's side of the conversation. A new programme, a new diet, a
      changed subscription date — this page is a client component reading
      `/api/profile`, so bringing it up to date is the reload it already has.
      Waits for a profile before it starts: there is nothing to be current about
      until the first fetch has landed. */
-  useLiveRefresh({ scope: "me", enabled: !!profile }, reload);
+  useLiveRefresh({ scope: "me", enabled: !!profile }, () => {
+    reload();
+    setCalendarReloadKey((k) => k + 1);
+  });
 
   // Default active tab override (when null, defaults to profile if under review or home otherwise)
   const [activeTabOverride, setActiveTabOverride] = useState<TabId | null>(null);
@@ -95,7 +105,13 @@ export default function DashboardPage() {
   );
 
   const activeTab: TabId = activeTabOverride ?? (isFullyUnderReview ? "profile" : "home");
-  const setActiveTab = (tab: TabId) => setActiveTabOverride(tab);
+  const setActiveTab = (tab: TabId) => {
+    setActiveTabOverride(tab);
+    /* Coming back to the home tab is when its calendar has to be current — a
+       workout may have just been filed on the workout tab. Bumped here rather
+       than in the effect beside `reload()`, which may not call setState. */
+    if (tab === "home") setCalendarReloadKey((k) => k + 1);
+  };
 
   /* Define the 4 tabs in exact order from Right to Left (in RTL mode) */
   const tabs: TabConfig[] = [
@@ -529,6 +545,14 @@ export default function DashboardPage() {
                       )}
                     </div>
                   </div>
+
+                  {/* The days the trainee has trained on, marked automatically.
+                      Read-only here — the day a workout is filed under is chosen
+                      on the workout tab, and shows up here once it is. */}
+                  <TrainingCalendarCard
+                    profileId={profile.id}
+                    reloadKey={calendarReloadKey}
+                  />
                 </div>
 
             </div>
