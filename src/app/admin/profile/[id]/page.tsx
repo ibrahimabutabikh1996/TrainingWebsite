@@ -7,7 +7,7 @@ import AccountManager from "@/components/admin/AccountManager";
 import PendingRenewalCard from "@/components/admin/PendingRenewalCard";
 import DeleteSubscriberZone from "@/components/admin/DeleteSubscriberZone";
 import AdminSubscriptionTimeline from "@/components/admin/AdminSubscriptionTimeline";
-import { activityLabel, PLAN_COLOUR_SLOT } from "@/lib/formLabels";
+import { PLAN_COLOUR_SLOT } from "@/lib/formLabels";
 import { planNameFrom, resolvePlanDisplayNames } from "@/lib/planNames";
 import { planTagStyle } from "@/lib/planCards";
 import { getLandingContent } from "@/app/admin/cms/actions";
@@ -141,7 +141,6 @@ export default async function ProfileDetailsPage({ params }: { params: Promise<{
                     It produced the right class for exactly the three values it was written for and
                     left "offer1" untouched, naming a class that has no rules. */}
                 {data.plan && <span className={`crm-tag ${PLAN_COLOUR_SLOT[String(data.plan)] ? `plan-${PLAN_COLOUR_SLOT[String(data.plan)]}` : ''}`} style={{ padding: '6px 14px', fontSize: '0.85rem', ...(planTagStyle(String(data.plan)) ?? {}) }}>{planNameFrom(planNames, data.plan)}</span>}
-                {data.activity && <span className="crm-tag" style={{ padding: '6px 14px', fontSize: '0.85rem' }}>{activityLabel(data.activity)}</span>}
               </div>
             </div>
           </div>
