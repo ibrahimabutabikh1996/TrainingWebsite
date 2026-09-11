@@ -11,10 +11,6 @@ import { safeVideoUrl } from "@/lib/videoEmbed";
 import VideoPlayer from "@/components/VideoPlayer";
 import "./workout-log.css";
 import { CustomDatePicker } from "@/components/dashboard/CustomDatePicker";
-import {
-  TrainingCalendarMonth,
-  type TrainedDay,
-} from "@/components/dashboard/TrainingCalendarMonth";
 import { WorkoutCompletionModal } from "@/components/dashboard/WorkoutCompletionModal";
 
 type SaveState = "idle" | "saving" | "saved" | "error";
@@ -169,10 +165,6 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
   const [activeCycleId, setActiveCycleId] = useState<string | null>(null);
   const [activeDay, setActiveDay] = useState(1);
   const [loading, setLoading] = useState(true);
-  /* The day the trainee says they trained, chosen from the calendar below and
-     filed by the finish button. Opens on today, which is the answer nearly every
-     time — a workout is recorded as it is done. */
-  const [pickedDate, setPickedDate] = useState<string>(() => todayISODate());
   /* The day the celebration is about, captured when the button is pressed.
      Recording the last workout of a cycle reshapes the list and sends the screen
      back to day 1, which would otherwise re-label the modal under the trainee. */
@@ -304,27 +296,6 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
   );
   const activeCycle = cycles.find((w) => w.id === activeCycleId) ?? null;
   const editable = !isSubscriptionExpired && (activeCycle?.isEditable ?? false);
-
-  /* Every day already recorded, across every schedule — what the calendar marks.
-     Taken from the cycles this screen has already loaded, so marking a day needs
-     no second read. */
-  const trainedDays = useMemo<TrainedDay[]>(
-    () =>
-      cycles.flatMap((c) =>
-        c.sessions.flatMap((s) =>
-          s.performed_on
-            ? [
-                {
-                  date: s.performed_on,
-                  day_number: s.day_number,
-                  cycle_number: c.cycle_number,
-                },
-              ]
-            : [],
-        ),
-      ),
-    [cycles],
-  );
 
   const saveWeight = useCallback(
     async (
@@ -525,6 +496,11 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
   /* Day N of the cycle follows day N of that plan. */
   const template = planDays[activeDay - 1];
   const recorded = session?.performed_on ?? "";
+  /* The day the finish button files this workout under: the one already chosen in
+     the date picker, or today for a day that carries none yet. Pressing the
+     button is enough to record a workout — a trainee who trains and finishes on
+     the spot never has to open the picker at all. */
+  const finishDate = recorded || todayISODate();
 
   return (
     <div className="dashboard-card">
@@ -579,28 +555,6 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
               <div className="wl-locked">
                 <Icon name="lock" />
                 <span>اكتمل هذا الجدول — محفوظ للمراجعة ولا يمكن تعديله.</span>
-              </div>
-            )}
-
-            {/* The day the workout is filed under, chosen before the day of the
-                plan it belongs to. Only while the schedule can still be written
-                to: on a closed one the marks are the record, and the calendar on
-                the home tab is where that record is read. */}
-            {editable && (
-              <div className="tcal-pick-block">
-                <div className="tcal-pick-head">
-                  <Icon name="calendar_month" />
-                  <span>
-                    اختر يوم التمرين من التقويم، ثم اختر اليوم التدريبي الذي
-                    أدّيته بالأسفل
-                  </span>
-                </div>
-                <TrainingCalendarMonth
-                  days={trainedDays}
-                  mode="pick"
-                  selected={pickedDate}
-                  onSelect={setPickedDate}
-                />
               </div>
             )}
 
@@ -1358,18 +1312,16 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
                         onClick={async () => {
                           if (!canFinishWorkout) return;
 
-                          /* This is what records the workout: the day chosen in
-                             the calendar is filed against the day of the plan
-                             being shown, and a day that carries a date is done.
-                             Weights are optional — pressing this is enough.
-
-                             Skipped when the day already carries that same date,
-                             and nothing is celebrated if the server refuses. */
-                          if (recorded !== pickedDate) {
+                          /* This is what records the workout: a day that carries
+                             a date is done, and weights are optional. Skipped for
+                             a day already filed — its date was chosen in the
+                             picker above and is not to be overwritten here — and
+                             nothing is celebrated if the server refuses. */
+                          if (!recorded) {
                             const taken = await saveDate(
                               activeCycle.id,
                               session.id,
-                              pickedDate,
+                              finishDate,
                             );
                             if (!taken) return;
                           }
@@ -1433,7 +1385,7 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
                             the workout under it: what is about to be recorded is
                             readable before it is pressed. */}
                         <span>
-                          إنهاء اليوم {activeDay} — {formatDayAndDate(pickedDate)}
+                          إنهاء اليوم {activeDay} — {formatDayAndDate(finishDate)}
                         </span>
                         <Icon name="verified" style={{ fontSize: "24px" }} />
                       </button>

@@ -1,10 +1,9 @@
 "use client";
 
-/* The training calendar — one month at a time, in two modes.
- *
- *   view   marks the days the trainee trained on, and nothing else. The home tab.
- *   pick   the same marks, plus choosing a day to file a workout under. The
- *          workout tab, above the day buttons.
+/* The training calendar — the home tab's month grid, marking every day the
+ * trainee has trained on. It reads; it takes no choice. The day a workout is
+ * filed under is chosen on the workout tab, in the date picker that has always
+ * been there, and shows up here once it is.
  *
  * Dates here are plain calendar days, carried and read as UTC midnight through
  * the helpers in @/lib/trainingDates — never `new Date(y, m, d)`, which is local
@@ -14,15 +13,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Icon } from "@/components/Icon";
-import {
-  DAY_MS,
-  MAX_BACKDATE_DAYS,
-  daysBetween,
-  formatDayAndDate,
-  fromISODate,
-  toISODate,
-  todayISODate,
-} from "@/lib/trainingDates";
+import { fromISODate, todayISODate } from "@/lib/trainingDates";
 
 /** One day the trainee has marked as trained. */
 export interface TrainedDay {
@@ -74,21 +65,9 @@ const monthIndex = (y: number, m: number) => y * 12 + m;
 
 interface TrainingCalendarMonthProps {
   days: TrainedDay[];
-  mode?: "view" | "pick";
-  /** `pick` only: the day currently chosen. */
-  selected?: string | null;
-  onSelect?: (iso: string) => void;
-  /** `pick` only: shows the month but takes no choice — a lapsed subscription. */
-  disabled?: boolean;
 }
 
-export function TrainingCalendarMonth({
-  days,
-  mode = "view",
-  selected = null,
-  onSelect,
-  disabled = false,
-}: TrainingCalendarMonthProps) {
+export function TrainingCalendarMonth({ days }: TrainingCalendarMonthProps) {
   const todayISO = todayISODate();
 
   /* Two workouts may carry the same date — nothing forbids it — so a day holds a
@@ -103,23 +82,18 @@ export function TrainingCalendarMonth({
     return map;
   }, [days]);
 
-  /* Which month is on screen. Opens on the month of the chosen day, or this one.
-     It does not follow `selected` afterwards: the choice is made inside this
-     calendar, so the month is already the one being looked at. */
+  /* Which month is on screen. Opens on this one. */
   const [cursor, setCursor] = useState(() => {
-    const at = fromISODate(selected && selected.length >= 10 ? selected : todayISO);
+    const at = fromISODate(todayISO);
     return { y: at.getUTCFullYear(), m: at.getUTCMonth() };
   });
 
-  /* How far back the arrows go. Picking is bounded by how far a workout may be
-     backdated; reading is bounded by the trainee's own first recorded day, so
-     their whole history is reachable and nothing beyond it is. */
-  const floorISO = useMemo(() => {
-    if (mode === "pick") {
-      return toISODate(new Date(fromISODate(todayISO).getTime() - MAX_BACKDATE_DAYS * DAY_MS));
-    }
-    return days.reduce((earliest, d) => (d.date < earliest ? d.date : earliest), todayISO);
-  }, [mode, days, todayISO]);
+  /* How far back the arrows go: the trainee's own first recorded day, so their
+     whole history is reachable and nothing beyond it is. */
+  const floorISO = useMemo(
+    () => days.reduce((earliest, d) => (d.date < earliest ? d.date : earliest), todayISO),
+    [days, todayISO],
+  );
 
   const floor = fromISODate(floorISO);
   const today = fromISODate(todayISO);
@@ -187,24 +161,13 @@ export function TrainingCalendarMonth({
           const cellISO = `${cursor.y}-${pad(cursor.m + 1)}-${pad(dayNum)}`;
           const marks = byDate.get(cellISO) ?? [];
           const isToday = cellISO === todayISO;
-          const isSelected = mode === "pick" && cellISO === selected;
-
-          /* A workout is recorded after it has been done, and only recently: today
-             or earlier, within the backdating window. The server applies the same
-             two rules, so nothing offered here can be refused there. */
-          const canPick =
-            mode === "pick" &&
-            !disabled &&
-            cellISO <= todayISO &&
-            daysBetween(todayISO, cellISO) >= -MAX_BACKDATE_DAYS;
 
           let cellClass = "tcal-cell";
           if (marks.length) cellClass += " is-trained";
           if (isToday) cellClass += " is-today";
-          if (isSelected) cellClass += " is-selected";
 
-          const body = (
-            <>
+          return (
+            <div key={cellISO} className={cellClass} title={isToday ? "اليوم" : undefined}>
               <span className="tcal-num">{dayNum}</span>
               {marks.length > 0 && (
                 <span className="tcal-marks">
@@ -224,50 +187,14 @@ export function TrainingCalendarMonth({
                   ))}
                 </span>
               )}
-            </>
-          );
-
-          if (mode !== "pick") {
-            return (
-              <div key={cellISO} className={cellClass} title={isToday ? "اليوم" : undefined}>
-                {body}
-              </div>
-            );
-          }
-
-          return (
-            <button
-              key={cellISO}
-              type="button"
-              className={cellClass}
-              disabled={!canPick}
-              onClick={() => onSelect?.(cellISO)}
-              title={
-                canPick
-                  ? formatDayAndDate(cellISO)
-                  : "لا يمكن تسجيل تمرين في هذا اليوم"
-              }
-            >
-              {body}
-            </button>
+            </div>
           );
         })}
       </div>
 
       <div className="tcal-foot">
-        {mode === "pick" ? (
-          <>
-            <span>اليوم المحدد</span>
-            <strong style={{ color: "var(--primary-on-tint)" }}>
-              {selected ? formatDayAndDate(selected) : "—"}
-            </strong>
-          </>
-        ) : (
-          <>
-            <span>تمارين هذا الشهر</span>
-            <strong style={{ color: "var(--primary-on-tint)" }}>{trainedThisMonth}</strong>
-          </>
-        )}
+        <span>تمارين هذا الشهر</span>
+        <strong style={{ color: "var(--primary-on-tint)" }}>{trainedThisMonth}</strong>
       </div>
     </div>
   );
@@ -326,7 +253,7 @@ export function TrainingCalendarCard({
           {days === null ? (
             <div className="tcal-loading">جاري تحميل التقويم...</div>
           ) : (
-            <TrainingCalendarMonth days={days} mode="view" />
+            <TrainingCalendarMonth days={days} />
           )}
         </div>
       </div>
