@@ -42,7 +42,7 @@ export default async function ExportDietPage({
     const rows = await prisma.diet_plans.findMany({
       where: { group_id: groupId, profile_id: null },
       orderBy: { position: "asc" },
-      select: { id: true, name: true, position: true, meals_data: true },
+      select: { id: true, name: true, group_name: true, position: true, meals_data: true },
     });
     if (rows.length === 0) notFound();
 
@@ -56,9 +56,12 @@ export default async function ExportDietPage({
     return (
       <ExportDietClient
         /* The template's own name, so the sheet and the file it downloads as
-           are identifiable. The four fields below it describe a person, and
-           there is no person — dashes rather than invented values. */
-        traineeName={templatePlans[0].name}
+           are identifiable. Any row of the group carries it — the save writes
+           it to all of them — and a template saved before the column existed
+           falls back to its first choice's name, as this line always read. The
+           four fields below it describe a person, and there is no person —
+           dashes rather than invented values. */
+        traineeName={rows[0].group_name || templatePlans[0].name}
         startDate="—"
         weight="—"
         height="—"

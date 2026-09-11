@@ -40,6 +40,7 @@ export default async function DietLibraryPage() {
       select: {
         id: true,
         name: true,
+        group_name: true,
         position: true,
         group_id: true,
         meals_data: true,
@@ -62,6 +63,13 @@ export default async function DietLibraryPage() {
        insertion order, so the ordering of the query above survives the fold. */
     const byGroup = new Map<string, LibraryPlan>();
 
+    /* A template's name is a property of the group, so it is collected beside
+       the fold rather than read off whichever row arrived first. Empty for a
+       prescribed card, which has no template, and for a template saved before
+       `group_name` existed — both are named by their first choice below,
+       exactly as every card was. */
+    const groupNames = new Map<string, string>();
+
     for (const row of rows) {
       const owner = row.profiles;
       const data = parseData(owner?.data);
@@ -81,25 +89,31 @@ export default async function DietLibraryPage() {
          before the column existed. */
       const groupKey = owner ? owner.id : row.group_id ?? "";
 
+      if (!owner && groupKey && row.group_name) {
+        groupNames.set(groupKey, row.group_name);
+      }
+
       if (groupKey) {
         const existing = byGroup.get(groupKey);
         if (existing) {
           existing.choices.push(choice);
-          /* The card is dated by the newest thing in it, and named by the first
-             choice — the rows arrive newest-first, so only a lower position may
-             rename it. */
+          /* The card is dated by the newest thing in it, and named by the
+             template — falling back to the first choice for a card that has no
+             template name: a prescribed plan, or one saved before templates
+             carried a name of their own. The rows arrive newest-first, so only
+             a lower position may rename it through that fallback. */
           if (row.updated_at.toISOString() > existing.updated_at) {
             existing.updated_at = row.updated_at.toISOString();
           }
           existing.choices.sort((a, b) => a.position - b.position);
-          existing.name = existing.choices[0].name;
+          existing.name = groupNames.get(groupKey) || existing.choices[0].name;
           continue;
         }
       }
 
       byGroup.set(groupKey || row.id, {
         key: groupKey || row.id,
-        name: row.name,
+        name: groupNames.get(groupKey) || row.name,
         choices: [choice],
         created_at: row.created_at.toISOString(),
         updated_at: row.updated_at.toISOString(),

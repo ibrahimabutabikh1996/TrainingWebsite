@@ -768,6 +768,12 @@ model diet_plans {
   /// this column is not a second way to do it. See
   /// prisma/manual/2026-09-06-general-diet-plan-choices.sql.
   group_id   String?  @db.Uuid
+  /// The template's own name — what the library card is called. A property of
+  /// the group, so every row of one carries the same value. NULL on every
+  /// prescribed row, whose card is named as it always was, and on every
+  /// template written before the column existed, which falls back to the first
+  /// choice's name. See prisma/manual/2026-09-11-general-diet-plan-name.sql.
+  group_name String?
   /// Coach-facing label, e.g. "نظام يوم التمرين".
   name       String
   /// 1-based slot, unique per trainee. How many slots a trainee may hold is an

@@ -45,6 +45,10 @@ export default async function DietPlanPage({
   let trainees: TraineeOption[] = [];
   let sources: NutritionSource[] = [];
   let plans: DietPlan[] = [];
+  /* The template's own name. Empty for a trainee's plans, which are not a
+     template, and for a template saved before `group_name` existed — the coach
+     names that one the next time it is saved. */
+  let generalName = "";
 
   try {
     const profiles = await prisma.profiles.findMany({
@@ -100,8 +104,11 @@ export default async function DietPlanPage({
       const rows = await prisma.diet_plans.findMany({
         where: { group_id: generalGroupId, profile_id: null },
         orderBy: { position: "asc" },
-        select: { id: true, name: true, position: true, meals_data: true },
+        select: { id: true, name: true, group_name: true, position: true, meals_data: true },
       });
+      /* Any row of the group answers this — the save writes the name to all of
+         them — so the first one does. */
+      generalName = rows[0]?.group_name ?? "";
       plans = rows.map((row) => ({
         id: row.id,
         name: row.name,
@@ -126,6 +133,7 @@ export default async function DietPlanPage({
           initialPlans={plans}
           initialTraineeId={selectedTraineeId}
           initialGeneralGroupId={generalGroupId}
+          initialGeneralName={generalName}
         />
       </div>
     </div>

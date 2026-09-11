@@ -149,6 +149,8 @@ export async function saveGeneralDietPlanAction(input: {
   planId?: string;
   position: number;
   name: string;
+  /** The template's own name — what the library card is called. */
+  groupName: string;
   meals: unknown;
 }) {
   if (!(await requireAdminAction())) return DENIED;
@@ -160,6 +162,14 @@ export async function saveGeneralDietPlanAction(input: {
   const name = typeof input.name === "string" ? input.name.trim().slice(0, 120) : "";
   if (!name) {
     return { success: false as const, error: "اسم النظام الغذائي مطلوب" };
+  }
+
+  /* Named the same way, and required for the same reason `name` is: the
+     library card carries this, and a template with no name of its own is the
+     card that had to borrow its first choice's. */
+  const groupName = typeof input.groupName === "string" ? input.groupName.trim().slice(0, 120) : "";
+  if (!groupName) {
+    return { success: false as const, error: "اسم النظام الغذائي العام مطلوب" };
   }
 
   const { position } = input;
@@ -194,6 +204,17 @@ export async function saveGeneralDietPlanAction(input: {
       if (count === 0) {
         return { success: false as const, error: "النظام العام غير موجود" };
       }
+      /* The name belongs to the template, not to the choice being saved, so it
+         is written across the whole group — two choices disagreeing about what
+         their own template is called is a card whose title depends on which row
+         the library read first. `profile_id: null` for the reason the update
+         above gives. */
+      if (input.groupId) {
+        await prisma.diet_plans.updateMany({
+          where: { group_id: input.groupId, profile_id: null },
+          data: { group_name: groupName },
+        });
+      }
       revalidateGeneral();
       return { success: true as const, id: input.planId, groupId: input.groupId ?? "" };
     }
@@ -205,9 +226,20 @@ export async function saveGeneralDietPlanAction(input: {
     const groupId = input.groupId || crypto.randomUUID();
 
     const created = await prisma.diet_plans.create({
-      data: { profile_id: null, group_id: groupId, position, name, meals_data: meals },
+      data: { profile_id: null, group_id: groupId, group_name: groupName, position, name, meals_data: meals },
       select: { id: true },
     });
+
+    /* A choice added to a template renamed in the same press: the rows that
+       already existed carry the old name until they are told, and only this
+       call knows the new one. Skipped when there is no group yet — the row
+       just created is the whole template. */
+    if (input.groupId) {
+      await prisma.diet_plans.updateMany({
+        where: { group_id: input.groupId, profile_id: null },
+        data: { group_name: groupName },
+      });
+    }
 
     revalidateGeneral();
     return { success: true as const, id: created.id, groupId };

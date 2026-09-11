@@ -114,6 +114,10 @@ export default function DietLibraryClient({
          match, so it answers to the word printed on its own card instead. */
       return (
         arabicIncludes(plan.name, query) ||
+        /* The choices inside it too: the card is named after the template now,
+           so the words the coach remembers may be on a tab rather than on the
+           card — "نظام يوم التمرين" is a question about a choice. */
+        plan.choices.some((choice) => arabicIncludes(choice.name, query)) ||
         arabicIncludes(plan.ownerName, query) ||
         arabicIncludes(plan.ownerUsername, query) ||
         (!plan.ownerId && arabicIncludes("نظام عام", query))

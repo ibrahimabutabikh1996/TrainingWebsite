@@ -55,6 +55,7 @@ export default function DietPlanBuilder({
   initialPlans,
   initialTraineeId,
   initialGeneralGroupId = "",
+  initialGeneralName = "",
 }: {
   trainees: TraineeOption[];
   sources: NutritionSource[];
@@ -62,6 +63,9 @@ export default function DietPlanBuilder({
   initialTraineeId: string;
   /** The general template being edited, if any. Empty while a new one is written. */
   initialGeneralGroupId?: string;
+  /** That template's own name. Empty for a new one, and for one saved before
+      templates had a name of their own. */
+  initialGeneralName?: string;
 }) {
   const router = useRouter();
 
@@ -103,6 +107,11 @@ export default function DietPlanBuilder({
      choices are saved in one press and the second must carry the id the first
      just created — a `router.replace` cannot be awaited into that loop. */
   const [groupId, setGroupId] = useState(initialGeneralGroupId);
+  /* The template's name, held apart from the choices because it is not one of
+     them: the two alternatives are documents inside it, and this is what the
+     library calls the thing holding them. */
+  const [generalName, setGeneralName] = useState(initialGeneralName);
+  const [savedGeneralName, setSavedGeneralName] = useState(initialGeneralName);
 
   const activePlan = plans.find((p) => p.position === activePosition) ?? null;
 
@@ -111,11 +120,15 @@ export default function DietPlanBuilder({
     [plans, saved]
   );
 
+  /* Renaming a template is an edit even when no choice was touched, so it arms
+     the save button on its own. Only in general mode — a trainee's plans have
+     no template name to change. */
+  const generalNameDirty = isGeneral && generalName.trim() !== savedGeneralName;
 
   /* Switching trainee is a navigation, not local state: the plans belong to the
      URL, and the page remounts the builder on the new ?traineeId=. */
   const handleTraineeChange = async (id: string) => {
-    if (dirtyPositions.length > 0 && !(await confirmDialog("هناك تعديلات غير محفوظة ستفقد. المتابعة؟"))) return;
+    if ((dirtyPositions.length > 0 || generalNameDirty) && !(await confirmDialog("هناك تعديلات غير محفوظة ستفقد. المتابعة؟"))) return;
     router.push(id ? `/admin/diet/plan?traineeId=${id}` : "/admin/diet/plan");
   };
 
@@ -199,15 +212,26 @@ export default function DietPlanBuilder({
      order, stopping at the first refusal. */
   const handleSaveGeneral = async () => {
     const pending = plans.filter((p) => dirtyPositions.includes(p.position));
-    if (pending.length === 0) {
+    if (pending.length === 0 && !generalNameDirty) {
       toast("لا توجد تعديلات للحفظ");
       return;
     }
-    if (pending.some((p) => !p.name.trim())) {
-      toast.error("اسم النظام الغذائي مطلوب");
+    if (!generalName.trim()) {
+      toast.error("اسم النظام الغذائي العام مطلوب");
       return;
     }
-    if (pending.some((p) => p.meals.some((m) => !m.name.trim()))) {
+
+    /* A rename with no edited choice still has to be written, and the name
+       lives on the rows — so the first choice carries it, and the action
+       spreads it over the rest of the group. Checked below rather than
+       `pending`, because that choice is what this press writes. */
+    const toSave = pending.length > 0 ? pending : plans.slice(0, 1);
+
+    if (toSave.some((p) => !p.name.trim())) {
+      toast.error("اسم الخيار مطلوب");
+      return;
+    }
+    if (toSave.some((p) => p.meals.some((m) => !m.name.trim()))) {
       toast.error("يرجى تسمية جميع الوجبات");
       return;
     }
@@ -220,12 +244,13 @@ export default function DietPlanBuilder({
          templates of one choice each. */
       let group = groupId;
       const savedNow: Record<number, string> = {};
-      for (const plan of pending) {
+      for (const plan of toSave) {
         const res = await saveGeneralDietPlanAction({
           groupId: group || undefined,
           planId: plan.id ?? undefined,
           position: plan.position,
           name: plan.name.trim(),
+          groupName: generalName.trim(),
           meals: plan.meals,
         });
         if (!res.success) {
@@ -240,6 +265,7 @@ export default function DietPlanBuilder({
         );
       }
       setSaved((prev) => ({ ...prev, ...savedNow }));
+      setSavedGeneralName(generalName.trim());
       setGroupId(group);
       toast.success("تم حفظ النظام الغذائي العام");
       /* The URL now names the template that exists, so a reload — or the back
@@ -408,7 +434,7 @@ export default function DietPlanBuilder({
           <button
             onClick={handleSave}
             className="diet-add-btn"
-            disabled={isSaving || dirtyPositions.length === 0}
+            disabled={isSaving || (dirtyPositions.length === 0 && !generalNameDirty)}
           >
             <Icon name="save" style={{ fontSize: 20 }} />
             <span>
@@ -416,7 +442,9 @@ export default function DietPlanBuilder({
                 ? "جارٍ الحفظ..."
                 : dirtyPositions.length > 0
                   ? `حفظ (${dirtyPositions.length})`
-                  : "محفوظ"}
+                  : generalNameDirty
+                    ? "حفظ"
+                    : "محفوظ"}
             </span>
           </button>
         </div>
@@ -433,6 +461,25 @@ export default function DietPlanBuilder({
         </div>
       ) : (
         <>
+          {/* The template's own name, above the tabs because it names the thing
+              the tabs are inside — the card the library shows, which used to
+              have to borrow the first choice's name. Written once at creation
+              and editable here afterwards. Prescribed plans have no such
+              document, so this belongs to general mode alone. */}
+          {isGeneral && !generalMissing && (
+            <div className="dplan-toolbar">
+              <label className="dplan-name" style={{ flex: 1 }}>
+                <span>اسم النظام الغذائي</span>
+                <input
+                  value={generalName}
+                  onChange={(e) => setGeneralName(e.target.value)}
+                  placeholder="مثال: نظام التنشيف"
+                  maxLength={80}
+                />
+              </label>
+            </div>
+          )}
+
           {/* The two alternatives, in both modes. They mean the same thing on
               either screen — the choice the trainee is given — and are numbered
               by the same `position`, so this row is one piece of code rather
@@ -500,7 +547,11 @@ export default function DietPlanBuilder({
             <>
               <div className="dplan-toolbar">
                 <label className="dplan-name">
-                  <span>اسم النظام</span>
+                  {/* Named for what it is in each mode: in a template this is
+                      the alternative's own name, beside the template's above —
+                      two fields reading "اسم النظام" would be two fields nobody
+                      can tell apart. A trainee's screen is unchanged. */}
+                  <span>{isGeneral ? "اسم الخيار" : "اسم النظام"}</span>
                   <input
                     value={activePlan.name}
                     onChange={(e) => updateActivePlan((p) => ({ ...p, name: e.target.value }))}

@@ -180,10 +180,10 @@ async function uniqueGeneralName(base: string): Promise<string> {
   const taken = new Set(
     (
       await prisma.diet_plans.findMany({
-        where: { profile_id: null, name: { startsWith: base } },
-        select: { name: true },
+        where: { profile_id: null, group_name: { startsWith: base } },
+        select: { group_name: true },
       })
-    ).map((row) => row.name)
+    ).map((row) => row.group_name)
   );
 
   if (!taken.has(base)) return base;
@@ -236,29 +236,33 @@ export async function duplicateDietPlanAction(input: {
       ? await prisma.diet_plans.findMany({
           where: { group_id: groupId, profile_id: null },
           orderBy: { position: "asc" },
-          select: { name: true, meals_data: true },
+          select: { name: true, group_name: true, meals_data: true },
         })
       : await prisma.diet_plans.findMany({
           where: { id: { in: ids } },
           orderBy: { position: "asc" },
-          select: { name: true, meals_data: true },
+          select: { name: true, group_name: true, meals_data: true },
         });
 
     if (sources.length === 0) {
       return { success: false as const, error: "النظام الغذائي غير موجود" };
     }
 
-    /* The first choice names the card, so it is the one that has to be
-       distinguishable. The rest keep their names: they are read inside the
-       template, on tabs that already sit beside each other. */
-    const name = await uniqueGeneralName(`${sources[0].name} (نسخة)`);
+    /* The template's own name is what the card reads, so it is the one that has
+       to be distinguishable — falling back to the first choice's name for a
+       source that has none: a prescribed card being lifted into the library, or
+       a template saved before templates carried a name. The choices keep their
+       names either way: they are read inside the template, on tabs that already
+       sit beside each other. */
+    const name = await uniqueGeneralName(`${sources[0].group_name || sources[0].name} (نسخة)`);
     const newGroupId = crypto.randomUUID();
 
     const rows = sources.map((source, i) => ({
       profile_id: null,
       group_id: newGroupId,
+      group_name: name,
       position: i + 1,
-      name: (i === 0 ? name : source.name).slice(0, 120),
+      name: source.name.slice(0, 120),
       /* Read through the same narrowing every reader of this column uses, so a
          legacy row's shape is normalised on the way into the copy rather than
          carried forward for another year. */
