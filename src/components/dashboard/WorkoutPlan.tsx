@@ -655,7 +655,6 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
                     gap: "16px",
                     background: `linear-gradient(to left, color-mix(in srgb, ${getDayAccent(activeDay)} 14%, var(--bg3)) 0%, var(--bg3) 85%)`,
                     border: `1px solid color-mix(in srgb, ${getDayAccent(activeDay)} 35%, var(--border))`,
-                    borderInlineStart: `4px solid ${getDayAccent(activeDay)}`,
                     borderRadius: "var(--radius-xl)",
                     padding: "18px 22px",
                     margin: "16px 0 22px 0",
@@ -920,7 +919,8 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
                               <div
                                 style={{
                                   display: "flex",
-                                  flexDirection: "column",
+                                  alignItems: "center",
+                                  gap: "10px",
                                 }}
                               >
                                 <h4
@@ -947,7 +947,7 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
                                 {ex.target_muscle && (
                                   <span
                                     className="wl-ex-muscle"
-                                    style={{ marginTop: "4px" }}
+                                    style={{ marginTop: 0 }}
                                   >
                                     {ex.target_muscle}
                                   </span>
@@ -1076,13 +1076,13 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
                               return (
                                 <div
                                   key={i}
+                                  className="wl-set-row"
                                   style={{
                                     display: "flex",
                                     flexWrap: "wrap",
                                     alignItems: "center",
                                     justifyContent: "space-between",
                                     gap: "12px",
-                                    background: "var(--bg3)",
                                     padding: "12px 16px",
                                     borderRadius: "var(--radius-md)",
                                     border: "1px solid var(--border)",
@@ -1373,7 +1373,9 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
                           setShowCelebration(true);
                         }}
                         className={
-                          canFinishWorkout ? "dash-primary-btn" : undefined
+                          canFinishWorkout
+                            ? "dash-primary-btn wl-finish-btn"
+                            : undefined
                         }
                         style={{
                           background: canFinishWorkout

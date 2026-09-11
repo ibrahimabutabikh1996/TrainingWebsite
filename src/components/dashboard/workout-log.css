@@ -63,22 +63,15 @@
   padding: 20px 22px;
   border-radius: var(--radius-xl);
   border: 1px solid var(--border);
-  border-inline-start: 4px solid var(--day-accent, var(--primary));
   background: linear-gradient(to left, color-mix(in srgb, var(--day-accent, var(--primary)) 6%, var(--bg2)) 0%, var(--bg2) 85%);
   transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), opacity var(--dur) var(--ease), transform var(--dur) var(--ease);
   position: relative;
   box-shadow: var(--elev-1);
 }
 
-.wl-ex:hover {
-  border-color: color-mix(in srgb, var(--day-accent, var(--primary)) 45%, var(--border));
-  box-shadow: var(--elev-2);
-  transform: translateY(-2px);
-}
-
 .wl-ex-head {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 10px;
 }
@@ -195,6 +188,20 @@
 .wl-exercise-table td {
   padding: var(--space-3) var(--space-4);
   vertical-align: middle;
+}
+
+.wl-set-row {
+  background: var(--bg3);
+  transition: background-color var(--dur) var(--ease);
+}
+
+.wl-set-row:hover {
+  background: var(--bg4);
+}
+
+.wl-finish-btn:hover {
+  filter: brightness(1.08);
+  transform: translateY(-2px);
 }
 
 /* Column elements */
