@@ -14,6 +14,21 @@ const ACTIVITY_OPTIONS = [
   { value: "4", key: "opt_act_4" },
 ] as const;
 
+/* Arabic-Indic (٠–٩) and Eastern Arabic-Indic (۰–۹) digits, to ASCII.
+ *
+ * The phone field is `type="tel"`, which accepts any text, so a number typed on
+ * an Arabic keypad was stored exactly as written. Everything downstream reads it
+ * with `replace(/[^0-9]/g, "")` — which does not match those code points, so the
+ * whole number was erased rather than cleaned, and the profile page's WhatsApp
+ * button disappeared with it. Folded here, as it is typed, so the stored value
+ * is dialable in the first place. */
+function toEnglishDigits(text: string): string {
+  return text.replace(/[٠-٩۰-۹]/g, (d) => {
+    const code = d.charCodeAt(0);
+    return String(code - (code >= 0x06f0 ? 0x06f0 : 0x0660));
+  });
+}
+
 export function StepOneBasicInfo({ formData, update, planLocked, planNames }: StepProps) {
   /* Built from the shared list rather than written out, so the selector cannot
      fall behind the set of things a landing-page card can link to — which is
@@ -38,7 +53,7 @@ export function StepOneBasicInfo({ formData, update, planLocked, planNames }: St
         inputMode="tel"
         placeholder={t("ph_phone")}
         value={formData.phone}
-        onChange={(phone) => update({ phone })}
+        onChange={(phone) => update({ phone: toEnglishDigits(phone) })}
         required
       />
 
