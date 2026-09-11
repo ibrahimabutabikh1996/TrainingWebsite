@@ -130,24 +130,16 @@
 .dpv-meal {
   border-radius: var(--radius-xl);
   border: 1px solid var(--border);
-  border-inline-start: 4px solid var(--meal-accent, var(--border));
   background: var(--bg2);
   overflow: hidden;
   transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), opacity var(--dur) var(--ease), transform var(--dur) var(--ease);
   position: relative;
 }
 
-.dpv-meal:hover {
-  border-color: color-mix(in srgb, var(--meal-accent, var(--primary)) 45%, var(--border));
-  box-shadow: var(--elev-2);
-  transform: translateY(-2px);
-}
-
 .dpv-meal--empty {
   opacity: 0.55;
   background: transparent;
   border-style: dashed;
-  border-inline-start-style: dashed;
 }
 
 /* Minimalist Meal Header with Soft Accent Ambient Tint */
