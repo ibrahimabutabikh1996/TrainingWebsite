@@ -512,36 +512,35 @@
    page. Two literals kept in step by hand is how the last card ends up half
    behind the bar the first time either number is touched. */
 .dashboard-page {
-  --dash-nav-h: 68px;
-  --dash-nav-gap: 16px;
+  --dash-nav-h: 72px;
+  /* The bar is no longer a floating pill, so there is nothing between it and
+     the bottom of the screen. The token stays because `.dashboard-main` still
+     adds it to the room it reserves at the end of the page. */
+  --dash-nav-gap: 0px;
 }
 
 .dash-bottom-nav {
   position: fixed;
-  /* The gap is measured from the top of the home indicator, not from the
-     bottom of the glass. On a phone without one the inset is zero and this is
-     the 16px it always was. */
-  bottom: calc(var(--dash-nav-gap) + var(--safe-bottom));
-  left: 50%;
-  transform: translateX(-50%);
-  width: max-content;
-  /* `min-width: 320px` was wider than a 320px phone once the 95vw cap is
-     applied, so on the narrowest screens the pill ran edge to edge with no
-     margin at all. It now yields to the viewport, keeping a gap either side. */
-  min-width: min(320px, calc(100vw - 2 * var(--dash-nav-gap)));
-  max-width: min(95vw, calc(100vw - 2 * var(--dash-nav-gap) - var(--safe-left) - var(--safe-right)));
-  height: var(--dash-nav-h);
+  /* Full width, edge to edge, like the coach panel's bar. The strip the phone
+     reserves for its home indicator is added to the height and paid back as
+     bottom padding, so the buttons sit exactly where they did while the glass
+     still runs to the physical edge. */
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: calc(var(--dash-nav-h) + var(--safe-bottom));
   display: flex;
   flex-direction: row;
   align-items: center;
-  justify-content: center;
-  padding: 0 16px;
+  justify-content: space-between;
+  padding-top: 0;
+  padding-bottom: var(--safe-bottom);
+  padding-left: calc(16px + var(--safe-left));
+  padding-right: calc(16px + var(--safe-right));
   background: color-mix(in srgb, var(--bg2) 85%, transparent);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-pill);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15), 0 0 0 1px color-mix(in srgb, var(--primary) 10%, transparent);
+  border-top: 1px solid var(--border);
   z-index: 100;
   /* The bar holds two children now — the brand and the tab row — and the phone
      rule below has always set a gap for them. This is its desktop counterpart. */
@@ -558,7 +557,8 @@
      square this rule used to describe drew it 36px across and 14px high — a
      smear at the end of the bar. The tile keeps the tabs' height and takes the
      width the emblem needs to reach its 26px cap. */
-  width: 84px;
+  width: auto;
+  max-width: 190px;
   height: 52px;
   padding: 0 8px;
   /* The tab row beside it is `width: 100%`, which would otherwise take this
@@ -578,6 +578,17 @@
 
 .dash-collapsed-logo-tile:hover {
   border-color: var(--primary);
+}
+
+/* Two marks, one tile: the wide lockup where there is room for it, the stacked
+   one on a phone, where 190px of wordmark would be taken out of the seven
+   targets beside it. */
+.dash-logo-mobile {
+  display: none;
+}
+
+.dash-logo-desktop {
+  display: block;
 }
 
 .dash-nav-container {
@@ -655,11 +666,30 @@
 
 @media (max-width: 768px) {
   .dash-bottom-nav {
-    padding: 0 8px;
+    padding-left: calc(8px + var(--safe-left));
+    padding-right: calc(8px + var(--safe-right));
     gap: 4px;
+  }
+  /* Seven fixed boxes — the mark, five destinations and the settings button —
+     came to 368px inside a 360px bar, and a `position: fixed` row that
+     overflows takes no scrollbar with it: whatever sits past the edge is
+     simply gone. Only the destinations give ground. They are one row of the
+     same thing, so they shrink together and stay legible as a set, while the
+     two single controls at the ends keep the full target.
+     A basis rather than a width, so the links divide what is left instead of
+     insisting on 44px apiece; `min-width: 0` on both the row and its links
+     lifts the automatic minimum that would otherwise refuse the squeeze. */
+  .dash-brand-header,
+  .dash-bottom-actions {
+    flex: 0 0 auto;
   }
   .dash-nav-container {
     gap: 2px;
+    min-width: 0;
+  }
+  .dash-nav-container .dash-nav-link {
+    flex: 0 1 var(--tap-min);
+    min-width: 0;
   }
   .dash-bottom-actions {
     gap: 2px;
@@ -679,6 +709,12 @@
     height: var(--tap-min);
     padding: 0 6px;
   }
+  .dash-logo-mobile {
+    display: block;
+  }
+  .dash-logo-desktop {
+    display: none;
+  }
   .dash-nav-link .app-icon, .dash-logout-btn .app-icon {
     font-size: 22px;
   }
@@ -691,7 +727,7 @@
 @media (max-height: 500px) and (orientation: landscape) {
   .dashboard-page {
     --dash-nav-h: 56px;
-    --dash-nav-gap: 8px;
+    --dash-nav-gap: 0px;
   }
 }
 /* ─── HOME (DEFAULT TAB) OVERVIEW & STATISTICS CARDS ─── */

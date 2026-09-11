@@ -115,11 +115,11 @@ export default function DashboardPage() {
 
   /* Define the 4 tabs in exact order from Right to Left (in RTL mode) */
   const tabs: TabConfig[] = [
-    { id: "settings", label: "المزيد", icon: "settings" },
-    { id: "diet", label: "النظام الغذائي", icon: "restaurant" },
-    { id: "workout", label: "البرنامج التدريبي", icon: "fitness_center" },
     { id: "home", label: "الرئيسية", icon: "home" },
     { id: "profile", label: "الملف الشخصي", icon: "person" },
+    { id: "workout", label: "البرنامج التدريبي", icon: "fitness_center" },
+    { id: "diet", label: "النظام الغذائي", icon: "restaurant" },
+    { id: "weight", label: "سجل الأوزان", icon: "monitor_weight" },
   ];
 
   const renderProcessingCard = (tabTitle: string) => (
@@ -220,78 +220,34 @@ export default function DashboardPage() {
           aria-label="العودة للصفحة الرئيسية"
         >
           <img
-            src={optimizedSrc("/images/logo/mainLogo.png", 96)}
-            srcSet={optimizedSrcSet("/images/logo/mainLogo.png", [96, 128])}
-            sizes="84px"
+            className="dash-logo-mobile"
+            src={optimizedSrc("/images/logo/vLogo.png", 128)}
+            srcSet={optimizedSrcSet("/images/logo/vLogo.png", [96, 128])}
+            sizes="60px"
             alt="Ibrahim Abutabikh"
             decoding="async"
-            style={{ width: "100%", height: "auto", maxHeight: "26px", objectFit: "contain", display: "block" }}
+            style={{ width: "100%", height: "auto", maxHeight: "26px", objectFit: "contain" }}
+          />
+          <img
+            className="dash-logo-desktop"
+            src={optimizedSrc("/images/logo/hLogo.png", 384)}
+            srcSet={optimizedSrcSet("/images/logo/hLogo.png", [384, 640])}
+            sizes="190px"
+            alt="Ibrahim Abutabikh"
+            decoding="async"
+            style={{ width: "100%", height: "auto", maxHeight: "30px", objectFit: "contain" }}
           />
         </Link>
 
         {/* Center Nav Links */}
-        <div className="dash-nav-container" style={{ width: "100%", justifyContent: "space-around", maxWidth: "500px", margin: "0 auto" }}>
+        <div className="dash-nav-container">
           {tabs.map((tab) => {
             let isTabWaiting = false;
             if (tab.id === "workout") isTabWaiting = isWorkoutUnderReview;
             else if (tab.id === "diet") isTabWaiting = isDietUnderReview;
             else if (tab.id === "history") isTabWaiting = isHistoryUnderReview;
 
-            const isActive = activeTab === tab.id || (tab.id === "settings" && isMoreMenuOpen);
-
-            if (tab.id === "settings") {
-              return (
-                <div key={tab.id} style={{ position: "relative" }}>
-                  <button
-                    onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
-                    title={tab.label}
-                    className={`dash-nav-link ${isActive ? "active" : ""}`}
-                  >
-                    <Icon name={tab.icon} />
-                  </button>
-                  {isMoreMenuOpen && (
-                    <>
-                      <div
-                        className="dash-more-menu"
-                        /* The panel is `.custom-select-dropdown`, to the value:
-                           same border, radius, shadow, 4px of padding and 2px
-                           between rows. Every list that drops out of a control
-                           in this product is drawn the same way. */
-                        style={{
-                          position: "absolute",
-                          bottom: "100%",
-                          right: "50%",
-                          transform: "translateX(50%)",
-                          marginBottom: "12px",
-                          background: "var(--bg2)",
-                          border: "1px solid var(--border-strong)",
-                          borderRadius: "var(--radius-md)",
-                          padding: "4px",
-                          boxShadow: "var(--elev-2)",
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: "2px",
-                          minWidth: "180px",
-                          zIndex: 100,
-                          animation: "fadeUp 0.2s ease-out forwards"
-                        }}
-                      >
-                        <button onClick={() => { setActiveTab("weight"); setIsMoreMenuOpen(false); }} className="dash-more-item">
-                          <Icon name="monitor_weight" /> سجل الأوزان
-                        </button>
-                        <div style={{ height: "1px", background: "var(--border)", margin: "4px 0" }} />
-                        <Link href="/account/password" className="dash-more-item">
-                          <Icon name="lock" /> تغيير كلمة السر
-                        </Link>
-                        <button onClick={logout} className="dash-more-item danger">
-                          <Icon name="logout" /> تسجيل الخروج
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </div>
-              );
-            }
+            const isActive = activeTab === tab.id;
 
             return (
               <button
@@ -321,6 +277,52 @@ export default function DashboardPage() {
               </button>
             );
           })}
+        </div>
+
+        {/* The settings control, last in source, so in RTL it sits at the left
+            end of the bar opposite the brand — the same two anchors the coach
+            panel's bar has. */}
+        <div className="dash-bottom-actions" style={{ position: "relative" }}>
+          <button
+            onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
+            title="المزيد"
+            className={`dash-nav-link ${isMoreMenuOpen ? "active" : ""}`}
+          >
+            <Icon name="settings" />
+          </button>
+          {isMoreMenuOpen && (
+            <div
+              className="dash-more-menu"
+              /* The panel is `.custom-select-dropdown`, to the value:
+                 same border, radius, shadow, 4px of padding and 2px
+                 between rows. Every list that drops out of a control
+                 in this product is drawn the same way. */
+              style={{
+                position: "absolute",
+                bottom: "100%",
+                left: 0,
+                marginBottom: "12px",
+                background: "var(--bg2)",
+                border: "1px solid var(--border-strong)",
+                borderRadius: "var(--radius-md)",
+                padding: "4px",
+                boxShadow: "var(--elev-2)",
+                display: "flex",
+                flexDirection: "column",
+                gap: "2px",
+                minWidth: "180px",
+                zIndex: 100,
+                animation: "fadeUp 0.2s ease-out forwards"
+              }}
+            >
+              <Link href="/account/password" className="dash-more-item">
+                <Icon name="lock" /> تغيير كلمة السر
+              </Link>
+              <button onClick={logout} className="dash-more-item danger">
+                <Icon name="logout" /> تسجيل الخروج
+              </button>
+            </div>
+          )}
         </div>
       </nav>
 
