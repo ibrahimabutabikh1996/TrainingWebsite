@@ -189,7 +189,7 @@ async function loadTimeline({ profileId, planNames }: Props) {
       age: data.age || "غير محدد",
       weight: data.weight || "غير محدد",
       height: data.height || "غير محدد",
-      activity: activityLabel(data.activity, "متوسط"),
+      activity: activityLabel(data.activity, "غير محدد"),
       goal: answerLabel(data.sub_goal || data.goal, "غير محدد"),
       gender: data.gender || "male",
       allergies: answerList(data.allergies, "لا يوجد"),

@@ -234,7 +234,7 @@ export default function ExportProfileClient({
               <div style={{ fontSize: "1.1rem", color: "#050505", fontWeight: 800 }}>{height}</div>
             </div>
             <div style={{ background: "#F5F2ED", padding: "14px 18px", borderRadius: "12px", border: "1px solid rgba(0,0,0,0.05)" }}>
-              <div style={{ fontSize: "0.78rem", color: "#524F4B", fontWeight: 700 }}>النشاط اليومي</div>
+              <div style={{ fontSize: "0.78rem", color: "#524F4B", fontWeight: 700 }}>مستوى النشاط البدني</div>
               <div style={{ fontSize: "1.05rem", color: "#050505", fontWeight: 800 }}>{activity}</div>
             </div>
           </div>

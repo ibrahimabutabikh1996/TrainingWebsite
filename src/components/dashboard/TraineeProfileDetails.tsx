@@ -264,7 +264,7 @@ export function TraineeProfileDetails({ profile }: TraineeProfileDetailsProps) {
           <MetricCard label="رقم الهاتف" value={data.phone || data.mobile || "غير مسجل"} icon="phone" dir="ltr" />
           <MetricCard label="مكان السكن / الدولة" value={data.residence || "—"} icon="web" />
           <MetricCard label="الحالة المهنية / طبيعة العمل" value={data.employment || "—"} icon="badge" />
-          <MetricCard label="مستوى النشاط اليومي" value={activityLabel(data.activity || profile.activity, "—")} icon="monitoring" />
+          <MetricCard label="مستوى النشاط البدني" value={activityLabel(data.activity || profile.activity, "غير محدد")} icon="monitoring" />
         </div>
       </section>
 

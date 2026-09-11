@@ -142,7 +142,7 @@ export default async function ExportProfilePage({
   const age = data.age ? `${data.age} سنة` : "غير محدد";
   const weight = data.weight ? `${data.weight} كجم` : "غير محدد";
   const height = data.height ? `${data.height} سم` : "غير محدد";
-  const activity = activityLabel(data.activity, "نشاط يومي متوسط");
+  const activity = activityLabel(data.activity, "غير محدد");
   const allergies = answerList(data.allergies, "لا توجد أي حساسيات أو موانع غذائية مسجلة");
   const healthIssues = answerList(data.health_issues || data.injuries, "لا توجد إصابات أو مشاكل صحية (سليم)");
   const dislikedFood = answerList(data.disliked_food || data.fav_foods || data.food_preferences, "لا يوجد");
