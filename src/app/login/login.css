@@ -305,7 +305,7 @@ body::before {
    and 44px of the field answers to the thumb. Same device gate as everywhere
    else, though it would be harmless on a desktop — a mouse does not miss a
    20px icon, and this way the rule says who it is for. */
-@media (pointer: coarse), (max-width: 640px) {
+@media (pointer: coarse), (max-width: 768px) {
   .field-toggle::after {
     content: '';
     position: absolute;
@@ -471,7 +471,7 @@ body::before {
 }
 
 /* ─── RESPONSIVE ─── */
-@media (max-width: 820px) {
+@media (max-width: 992px) {
   .page { grid-template-columns: 1fr; height: auto; }
   .panel-image { height: 280px; }
   .panel-form { padding: 52px 32px; min-height: auto; overflow: visible; }
@@ -607,7 +607,7 @@ body::before {
    the whole fix, and pinch-zoom stays available because nothing had to be
    locked down to get it. Gated on the pointer, because Safari zooms whichever
    way the phone is held and a landscape phone is 667px wide or more. */
-@media (pointer: coarse), (max-width: 640px) {
+@media (pointer: coarse), (max-width: 768px) {
   .field input {
     font-size: 16px;
   }

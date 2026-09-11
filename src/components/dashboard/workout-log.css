@@ -365,10 +365,13 @@
 
 .wl-hint .app-icon { font-size: 17px; color: var(--primary-on-tint); flex-shrink: 0; }
 
-@media (max-width: 520px) {
+@media (max-width: 768px) {
   .wl-exercise-table {
     min-width: 0; /* Remove horizontal scroll */
   }
+}
+
+@media (max-width: 480px) {
   .wl-exercise-table th,
   .wl-exercise-table td {
     padding: 10px 4px; /* Compress padding */
@@ -599,7 +602,7 @@
    label still sets the width — only the height has a floor — so neither control
    changes shape, and `justify-content` keeps the text centred in the taller box
    instead of stranded at the top. */
-@media (pointer: coarse) {
+@media (pointer: coarse), (max-width: 768px) {
   .wl-mark-done,
   .wl-video-link {
     min-height: var(--tap-min);

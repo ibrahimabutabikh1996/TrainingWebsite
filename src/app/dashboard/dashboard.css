@@ -472,7 +472,7 @@
    Split by concern rather than merged: the padding and type are a width
    question, the button's floor is a finger question, and a tablet has the
    second without the first. */
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .processing-card {
     padding: var(--space-10) var(--space-5);
     margin: var(--space-3) auto;
@@ -495,7 +495,7 @@
   }
 }
 
-@media (pointer: coarse) {
+@media (pointer: coarse), (max-width: 768px) {
   .processing-btn {
     min-height: var(--tap-min);
   }
@@ -1085,7 +1085,7 @@
   height: 42px;
 }
 
-@media (pointer: coarse) {
+@media (pointer: coarse), (max-width: 768px) {
   .dash-weight-input,
   .dash-weight-save {
     height: var(--tap-min);

@@ -61,7 +61,7 @@
   padding: 4px 0;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 992px) {
   .dpv-kpi-bar {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -234,6 +234,14 @@
   text-align: start;
   font-size: var(--text-sm);
   min-width: 600px;
+}
+
+/* The 600px floor above is a desktop reading width. On a phone it is wider than
+   the screen, so the wrap scrolls sideways and the table runs past the card. */
+@media (max-width: 768px) {
+  .dpv-min-table {
+    min-width: 0;
+  }
 }
 
 .dpv-min-table th {

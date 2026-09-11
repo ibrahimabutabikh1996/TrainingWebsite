@@ -1003,7 +1003,7 @@
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .form-page {
     --field-gap: 16px;
   }
@@ -1071,7 +1071,7 @@
    the whole fix, and pinch-zoom stays available because nothing had to be
    locked down to get it. Gated on the pointer, because Safari zooms whichever
    way the phone is held and a landscape phone is 667px wide or more. */
-@media (pointer: coarse), (max-width: 640px) {
+@media (pointer: coarse), (max-width: 768px) {
   .form-page .control .form-input {
     font-size: 16px;
   }
