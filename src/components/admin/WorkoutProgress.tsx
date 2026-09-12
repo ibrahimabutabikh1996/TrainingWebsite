@@ -1,5 +1,4 @@
 import { Fragment } from "react";
-import { arabicCount, DAY } from "@/lib/arabicCount";
 import { formatDayAndDate } from "@/lib/trainingDates";
 import { Icon } from "@/components/Icon";
 import { TrainingCalendarMonth, type TrainedDay } from "@/components/dashboard/TrainingCalendarMonth";
@@ -96,13 +95,6 @@ export default function WorkoutProgress({
     set.set(r.session_date, r);
   }
 
-  const totalSessions = dates.length;
-  const totalEntries = rows.filter((r) => r.weight !== null).length;
-  const heaviest = rows.reduce<Row | null>(
-    (best, r) => (r.weight !== null && (!best || r.weight > (best.weight ?? 0)) ? r : best),
-    null
-  );
-
   /* Same container as the month record and the weigh-in chart beside it: one
      radius, one border, one background, so the three tabs of a month read as
      three of a kind. `--border-strong` because `--border` is within seven units
@@ -135,14 +127,6 @@ export default function WorkoutProgress({
       </p>
       ) : (
       <>
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 18 }}>
-        <span className="crm-tag primary-tag">{arabicCount(totalSessions, DAY)} تمرين مُسجَّل</span>
-        <span className="crm-tag">{totalEntries} وزن مُدخل</span>
-        {heaviest?.weight != null && (
-          <span className="crm-tag">أثقل وزن: {heaviest.weight} كغم — {heaviest.exercise_name}</span>
-        )}
-      </div>
-
       {/* Wide histories scroll inside their own box rather than stretching the page. */}
       <div style={{ overflowX: "auto" }}>
         <table
