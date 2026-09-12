@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { type CSSProperties, useEffect, useRef, useState } from "react";
 import { driveFileId, drivePosterUrl, getEmbedUrl, isDirectMediaUrl, safeVideoUrl } from "@/lib/videoEmbed";
 import "./VideoPlayer.css";
 
@@ -45,10 +45,12 @@ export default function VideoPlayer({
    *  "metadata" for one of many sitting in a list, where fetching every video
    *  in full is the cost the list cannot afford. */
   preload?: "auto" | "metadata";
-  /** A ceiling on the player's height. It bound when the frame took the shape
-   *  of a portrait clip; at the fixed 16/9 the frame has now it works out wider
-   *  than any container here and so never binds. Kept because it costs nothing
-   *  and is what a per-clip frame would need again. */
+  /** A ceiling on the player's height, published as `--vp-max-h` and spent by
+   *  the stylesheet as a width cap at 16/9. At that ratio it works out wider
+   *  than any container here and so never binds. The one frame that is not
+   *  16/9 — the trainee's list on a phone — deliberately ignores it and takes
+   *  the card's full width, carrying its own ceiling instead; see `.wl-video`
+   *  in workout-log.css. */
   maxHeight?: string;
 }) {
   const embedUrl = getEmbedUrl(url);
@@ -61,10 +63,9 @@ export default function VideoPlayer({
   /* Anything else was an iframe already and starts as one. */
   const [useFrame, setUseFrame] = useState(!directUrl);
   const [ready, setReady] = useState(false);
-  /* Width over height, once something has said what it is.
-     Measured but no longer read: the frame is a fixed 16/9 now — see `ratio`
-     below for why, and for why this is kept rather than torn out. */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  /* Width over height, once something has said what it is. Published as
+     `--vp-ratio` below; which viewport actually spends it is the stylesheet's
+     decision — see the note above the style. */
   const [aspect, setAspect] = useState<number | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -113,34 +114,37 @@ export default function VideoPlayer({
      renders nothing rather than an empty stage. */
   if (!embedUrl) return null;
 
-  /* 16/9, for every clip, whatever shape it was filmed in — asked for so that
-     the panel and the dashboard show one frame size rather than a different one
-     under every exercise.
+  /* Two numbers are handed to the stylesheet; neither one picks the frame.
    *
-   * This is a deliberate trade and it is worth naming, because the frame no
-   * longer follows the clip. The library is filmed on a phone and is portrait:
-   * six clips sampled from `exercises.video_url` measured 640x1138 each. A 9/16
-   * clip in a 16/9 frame is letterboxed by whoever is drawing it — Drive's
-   * viewer for a Drive file, `object-fit: contain` for a media file — so those
-   * play as a strip down the middle with the rest of the width dark. That is
-   * the cost of a uniform frame, and it is the choice being made here; the
-   * alternative, filling the width, is only reachable by cropping away about
-   * two thirds of a portrait frame.
+   * 16/9 for every clip, whatever shape it was filmed in, is still the default
+   * and still the deliberate trade: the library is filmed on a phone and is
+   * portrait — six clips sampled from `exercises.video_url` measured 640x1138
+   * each — so a uniform frame letterboxes them, Drive's viewer doing it for a
+   * Drive file and `object-fit: contain` for a media file. That buys one frame
+   * size across the panel and the dashboard, and the alternative, filling the
+   * width, is only reachable by cropping away two thirds of a portrait frame.
    *
-   * `aspect` is still measured and is deliberately not read. It costs nothing —
-   * the still it measures is requested anyway for the loading overlay — and
-   * leaving it in place keeps going back to a per-clip frame a one-line change
-   * rather than a rebuild. `max-width` still caps the height at `maxHeight`,
-   * which at this ratio is far wider than any container and so never binds. */
-  const ratio = 16 / 9;
+   * What it does not buy is a phone. There the 16/9 box is the card's width by
+   * about 150px tall, and a portrait clip inside it is a strip. So the ratio
+   * `aspect` measured is published rather than spent, and a stylesheet rule
+   * narrow enough to know which screen it is on may reach for it: the trainee's
+   * workout list does, under `.wl-video` in workout-log.css. Nothing else does,
+   * which is why the panel's previews are the size they were.
+   *
+   * These were inline `aspectRatio` and `maxWidth` — the same values the CSS
+   * now computes from the pair — and inline is exactly what no media query can
+   * override, which is why they are variables instead. */
+  const ratio = aspect ?? 16 / 9;
 
   return (
     <div
       className="vp-stage"
-      style={{
-        aspectRatio: String(ratio.toFixed(4)),
-        maxWidth: `calc(${maxHeight} * ${ratio.toFixed(4)})`,
-      }}
+      style={
+        {
+          "--vp-ratio": ratio.toFixed(4),
+          "--vp-max-h": maxHeight,
+        } as CSSProperties
+      }
     >
       {useFrame ? (
         <iframe

@@ -7,11 +7,14 @@
 .vp-stage {
   position: relative;
   width: 100%;
-  /* Both of these are still set inline — see VideoPlayer.tsx — but they no
-     longer vary: every clip is framed 16/9 now, whatever shape it was filmed
-     in, so the inline pair and the pair here say the same thing. */
+  /* 16/9 for every clip, whatever shape it was filmed in. The component no
+     longer states the frame — it publishes the clip's own ratio as
+     `--vp-ratio` and the caller's ceiling as `--vp-max-h`, and this is the
+     rule that decides to ignore the first of the two. A caller that wants the
+     clip's shape instead overrides `aspect-ratio` with `--vp-ratio`; only the
+     trainee's workout list does, and only on a phone. */
   aspect-ratio: 16 / 9;
-  max-width: calc(70vh * 1.7778);
+  max-width: calc(var(--vp-max-h, 70vh) * 1.7778);
   /* A portrait clip is narrower than whatever holds it, so it sits in the
      middle of that space rather than against one edge of it. */
   margin-inline: auto;
