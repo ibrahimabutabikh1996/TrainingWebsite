@@ -11,6 +11,41 @@ function asReps(reps: DayExercise["reps"]): string[] {
   return [String(reps)];
 }
 
+/* One colour per target muscle, so a day's muscles read as separate circles
+   instead of one run of text. The colour is picked from the sum of the name's
+   characters, not from its position in the list, so a muscle keeps the same
+   colour on every day and every page — and a muscle the coach typed by hand
+   gets one too. Each is a pale fill with its own darker ink of the same hue:
+   pale enough to sit quietly, and white text would be unreadable on it. */
+const MUSCLE_CIRCLE_COLORS = [
+  { bg: "#FEE2E2", text: "#991B1B" },
+  { bg: "#CFFAFE", text: "#155E75" },
+  { bg: "#DCFCE7", text: "#166534" },
+  { bg: "#EDE9FE", text: "#5B21B6" },
+  { bg: "#FFEDD5", text: "#9A3412" },
+  { bg: "#FAE8FF", text: "#86198F" },
+  { bg: "#FEF3C7", text: "#92400E" },
+  { bg: "#ECFCCB", text: "#3F6212" },
+];
+
+function muscleCircleColors(names: string[]): { bg: string; text: string }[] {
+  const used = new Set<number>();
+  return names.map((name) => {
+    let sum = 0;
+    for (let i = 0; i < name.length; i++) sum += name.charCodeAt(i);
+    let idx = sum % MUSCLE_CIRCLE_COLORS.length;
+    /* Two different names can sum onto the same slot — "صدر" and "بطن" do —
+       and two circles of one colour side by side is the thing this is meant to
+       avoid, so a taken slot steps to the next free one. Past eight muscles in
+       a single day the palette necessarily repeats. */
+    for (let step = 0; step < MUSCLE_CIRCLE_COLORS.length && used.has(idx); step++) {
+      idx = (idx + 1) % MUSCLE_CIRCLE_COLORS.length;
+    }
+    used.add(idx);
+    return MUSCLE_CIRCLE_COLORS[idx];
+  });
+}
+
 interface ExportWorkoutClientProps {
   title: string;
   traineeName: string;
@@ -46,7 +81,7 @@ export default function ExportWorkoutClient({
     // If the coach explicitly selected muscles in the builder, they take absolute precedence.
     if (Array.isArray(d.muscles) && d.muscles.length > 0) {
       const filtered = d.muscles.filter((m) => typeof m === "string" && m.trim() !== "" && m !== "الكل");
-      if (filtered.length > 0) return filtered.join("، ");
+      if (filtered.length > 0) return filtered;
     }
 
     const exMuscles = new Set<string>();
@@ -67,7 +102,7 @@ export default function ExportWorkoutClient({
     });
 
     const arr = Array.from(exMuscles);
-    return arr.length > 0 ? arr.join("، ") : "تمارين شاملة";
+    return arr.length > 0 ? arr : ["تمارين شاملة"];
   };
 
   const downloadPDF = async () => {
@@ -428,6 +463,7 @@ export default function ExportWorkoutClient({
           days.map((d, dayIdx) => {
             const dayTitle = d.title || `اليوم التدريبي ${dayIdx + 1}`;
             const muscles = getDayMuscles(d);
+            const muscleColors = muscleCircleColors(muscles);
             const exercises = Array.isArray(d.exercises) ? d.exercises : [];
             const dayMaxSets = Math.max(1, ...exercises.map((e) => e.sets ?? asReps(e.reps).length ?? 3), maxSetsInAll);
 
@@ -470,13 +506,15 @@ export default function ExportWorkoutClient({
                   <div style={{ flex: "1 1 auto", display: "flex", flexDirection: "column", paddingBottom: "0" }}>
                     
                     {/* Day Header Strip */}
-                    <div className="day-header-strip" style={{ background: "#f1f5f9", padding: stripPadding, borderRadius: "6px", borderLeft: "6px solid #0F4E79", borderRight: "6px solid #0F4E79", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", marginBottom: headerMarginBottom, borderTop: "1px solid #e2e8f0", borderBottom: "1px solid #e2e8f0", flexShrink: 0 }}>
-                      <div style={{ fontSize: stripFontSize, fontWeight: 800, color: "#0f172a" }}>
+                    <div className="day-header-strip" style={{ backgroundColor: "hsla(203, 83%, 23%, 1)", backgroundImage: "linear-gradient(90deg, hsla(203, 83%, 23%, 1) 0%, hsla(203, 61%, 37%, 1) 50%, hsla(203, 92%, 41%, 1) 100%)", padding: stripPadding, borderRadius: "6px", borderLeft: "6px solid #0F4E79", borderRight: "6px solid #0F4E79", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", marginBottom: headerMarginBottom, borderTop: "1px solid transparent", borderBottom: "1px solid transparent", flexShrink: 0 }}>
+                      <div style={{ fontSize: stripFontSize, fontWeight: 800, color: "#fff" }}>
                         {dayTitle}
                       </div>
-                      <div style={{ fontSize: "1.15rem", fontWeight: 800, color: "#0F4E79", display: "flex", alignItems: "center", gap: "6px" }}>
+                      <div style={{ fontSize: "1.15rem", fontWeight: 800, color: "#fff", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
                         <span></span>
-                        <span>{muscles}</span>
+                        {muscles.map((m, mIdx) => (
+                          <span key={mIdx} style={{ background: muscleColors[mIdx].bg, color: muscleColors[mIdx].text, borderRadius: "5px", padding: "2px 12px", lineHeight: 1.3, whiteSpace: "nowrap", fontSize: "0.85rem" }}>{m}</span>
+                        ))}
                       </div>
                     </div>
 
