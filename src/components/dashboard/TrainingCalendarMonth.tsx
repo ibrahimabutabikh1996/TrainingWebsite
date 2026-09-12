@@ -66,9 +66,20 @@ const monthIndex = (y: number, m: number) => y * 12 + m;
 
 interface TrainingCalendarMonthProps {
   days: TrainedDay[];
+  /* Both optional, and both left out everywhere the calendar only reports. Hand
+     in `onSelectDay` and the cells become pressable — that is the single switch;
+     without it nothing about the grid changes and it stays as inert as the note
+     at the top of this file says it is. `selectedDate` is only which cell to
+     mark, so the caller owns the choice and this keeps no state of its own. */
+  onSelectDay?: (date: string) => void;
+  selectedDate?: string | null;
 }
 
-export function TrainingCalendarMonth({ days }: TrainingCalendarMonthProps) {
+export function TrainingCalendarMonth({
+  days,
+  onSelectDay,
+  selectedDate = null,
+}: TrainingCalendarMonthProps) {
   const todayISO = todayISODate();
 
   /* Two workouts may carry the same date — nothing forbids it — so a day holds a
@@ -162,13 +173,46 @@ export function TrainingCalendarMonth({ days }: TrainingCalendarMonthProps) {
           const cellISO = `${cursor.y}-${pad(cursor.m + 1)}-${pad(dayNum)}`;
           const marks = byDate.get(cellISO) ?? [];
           const isToday = cellISO === todayISO;
+          const isSelected = cellISO === selectedDate;
 
           let cellClass = "tcal-cell";
           if (marks.length) cellClass += " is-trained";
           if (isToday) cellClass += " is-today";
 
           return (
-            <div key={cellISO} className={cellClass} title={isToday ? "اليوم" : undefined}>
+            <div
+              key={cellISO}
+              className={cellClass}
+              title={isToday ? "اليوم" : undefined}
+              role={onSelectDay ? "button" : undefined}
+              tabIndex={onSelectDay ? 0 : undefined}
+              onClick={onSelectDay ? () => onSelectDay(cellISO) : undefined}
+              onKeyDown={
+                onSelectDay
+                  ? (e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        onSelectDay(cellISO);
+                      }
+                    }
+                  : undefined
+              }
+              /* Inline rather than a class: the selected look is only ever worn
+                 where a caller made the grid pressable, and the stylesheet is
+                 shared with the trainee's card, which never is. */
+              style={
+                onSelectDay
+                  ? isSelected
+                    ? {
+                        cursor: "pointer",
+                        borderColor: "var(--primary)",
+                        background: "var(--primary-dim)",
+                        color: "var(--primary-on-tint)",
+                      }
+                    : { cursor: "pointer" }
+                  : undefined
+              }
+            >
               <span className="tcal-num">{dayNum}</span>
               {marks.length > 0 && (
                 <span className="tcal-marks">
