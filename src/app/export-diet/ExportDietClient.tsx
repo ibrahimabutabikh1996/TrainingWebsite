@@ -330,8 +330,8 @@ export default function ExportDietClient({
                   {renderHeader()}
                   <div style={{ flex: "1 1 auto", display: "flex", flexDirection: "column", paddingBottom: "0" }}>
                     
-                    <div className="day-header-strip" style={{ background: "#f1f5f9", padding: stripPadding, borderRadius: "6px", borderLeft: "6px solid #0F4E79", borderRight: "6px solid #0F4E79", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", marginBottom: headerMarginBottom, borderTop: "1px solid #e2e8f0", borderBottom: "1px solid #e2e8f0", flexShrink: 0 }}>
-                      <div style={{ fontSize: stripFontSize, fontWeight: 800, color: "#0f172a" }}>
+                    <div className="day-header-strip" style={{ backgroundColor: "hsla(173, 26%, 26%, 1)", backgroundImage: "linear-gradient(90deg, hsla(173, 26%, 26%, 1) 0%, hsla(173, 52%, 33%, 1) 50%, hsla(173, 74%, 41%, 1) 100%)", padding: stripPadding, borderRadius: "6px", borderLeft: "6px solid #0F4E79", borderRight: "6px solid #0F4E79", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", marginBottom: headerMarginBottom, borderTop: "1px solid #e2e8f0", borderBottom: "1px solid #e2e8f0", flexShrink: 0 }}>
+                      <div style={{ fontSize: stripFontSize, fontWeight: 800, color: "#fff" }}>
                         {planTitle}
                       </div>
                     </div>
