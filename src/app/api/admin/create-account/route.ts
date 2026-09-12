@@ -29,9 +29,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: credentialProblem }, { status: 400 });
     }
 
+    /* Lowercased, and only after the check above — which is what proves this is
+       a string at all, and one the pattern allows no whitespace into.
+     *
+     * Stored this way because /api/auth/login looks the name up with `findUnique`
+     * on a case-sensitive column while `isAdminUsername` compares in lower case.
+     * Without it `Ali` and `ali` are two accounts the coach cannot tell apart,
+     * and a trainee who types the other casing is refused with the sign-in
+     * screen's one deliberately unhelpful sentence. /api/admin/change-username
+     * already stores names this way; creating them differently is what let the
+     * two drift. */
+    const cleanUsername = username.toLowerCase();
+
     // Check if the username already exists
     const existingAccount = await prisma.accounts.findUnique({
-      where: { username },
+      where: { username: cleanUsername },
     });
 
     if (existingAccount) {
@@ -67,7 +79,7 @@ export async function POST(request: Request) {
     const newAccount = await prisma.$transaction(async (tx) => {
       const account = await tx.accounts.create({
         data: {
-          username,
+          username: cleanUsername,
           password: hashedPassword,
         },
       });

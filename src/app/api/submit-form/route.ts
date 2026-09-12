@@ -418,7 +418,13 @@ export async function POST(request: Request) {
         return updated;
       });
     } else {
-      const rawUsername = String(jsonData.username || "").trim();
+      /* Lowercased for the reason /api/admin/create-account and
+         /api/admin/change-username store it that way: sign-in looks the name up
+         on a case-sensitive column, so `Ali` and `ali` would be two accounts
+         nobody can tell apart and the visitor who registers one and later types
+         the other is refused without being told why. `validateSubmission` has
+         already held this to `USERNAME_PATTERN` by the time it is read here. */
+      const rawUsername = String(jsonData.username || "").trim().toLowerCase();
       const rawPassword = String(jsonData.password || "").trim();
 
       /* Checked here so the common case gets the sentence that tells the person
