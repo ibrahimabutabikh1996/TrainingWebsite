@@ -2,6 +2,7 @@ import { Fragment } from "react";
 import { arabicCount, DAY } from "@/lib/arabicCount";
 import { formatDayAndDate } from "@/lib/trainingDates";
 import { Icon } from "@/components/Icon";
+import { TrainingCalendarMonth, type TrainedDay } from "@/components/dashboard/TrainingCalendarMonth";
 
 /* Coach-side view of what the trainee actually lifted.
 
@@ -32,17 +33,28 @@ type Row = WorkoutLogRow;
 
 /**
  * @param rows  already narrowed to whatever period the caller is showing
+ * @param trainedDays  the days that period was trained on, narrowed the same
+ *                     way. They become columns too, so a day the trainee
+ *                     recorded but typed no weight into is still a column of
+ *                     dashes rather than a day that never happened.
+ * @param calendarDays  every day the trainee ever recorded — the calendar is
+ *                      theirs and navigates their whole history, so it is not
+ *                      narrowed to the period.
  * @param emptyNote  what to say when there are none — a month with no sessions
  *                   is a different statement from a trainee who never logged
  */
 export default function WorkoutProgress({
   rows,
+  trainedDays = [],
+  calendarDays = [],
   emptyNote = "لم يسجّل المشترك أي أوزان بعد. تظهر هنا الأوزان التي يدخلها أثناء التمرين.",
 }: {
   rows: Row[];
+  trainedDays?: TrainedDay[];
+  calendarDays?: TrainedDay[];
   emptyNote?: string;
 }) {
-  if (rows.length === 0) {
+  if (rows.length === 0 && calendarDays.length === 0) {
     return (
       <div className="crm-modal-section">
         <h4 className="crm-modal-section-title">
@@ -56,8 +68,16 @@ export default function WorkoutProgress({
     );
   }
 
-  /* Pivot into exercise → set → date so each row reads as a progression. */
-  const dates = [...new Set(rows.map((r) => r.session_date))];
+  /* Pivot into exercise → set → date so each row reads as a progression.
+
+     The columns are every day the period holds — the days recorded as trained
+     and the days weights were typed on — not the second list alone. A workout
+     the trainee marked done without filling a single field is a fact about the
+     month, and dropping its column made it read as a day they skipped. Sorted
+     because the two lists are merged; `YYYY-MM-DD` sorts chronologically. */
+  const dates = [
+    ...new Set([...trainedDays.map((d) => d.date), ...rows.map((r) => r.session_date)]),
+  ].sort();
   const byExercise = new Map<string, { name: string; sets: Map<number, Map<string, Row>> }>();
 
   for (const r of rows) {
@@ -99,6 +119,22 @@ export default function WorkoutProgress({
 
       <div style={{ marginTop: '24px' }}>
 
+      {/* The trainee's own calendar, exactly as their home tab draws it and just
+          as inert — it marks days and takes no choice. Capped rather than left
+          to fill the panel: a seven-column grid across a desktop-wide card
+          stops reading as a month. */}
+      {calendarDays.length > 0 && (
+      <div style={{ maxWidth: 480, marginBottom: 18 }}>
+        <TrainingCalendarMonth days={calendarDays} />
+      </div>
+      )}
+
+      {rows.length === 0 ? (
+      <p style={{ margin: 0, color: "var(--text-muted)", fontSize: "0.9rem" }}>
+        {emptyNote}
+      </p>
+      ) : (
+      <>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 18 }}>
         <span className="crm-tag primary-tag">{arabicCount(totalSessions, DAY)} تمرين مُسجَّل</span>
         <span className="crm-tag">{totalEntries} وزن مُدخل</span>
@@ -232,6 +268,8 @@ export default function WorkoutProgress({
       <p style={{ margin: "12px 0 0", fontSize: "0.78rem", color: "var(--text-muted)" }}>
         الأرقام بالكيلوغرام. ▲ تعني أن الوزن في هذه الجولة ارتفع عن أول يوم مُسجَّل.
       </p>
+      </>
+      )}
       </div>
     </details>
   );

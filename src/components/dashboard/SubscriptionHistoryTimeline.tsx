@@ -13,6 +13,7 @@ import { DEFAULT_PLAN_NAMES, type PlanNames } from "@/lib/planNames";
 import { buildSubscriptionMonths } from "@/lib/subscriptionMonths";
 import { MonthSection } from "@/components/admin/ProfileMonthlyRecord";
 import WorkoutProgress, { type WorkoutLogRow } from "@/components/admin/WorkoutProgress";
+import type { TrainedDay } from "@/components/dashboard/TrainingCalendarMonth";
 import WeightLog from "@/components/dashboard/WeightLog";
 import { confirmDialog } from "@/lib/confirmDialog";
 
@@ -39,6 +40,7 @@ interface Props {
      split per month here. Absent on any tree that does not supply it, which
      simply means no weights are shown. */
   workoutLogs?: WorkoutLogRow[];
+  trainedDays?: TrainedDay[];
   /* The coach's names for the packages. Optional with the dictionary as the
      default, because this renders inside two different trees and only the one
      with a server component above it can supply them. */
@@ -50,6 +52,7 @@ export function SubscriptionHistoryTimeline({
   planNames = DEFAULT_PLAN_NAMES,
   isAdminView = false,
   workoutLogs = [],
+  trainedDays = [],
 }: Props) {
   /* Only the subscriber's own details still open in place. The training sheet
      and the diet used to expand here too, each behind its own "view" button
@@ -468,6 +471,9 @@ export function SubscriptionHistoryTimeline({
 
           const monthWorkoutRows = workoutLogs.filter((r) =>
             withinMonth(r.session_date, item.startDate, item.endDate),
+          );
+          const monthTrainedDays = trainedDays.filter((d) =>
+            withinMonth(d.date, item.startDate, item.endDate),
           );
           const monthWeightLogs = allWeightLogs.filter((l) =>
             withinMonth(l.date, item.startDate, item.endDate),
@@ -1166,6 +1172,8 @@ export function SubscriptionHistoryTimeline({
 
                       <WorkoutProgress
                         rows={monthWorkoutRows}
+                        trainedDays={monthTrainedDays}
+                        calendarDays={trainedDays}
                         emptyNote={`لم تُسجَّل أي أوزان تمارين خلال ${item.monthName}.`}
                       />
 

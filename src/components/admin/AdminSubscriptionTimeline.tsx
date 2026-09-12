@@ -11,6 +11,7 @@ import type { Day } from "@/types/admin";
 import { SubscriptionHistoryTimeline } from "@/components/dashboard/SubscriptionHistoryTimeline";
 import { Icon } from "@/components/Icon";
 import type { WorkoutLogRow } from "@/components/admin/WorkoutProgress";
+import type { TrainedDay } from "@/components/dashboard/TrainingCalendarMonth";
 
 interface Props {
   profileId: string;
@@ -111,6 +112,42 @@ async function loadTimeline({ profileId, planNames }: Props) {
       console.error("Failed to load workout logs:", error);
     }
 
+    /* The days the trainee recorded a workout on — the same read the calendar
+       on their own dashboard makes through `?view=dates`, made here because the
+       coach's timeline is a client component and this page is already a server
+       one behind `requireAdminPage`. They draw the calendar in the progress
+       section, and they give that section a column per training day: a day
+       marked done with no weight typed into it is not a day that never
+       happened. Failure is logged and left empty, as above. */
+    let trainedDays: TrainedDay[] = [];
+    try {
+      const sessions = await prisma.training_sessions.findMany({
+        where: {
+          performed_on: { not: null },
+          training_cycles: { profile_id: profile.id },
+        },
+        orderBy: { performed_on: "asc" },
+        select: {
+          day_number: true,
+          performed_on: true,
+          training_cycles: { select: { cycle_number: true } },
+        },
+      });
+      trainedDays = sessions.flatMap((s) =>
+        s.performed_on
+          ? [
+              {
+                date: toISODate(s.performed_on),
+                day_number: s.day_number,
+                cycle_number: s.training_cycles.cycle_number,
+              },
+            ]
+          : []
+      );
+    } catch (error) {
+      console.error("Failed to load trained days:", error);
+    }
+
     const months = buildSubscriptionMonths(data, profile.created_at);
 
     const deletedMonths = Array.isArray(data.deleted_months) ? (data.deleted_months as number[]) : [];
@@ -201,7 +238,7 @@ async function loadTimeline({ profileId, planNames }: Props) {
       monthlyHistory,
     } as unknown as UserProfile;
 
-    return { mockProfile, monthCount: monthlyHistory.length, workoutLogs };
+    return { mockProfile, monthCount: monthlyHistory.length, workoutLogs, trainedDays };
   } catch (err) {
     console.error("Failed to load the admin subscription timeline:", err);
     return null;
@@ -212,7 +249,7 @@ export default async function AdminSubscriptionTimeline({ profileId, planNames }
   const loaded = await loadTimeline({ profileId, planNames });
   if (!loaded) return null;
 
-  const { mockProfile, monthCount, workoutLogs } = loaded;
+  const { mockProfile, monthCount, workoutLogs, trainedDays } = loaded;
 
   return (
     <details
@@ -256,6 +293,7 @@ export default async function AdminSubscriptionTimeline({ profileId, planNames }
           isAdminView={true}
           planNames={planNames}
           workoutLogs={workoutLogs}
+          trainedDays={trainedDays}
         />
       </div>
     </details>

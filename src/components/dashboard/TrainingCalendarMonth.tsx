@@ -14,6 +14,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Icon } from "@/components/Icon";
 import { fromISODate, todayISODate } from "@/lib/trainingDates";
+import "./training-calendar.css";
 
 /** One day the trainee has marked as trained. */
 export interface TrainedDay {
