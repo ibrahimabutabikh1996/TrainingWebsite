@@ -187,6 +187,7 @@ export default function ExportDietClient({
         }
 
         .table-grid th {
+          background: #D4E5E6;
           color: #0F4E79;
           font-weight: 800;
           font-size: 4.1mm;
