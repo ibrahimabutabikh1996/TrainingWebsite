@@ -131,6 +131,30 @@
   color: var(--text-muted);
 }
 
+/* The set count and the rest window, stacked at the end of the head. A column
+   rather than a row because the head's other side is the exercise name, which
+   is the part that should have the width. */
+.wl-ex-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.wl-ex-rest {
+  /* The phone's copy of the rest window. On a desktop the set row has the
+     room to carry it, and does — `.wl-set-rest` below — so this one is shown
+     only where the row cannot. */
+  display: none;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--primary-on-tint);
+  white-space: nowrap;
+}
+
 /* ─── Premium Exercise Sets Table ─── */
 /* Shares the recipe used by .co-minimal-table in the admin area. */
 .wl-table-wrap {
@@ -190,13 +214,46 @@
   vertical-align: middle;
 }
 
+/* Everything above the background here, and the two rules under the hover,
+   were `style={{...}}` on their elements until the row had to become one line
+   on a phone — which is not something an inline declaration can be asked for,
+   the same reason given above `.wl-mark-done` further down. The values are the
+   ones that were inline, so a desktop sees the row it saw before. */
 .wl-set-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
   background: var(--bg3);
   transition: background-color var(--dur) var(--ease);
 }
 
 .wl-set-row:hover {
   background: var(--bg4);
+}
+
+/* The row's two halves: badge and reps at the start, weight and save state at
+   the end. */
+.wl-set-main,
+.wl-set-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.wl-set-status {
+  width: 90px;
+  text-align: end;
+}
+
+.wl-set-rest {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--primary);
 }
 
 .wl-finish-btn:hover {
@@ -388,6 +445,92 @@
     width: 100%;
     min-width: 100px;
     max-width: 120px;
+  }
+}
+
+/* ─── One set, one line ─────────────────────────────────────────────────────
+   The row is a badge, a rep count, a rest window, a weight field and a save
+   state, and on a phone those five were wrapping into two lines. The rest
+   window is the one that gives way here — it is a single value per exercise
+   printed once per set, so this query hides it and shows the head's copy
+   instead — which leaves four items that fit across about 270px once the gaps
+   and the padding come down to a phone's scale.
+
+   600px rather than the 480px above because the row is tightest just under the
+   tablet breakpoint, where the page's gutter has already narrowed but nothing
+   else has. The weight field is restated here on purpose: it is the one item
+   that may give up width, so the width capped above becomes a starting width
+   and a floor, and a 320px screen fits by shrinking the field rather than by
+   pushing the row onto a second line. Everything else holds its size. */
+@media (max-width: 600px) {
+  .wl-set-row {
+    gap: 6px;
+    padding: 8px 10px;
+  }
+
+  /* The start half holds its size: it is a badge and a rep count, both as
+     small as they go. What gives instead is the weight field at the other
+     end — see `.wl-weight-input-wrap` below. */
+  .wl-set-main {
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  /* `min-width: 0` is what lets that shrink actually happen: a flex item's
+     floor is its min-content otherwise, and the field would refuse to narrow
+     past its own. */
+  .wl-set-actions {
+    gap: 6px;
+    min-width: 0;
+  }
+
+  /* The row never wrapped — the text inside it did. `.wl-reps-text` is a flex
+     container over one text node, so its min-content is the width of the word
+     "تكرار" alone; once the row ran out of width the text broke at the space
+     and the row became two lines tall. This is the line that keeps it one. */
+  .wl-reps-text {
+    white-space: nowrap;
+    font-size: var(--text-sm);
+  }
+
+  /* The rest window is the fifth item the row has no width for, and it is one
+     value per exercise rather than per set — so here it is shown once in the
+     head instead. */
+  .wl-set-rest {
+    display: none;
+  }
+
+  .wl-ex-rest {
+    display: inline-flex;
+  }
+
+  .wl-set-main > *,
+  .wl-readonly-badge {
+    flex-shrink: 0;
+  }
+
+  /* The fixed 90px column was there to keep four rows' save states aligned
+     under one another; at this width the space it reserves is space the row
+     does not have, and the states are the same width as each other anyway. */
+  .wl-set-status {
+    width: auto;
+  }
+
+  .wl-weight-input-wrap {
+    width: 96px;
+    min-width: 56px;
+    max-width: none;
+    flex-shrink: 1;
+  }
+
+  .wl-weight-input-wrap input {
+    padding: 8px 4px;
+    font-size: var(--text-sm);
+  }
+
+  .wl-weight-input-wrap .unit {
+    padding: 8px 8px;
+    font-size: var(--text-xs);
   }
 }
 

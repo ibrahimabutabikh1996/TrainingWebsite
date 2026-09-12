@@ -995,11 +995,29 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
                                 </button>
                               )}
                             </div>
-                            <span className="wl-ex-sets">{setCount} سيت</span>
+                            <div className="wl-ex-meta">
+                              <span className="wl-ex-sets">{setCount} سيت</span>
+                              {/* The phone's rest window. The set row carries
+                                  it on a desktop and still does; on a phone
+                                  four copies of the same "60-90 sec" are what
+                                  pushed each row onto a second line, so the
+                                  stylesheet hides the row's copy there and
+                                  shows this one instead. */}
+                              <span className="wl-ex-rest">
+                                <Icon
+                                  name="schedule"
+                                  style={{ fontSize: "14px" }}
+                                />
+                                <span style={{ direction: "ltr" }}>
+                                  {formatRestShorthand(ex)}
+                                </span>
+                              </span>
+                            </div>
                           </div>
 
                           {ex.video_url && (
                             <div
+                              className="wl-video"
                               style={{
                                 marginTop: "16px",
                                 marginBottom: "16px",
@@ -1074,42 +1092,15 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
                               const value = saved[k];
 
                               return (
-                                <div
-                                  key={i}
-                                  className="wl-set-row"
-                                  style={{
-                                    display: "flex",
-                                    flexWrap: "wrap",
-                                    alignItems: "center",
-                                    justifyContent: "space-between",
-                                    gap: "12px",
-                                    padding: "12px 16px",
-                                    borderRadius: "var(--radius-md)",
-                                    border: "1px solid var(--border)",
-                                  }}
-                                >
-                                  <div
-                                    style={{
-                                      display: "flex",
-                                      alignItems: "center",
-                                      gap: "16px",
-                                      flexWrap: "wrap",
-                                    }}
-                                  >
+                                <div key={i} className="wl-set-row">
+                                  <div className="wl-set-main">
                                     <span className="wl-set-badge">
                                       السيت {i + 1}
                                     </span>
                                     <span className="wl-reps-text">
                                       {targetReps} تكرار
                                     </span>
-                                    <span
-                                      style={{
-                                        display: "inline-flex",
-                                        alignItems: "center",
-                                        gap: "6px",
-                                        color: "var(--primary)",
-                                      }}
-                                    >
+                                    <span className="wl-set-rest">
                                       <Icon
                                         name="schedule"
                                         style={{ fontSize: "16px" }}
@@ -1125,13 +1116,7 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
                                       </span>
                                     </span>
                                   </div>
-                                  <div
-                                    style={{
-                                      display: "flex",
-                                      alignItems: "center",
-                                      gap: "16px",
-                                    }}
-                                  >
+                                  <div className="wl-set-actions">
                                     {isSessionEditable ? (
                                       <div className="wl-weight-input-wrap">
                                         <input
@@ -1183,12 +1168,7 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
                                       </span>
                                     )}
 
-                                    <div
-                                      style={{
-                                        width: "90px",
-                                        textAlign: "end",
-                                      }}
-                                    >
+                                    <div className="wl-set-status">
                                       <span
                                         className="wl-status"
                                         data-state={
