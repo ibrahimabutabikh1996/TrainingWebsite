@@ -446,6 +446,13 @@
     min-width: 100px;
     max-width: 120px;
   }
+
+  /* The card's 22px side padding is 44px the set row does not have at this
+     width — it was never narrowed for a phone. The 20px this gives back is
+     what keeps the row on one line at 320px. */
+  .wl-ex {
+    padding: 16px 12px;
+  }
 }
 
 /* ─── One set, one line ─────────────────────────────────────────────────────
@@ -560,6 +567,21 @@
     height: 200%;
     transform: translate(-50%, -50%) scale(0.5);
     transform-origin: center;
+  }
+}
+
+/* المعامل أعلاه يعطي Drive نافذة = ضعف عرض المربع، وهذا عند 390px يعني
+   ~628px — كافٍ ليرتّب صفحته كما على الحاسوب. عند 320px يهبط إلى ~530px،
+   فيعود احتمال القصّ الذي عولج أصلاً. هنا يرتفع المضاعف إلى 2.5 وينزل
+   التصغير إلى 0.4 — حاصلهما واحد، فالإطار يبقى بمقاس المربع بالضبط،
+   والنافذة تصير ~660px مع العرض الذي كسبته البطاقة من حشوتها أعلاه.
+   الكلفة: واجهة Drive تُرسم أصغر على هذه الشاشات — وأزرار أصغر أهون
+   من فيديو مقصوص. المربع نفسه لم يُمسّ هنا أيضاً. */
+@media (max-width: 400px) {
+  .wl-video .vp-media {
+    width: 250%;
+    height: 250%;
+    transform: translate(-50%, -50%) scale(0.4);
   }
 }
 
