@@ -467,9 +467,6 @@ export default function AccountManager({ profileId, existingAccount: initialAcco
                   }}
                 />
               </div>
-              <p style={{ margin: "8px 0 0", fontSize: "0.82rem", color: "var(--warning-text)", fontWeight: 600 }}>
-                تنبيه: سيتم تسجيل خروج المشترك فوراً، وعليه الدخول بالاسم الجديد.
-              </p>
             </div>
             <div style={{ display: "flex", gap: "10px" }}>
               <button
@@ -492,6 +489,13 @@ export default function AccountManager({ profileId, existingAccount: initialAcco
                 {isUsernameLoading ? "جاري الحفظ..." : "حفظ اسم المستخدم"}
               </button>
             </div>
+            {/* Its own line, so the row above stays two items aligned on one
+                baseline. Inside the field's column it made that column taller
+                than the buttons', and `flex-end` then levelled the buttons with
+                the bottom of this sentence instead of the input. */}
+            <p style={{ flexBasis: "100%", margin: 0, fontSize: "0.82rem", color: "var(--warning-text)", fontWeight: 600 }}>
+              تنبيه: سيتم تسجيل خروج المشترك فوراً، وعليه الدخول بالاسم الجديد.
+            </p>
           </form>
         )}
 
