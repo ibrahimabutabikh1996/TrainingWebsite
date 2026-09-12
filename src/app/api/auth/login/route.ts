@@ -43,7 +43,7 @@ export async function POST(request: Request) {
        name that could never match: every attempt failed whatever the password
        was, under a counter key of its own that a later success never cleared. */
     const address = clientAddress(request);
-    const cleanUsername = String(username).trim();
+    const cleanUsername = String(username).trim().toLowerCase();
     const userKey = `user:${cleanUsername.toLowerCase().slice(0, 64)}`;
     const ipKey = `ip:${address}`;
 
