@@ -315,6 +315,7 @@ export default function ExportWorkoutClient({
         /* Headings stay on one line so the head row matches the data rows' height;
            only cell content is allowed to break mid-word when it has to. */
         .table-grid th {
+          background: rgba(10, 70, 107, 0.10);
           color: #0F4E79;
           font-weight: 800;
           font-size: 4.1mm;
