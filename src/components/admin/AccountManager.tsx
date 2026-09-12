@@ -45,6 +45,10 @@ export default function AccountManager({ profileId, existingAccount: initialAcco
   const [isPasswordLoading, setIsPasswordLoading] = useState(false);
   const [isSuspendLoading, setIsSuspendLoading] = useState(false);
 
+  const [isChangingUsername, setIsChangingUsername] = useState(false);
+  const [nextUsername, setNextUsername] = useState("");
+  const [isUsernameLoading, setIsUsernameLoading] = useState(false);
+
   const handleToggleSuspend = async () => {
     if (!(await confirmDialog(isSuspended ? "هل أنت متأكد من تفعيل الحساب؟" : "هل أنت متأكد من تعطيل الحساب؟"))) return;
     setIsSuspendLoading(true);
@@ -93,6 +97,42 @@ export default function AccountManager({ profileId, existingAccount: initialAcco
       toast.error("حدث خطأ في الاتصال بالخادم");
     } finally {
       setIsPasswordLoading(false);
+    }
+  };
+
+  const handleChangeUsername = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!nextUsername) {
+      toast.error("يرجى إدخال اسم المستخدم الجديد");
+      return;
+    }
+    /* Said plainly before it happens, because it is the part the coach cannot
+       see: the server disowns the trainee's token, so they are signed out
+       wherever they are and have to come back with the new name. */
+    if (!(await confirmDialog("سيتم تسجيل خروج المشترك من جميع أجهزته وسيحتاج للدخول بالاسم الجديد. هل أنت متأكد؟"))) return;
+    setIsUsernameLoading(true);
+    try {
+      const res = await fetch("/api/admin/change-username", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ profileId, newUsername: nextUsername }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        /* The stored name comes back from the server rather than being assumed
+           from the field: it is trimmed and lowercased there, and the card has
+           to show what was actually written. */
+        setAccount((prev) => (prev ? { ...prev, username: data.username } : prev));
+        toast.success("تم تغيير اسم المستخدم بنجاح");
+        setIsChangingUsername(false);
+        setNextUsername("");
+      } else {
+        toast.error(data.error || "حدث خطأ");
+      }
+    } catch {
+      toast.error("حدث خطأ في الاتصال بالخادم");
+    } finally {
+      setIsUsernameLoading(false);
     }
   };
   
@@ -259,6 +299,23 @@ export default function AccountManager({ profileId, existingAccount: initialAcco
               <span>تغيير كلمة المرور</span>
             </button>
             <button
+              onClick={() => setIsChangingUsername(!isChangingUsername)}
+              className="crm-btn-secondary"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+                padding: "10px 18px",
+                fontSize: "0.92rem",
+                fontWeight: 600,
+                borderRadius: "var(--radius-md)",
+                background: isChangingUsername ? "var(--bg3)" : "transparent",
+              }}
+            >
+              <Icon name="badge" style={{ fontSize: "18px", color: "var(--primary)" }} />
+              <span>تغيير اسم المستخدم</span>
+            </button>
+            <button
               onClick={handleToggleSuspend}
               disabled={isSuspendLoading}
               className="crm-btn-secondary"
@@ -350,6 +407,89 @@ export default function AccountManager({ profileId, existingAccount: initialAcco
                 style={{ padding: "12px 28px", borderRadius: "var(--radius-md)", fontWeight: 700, height: "fit-content" }}
               >
                 {isPasswordLoading ? "جاري الحفظ..." : "حفظ كلمة المرور"}
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* Change Username Form Drawer */}
+        {isChangingUsername && (
+          <form
+            onSubmit={handleChangeUsername}
+            style={{
+              background: "var(--bg3)",
+              padding: "20px 24px",
+              borderRadius: "var(--radius-lg)",
+              border: "1px solid var(--border)",
+              display: "flex",
+              gap: "16px",
+              alignItems: "flex-end",
+              flexWrap: "wrap",
+            }}
+          >
+            <div style={{ flex: "1 1 280px" }}>
+              <label style={{ display: "block", marginBottom: "8px", fontSize: "0.9rem", fontWeight: 700, color: "var(--text)" }}>
+                اسم المستخدم الجديد للمشترك ({account.username})
+              </label>
+              <div style={{ position: "relative" }}>
+                <input
+                  type="text"
+                  value={nextUsername}
+                  /* Lowercased as it is typed, not only on the server: the coach
+                     has to see the name that will actually be stored, or they
+                     dictate one casing over the phone and the account carries
+                     another. */
+                  onChange={(e) => setNextUsername(e.target.value.trim().toLowerCase())}
+                  placeholder="حروف إنجليزية أو أرقام أو . _ - (3 إلى 32 خانة)"
+                  style={{
+                    width: "100%",
+                    padding: "12px 16px",
+                    paddingInlineEnd: "40px",
+                    borderRadius: "var(--radius-md)",
+                    border: "1px solid var(--border)",
+                    background: "var(--bg2)",
+                    color: "var(--text)",
+                    fontSize: "0.95rem",
+                  }}
+                  required
+                  minLength={3}
+                  maxLength={32}
+                />
+                <Icon
+                  name="badge"
+                  style={{
+                    position: "absolute",
+                    top: "50%",
+                    left: "14px",
+                    transform: "translateY(-50%)",
+                    color: "var(--text-muted)",
+                    pointerEvents: "none",
+                  }}
+                />
+              </div>
+              <p style={{ margin: "8px 0 0", fontSize: "0.82rem", color: "var(--warning-text)", fontWeight: 600 }}>
+                تنبيه: سيتم تسجيل خروج المشترك فوراً، وعليه الدخول بالاسم الجديد.
+              </p>
+            </div>
+            <div style={{ display: "flex", gap: "10px" }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsChangingUsername(false);
+                  setNextUsername("");
+                }}
+                className="crm-btn-secondary"
+                style={{ padding: "12px 20px", borderRadius: "var(--radius-md)", height: "fit-content" }}
+              >
+                إلغاء
+              </button>
+              <button
+                type="submit"
+                disabled={isUsernameLoading}
+                className="crm-btn-primary"
+                style={{ padding: "12px 28px", borderRadius: "var(--radius-md)", fontWeight: 700, height: "fit-content" }}
+              >
+                {isUsernameLoading ? "جاري الحفظ..." : "حفظ اسم المستخدم"}
               </button>
             </div>
           </form>

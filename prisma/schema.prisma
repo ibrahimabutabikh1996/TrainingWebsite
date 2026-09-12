@@ -501,9 +501,11 @@ model accounts {
   id       String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   username String @unique
   password String
-  /// When the password was last deliberately changed. A session token issued
-  /// before this is refused — see `sessionRefusal` in @/lib/authGuard. Null on
-  /// accounts whose password has not changed since the column existed.
+  /// When this account's credentials were last deliberately changed: the password,
+  /// or the username through /api/admin/change-username — a rename disowns the
+  /// token too, since the token carries the name. A session token issued before
+  /// this is refused — see `sessionRefusal` in @/lib/authGuard. Null on accounts
+  /// unchanged since the column existed; the name predates the rename endpoint.
   password_changed_at DateTime?         @db.Timestamptz(6)
   created_at          DateTime?         @default(now()) @db.Timestamptz(6)
   courses             courses[]
