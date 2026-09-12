@@ -109,17 +109,26 @@ export default function WorkoutProgress({
         <Icon name="expand_more" className="accordion-icon" style={{ color: 'var(--text-muted)' }} />
       </summary>
 
-      <div style={{ marginTop: '24px' }}>
+      {/* Calendar and log side by side, each in its own outlined panel — the two
+          were stacked and ran into one another with nothing to say where one
+          ended. The row is RTL, so the calendar sits on the right by being first
+          in the source; no `left`/`right` anywhere. It wraps on its own once the
+          two bases no longer fit, which is the narrow layout. */}
+      <div style={{ marginTop: '24px', display: 'flex', alignItems: 'flex-start', gap: 'var(--space-5)', flexWrap: 'wrap' }}>
 
       {/* The trainee's own calendar, exactly as their home tab draws it and just
-          as inert — it marks days and takes no choice. Capped rather than left
-          to fill the panel: a seven-column grid across a desktop-wide card
+          as inert — it marks days and takes no choice. Fixed at a width that
+          holds seven columns: a seven-column grid across a desktop-wide card
           stops reading as a month. */}
       {calendarDays.length > 0 && (
-      <div style={{ maxWidth: 480, marginBottom: 18 }}>
+      <div style={{ flex: '0 0 400px', maxWidth: '100%', padding: 'var(--space-4)', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-lg)' }}>
         <TrainingCalendarMonth days={calendarDays} />
       </div>
       )}
+
+      {/* `min-width: 0` or the table's own min-content width becomes the flex
+          item's floor and the overflow box below never scrolls. */}
+      <div style={{ flex: '1 1 420px', minWidth: 0, padding: 'var(--space-4)', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-lg)' }}>
 
       {rows.length === 0 ? (
       <p style={{ margin: 0, color: "var(--text-muted)", fontSize: "0.9rem" }}>
@@ -254,6 +263,7 @@ export default function WorkoutProgress({
       </p>
       </>
       )}
+      </div>
       </div>
     </details>
   );
