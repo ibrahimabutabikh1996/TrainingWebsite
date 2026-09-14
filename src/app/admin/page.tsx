@@ -16,7 +16,7 @@ export const dynamic = "force-dynamic";
  * of the body photographs, every measurement — and `history`, which holds a full
  * copy of all of the above for each month the trainee has renewed. All of it was
  * being serialised into the page for every subscriber at once, to render a table
- * that reads seven keys.
+ * that reads nine keys.
  *
  * That is a payload that grows with each renewal of each trainee, and it puts a
  * person's health answers into the HTML of a page that is merely listing names.
@@ -82,13 +82,13 @@ export default async function AdminDashboardPage() {
   }> = [];
 
   try {
-    /* The eight keys are picked in Postgres, not here.
+    /* The nine keys are picked in Postgres, not here.
      *
      * `select: { data: true }` reads the whole intake record for every
      * subscriber — every measurement, every injury, and `history`, which holds a
      * full copy of all of it for each month the trainee has renewed. That is a
      * transfer that grows with each renewal of each person, spent on a table
-     * that draws eight fields. Filtering it in JavaScript, as this did, only
+     * that draws nine fields. Filtering it in JavaScript, as this did, only
      * moves the cost: the rows have already crossed the wire by then.
      *
      * Prisma cannot select part of a JSON column, so this is raw. It stays one
@@ -102,7 +102,7 @@ export default async function AdminDashboardPage() {
      * `readBlob` does. So object rows take the fast path and anything else is
      * handed back untouched, exactly as it arrives today, for `listFieldsOnly`
      * to deal with. The odd row costs what it always cost; every ordinary one
-     * now costs eight keys. */
+     * now costs nine keys. */
     profiles = await prisma.$queryRaw<typeof profiles>`
       SELECT
         p.id,
