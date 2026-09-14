@@ -1185,3 +1185,15 @@ details[open].crm-modal-section > summary .accordion-icon {
     min-height: var(--tap-min);
   }
 }
+
+/* A row in the plan-update alerts. It opens the trainee, so it answers the
+   pointer — at its edge and fill only, since it sits in a list. */
+.crm-alert-row {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  transition: border-color var(--dur) var(--ease), background-color var(--dur) var(--ease);
+}
+.crm-alert-row:hover {
+  background: var(--bg3);
+  border-color: var(--border-primary);
+}

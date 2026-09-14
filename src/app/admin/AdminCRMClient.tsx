@@ -335,7 +335,8 @@ export default function AdminCRMClient({
                           }
                         }}
                         aria-label={`فتح ملف ${n.name}`}
-                        style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--bg)", padding: "12px 16px", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", cursor: "pointer" }}
+                        className="crm-alert-row"
+                        style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", borderRadius: "var(--radius-md)", cursor: "pointer" }}
                       >
                         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                           <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "var(--warning)", flexShrink: 0 }} />
