@@ -234,7 +234,7 @@ export default function AdminCRMClient({
     const dietDue = data.plan_type !== 'training' && dietCycles > 0 && !(p.diet_updated_at && new Date(p.diet_updated_at).getTime() >= dietDueAt);
     const workoutDue = data.plan_type !== 'diet' && workoutCycles > 0 && !(p.course_assigned_at && new Date(p.course_assigned_at).getTime() >= workoutDueAt);
     
-    if (dietDue || workoutDue) {
+    if (!p.is_suspended && (dietDue || workoutDue)) {
       const msgs = [];
       if (dietDue) msgs.push(`النظام الغذائي`);
       if (workoutDue) msgs.push(`النظام التدريبي`);
