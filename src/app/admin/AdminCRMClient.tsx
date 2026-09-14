@@ -225,7 +225,8 @@ export default function AdminCRMClient({
     const diffTime = now - new Date(data.activation_date || p.created_at).getTime();
     const daysSinceStart = Math.floor(diffTime / (1000 * 60 * 60 * 24));
     
-    // Check if they need updates based on multiples of 30 and 60 days
+    // Due at the latest 30-day (diet) / 60-day (workout) mark, and cleared once that plan is saved on or after it.
+    // Only the half of the plan the trainee subscribed to counts, and suspended trainees are left out.
     const dietCycles = Math.floor(daysSinceStart / 30);
     const workoutCycles = Math.floor(daysSinceStart / 60);
     const startTime = now - diffTime;
