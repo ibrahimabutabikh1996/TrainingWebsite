@@ -231,8 +231,8 @@ export default function AdminCRMClient({
     const startTime = now - diffTime;
     const dietDueAt = startTime + dietCycles * 30 * (1000 * 60 * 60 * 24);
     const workoutDueAt = startTime + workoutCycles * 60 * (1000 * 60 * 60 * 24);
-    const dietDue = dietCycles > 0 && !(p.diet_updated_at && new Date(p.diet_updated_at).getTime() >= dietDueAt);
-    const workoutDue = workoutCycles > 0 && !(p.course_assigned_at && new Date(p.course_assigned_at).getTime() >= workoutDueAt);
+    const dietDue = data.plan_type !== 'training' && dietCycles > 0 && !(p.diet_updated_at && new Date(p.diet_updated_at).getTime() >= dietDueAt);
+    const workoutDue = data.plan_type !== 'diet' && workoutCycles > 0 && !(p.course_assigned_at && new Date(p.course_assigned_at).getTime() >= workoutDueAt);
     
     if (dietDue || workoutDue) {
       const msgs = [];
