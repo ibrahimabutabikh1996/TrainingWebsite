@@ -322,7 +322,21 @@ export default function AdminCRMClient({
                     <p style={{ textAlign: "center", color: "var(--text-muted)", margin: "20px 0" }}>لا توجد تنبيهات حالياً.</p>
                   ) : (
                     updateNotifications.map((n, idx) => (
-                      <div key={`${n.id}-${idx}`} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--bg)", padding: "12px 16px", borderRadius: "var(--radius-md)", border: "1px solid var(--border)" }}>
+                      <div
+                        key={`${n.id}-${idx}`}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => { const profile = profiles.find(p => p.id === n.id); if (profile) handleSelectProfile(profile); }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            const profile = profiles.find(p => p.id === n.id);
+                            if (profile) handleSelectProfile(profile);
+                          }
+                        }}
+                        aria-label={`فتح ملف ${n.name}`}
+                        style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--bg)", padding: "12px 16px", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", cursor: "pointer" }}
+                      >
                         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                           <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "var(--warning)", flexShrink: 0 }} />
                           <strong style={{ color: "var(--text)", fontSize: "0.95rem" }}>{n.name}</strong>
