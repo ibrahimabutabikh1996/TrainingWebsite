@@ -77,6 +77,8 @@ export default async function AdminDashboardPage() {
     created_at: Date;
     data: unknown;
     is_suspended: boolean;
+    diet_updated_at: Date | null;
+    course_assigned_at: Date | null;
   }> = [];
 
   try {
@@ -107,6 +109,8 @@ export default async function AdminDashboardPage() {
         COALESCE(a.username, p.username) AS username,
         p.created_at,
         p.is_suspended,
+        (SELECT max(d.updated_at) FROM public.diet_plans d WHERE d.profile_id = p.id) AS diet_updated_at,
+        (SELECT max(c.assigned_at) FROM public.client_courses c WHERE c.client_id = p.id) AS course_assigned_at,
         CASE
           WHEN jsonb_typeof(p.data) = 'object' THEN COALESCE(
             (
@@ -139,6 +143,8 @@ export default async function AdminDashboardPage() {
     data: listFieldsOnly(p.data),
     // Authoritative flag, from the column rather than the JSON blob.
     is_suspended: p.is_suspended,
+    diet_updated_at: p.diet_updated_at ? p.diet_updated_at.toISOString() : null,
+    course_assigned_at: p.course_assigned_at ? p.course_assigned_at.toISOString() : null,
   }));
 
   /* The packages as the coach named them, so the subscriber list, its filter

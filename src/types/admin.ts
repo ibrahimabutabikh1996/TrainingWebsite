@@ -4,6 +4,8 @@ export type Profile = {
   created_at: string | Date;
   /* Real column, not a key inside `data` — it gates login, so it needs a type. */
   is_suspended?: boolean;
+  diet_updated_at?: string | null;
+  course_assigned_at?: string | null;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data: any; 
 };
