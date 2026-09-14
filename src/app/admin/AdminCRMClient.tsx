@@ -157,12 +157,9 @@ export default function AdminCRMClient({
       const fullname = data.fullname || "";
       const phone = data.phone || "";
       const plan = planNameFrom(planNames, data.plan, "غير محدد");
-      const dateObj = new Date(p.created_at);
       const dateStr = formatTimestamp(data.activation_date || p.created_at);
 
-      const diffTime = Date.now() - dateObj.getTime();
-      // Using 30.44 days for an average month
-      const diffMonths = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 30.44)));
+      const diffMonths = (Array.isArray(data.renewals) ? data.renewals.length : 0) + 1;
 
       return [
         csvCell(p.username),

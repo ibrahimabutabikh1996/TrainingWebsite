@@ -35,6 +35,7 @@ const LIST_FIELDS = [
      request that blocks a paid month is the wrong way round. */
   "renewal_pending",
   "activation_date",
+  "renewals",
 ] as const;
 
 /** The blob as it is stored, or an empty record — the column is free-form. */
