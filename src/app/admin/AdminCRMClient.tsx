@@ -231,11 +231,13 @@ export default function AdminCRMClient({
     // Check if they need updates based on multiples of 30 and 60 days
     const dietCycles = Math.floor(daysSinceStart / 30);
     const workoutCycles = Math.floor(daysSinceStart / 60);
+    const dietDue = dietCycles > 0 && daysSinceStart % 30 < 7;
+    const workoutDue = workoutCycles > 0 && daysSinceStart % 60 < 7;
     
-    if (dietCycles > 0 || workoutCycles > 0) {
+    if (dietDue || workoutDue) {
       const msgs = [];
-      if (dietCycles > 0) msgs.push(`النظام الغذائي`);
-      if (workoutCycles > 0) msgs.push(`النظام التدريبي`);
+      if (dietDue) msgs.push(`النظام الغذائي`);
+      if (workoutDue) msgs.push(`النظام التدريبي`);
       
       acc.push({
         id: p.id,
