@@ -225,7 +225,7 @@ export default function AdminCRMClient({
   // Calculate Notifications
   const updateNotifications = profiles.reduce((acc, p) => {
     const data = getProfileData(p);
-    const diffTime = now - new Date(p.created_at).getTime();
+    const diffTime = now - new Date(data.activation_date || p.created_at).getTime();
     const daysSinceStart = Math.floor(diffTime / (1000 * 60 * 60 * 24));
     
     // Check if they need updates based on multiples of 30 and 60 days
