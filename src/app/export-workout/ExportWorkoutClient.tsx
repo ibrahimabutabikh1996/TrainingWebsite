@@ -531,7 +531,7 @@ export default function ExportWorkoutClient({
                             </th>
                           ))}
                           <th style={{ width: "24mm", padding: "2mm 1mm" }}>وقت الراحة</th>
-                          <th style={{ width: "26mm", padding: "2mm 1mm" }}>رابط الفيديو</th>
+                          <th style={{ width: "14mm", padding: "2mm 1mm" }}>فيديو</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -582,11 +582,12 @@ export default function ExportWorkoutClient({
                                               target="_blank"
                                               rel="noreferrer"
                                               style={{ color: "#2563eb", textDecoration: "underline", fontWeight: 800, fontSize: linkFontSize }}
+                                              aria-label="رابط الفيديو"
                                             >
-                                              رابط الفيديو
+                                              <svg viewBox="0 0 24 24" width="1.8em" height="1.8em" style={{ verticalAlign: "middle" }} aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="4" fill="#2563eb" /><path d="M10 8.5v7l6-3.5z" fill="#fff" /></svg>
                                             </a>
                                           ) : (
-                                            <span style={{ color: "#94a3b8", fontSize: linkFontSize }}>غير متوفر</span>
+                                            <span style={{ color: "#94a3b8", fontSize: linkFontSize }}>—</span>
                                           )}
                                         </td>
                                       </tr>
@@ -665,11 +666,12 @@ export default function ExportWorkoutClient({
                                       target="_blank"
                                       rel="noreferrer"
                                       style={{ color: "#2563eb", textDecoration: "underline", fontWeight: 800, fontSize: linkFontSize }}
+                                      aria-label="رابط الفيديو"
                                     >
-                                      رابط الفيديو
+                                      <svg viewBox="0 0 24 24" width="1.8em" height="1.8em" style={{ verticalAlign: "middle" }} aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="4" fill="#2563eb" /><path d="M10 8.5v7l6-3.5z" fill="#fff" /></svg>
                                     </a>
                                   ) : (
-                                    <span style={{ color: "#94a3b8", fontSize: linkFontSize }}>غير متوفر</span>
+                                    <span style={{ color: "#94a3b8", fontSize: linkFontSize }}>—</span>
                                   )}
                                 </td>
                               </tr>
