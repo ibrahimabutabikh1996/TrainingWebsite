@@ -549,7 +549,7 @@ export default function ExportWorkoutClient({
                               const items = ex.items ?? [];
                               return (
                                 <React.Fragment key={exIdx}>
-                                  <tr style={{ height: rowHeight }}>
+                                  <tr style={{ height: rowHeight, background: "#9cbcdb" }}>
                                     <td style={{ fontWeight: 800, color: "#475569", height: rowHeight, padding: cellPad, fontSize: fontSize }}>{exIdx + 1}</td>
                                     <td colSpan={dayMaxSets + 3} style={{ textAlign: "right", fontWeight: 800, color: "#0F4E79", fontSize: titleFontSize, height: rowHeight, padding: cellPad }}>
                                       سوبر سيت
@@ -560,7 +560,7 @@ export default function ExportWorkoutClient({
                                     const itemSetCount = item.sets ?? itemReps.length ?? 3;
                                     const itemVideo = item.video_url || videoMap[item.refId || ""] || videoMap[item.name_ar || ""] || "";
                                     return (
-                                      <tr key={`${exIdx}-${itemIdx}`} style={{ height: rowHeight }}>
+                                      <tr key={`${exIdx}-${itemIdx}`} style={{ height: rowHeight, background: "#9cbcdb" }}>
                                         <td style={{ fontWeight: 800, color: "#475569", height: rowHeight, padding: cellPad, fontSize: fontSize }}>{exIdx + 1}.{itemIdx + 1}</td>
                                         <td style={{ textAlign: "right", fontWeight: 800, color: "#000", fontSize: titleFontSize, height: rowHeight, padding: cellPad }}>
                                           {item.name_ar || "تمرين غير مسمى"}
