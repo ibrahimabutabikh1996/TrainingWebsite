@@ -1883,32 +1883,6 @@ a.contact-item:hover p {
   font-size: var(--text-xs);
   color: var(--muted);
 }
-.footer-socials {
-  display: flex;
-  gap: 8px;
-}
-.footer-socials a {
-  width: 36px;
-  height: 36px;
-  border-radius: var(--radius-md);
-  background: var(--bg3);
-  border: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--muted);
-  font-size: var(--text-sm);
-  text-decoration: none;
-  transition:
-    background 0.2s,
-    color 0.2s,
-    border-color 0.2s;
-}
-.footer-socials a:hover {
-  background: var(--primary);
-  color: var(--text-inverse);
-  border-color: var(--primary);
-}
 
 /* ─── SCROLL REVEAL ─── */
 .reveal {
@@ -2463,13 +2437,6 @@ body.offers-active .nav-links a[href="#offers"]::after {
     display: block;
     padding: 11px 0;
   }
-  .footer-socials {
-    gap: 12px;
-  }
-  .footer-socials a {
-    width: 44px;
-    height: 44px;
-  }
 
   /* Centred at the foot of a narrow screen, the travelling arrow lands exactly
      on these social buttons — the last row of the page, and the one row a fixed
@@ -2616,11 +2583,6 @@ body.offers-active .nav-links a[href="#offers"]::after {
   .footer-col ul a {
     display: block;
     padding-block: 11px;
-  }
-
-  .footer-socials a {
-    width: var(--tap-min);
-    height: var(--tap-min);
   }
 
   /* The scroll cue's label is 11px caps under a 20px arrow, so the link's box
