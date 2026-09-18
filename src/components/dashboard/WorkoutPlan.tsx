@@ -1,10 +1,10 @@
 "use client";
 
 import { UserProfile } from "@/types";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { Icon } from "@/components/Icon";
-import { isCustomExercise } from "@/types/admin";
+import { isCustomExercise, isSupersetExercise } from "@/types/admin";
 import { useNow } from "@/hooks/useNow";
 import { formatDayAndDate, todayISODate } from "@/lib/trainingDates";
 import { safeVideoUrl } from "@/lib/videoEmbed";
@@ -61,6 +61,9 @@ interface PlanExercise {
   custom_col_2?: string;
   custom_col_3?: string;
   custom_col_4?: string;
+  /* A superset frame: its exercises in `items`, one rest window for all. */
+  is_superset?: boolean;
+  items?: PlanExercise[];
 }
 
 interface PlanDay {
@@ -215,7 +218,7 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
     sessId: string,
     exList: PlanExercise[],
   ): boolean => {
-    for (const ex of exList) {
+    for (const ex of exList.flatMap((e) => (isSupersetExercise(e) ? e.items ?? [] : [e]))) {
       const setCount = ex.sets ?? ex.reps?.length ?? 3;
       for (let i = 0; i < setCount; i++) {
         const k = key(sessId, ex.id, i);
@@ -842,7 +845,40 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
                         </div>
                       );
                     })()}
-                    {(template.exercises || []).map((ex) => {
+                    {(template.exercises || []).map(function renderEx(ex: PlanExercise): ReactNode {
+                      /* A superset: one frame holding its exercises, each logged
+                         like any other. The rest is taken after the last one,
+                         so the ones before it carry no rest of their own. */
+                      if (isSupersetExercise(ex)) {
+                        const items = ex.items || [];
+                        return (
+                          <div key={ex.id} className="wl-ex" style={{ marginBottom: "15px" }}>
+                            <div className="wl-ex-head">
+                              <div>
+                                <h4 className="wl-ex-name">سوبر سيت</h4>
+                              </div>
+                              <div className="wl-ex-meta">
+                                <span className="wl-ex-sets">{items.length} تمارين</span>
+                              </div>
+                            </div>
+                            {items.map((item, itemIdx) =>
+                              renderEx(
+                                itemIdx === items.length - 1
+                                  ? {
+                                      ...item,
+                                      rest_from: ex.rest_from,
+                                      rest_from_unit: ex.rest_from_unit,
+                                      rest_to: ex.rest_to,
+                                      rest_to_unit: ex.rest_to_unit,
+                                      rest_time: ex.rest_time,
+                                    }
+                                  : { ...item, rest_from: "", rest_to: "", rest_time: "بدون راحة" },
+                              ),
+                            )}
+                          </div>
+                        );
+                      }
+
                       /* A custom row is a free-text line the coach wrote: a title
                        and four columns, with no sets, reps or rest. Sending it
                        through the logging table below gave it "0 سيت" and an

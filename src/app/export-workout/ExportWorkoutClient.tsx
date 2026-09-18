@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { isCustomExercise, type Day, type DayExercise } from "@/types/admin";
+import { isCustomExercise, isSupersetExercise, type Day, type DayExercise } from "@/types/admin";
 
 /* `reps` is stored as an array, a bare string, or a number depending on which
    version of the builder wrote the row — so it is read through this rather than
@@ -157,7 +157,7 @@ export default function ExportWorkoutClient({
 
   const maxSetsInAll = Math.max(
     1,
-    ...days.flatMap((d) => (Array.isArray(d.exercises) ? d.exercises.map((e) => e.sets ?? asReps(e.reps).length ?? 3) : [3]))
+    ...days.flatMap((d) => (Array.isArray(d.exercises) ? d.exercises.flatMap((e) => (isSupersetExercise(e) ? e.items ?? [] : [e])).map((e) => e.sets ?? asReps(e.reps).length ?? 3) : [3]))
   );
 
   {/* The logo, divider rules, watermark and contact icons are all baked into
@@ -468,7 +468,7 @@ export default function ExportWorkoutClient({
             const exercises = Array.isArray(d.exercises) ? d.exercises : [];
             const dayMaxSets = Math.max(1, ...exercises.map((e) => e.sets ?? asReps(e.reps).length ?? 3), maxSetsInAll);
 
-            const count = exercises.length;
+            const count = exercises.reduce((n, e) => n + (isSupersetExercise(e) ? (e.items ?? []).length + 1 : 1), 0);
             let rowHeight = "17.5mm";
             let cellPad = "4.2mm 1.5mm";
             let fontSize = "4.4mm";
@@ -543,6 +543,59 @@ export default function ExportWorkoutClient({
                           </tr>
                         ) : (
                           exercises.map((ex, exIdx) => {
+                            /* A superset: a title row, then one row per
+                               exercise, with one rest cell spanning them. */
+                            if (isSupersetExercise(ex)) {
+                              const items = ex.items ?? [];
+                              return (
+                                <React.Fragment key={exIdx}>
+                                  <tr style={{ height: rowHeight }}>
+                                    <td style={{ fontWeight: 800, color: "#475569", height: rowHeight, padding: cellPad, fontSize: fontSize }}>{exIdx + 1}</td>
+                                    <td colSpan={dayMaxSets + 3} style={{ textAlign: "right", fontWeight: 800, color: "#0F4E79", fontSize: titleFontSize, height: rowHeight, padding: cellPad }}>
+                                      سوبر سيت
+                                    </td>
+                                  </tr>
+                                  {items.map((item, itemIdx) => {
+                                    const itemReps = asReps(item.reps);
+                                    const itemSetCount = item.sets ?? itemReps.length ?? 3;
+                                    const itemVideo = item.video_url || videoMap[item.refId || ""] || videoMap[item.name_ar || ""] || "";
+                                    return (
+                                      <tr key={`${exIdx}-${itemIdx}`} style={{ height: rowHeight }}>
+                                        <td style={{ fontWeight: 800, color: "#475569", height: rowHeight, padding: cellPad, fontSize: fontSize }}>{exIdx + 1}.{itemIdx + 1}</td>
+                                        <td style={{ textAlign: "right", fontWeight: 800, color: "#000", fontSize: titleFontSize, height: rowHeight, padding: cellPad }}>
+                                          {item.name_ar || "تمرين غير مسمى"}
+                                        </td>
+                                        {Array.from({ length: dayMaxSets }).map((_, sIdx) => (
+                                          <td key={sIdx} style={{ fontWeight: 800, color: sIdx < itemSetCount ? "#0f172a" : "#94a3b8", height: rowHeight, padding: cellPad, fontSize: fontSize }}>
+                                            {sIdx < itemSetCount ? String(itemReps[sIdx] ?? itemReps[itemReps.length - 1] ?? "10") : "—"}
+                                          </td>
+                                        ))}
+                                        {itemIdx === 0 && (
+                                          <td rowSpan={items.length} style={{ color: "#0F4E79", fontWeight: 800, direction: "ltr", padding: cellPad, fontSize: fontSize }}>
+                                            {formatRest(ex)}
+                                          </td>
+                                        )}
+                                        <td style={{ height: rowHeight, padding: cellPad }}>
+                                          {itemVideo && /^https?:\/\//i.test(itemVideo.trim()) ? (
+                                            <a
+                                              href={itemVideo.trim()}
+                                              target="_blank"
+                                              rel="noreferrer"
+                                              style={{ color: "#2563eb", textDecoration: "underline", fontWeight: 800, fontSize: linkFontSize }}
+                                            >
+                                              رابط الفيديو
+                                            </a>
+                                          ) : (
+                                            <span style={{ color: "#94a3b8", fontSize: linkFontSize }}>غير متوفر</span>
+                                          )}
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
+                                </React.Fragment>
+                              );
+                            }
+
                             /* Custom rows are a title plus four free-text
                                columns. They have no sets, reps or rest, so the
                                standard cells below printed a rep of "10", a

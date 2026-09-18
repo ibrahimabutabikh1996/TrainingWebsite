@@ -66,6 +66,10 @@ export type DayExercise = {
   custom_col_2?: string;
   custom_col_3?: string;
   custom_col_4?: string;
+  /* A superset: a frame titled "سوبر سيت" holding library exercises performed
+     back to back, with one rest window (the rest_* fields above) for all of them. */
+  is_superset?: boolean;
+  items?: DayExercise[];
 };
 
 export type Day = {
@@ -107,7 +111,12 @@ export type CourseAssignments = Record<string, string[]>;
  * for rows that never had either.
  */
 export function isCustomExercise(ex: Partial<DayExercise> | null | undefined): boolean {
-  return !!ex && (ex.is_custom === true || !ex.refId);
+  return !!ex && !ex.is_superset && (ex.is_custom === true || !ex.refId);
+}
+
+/** A superset frame — see `is_superset` on DayExercise. */
+export function isSupersetExercise(ex: Partial<DayExercise> | null | undefined): boolean {
+  return !!ex && ex.is_superset === true;
 }
 
 /** Narrows a jsonb days_data blob to the day list, tolerating legacy rows. */

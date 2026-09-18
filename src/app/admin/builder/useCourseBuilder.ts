@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Day, DayExercise, Exercise, isCustomExercise } from "@/types/admin";
+import { Day, DayExercise, Exercise, isCustomExercise, isSupersetExercise } from "@/types/admin";
 
 /* Collision-free ids. Date.now() was used before, which hands out the same id
    to two weeks/days/exercises created in the same millisecond — and since
@@ -68,6 +68,28 @@ export function normalizeDays(raw: unknown): Day[] {
             id: ex?.id || newId(),
             name_ar: ex?.name_ar || "",
           };
+          /* A superset keeps one rest window for the whole frame; its items
+             carry sets and reps only. */
+          if (isSupersetExercise(ex)) {
+            return {
+              ...base,
+              name_ar: "سوبر سيت",
+              rest_from: ex?.rest_from || "60",
+              rest_from_unit: ex?.rest_from_unit || "ثانية",
+              rest_to: ex?.rest_to || "90",
+              rest_to_unit: ex?.rest_to_unit || "ثانية",
+              rest_time: ex?.rest_time || "من 60 ثانية إلى 90 ثانية",
+              items: (Array.isArray(ex?.items) ? ex.items : []).map((item: Partial<DayExercise>) => ({
+                ...item,
+                id: item?.id || newId(),
+                refId: item?.refId || "",
+                name_ar: item?.name_ar || "",
+                target_muscle: item?.target_muscle || "",
+                sets: typeof item?.sets === "number" ? item.sets : (Array.isArray(item?.reps) ? item.reps.length : 3),
+                reps: Array.isArray(item?.reps) ? item.reps : ["10", "10", "10"],
+              })),
+            };
+          }
           /* A custom row has no sets, reps or rest to fall back to. Applying
              the library defaults here is what turned every saved custom row
              into a 3×10 exercise resting 60–90 seconds — values the coach
@@ -141,7 +163,13 @@ export function useCourseBuilder(init: CourseBuilderInit = {}) {
   ) =>
     mapDay(dayId, (d) => ({
       ...d,
-      exercises: d.exercises.map((ex) => (ex.id === exId ? fn(ex) : ex)),
+      exercises: d.exercises.map((ex) =>
+        ex.id === exId
+          ? fn(ex)
+          : isSupersetExercise(ex) && Array.isArray(ex.items)
+            ? { ...ex, items: ex.items.map((item) => (item.id === exId ? fn(item) : item)) }
+            : ex
+      ),
     }));
 
   const addDay = () => {
@@ -212,6 +240,59 @@ export function useCourseBuilder(init: CourseBuilderInit = {}) {
         },
       ],
     }));
+
+  /* An empty "سوبر سيت" frame; its exercises are added from the library picker. */
+  const addSupersetToDay = (dayId: string) =>
+    mapDay(dayId, (d) => ({
+      ...d,
+      exercises: [
+        ...d.exercises,
+        {
+          id: newId(),
+          is_superset: true,
+          name_ar: "سوبر سيت",
+          items: [],
+          rest_from: "60",
+          rest_from_unit: "ثانية",
+          rest_to: "90",
+          rest_to_unit: "ثانية",
+          rest_time: "من 60 ثانية إلى 90 ثانية",
+        },
+      ],
+    }));
+
+  const addExerciseToSuperset = (dayId: string, supersetId: string, ex: Exercise) =>
+    mapExercise(dayId, supersetId, (s) => ({
+      ...s,
+      items: [
+        ...(s.items ?? []),
+        {
+          id: newId(),
+          refId: ex.id,
+          name_ar: ex.name_ar,
+          target_muscle: ex.target_muscle || "",
+          video_url: ex.video_url || null,
+          sets: 3,
+          reps: ["10", "10", "10"],
+        },
+      ],
+    }));
+
+  const removeSupersetItem = (dayId: string, supersetId: string, itemId: string) =>
+    mapExercise(dayId, supersetId, (s) => ({
+      ...s,
+      items: (s.items ?? []).filter((item) => item.id !== itemId),
+    }));
+
+  const moveSupersetItem = (dayId: string, supersetId: string, itemId: string, direction: -1 | 1) =>
+    mapExercise(dayId, supersetId, (s) => {
+      const items = [...(s.items ?? [])];
+      const from = items.findIndex((item) => item.id === itemId);
+      const to = from + direction;
+      if (from === -1 || to < 0 || to >= items.length) return s;
+      [items[from], items[to]] = [items[to], items[from]];
+      return { ...s, items };
+    });
 
   const removeExercise = (dayId: string, exId: string) =>
     mapDay(dayId, (d) => ({
@@ -332,6 +413,7 @@ export function useCourseBuilder(init: CourseBuilderInit = {}) {
     days, setDays,
     addDay, deleteDay, moveDay, setDayMuscles,
     addExerciseToDay, addCustomExerciseToDay,
+    addSupersetToDay, addExerciseToSuperset, removeSupersetItem, moveSupersetItem,
     updateSets, updateRep, applyRepsToAll, updateCustomCol, updateCustomTitle,
     removeExercise, moveExercise, updateRestTime, applyRestPreset,
     totals,

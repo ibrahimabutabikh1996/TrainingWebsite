@@ -4,7 +4,7 @@ import { useState, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { CourseTemplate, DayExercise, Exercise, TraineeOption } from "@/types/admin";
 import { useCourseBuilder, normalizeDays } from "./useCourseBuilder";
-import { isCustomExercise } from "@/types/admin";
+import { isCustomExercise, isSupersetExercise } from "@/types/admin";
 import DayMusclePicker from "./DayMusclePicker";
 import AdminModal from "../components/AdminModal";
 import { Toaster, toast } from "react-hot-toast";
@@ -51,6 +51,7 @@ export default function AdminBuilderClient({
     days, setDays,
     addDay, deleteDay, moveDay, setDayMuscles,
     addExerciseToDay, addCustomExerciseToDay,
+    addSupersetToDay, addExerciseToSuperset, removeSupersetItem, moveSupersetItem,
     updateSets, updateRep, applyRepsToAll, updateCustomCol, updateCustomTitle,
     removeExercise, moveExercise, updateRestTime,
     totals,
@@ -71,6 +72,8 @@ export default function AdminBuilderClient({
   /* Which day the picker is adding to. Null while it is closed — the same
      single-slot state the diet builder keeps for its meal picker. */
   const [pickerDayId, setPickerDayId] = useState<string | null>(null);
+  /* Set when the picker was opened from a superset frame: picks go into it. */
+  const [pickerSupersetId, setPickerSupersetId] = useState<string | null>(null);
   /* Deleting a training day asks first; this holds what the dialog is about. */
   const [dayToDelete, setDayToDelete] = useState<{ id: string; index: number; exCount: number } | null>(null);
 
@@ -94,6 +97,9 @@ export default function AdminBuilderClient({
     const counts = new Map<string, number>();
     dayExercises.forEach((ex) => {
       if (ex.refId) counts.set(ex.refId, (counts.get(ex.refId) ?? 0) + 1);
+      (ex.items ?? []).forEach((item) => {
+        if (item.refId) counts.set(item.refId, (counts.get(item.refId) ?? 0) + 1);
+      });
     });
     return counts;
   }, [dayExercises]);
@@ -157,6 +163,16 @@ export default function AdminBuilderClient({
 
     if (days.length === 0) {
       toast.error("يرجى إضافة يوم تدريبي واحد على الأقل وتصميم تمارين الكورس.");
+      return;
+    }
+
+    /* A superset is two exercises or more; one short of that stops the save. */
+    const shortDayIndex = days.findIndex((d) =>
+      d.exercises.some((ex) => isSupersetExercise(ex) && (ex.items ?? []).length < 2)
+    );
+    if (shortDayIndex !== -1) {
+      toast.error(`السوبر سيت في اليوم ${shortDayIndex + 1} يجب أن يحتوي على تمرينين على الأقل.`);
+      setActiveDayId(days[shortDayIndex].id);
       return;
     }
 
@@ -435,6 +451,147 @@ export default function AdminBuilderClient({
                     const sets = typeof ex.sets === "number" ? ex.sets : reps.length || 1;
                     const repValues = Array.from({ length: sets }, (_, i) => reps[i] ?? "10");
 
+                    /* A superset: one frame, its library exercises as rows with
+                       their own sets and reps, and a single rest for all of them. */
+                    if (isSupersetExercise(ex)) {
+                      const items = ex.items ?? [];
+                      return (
+                        <section key={`ex-${ex.id}-${exIndex}`} className="dplan-meal">
+                          <header className="dplan-meal-head">
+                            <div className="dplan-meal-title">
+                              <span className="bldr-ex-num">{exIndex + 1}</span>
+                              <h3>سوبر سيت</h3>
+                              <span className="dplan-meal-count">{items.length} تمارين</span>
+                            </div>
+                            <div className="dplan-meal-tools">
+                              <button className="diet-icon-btn" onClick={() => moveExercise(currentDay.id, ex.id, -1)} disabled={exIndex === 0} title="تحريك السوبر سيت للأعلى" aria-label="تحريك للأعلى">
+                                <Icon name="expand_more" className="bldr-flip" />
+                              </button>
+                              <button className="diet-icon-btn" onClick={() => moveExercise(currentDay.id, ex.id, 1)} disabled={exIndex === dayExercises.length - 1} title="تحريك السوبر سيت للأسفل" aria-label="تحريك للأسفل">
+                                <Icon name="expand_more" />
+                              </button>
+                              <button className="diet-icon-btn danger" onClick={() => removeExercise(currentDay.id, ex.id)} title="إزالة السوبر سيت من هذا اليوم" aria-label="إزالة السوبر سيت">
+                                <Icon name="close" />
+                              </button>
+                            </div>
+                          </header>
+
+                          {items.length < 2 && (
+                            <p className="dplan-meal-empty">أضف تمرينين على الأقل لهذا السوبر سيت.</p>
+                          )}
+
+                          {items.map((item, itemIndex) => {
+                            const itemReps = repList(item.reps);
+                            const itemSets = typeof item.sets === "number" ? item.sets : itemReps.length || 1;
+                            const itemRepValues = Array.from({ length: itemSets }, (_, i) => itemReps[i] ?? "10");
+                            return (
+                              <div key={item.id} style={{ borderTop: "1px solid var(--border)", paddingTop: 12, marginTop: 12 }}>
+                                <header className="dplan-meal-head">
+                                  <div className="dplan-meal-title">
+                                    <span className="bldr-ex-num">{exIndex + 1}.{itemIndex + 1}</span>
+                                    <h3>{item.name_ar}</h3>
+                                    <span className="dplan-meal-count">{item.target_muscle || "عام"}</span>
+                                  </div>
+                                  <div className="dplan-meal-tools">
+                                    <button className="diet-icon-btn" onClick={() => moveSupersetItem(currentDay.id, ex.id, item.id, -1)} disabled={itemIndex === 0} title="تحريك التمرين للأعلى" aria-label="تحريك للأعلى">
+                                      <Icon name="expand_more" className="bldr-flip" />
+                                    </button>
+                                    <button className="diet-icon-btn" onClick={() => moveSupersetItem(currentDay.id, ex.id, item.id, 1)} disabled={itemIndex === items.length - 1} title="تحريك التمرين للأسفل" aria-label="تحريك للأسفل">
+                                      <Icon name="expand_more" />
+                                    </button>
+                                    <button className="diet-icon-btn danger" onClick={() => removeSupersetItem(currentDay.id, ex.id, item.id)} title="إزالة التمرين من السوبر سيت" aria-label="إزالة التمرين">
+                                      <Icon name="close" />
+                                    </button>
+                                  </div>
+                                </header>
+
+                                <ul className="dplan-items bldr-ex-row">
+                                  <li className="dplan-item dplan-item--sets">
+                                    <div className="dplan-item-main">
+                                      <strong>عدد الجولات</strong>
+                                    </div>
+                                    <div className="bldr-row-controls">
+                                      <div className="bldr-pill">
+                                        <div className="bldr-stepper">
+                                          <button type="button" onClick={() => updateSets(currentDay.id, item.id, String(itemSets - 1))} disabled={itemSets <= 1} title="إنقاص جولة" aria-label="إنقاص جولة">−</button>
+                                          <input type="number" min="1" max="10" value={itemSets} onChange={(e) => updateSets(currentDay.id, item.id, e.target.value)} aria-label="عدد الجولات" />
+                                          <button type="button" onClick={() => updateSets(currentDay.id, item.id, String(itemSets + 1))} disabled={itemSets >= 10} title="إضافة جولة" aria-label="إضافة جولة">+</button>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </li>
+
+                                  <li className="dplan-item dplan-item--reps" style={{ minWidth: 0 }}>
+                                    <div className="dplan-item-main" style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "10px" }}>
+                                      <strong>التكرارات لكل جولة</strong>
+                                      {itemRepValues.length > 1 && (
+                                        <button type="button" className="bldr-mini-btn" onClick={() => applyRepsToAll(currentDay.id, item.id, itemRepValues[0])} title="نسخ تكرار الجولة الأولى إلى بقية الجولات" style={{ flexShrink: 0 }}>
+                                          توحيد الكل
+                                        </button>
+                                      )}
+                                    </div>
+                                    <div className="bldr-row-controls" style={{ flexWrap: "wrap", overflowX: "auto" }}>
+                                      <div className="bldr-pill bldr-pill--grid" style={{ gridTemplateColumns: `repeat(${Math.min(itemRepValues.length, 4)}, 1fr)` }}>
+                                        {itemRepValues.map((rep, rIndex) => (
+                                          <label key={rIndex} className="bldr-rep" style={{ width: "100%" }}>
+                                            <span>{rIndex + 1}</span>
+                                            <input type="text" inputMode="numeric" value={rep} onChange={(e) => updateRep(currentDay.id, item.id, rIndex, e.target.value)} placeholder="10" aria-label={`تكرار الجولة ${rIndex + 1}`} style={{ width: "100%", minWidth: "0" }} />
+                                          </label>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  </li>
+                                </ul>
+                              </div>
+                            );
+                          })}
+
+                          <ul className="dplan-items bldr-ex-row" style={{ borderTop: "1px solid var(--border)", paddingTop: 12, marginTop: 12 }}>
+                            <li className="dplan-item dplan-item--rest" style={{ minWidth: 0 }}>
+                              <div className="dplan-item-main">
+                                <strong>وقت الراحة للسوبر سيت</strong>
+                              </div>
+                              <div className="bldr-row-controls" style={{ flexWrap: "wrap", overflow: "visible" }}>
+                                <div className="bldr-pill" style={{ flexWrap: "wrap" }}>
+                                  <span className="bldr-word" style={{ whiteSpace: "nowrap" }}>من</span>
+                                  <input type="number" min="1" className="bldr-rest-val" value={ex.rest_from ?? "60"} onChange={(e) => updateRestTime(currentDay.id, ex.id, "rest_from", e.target.value)} placeholder="60" aria-label="أقل وقت راحة" style={{ minWidth: "50px" }} />
+                                  <div style={{ width: 100, flexShrink: 0 }}>
+                                    <CustomSelect
+                                      value={ex.rest_from_unit ?? "ثانية"}
+                                      onChange={(v) => updateRestTime(currentDay.id, ex.id, "rest_from_unit", v)}
+                                      options={[
+                                        { value: "ثانية", label: "ثانية" },
+                                        { value: "دقيقة", label: "دقيقة" },
+                                      ]}
+                                    />
+                                  </div>
+                                  <span className="bldr-word" style={{ whiteSpace: "nowrap" }}>إلى</span>
+                                  <input type="number" min="1" className="bldr-rest-val" value={ex.rest_to ?? "90"} onChange={(e) => updateRestTime(currentDay.id, ex.id, "rest_to", e.target.value)} placeholder="90" aria-label="أقصى وقت راحة" style={{ minWidth: "50px" }} />
+                                  <div style={{ width: 100, flexShrink: 0 }}>
+                                    <CustomSelect
+                                      value={ex.rest_to_unit ?? "ثانية"}
+                                      onChange={(v) => updateRestTime(currentDay.id, ex.id, "rest_to_unit", v)}
+                                      options={[
+                                        { value: "ثانية", label: "ثانية" },
+                                        { value: "دقيقة", label: "دقيقة" },
+                                      ]}
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            </li>
+                          </ul>
+
+                          <div className="dplan-meal-foot" style={{ display: "flex", justifyContent: "center" }}>
+                            <button className="dplan-add-item" onClick={() => { setPickerSupersetId(ex.id); setPickerDayId(currentDay.id); }}>
+                              <Icon name="add" style={{ fontSize: 18 }} />
+                              <span>إضافة تمرين للسوبر سيت</span>
+                            </button>
+                          </div>
+                        </section>
+                      );
+                    }
+
                     const isCustomEx = isCustomExercise(ex);
                     return isCustomEx ? (
                       <section key={`ex-${ex.id}-${exIndex}`} className="dplan-meal">
@@ -645,6 +802,10 @@ export default function AdminBuilderClient({
                     <Icon name="add" style={{ fontSize: 18 }} />
                     <span>تمرين خارج الخطة</span>
                   </button>
+                  <button className="dplan-add-item" onClick={() => addSupersetToDay(currentDay.id)}>
+                    <Icon name="add" style={{ fontSize: 18 }} />
+                    <span>إضافة تمرين سوبر</span>
+                  </button>
                 </div>
               </div>
             </>
@@ -764,10 +925,17 @@ export default function AdminBuilderClient({
       {pickerDayId && (
         <ExercisePicker
           exercises={initialExercises}
-          dayLabel={`اليوم التدريبي ${currentDayIndex + 1}`}
+          dayLabel={pickerSupersetId ? `سوبر سيت — اليوم التدريبي ${currentDayIndex + 1}` : `اليوم التدريبي ${currentDayIndex + 1}`}
           usedInDay={usedInDay}
-          onPick={(ex) => handleAddExercise(pickerDayId, ex)}
-          onClose={() => setPickerDayId(null)}
+          onPick={(ex) => {
+            if (pickerSupersetId) {
+              addExerciseToSuperset(pickerDayId, pickerSupersetId, ex);
+              toast.success(`أُضيف ${ex.name_ar}`);
+            } else {
+              handleAddExercise(pickerDayId, ex);
+            }
+          }}
+          onClose={() => { setPickerDayId(null); setPickerSupersetId(null); }}
         />
       )}
     </div>

@@ -12,6 +12,7 @@ import {
   countDays,
   countExercises,
   isCustomExercise,
+  isSupersetExercise,
 } from "@/types/admin";
 import AdminModal from "../components/AdminModal";
 import { deleteCourseAction, assignCourseAction, duplicateCourseAction } from "../builder/actions";
@@ -529,6 +530,74 @@ export default function AdminCoursesClient({
                               </thead>
                               <tbody>
                                 {day.exercises.map((ex, exIndex) => {
+                                  /* A superset: a title row, then one row per
+                                     exercise, sharing a single rest cell. */
+                                  if (isSupersetExercise(ex)) {
+                                    const items = ex.items ?? [];
+                                    return [
+                                      <tr key={ex.id || exIndex}>
+                                        <td colSpan={5} style={{ textAlign: "start" }}>
+                                          <div className="co-exercise-title">
+                                            <span className="co-exercise-num">{exIndex + 1}.</span>
+                                            <span>سوبر سيت</span>
+                                          </div>
+                                        </td>
+                                      </tr>,
+                                      ...items.map((item, itemIndex) => {
+                                        const url = videoFor(item);
+                                        return (
+                                          <tr key={item.id || `${exIndex}-${itemIndex}`}>
+                                            <td style={{ textAlign: "start" }}>
+                                              <div className="co-exercise-cell">
+                                                <div className="co-exercise-title">
+                                                  <span className="co-exercise-num">{exIndex + 1}.{itemIndex + 1}</span>
+                                                  <span>{item.name_ar || "تمرين غير مسمى"}</span>
+                                                </div>
+                                                {item.target_muscle && (
+                                                  <span className="crm-tag primary-tag" style={{ padding: "2px 8px", fontSize: "0.7rem", fontWeight: 500 }}>
+                                                    {item.target_muscle}
+                                                  </span>
+                                                )}
+                                              </div>
+                                            </td>
+                                            <td style={{ textAlign: "center", paddingInline: "6px" }}>
+                                              <span className="co-sets-badge">{item.sets || "—"}</span>
+                                            </td>
+                                            <td style={{ textAlign: "start" }}>
+                                              <div className="co-reps-container">
+                                                {(Array.isArray(item.reps) ? item.reps : [String(item.reps || "10")]).map((rep, rIdx) => (
+                                                  <span key={rIdx} className="co-rep-chip" title={`الجولة ${rIdx + 1}: ${rep} تكرار`}>
+                                                    {rep}
+                                                  </span>
+                                                ))}
+                                              </div>
+                                            </td>
+                                            {itemIndex === 0 && (
+                                              <td rowSpan={items.length} style={{ textAlign: "center", fontSize: "0.82rem", color: "var(--primary)", fontWeight: 600 }}>
+                                                {ex.rest_time || "من 60 ثانية إلى 90 ثانية"}
+                                              </td>
+                                            )}
+                                            <td style={{ textAlign: "center" }}>
+                                              {url ? (
+                                                <button
+                                                  type="button"
+                                                  className="co-video-btn"
+                                                  onClick={() => setVideoUrl(url)}
+                                                  title="مشاهدة الفيديو"
+                                                  aria-label={`مشاهدة فيديو ${item.name_ar || "التمرين"}`}
+                                                >
+                                                  <Icon name="play_circle" />
+                                                </button>
+                                              ) : (
+                                                <span className="co-video-empty" aria-label="لا يوجد فيديو">—</span>
+                                              )}
+                                            </td>
+                                          </tr>
+                                        );
+                                      }),
+                                    ];
+                                  }
+
                                   /* A custom row is a title plus four free-text
                                      columns the coach wrote. It has no sets,
                                      reps or rest, so rendering it through the
