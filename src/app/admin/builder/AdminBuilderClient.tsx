@@ -535,7 +535,7 @@ export default function AdminBuilderClient({
                                         {itemRepValues.map((rep, rIndex) => (
                                           <label key={rIndex} className="bldr-rep" style={{ width: "100%" }}>
                                             <span>{rIndex + 1}</span>
-                                            <input type="text" inputMode="numeric" value={rep} onChange={(e) => updateRep(currentDay.id, item.id, rIndex, e.target.value)} placeholder="10" aria-label={`تكرار الجولة ${rIndex + 1}`} style={{ width: "100%", minWidth: "0" }} />
+                                            <input type="text" value={rep} onChange={(e) => updateRep(currentDay.id, item.id, rIndex, e.target.value)} placeholder="10" aria-label={`تكرار الجولة ${rIndex + 1}`} style={{ width: "100%", minWidth: "0" }} />
                                           </label>
                                         ))}
                                       </div>
@@ -721,7 +721,6 @@ export default function AdminBuilderClient({
                                     <span>{rIndex + 1}</span>
                                     <input
                                       type="text"
-                                      inputMode="numeric"
                                       value={rep}
                                       onChange={(e) => updateRep(currentDay.id, ex.id, rIndex, e.target.value)}
                                       placeholder="10"

@@ -566,7 +566,7 @@ export default function ExportWorkoutClient({
                                           {item.name_ar || "تمرين غير مسمى"}
                                         </td>
                                         {Array.from({ length: dayMaxSets }).map((_, sIdx) => (
-                                          <td key={sIdx} style={{ fontWeight: 800, color: sIdx < itemSetCount ? "#0f172a" : "#94a3b8", height: rowHeight, padding: cellPad, fontSize: fontSize }}>
+                                          <td key={sIdx} style={{ fontWeight: 800, color: sIdx < itemSetCount ? "#0f172a" : "#94a3b8", height: rowHeight, padding: cellPad, fontSize: fontSize, ...(sIdx < itemSetCount && /[a-zA-Z\u0600-\u06FF]/.test(String(itemReps[sIdx] ?? itemReps[itemReps.length - 1] ?? "")) ? { fontSize: `calc(${fontSize} * 0.8)`, overflowWrap: "normal", lineHeight: 1.15 } : {}) }}>
                                             {sIdx < itemSetCount ? String(itemReps[sIdx] ?? itemReps[itemReps.length - 1] ?? "10") : "—"}
                                           </td>
                                         ))}
@@ -651,7 +651,7 @@ export default function ExportWorkoutClient({
                                     val = String(repsArr[sIdx] ?? repsArr[repsArr.length - 1] ?? "10");
                                   }
                                   return (
-                                    <td key={sIdx} style={{ fontWeight: 800, color: sIdx < setCount ? "#0f172a" : "#94a3b8", height: rowHeight, padding: cellPad, fontSize: fontSize }}>
+                                    <td key={sIdx} style={{ fontWeight: 800, color: sIdx < setCount ? "#0f172a" : "#94a3b8", height: rowHeight, padding: cellPad, fontSize: fontSize, ...(/[a-zA-Z\u0600-\u06FF]/.test(val) ? { fontSize: `calc(${fontSize} * 0.8)`, overflowWrap: "normal", lineHeight: 1.15 } : {}) }}>
                                       {val}
                                     </td>
                                   );
