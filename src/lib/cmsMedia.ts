@@ -74,3 +74,58 @@ export async function storeCmsMedia(file: File): Promise<StoredMedia> {
     return { ok: false, error: "حدث خطأ أثناء رفع الملف" };
   }
 }
+
+/* A file too large for one request — a testimonial video above Vercel's ~4.5 MB
+ * body limit — goes from the browser straight to storage instead, in two steps
+ * around that transfer: `issueCmsMediaSlot` names where it may land, and
+ * `confirmCmsMedia` reads it back and stores it through `storeCmsMedia`, so it
+ * passes the same checks and gets the same name and type as any other upload.
+ *
+ * The waiting copy sits under `pending/`, outside `images/`, so the media
+ * library — which lists `images` — never shows a file nobody has checked yet. */
+const PENDING_PREFIX = "pending/";
+const PENDING_PATH = /^pending\/cms_\d+_[0-9a-f]{8}$/;
+
+export type CmsMediaSlot =
+  | { ok: true; bucket: string; path: string; token: string }
+  | { ok: false; error: string };
+
+export async function issueCmsMediaSlot(): Promise<CmsMediaSlot> {
+  const path = `${PENDING_PREFIX}cms_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
+
+  const { data, error } = await supabaseAdmin.storage
+    .from(PUBLIC_MEDIA_BUCKET)
+    .createSignedUploadUrl(path);
+
+  if (error || !data) {
+    console.error("Failed to create a signed CMS upload URL:", error);
+    return { ok: false, error: "تعذّر تجهيز الرفع" };
+  }
+
+  return { ok: true, bucket: PUBLIC_MEDIA_BUCKET, path, token: data.token };
+}
+
+export async function confirmCmsMedia(path: string): Promise<StoredMedia> {
+  /* Only a path `issueCmsMediaSlot` could have named. */
+  if (!PENDING_PATH.test(path)) {
+    return { ok: false, error: "الملف غير موجود" };
+  }
+
+  try {
+    const { data: blob, error } = await supabaseAdmin.storage
+      .from(PUBLIC_MEDIA_BUCKET)
+      .download(path);
+
+    if (error || !blob) {
+      return { ok: false, error: "لم يُعثر على الملف المرفوع" };
+    }
+
+    return await storeCmsMedia(new File([blob], "upload"));
+  } finally {
+    /* Kept or refused, the waiting copy goes: what is kept now lives under `images/`. */
+    const { error } = await supabaseAdmin.storage.from(PUBLIC_MEDIA_BUCKET).remove([path]);
+    if (error) {
+      console.error(`Failed to delete a pending CMS upload (${path}):`, error);
+    }
+  }
+}

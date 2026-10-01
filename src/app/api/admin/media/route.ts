@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { requireAdmin } from "@/lib/authGuard";
-import { storeCmsMedia } from "@/lib/cmsMedia";
+import { confirmCmsMedia, issueCmsMediaSlot, storeCmsMedia } from "@/lib/cmsMedia";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -25,6 +25,32 @@ export async function POST(request: NextRequest) {
   if (!auth.ok) return auth.response;
 
   try {
+    /* A JSON body is the two-step upload that sends the bytes straight to
+       storage — see `issueCmsMediaSlot` in `@/lib/cmsMedia`. */
+    if (request.headers.get("content-type")?.includes("application/json")) {
+      const body = (await request.json().catch(() => null)) as
+        | { action?: unknown; path?: unknown }
+        | null;
+
+      if (body?.action === "slot") {
+        const slot = await issueCmsMediaSlot();
+        if (!slot.ok) {
+          return NextResponse.json({ error: slot.error }, { status: 500 });
+        }
+        return NextResponse.json({ bucket: slot.bucket, path: slot.path, token: slot.token });
+      }
+
+      if (body?.action === "confirm" && typeof body.path === "string") {
+        const stored = await confirmCmsMedia(body.path);
+        if (!stored.ok) {
+          return NextResponse.json({ error: stored.error }, { status: 400 });
+        }
+        return NextResponse.json({ url: stored.url });
+      }
+
+      return NextResponse.json({ error: "طلب غير صالح" }, { status: 400 });
+    }
+
     const formData = await request.formData();
     const file = formData.get("file");
 

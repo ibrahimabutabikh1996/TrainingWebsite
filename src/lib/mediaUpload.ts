@@ -3,7 +3,8 @@
 import { DEFAULT_MAX_EDGE } from "@/lib/cropUtils";
 import { compressForUpload } from "@/lib/imageUpload";
 import { beginUpload } from "@/lib/uploadProgress";
-import { parseJsonBody, xhrUpload } from "@/lib/xhrUpload";
+import { uploadToSignedUrlWithProgress } from "@/lib/signedUpload";
+import { parseJsonBody } from "@/lib/xhrUpload";
 
 /* The coach's side of an upload: prepare the picture, send it, report the whole
  * journey to the window.
@@ -47,19 +48,41 @@ export async function uploadMediaWithProgress(
     );
     task.preparing(100);
 
-    const body = new FormData();
-    body.append("file", prepared);
-
-    const response = await xhrUpload({
-      url: "/api/admin/media",
+    /* The bytes go straight to storage, not through the app: Vercel refuses a
+       request body over ~4.5 MB, which a testimonial video easily is. The app
+       names the slot first and checks the stored file afterwards — see
+       `issueCmsMediaSlot` in `@/lib/cmsMedia`. */
+    const slotResponse = await fetch("/api/admin/media", {
       method: "POST",
-      body,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "slot" }),
+    });
+    const slot = parseJsonBody<{ bucket?: string; path?: string; token?: string; error?: string }>(
+      await slotResponse.text()
+    );
+
+    if (!slotResponse.ok || !slot?.bucket || !slot.path || !slot.token) {
+      task.fail(slot?.error ?? "تعذّر تجهيز الرفع");
+      return null;
+    }
+
+    await uploadToSignedUrlWithProgress({
+      bucket: slot.bucket,
+      path: slot.path,
+      token: slot.token,
+      file: prepared,
       onProgress: (percent) => task.uploading(percent),
     });
 
-    const parsed = parseJsonBody<{ url?: string; error?: string }>(response.body);
+    const response = await fetch("/api/admin/media", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "confirm", path: slot.path }),
+    });
 
-    if (response.status >= 200 && response.status < 300 && parsed?.url) {
+    const parsed = parseJsonBody<{ url?: string; error?: string }>(await response.text());
+
+    if (response.ok && parsed?.url) {
       task.done();
       return parsed.url;
     }
