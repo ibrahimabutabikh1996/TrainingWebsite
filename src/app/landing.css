@@ -1098,7 +1098,7 @@ body::before {
 }
 
 .coach-inner {
-  max-width: 1160px;
+  max-width: 1300px;
   margin: 0 auto;
   padding: 0 48px;
 }
@@ -1189,7 +1189,7 @@ body::before {
   border-top: 1px solid var(--border);
 }
 .coach-stats li {
-  flex: 1;
+  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
   gap: 4px;
