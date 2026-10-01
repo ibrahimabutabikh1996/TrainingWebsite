@@ -86,11 +86,45 @@ export async function storeCmsMedia(file: File): Promise<StoredMedia> {
 const PENDING_PREFIX = "pending/";
 const PENDING_PATH = /^pending\/cms_\d+_[0-9a-f]{8}$/;
 
+/* A pending copy is confirmed seconds after its upload completes. One older
+   than this is one whose confirm never came — a tab closed in between. */
+const PENDING_GRACE_MS = 60 * 60 * 1000;
+
 export type CmsMediaSlot =
   | { ok: true; bucket: string; path: string; token: string }
   | { ok: false; error: string };
 
+/* Nothing else visits `pending/`, so each new upload clears what earlier ones
+   left behind. A failure here is logged and the upload goes on regardless. */
+async function removeStalePending(): Promise<void> {
+  const { data, error } = await supabaseAdmin.storage
+    .from(PUBLIC_MEDIA_BUCKET)
+    .list("pending", { limit: 100, sortBy: { column: "created_at", order: "asc" } });
+
+  if (error || !data) {
+    console.error("Failed to list pending CMS uploads:", error);
+    return;
+  }
+
+  const cutoff = Date.now() - PENDING_GRACE_MS;
+  const stale = data
+    .filter((object) => object.created_at && Date.parse(object.created_at) < cutoff)
+    .map((object) => `${PENDING_PREFIX}${object.name}`)
+    .filter((path) => PENDING_PATH.test(path));
+
+  if (stale.length === 0) return;
+
+  const { error: removeError } = await supabaseAdmin.storage.from(PUBLIC_MEDIA_BUCKET).remove(stale);
+  if (removeError) {
+    console.error("Failed to delete stale pending CMS uploads:", removeError);
+  }
+}
+
 export async function issueCmsMediaSlot(): Promise<CmsMediaSlot> {
+  await removeStalePending().catch((error) =>
+    console.error("Exception while clearing pending CMS uploads:", error)
+  );
+
   const path = `${PENDING_PREFIX}cms_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
 
   const { data, error } = await supabaseAdmin.storage
