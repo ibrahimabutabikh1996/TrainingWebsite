@@ -595,6 +595,46 @@ export default function LandingClient({
     el.scrollBy({ left: physical * step, behavior: "smooth" });
   };
 
+  /* The testimonials row, scrolled the same way as the plans above: its own
+     ref and flags, measured from the element, and one card per press. */
+  const testiRowRef = useRef<HTMLDivElement | null>(null);
+  const [testiScroll, setTestiScroll] = useState({ scrollable: false, atStart: true, atEnd: true });
+
+  useEffect(() => {
+    const el = testiRowRef.current;
+    if (!el) return;
+
+    const measure = () => {
+      const max = el.scrollWidth - el.clientWidth;
+      const start = scrollStart(el);
+      setTestiScroll({
+        scrollable: max > 2,
+        atStart: start <= 1,
+        atEnd: start >= max - 1,
+      });
+    };
+
+    measure();
+    el.addEventListener("scroll", measure, { passive: true });
+
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+
+    return () => {
+      el.removeEventListener("scroll", measure);
+      observer.disconnect();
+    };
+  }, [cmsData]);
+
+  const scrollTestimonials = (direction: 1 | -1) => {
+    const el = testiRowRef.current;
+    if (!el) return;
+    const card = el.querySelector<HTMLElement>(".testimonial-card");
+    const step = card ? card.getBoundingClientRect().width + 24 : el.clientWidth;
+    const physical = getComputedStyle(el).direction === "rtl" ? -direction : direction;
+    el.scrollBy({ left: physical * step, behavior: "smooth" });
+  };
+
 
   /* Written by the content manager's testimonials tab. Narrowed here rather than
      trusted: the column is free-form JSON, so a hand-edited or older row can
@@ -1283,7 +1323,55 @@ export default function LandingClient({
                 <div className="primary-divider"></div>
               </div>
 
-              <div className="testimonials-grid">
+              <div className="membership-scroller">
+              <button
+                type="button"
+                className="membership-nav membership-nav--prev"
+                onClick={() => scrollTestimonials(-1)}
+                disabled={testiScroll.atStart}
+                hidden={!testiScroll.scrollable}
+                aria-label="عرض النتائج السابقة"
+              >
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                className="membership-nav membership-nav--next"
+                onClick={() => scrollTestimonials(1)}
+                disabled={testiScroll.atEnd}
+                hidden={!testiScroll.scrollable}
+                aria-label="عرض النتائج التالية"
+              >
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <polyline points="15 18 9 12 15 6" />
+                </svg>
+              </button>
+              <div
+                className={`testimonials-grid membership-grid--scroll${testiScroll.atStart ? "" : " is-faded-start"}${testiScroll.atEnd ? "" : " is-faded-end"}`}
+                ref={testiRowRef}
+              >
                 {testimonials.map((t, i) => (
                   <article className="testimonial-card reveal" key={i}>
                     <div className="testimonial-content">
@@ -1318,6 +1406,7 @@ export default function LandingClient({
                     )}
                   </article>
                 ))}
+              </div>
               </div>
             </div>
           </section>

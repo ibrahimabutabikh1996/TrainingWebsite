@@ -2783,6 +2783,20 @@ body.offers-active .nav-links a[href="#offers"]::after {
     scroll-snap-align: start;
   }
 
+  /* The testimonials row borrows this scroller. Three across like the plans;
+     the auto margins keep one or two cards centred, as the grid did, and fall
+     to zero once the row overflows. */
+  .testimonials-grid.membership-grid--scroll > .testimonial-card {
+    flex: 0 0 calc((100% - 48px) / 3);
+    scroll-snap-align: start;
+  }
+  .testimonials-grid.membership-grid--scroll > .testimonial-card:first-child {
+    margin-inline-start: auto;
+  }
+  .testimonials-grid.membership-grid--scroll > .testimonial-card:last-child {
+    margin-inline-end: auto;
+  }
+
   .membership-nav {
     position: absolute;
     top: 50%;
