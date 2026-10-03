@@ -338,7 +338,7 @@ export async function POST(request: Request) {
        * was 25 KB of which 23 were repeats. `currentMonthData` keeps the
        * answers and drops the bookkeeping the app writes around them — all of
        * which lives at the top level, where it is read from. */
-      history.push({
+      if (history.length <= renewals.length) history.push({
         label: currentMonthNumber === 1 ? 'الشهر الأول' : `الشهر ${currentMonthNumber}`,
         date: new Date().toISOString(),
         data: currentMonthData(existingData)
