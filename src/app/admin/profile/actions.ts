@@ -6,6 +6,7 @@ import { comparePassword, isBcryptHash } from "@/lib/auth";
 import { requireAdminAction } from "@/lib/authGuard";
 import { storagePathOf, supabaseAdmin, UPLOADS_BUCKET } from "@/lib/supabaseAdmin";
 import type { JsonRecord } from "@/types";
+import { NON_ANSWER_KEYS } from "@/lib/subscriptionMonths";
 import {
   ATTACHMENT_FIELDS,
   type DeleteAttachmentInput,
@@ -415,8 +416,8 @@ export async function deleteEntireHistoryAction(
  * Nothing about the subscription is touched. `subscription_ends_at` is not
  * shortened and `renewals` is not edited: a rejected *request* is not a
  * revoked month, and a trainee who still has paid days must keep them. The
- * answers they submitted stay too — they are this month's answers whether or
- * not the next month was granted.
+ * answers they submitted do not stay: the month the request archived is put
+ * back as the current one, so the timeline and the activation count agree.
  *
  * Written through `updateBlob`, so it goes through `requireAdminAction` and the
  * same id check as the history actions. A trainee must not be able to reach
@@ -428,6 +429,16 @@ export async function rejectRenewalAction(
 ): Promise<{ success: boolean; error?: string }> {
   try {
     return await updateBlob(profileId, (blob) => {
+      const history = Array.isArray(blob.history) ? blob.history : [];
+      const renewals = Array.isArray(blob.renewals) ? blob.renewals : [];
+      const archived = history.length > renewals.length ? history[history.length - 1] : null;
+      if (archived && archived.data && typeof archived.data === "object") {
+        for (const key of Object.keys(blob)) {
+          if (!(NON_ANSWER_KEYS as readonly string[]).includes(key)) delete blob[key];
+        }
+        Object.assign(blob, archived.data);
+        blob.history = history.slice(0, -1);
+      }
       delete blob.renewal_pending;
       delete blob.renewal_requested_at;
       delete blob.renewal_requested_month;
