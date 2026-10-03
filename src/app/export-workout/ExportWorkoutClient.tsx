@@ -46,6 +46,16 @@ function muscleCircleColors(names: string[]): { bg: string; text: string }[] {
   });
 }
 
+/* The fixed first page of every workout PDF: the same four explainer videos
+   for every trainee, so they live here rather than in the database. Changing
+   one is an edit to this list. */
+const INTRO_VIDEOS = [
+  { title: "شرح الاحماء", url: "https://drive.google.com/file/d/1ZENcylyWlz1rETS_Vys3Bb-ifNMBGeJP/view?usp=drivesdk" },
+  { title: "شرح الفشل العضلي", url: "https://drive.google.com/file/d/1wiIjuUU470VdrkP_tHvhI9qy4OdujjyA/view?usp=drivesdk" },
+  { title: "شرح تسجيل أوزان التمرين", url: "https://drive.google.com/file/d/1jMq8bk2b4QSpUytwr5nK8kLdln0WQZOe/view?usp=drivesdk" },
+  { title: "شلون تقلل تشنج بداية التمرين", url: "https://drive.google.com/file/d/1aJYAxudl_3o2NHASI9aqZxxuLXb-bqSz/view?usp=drivesdk" },
+];
+
 interface ExportWorkoutClientProps {
   title: string;
   traineeName: string;
@@ -452,6 +462,34 @@ export default function ExportWorkoutClient({
 
       {/* Document PDF Content Area - Multi-Page structure */}
       <div id="pdf-content-area" style={{ maxWidth: "960px", margin: "0 auto" }}>
+        {/* Fixed intro page, printed before the days — and on its own when there are none */}
+        <div className="pdf-page-card">
+          {renderHeader()}
+          <div style={{ flex: "1 1 auto", display: "flex", flexDirection: "column", marginTop: "4mm", borderTop: "0.45mm solid #0F4E79" }}>
+            {INTRO_VIDEOS.map((v, vIdx) => (
+              <div key={vIdx} style={{ padding: "5mm 2mm", borderBottom: "0.3mm solid #0F4E79", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "4mm" }}>
+                <div style={{ fontSize: "5mm", fontWeight: 800, color: "#0F4E79" }}>
+                  {v.title}
+                </div>
+                <a
+                  href={v.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={`فيديو ${v.title}`}
+                  style={{ display: "inline-flex", alignItems: "center", gap: "2.5mm", flexShrink: 0, textDecoration: "none" }}
+                >
+                  <span style={{ fontSize: "3.6mm", fontWeight: 700, color: "#475569" }}>اضغط لمشاهدة الفيديو</span>
+                  <svg viewBox="0 0 24 24" width="6mm" height="6mm" aria-hidden="true"><path d="M20 12H5M11 6l-6 6 6 6" fill="none" stroke="#2563eb" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                  <svg viewBox="0 0 24 24" width="12mm" height="12mm" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="4" fill="#2563eb" /><path d="M10 8.5v7l6-3.5z" fill="#fff" /></svg>
+                </a>
+              </div>
+            ))}
+          </div>
+          {renderFooter()}
+        </div>
+        <div className="no-print" style={{ height: "32px" }} />
+        <div className="pdf-page-break" style={{ pageBreakAfter: "always", breakAfter: "page" }} />
+
         {days.length === 0 ? (
           <div className="pdf-page-card">
             {renderHeader()}
