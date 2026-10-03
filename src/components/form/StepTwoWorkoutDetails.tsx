@@ -2,7 +2,6 @@
 
 import { ChipGroup, Dropzone, FormGrid, FormSection, SelectField, TextArea, Field } from "./Fields";
 import { useId } from "react";
-import { CustomSelect } from "@/components/CustomSelect";
 import type { StepProps, SubscriptionFormData } from "./types";
 import { t, type TranslationKey } from "@/lib/translations";
 
@@ -32,60 +31,25 @@ interface TimeInputProps {
   required?: boolean;
 }
 
-const PERIODS = ["صباحاً", "مساءاً", "AM", "PM"];
-
 /* Declared at module scope on purpose. Nested inside StepTwoWorkoutDetails it was
    a freshly-created component type on every parent render, so React tore the
    inputs down and rebuilt them after each keystroke — the field lost focus and
    the typed value with it. */
 function TimeInput({ label, value, onChange, placeholder, required }: TimeInputProps) {
   const id = useId();
-  const parts = (value || "").trim().split(" ");
-  const lastPart = parts.length > 0 ? parts[parts.length - 1] : "";
-  const isPeriod = PERIODS.includes(lastPart);
-
-  const timePart = isPeriod ? parts.slice(0, -1).join(" ") : value;
-  const periodPart = isPeriod ? lastPart : "صباحاً";
-
-  const handleTimeChange = (time: string) => {
-    onChange(`${time} ${periodPart}`.trim());
-  };
-
-  const handlePeriodChange = (p: string) => {
-    if (!timePart) return onChange(p);
-    onChange(`${timePart} ${p}`.trim());
-  };
 
   return (
     <Field label={label} htmlFor={id} required={required}>
-      {/* The hour and its period are halves of one value, so they share one
-          bordered shell rather than sitting as two separate boxes. */}
-      <div className="control control--time">
+      <div className="control">
         <input
           id={id}
           type="text"
-          inputMode="numeric"
-          className="form-input time-value"
+          className="form-input"
           required={required}
-          value={timePart}
+          value={value}
           placeholder={placeholder}
-          onChange={(e) => handleTimeChange(e.target.value)}
+          onChange={(e) => onChange(e.target.value)}
         />
-        <span className="time-period">
-          {/* Not `.form-input`. That class lands on the container, which
-              already holds a trigger carrying its own border, padding and
-              ground — a box drawn inside a box, and the one dropdown in the
-              product that did not look like the others. */}
-          <CustomSelect
-            className="time-period-select"
-            value={periodPart}
-            onChange={handlePeriodChange}
-            options={[
-              { value: "صباحاً", label: "صباحاً" },
-              { value: "مساءاً", label: "مساءاً" },
-            ]}
-          />
-        </span>
       </div>
     </Field>
   );
