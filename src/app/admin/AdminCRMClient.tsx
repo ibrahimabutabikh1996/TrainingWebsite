@@ -71,6 +71,16 @@ export default function AdminCRMClient({
 
   const [profiles, setProfiles] = useState<Profile[]>(initialProfiles || []);
 
+  /* `LiveRefresh` re-runs the page and hands down a new list, but state seeded
+     from a prop keeps its first value — so a subscriber or a renewal arriving
+     while the panel was open never reached the bell. Taken over during render,
+     React's pattern for state that follows a prop, rather than in an effect. */
+  const [seenInitial, setSeenInitial] = useState(initialProfiles);
+  if (initialProfiles !== seenInitial) {
+    setSeenInitial(initialProfiles);
+    setProfiles(initialProfiles || []);
+  }
+
   const handleSelectProfile = (profile: Profile) => {
     // Open in a new tab immediately
     window.open(`/admin/profile/${profile.id}`, '_blank');
@@ -455,11 +465,11 @@ export default function AdminCRMClient({
                     </div>
 
                     <div className="crm-card-meta">
-                      {/* Survives the row being marked read, unlike the dot
-                          beside it: `is_new` is cleared the moment the coach
-                          opens the trainee, but the month is still ungranted
-                          until they decide. This is the state that has to stay
-                          visible from the list until it is acted on. */}
+                      {/* Independent of the bell: marking the request read
+                          there does not grant the month, which is still
+                          ungranted until the coach approves or rejects it.
+                          This is the state that has to stay visible from the
+                          list until it is acted on. */}
                       {data.renewal_pending === true && (
                         <span
                           className="crm-tag"

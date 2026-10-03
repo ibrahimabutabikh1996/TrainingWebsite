@@ -136,7 +136,9 @@ async function panelFingerprint(): Promise<string> {
           p.id::text || ':' ||
           COALESCE(p.current_course_id::text, '') || ':' ||
           COALESCE(p.subscription_ends_at::text, '') || ':' ||
-          p.is_suspended::text,
+          p.is_suspended::text || ':' ||
+          -- The panel bell: a renewal request, or marking one read, changes only this.
+          COALESCE((p.data->'notifications')::text, ''),
           '|' ORDER BY p.id
         ))
         FROM public.profiles p
