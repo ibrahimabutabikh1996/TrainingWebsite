@@ -432,7 +432,7 @@ export default function ExportWorkoutClient({
               display: "inline-flex",
               alignItems: "center",
               gap: "8px",
-              transition: "all 0.2s",
+              transition: "background-color 0.2s",
               fontFamily: "'Cairo', sans-serif"
             }}
           >
