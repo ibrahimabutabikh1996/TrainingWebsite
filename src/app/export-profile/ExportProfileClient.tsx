@@ -315,7 +315,7 @@ export default function ExportProfileClient({
             <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "14px" }}>
               <div style={{ padding: "16px", background: "#F5F2ED", borderRadius: "14px", border: "1px solid rgba(0,0,0,0.05)", gridColumn: "1 / -1" }}>
                 <div style={{ color: "#524F4B", fontWeight: 800, fontSize: "0.9rem", marginBottom: "4px" }}>الأكلات المفضلة:</div>
-                <div style={{ color: "#050505", fontWeight: 700, fontSize: "1.05rem" }}>{raw.fav_foods || "لم يذكر"}</div>
+                <div style={{ color: "#050505", fontWeight: 700, fontSize: "1.05rem" }}>{raw.fav_foods || "لم تتم الإجابة"}</div>
               </div>
               <div style={{ padding: "16px", background: "#F5F2ED", borderRadius: "14px", border: "1px solid rgba(0,0,0,0.05)" }}>
                 <div style={{ color: "#d97706", fontWeight: 800, fontSize: "0.9rem", marginBottom: "4px" }}>الحساسية الغذائية أو الموانع:</div>
@@ -327,7 +327,7 @@ export default function ExportProfileClient({
               </div>
               <div style={{ padding: "16px", background: "#F5F2ED", borderRadius: "14px", border: "1px solid rgba(0,0,0,0.05)" }}>
                 <div style={{ color: "#524F4B", fontWeight: 800, fontSize: "0.9rem", marginBottom: "4px" }}>معدل القهوة اليومي:</div>
-                <div style={{ color: "#050505", fontWeight: 700, fontSize: "1.05rem" }}>{answerLabel(raw.coffee_rate, "طبيعي")}{raw.coffee_type ? ` (${raw.coffee_type})` : ""}</div>
+                <div style={{ color: "#050505", fontWeight: 700, fontSize: "1.05rem" }}>{answerLabel(raw.coffee_rate, "لم تتم الإجابة")}{raw.coffee_type ? ` (${raw.coffee_type})` : ""}</div>
               </div>
               <div style={{ padding: "16px", background: "#F5F2ED", borderRadius: "14px", border: "1px solid rgba(0,0,0,0.05)" }}>
                 <div style={{ color: "#524F4B", fontWeight: 800, fontSize: "0.9rem", marginBottom: "4px" }}>الرغبة في شراء المكملات:</div>
@@ -352,16 +352,18 @@ export default function ExportProfileClient({
               </div>
               <div style={{ padding: "16px", background: "#F5F2ED", borderRadius: "14px", border: "1px solid rgba(0,0,0,0.05)" }}>
                 <div style={{ color: "#524F4B", fontWeight: 800, fontSize: "0.9rem", marginBottom: "4px" }}>أنواع التمارين السابقة:</div>
-                <div style={{ color: "#050505", fontWeight: 700, fontSize: "1.05rem" }}>{answerList(raw.workout_type_exp, "عام")}</div>
+                <div style={{ color: "#050505", fontWeight: 700, fontSize: "1.05rem" }}>{answerList(raw.workout_type_exp, "لم تتم الإجابة")}</div>
               </div>
               <div style={{ padding: "16px", background: "#F5F2ED", borderRadius: "14px", border: "1px solid rgba(0,0,0,0.05)" }}>
                 <div style={{ color: "#524F4B", fontWeight: 800, fontSize: "0.9rem", marginBottom: "4px" }}>أيام التمرين الأسبوعية المعتمدة:</div>
                 <div style={{ color: "#050505", fontWeight: 700, fontSize: "1.05rem" }}>{sleepHours}</div>
               </div>
-              <div style={{ padding: "16px", background: "#F5F2ED", borderRadius: "14px", border: "1px solid rgba(0,0,0,0.05)" }}>
-                <div style={{ color: "#524F4B", fontWeight: 800, fontSize: "0.9rem", marginBottom: "4px" }}>مواعيد وفترات التدريب:</div>
-                <div style={{ color: "#050505", fontWeight: 700, fontSize: "1.05rem" }}>{waterIntake}</div>
-              </div>
+              {raw.workout_commit !== "opt_commit_home" && (
+                <div style={{ padding: "16px", background: "#F5F2ED", borderRadius: "14px", border: "1px solid rgba(0,0,0,0.05)" }}>
+                  <div style={{ color: "#524F4B", fontWeight: 800, fontSize: "0.9rem", marginBottom: "4px" }}>مواعيد وفترات التدريب:</div>
+                  <div style={{ color: "#050505", fontWeight: 700, fontSize: "1.05rem" }}>{waterIntake}</div>
+                </div>
+              )}
               {raw.workout_type_other_desc && (
                 <div style={{ padding: "16px", background: "#F5F2ED", borderRadius: "14px", border: "1px solid rgba(0,0,0,0.05)", gridColumn: "1 / -1" }}>
                   <div style={{ color: "#524F4B", fontWeight: 800, fontSize: "0.9rem", marginBottom: "4px" }}>ملاحظات أو رياضات أخرى:</div>

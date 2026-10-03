@@ -241,7 +241,7 @@ export function TraineeProfileDetails({ profile }: TraineeProfileDetailsProps) {
           </div>
           <MetricCard
             label="الهدف الأساسي من الاشتراك"
-            value={answerLabel(data.sub_goal || data.goal || profile.goal, "غير محدد")}
+            value={answerLabel(data.sub_goal || data.goal || profile.goal, "لم تتم الإجابة")}
             icon="emoji_events"
           />
         </div>
@@ -358,12 +358,12 @@ export function TraineeProfileDetails({ profile }: TraineeProfileDetailsProps) {
           </div>
 
           <MetricCard label="أنواع اللحوم المفضلة" value={answerList(data.meat, "—")} icon="restaurant_menu" />
-          <MetricCard label="معدل استهلاك القهوة" value={`${answerLabel(data.coffee_rate, "—")}${data.coffee_type ? ` — (${data.coffee_type})` : ""}`} icon="bakery_dining" />
+          <MetricCard label="معدل استهلاك القهوة" value={`${answerLabel(data.coffee_rate, "لم تتم الإجابة")}${data.coffee_type ? ` — (${data.coffee_type})` : ""}`} icon="bakery_dining" />
           <MetricCard label="شراء المكملات الغذائية" value={answerLabel(data.buy_supp, "—")} icon="medication" />
-          <MetricCard label="الأكلات والوجبات المفضلة" value={data.fav_foods || "لم يتم ذكر أكلات معينة"} icon="restaurant" fullWidth />
+          <MetricCard label="الأكلات والوجبات المفضلة" value={data.fav_foods || "لم تتم الإجابة"} icon="restaurant" fullWidth />
           <MetricCard
             label="أطعمة مستبعدة أو حساسية غذائية"
-            value={data.allergies || "لا توجد حساسية أو أطعمة مستبعدة"}
+            value={data.allergies || "لم تتم الإجابة"}
             icon="warning"
             alertColor={data.allergies ? "red" : undefined}
             fullWidth
@@ -385,10 +385,10 @@ export function TraineeProfileDetails({ profile }: TraineeProfileDetailsProps) {
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "16px" }}>
-          <MetricCard label="خبرة التمرين السابقة" value={answerLabel(data.workout_exp, "—")} icon="military_tech" />
-          <MetricCard label="نوع الرياضة أو الخبرة" value={answerList(data.workout_type_exp, "—")} icon="exercise" />
+          <MetricCard label="خبرة التمرين السابقة" value={answerLabel(data.workout_exp, "لم تتم الإجابة")} icon="military_tech" />
+          <MetricCard label="نوع الرياضة أو الخبرة" value={answerList(data.workout_type_exp, "لم تتم الإجابة")} icon="exercise" />
           <MetricCard label="مكان الالتزام بالتمرين" value={answerLabel(data.workout_commit || data.place, "—")} icon="home" />
-          <MetricCard label="الوقت المفضل لتأدية التمرين" value={answerLabel(data.gym_time, "—")} icon="schedule" />
+          {data.workout_commit !== "opt_commit_home" && <MetricCard label="الوقت المفضل لتأدية التمرين" value={answerLabel(data.gym_time, "لم تتم الإجابة")} icon="schedule" />}
           <MetricCard label="عدد أيام التمرين المقررة" value={answerLabel(data.workout_days || data.days, "—")} icon="calendar_month" />
 
           {data.workout_type_other_desc && (

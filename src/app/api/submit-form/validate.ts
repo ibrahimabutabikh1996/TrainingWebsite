@@ -33,8 +33,8 @@ const ALLOWED_KEYS = [
 const REQUIRED_KEYS = [
   "fullname", "phone", "plan", "gender", "age", "weight", "height",
   "activity", "residence", "employment",
-  "workout_exp", "workout_type_exp", "workout_commit", "workout_days",
-  "sub_goal", "target_weight", "allergies", "fav_foods", "coffee_rate", "buy_supp",
+  "workout_commit", "workout_days",
+  "target_weight", "buy_supp",
   "injuries",
 ] as const;
 

@@ -138,19 +138,19 @@ export default async function ExportProfilePage({
     (await getLandingContent())?.content_ar as JsonRecord | undefined
   );
   const plan = planNameFrom(planNames, data.plan, "خطة تدريب وتغذية");
-  const goal = answerLabel(data.sub_goal || data.goal, "تطوير البنية العضلية وتحسين اللياقة");
+  const goal = answerLabel(data.sub_goal || data.goal, "لم تتم الإجابة");
   const age = data.age ? `${data.age} سنة` : "غير محدد";
   const weight = data.weight ? `${data.weight} كجم` : "غير محدد";
   const height = data.height ? `${data.height} سم` : "غير محدد";
   const activity = activityLabel(data.activity, "غير محدد");
-  const allergies = answerList(data.allergies, "لا توجد أي حساسيات أو موانع غذائية مسجلة");
+  const allergies = answerList(data.allergies, "لم تتم الإجابة");
   const healthIssues = answerList(data.health_issues || data.injuries, "لا توجد إصابات أو مشاكل صحية (سليم)");
-  const dislikedFood = answerList(data.disliked_food || data.fav_foods || data.food_preferences, "لا يوجد");
+  const dislikedFood = answerList(data.disliked_food || data.fav_foods || data.food_preferences, "لم تتم الإجابة");
   const workoutLocation = answerLabel(data.workout_commit || data.workout_location || data.location, "الجيم / صالة الحديد الرياضية");
   const sleepHours = answerLabel(data.workout_days || data.sleep_hours || data.sleep, "حسب جدول التدريب الرياضي");
-  const waterIntake = answerLabel(data.gym_time || data.water_intake || data.water, "أوقات مرنة");
+  const waterIntake = answerLabel(data.gym_time || data.water_intake || data.water, "لم تتم الإجابة");
   const stressLevel = answerLabel(data.stress_level || data.stress, "طبيعي");
-  const experience = answerLabel(data.workout_exp || data.experience || data.training_history, "متوسط");
+  const experience = answerLabel(data.workout_exp || data.experience || data.training_history, "لم تتم الإجابة");
   const measurements = (data.measurements || {
     arm: data.meas_arm,
     waist: data.meas_waist,

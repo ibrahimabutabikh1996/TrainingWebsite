@@ -137,7 +137,7 @@ export function StepTwoWorkoutDetails({ formData, update }: StepProps) {
             value={formData.workout_exp}
             onChange={(workout_exp) => update({ workout_exp })}
             options={EXPERIENCE}
-            required
+            optional
           />
 
           <SelectField
@@ -162,7 +162,7 @@ export function StepTwoWorkoutDetails({ formData, update }: StepProps) {
               value={formData.gym_time}
               onChange={(gym_time) => update({ gym_time })}
               options={GYM_TIME}
-              required
+              optional
             />
           )}
 
@@ -186,7 +186,7 @@ export function StepTwoWorkoutDetails({ formData, update }: StepProps) {
             options={EXP_TYPES}
             values={formData.workout_type_exp}
             onToggle={toggleExpType}
-            required
+            optional
           />
 
           {formData.workout_type_exp.includes("chk_exp_other") && (

@@ -238,6 +238,14 @@ const text = (key: string) => (d: JsonRecord) =>
   d[key] === null || d[key] === undefined || d[key] === "" ? EMPTY : String(d[key]);
 const answer = (key: string) => (d: JsonRecord) => answerLabel(d[key]);
 const list = (key: string) => (d: JsonRecord) => answerList(d[key]);
+
+/* The questions the form lets a trainee skip. A blank one is printed as
+   unanswered rather than dropped, so the coach can tell "skipped" from "no". */
+const NOT_ANSWERED = "لم تتم الإجابة";
+const optional = (format: IntakeField["format"]) => (d: JsonRecord, c: FieldContext) => {
+  const value = format(d, c);
+  return has(value) ? value : NOT_ANSWERED;
+};
 const unit = (key: string, u: string) => (d: JsonRecord) => withUnit(d[key], u);
 
 /**
@@ -260,18 +268,18 @@ export const INTAKE_FIELDS: IntakeField[] = [
   { key: "height", label: t("lbl_height"), format: unit("height", t("unit_cm")), group: "body" },
   { key: "weight", label: t("lbl_weight"), format: unit("weight", t("unit_kg")), group: "body" },
   { key: "target_weight", label: t("lbl_target_weight"), format: unit("target_weight", t("unit_kg")), group: "body" },
-  { key: "sub_goal", label: t("lbl_sub_goal"), format: answer("sub_goal"), group: "body" },
+  { key: "sub_goal", label: t("lbl_sub_goal"), format: optional(answer("sub_goal")), group: "body" },
   { key: "meas_arm", label: t("lbl_meas_arm"), format: unit("meas_arm", t("unit_cm")), group: "body" },
   { key: "meas_waist", label: t("lbl_meas_waist"), format: unit("meas_waist", t("unit_cm")), group: "body" },
   { key: "meas_hips", label: t("lbl_meas_hips"), format: unit("meas_hips", t("unit_cm")), group: "body" },
   { key: "meas_leg", label: t("lbl_meas_leg"), format: unit("meas_leg", t("unit_cm")), group: "body" },
 
-  { key: "workout_exp", label: t("lbl_workout_exp"), format: answer("workout_exp"), group: "training" },
-  { key: "workout_type_exp", label: t("lbl_workout_type_exp"), format: list("workout_type_exp"), group: "training" },
+  { key: "workout_exp", label: t("lbl_workout_exp"), format: optional(answer("workout_exp")), group: "training" },
+  { key: "workout_type_exp", label: t("lbl_workout_type_exp"), format: optional(list("workout_type_exp")), group: "training" },
   { key: "workout_type_other_desc", label: t("lbl_workout_type_other_desc"), format: text("workout_type_other_desc"), group: "training" },
   { key: "workout_commit", label: t("lbl_workout_commit"), format: answer("workout_commit"), group: "training" },
   { key: "workout_days", label: t("lbl_workout_days"), format: answer("workout_days"), group: "training" },
-  { key: "gym_time", label: t("lbl_gym_time"), format: answer("gym_time"), group: "training" },
+  { key: "gym_time", label: t("lbl_gym_time"), format: (d, c) => (d.workout_commit === "opt_commit_home" ? EMPTY : optional(answer("gym_time"))(d, c)), group: "training" },
 
   { key: "workday_breakfast", label: `${t("sub_workday_meals")} — ${t("lbl_meal_breakfast")}`, format: answer("workday_breakfast"), group: "nutrition" },
   { key: "workday_lunch", label: `${t("sub_workday_meals")} — ${t("lbl_meal_lunch")}`, format: answer("workday_lunch"), group: "nutrition" },
@@ -279,10 +287,10 @@ export const INTAKE_FIELDS: IntakeField[] = [
   { key: "holiday_breakfast", label: `${t("sub_holiday_meals")} — ${t("lbl_meal_breakfast")}`, format: answer("holiday_breakfast"), group: "nutrition" },
   { key: "holiday_lunch", label: `${t("sub_holiday_meals")} — ${t("lbl_meal_lunch")}`, format: answer("holiday_lunch"), group: "nutrition" },
   { key: "holiday_dinner", label: `${t("sub_holiday_meals")} — ${t("lbl_meal_dinner")}`, format: answer("holiday_dinner"), group: "nutrition" },
-  { key: "allergies", label: t("lbl_allergies"), format: text("allergies"), group: "nutrition" },
-  { key: "fav_foods", label: t("lbl_fav_foods"), format: text("fav_foods"), group: "nutrition" },
+  { key: "allergies", label: t("lbl_allergies"), format: optional(text("allergies")), group: "nutrition" },
+  { key: "fav_foods", label: t("lbl_fav_foods"), format: optional(text("fav_foods")), group: "nutrition" },
   { key: "meat", label: t("lbl_meat"), format: list("meat"), group: "nutrition" },
-  { key: "coffee_rate", label: t("lbl_coffee_rate"), format: answer("coffee_rate"), group: "nutrition" },
+  { key: "coffee_rate", label: t("lbl_coffee_rate"), format: optional(answer("coffee_rate")), group: "nutrition" },
   { key: "coffee_type", label: t("lbl_coffee_type"), format: text("coffee_type"), group: "nutrition" },
 
   { key: "injuries", label: t("lbl_injuries"), format: text("injuries"), group: "health" },
@@ -315,7 +323,8 @@ const has = (v: string) => v !== EMPTY && v !== "";
  * for it, with no reference to the month before. An answer the trainee left
  * blank is dropped rather than printed as a dash, and a group whose answers
  * were all blank does not appear at all — a month is shown at the length of
- * what it actually contains.
+ * what it actually contains. The skippable questions are the exception: they
+ * come back as `NOT_ANSWERED` and are shown, but not counted as answers.
  */
 export function monthGroups(
   month: SubscriptionMonth,
@@ -333,7 +342,7 @@ export function monthGroups(
 
 /** How many answers a month actually carries, for its collapsed heading. */
 export function answeredCount(groups: FieldGroup[]): number {
-  return groups.reduce((n, g) => n + g.fields.length, 0);
+  return groups.reduce((n, g) => n + g.fields.filter((f) => f.value !== NOT_ANSWERED).length, 0);
 }
 
 /** The headline number on a month's collapsed row. */

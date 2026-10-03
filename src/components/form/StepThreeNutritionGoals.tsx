@@ -23,7 +23,7 @@ export function StepThreeNutritionGoals({ formData, update }: StepProps) {
             onChange={(sub_goal) => update({ sub_goal })}
             placeholder={t("lbl_sub_goal")}
             rows={2}
-            required
+            optional
           />
           <TextInput
             label={t("lbl_target_weight")}
@@ -48,7 +48,7 @@ export function StepThreeNutritionGoals({ formData, update }: StepProps) {
             onChange={(allergies) => update({ allergies })}
             placeholder={t("ph_allergies")}
             rows={2}
-            required
+            optional
           />
           <TextArea
             label={t("lbl_fav_foods")}
@@ -56,7 +56,7 @@ export function StepThreeNutritionGoals({ formData, update }: StepProps) {
             onChange={(fav_foods) => update({ fav_foods })}
             placeholder={t("ph_fav_foods")}
             rows={2}
-            required
+            optional
           />
           <TextArea
             label={t("lbl_meat")}
@@ -71,7 +71,7 @@ export function StepThreeNutritionGoals({ formData, update }: StepProps) {
             value={formData.coffee_rate}
             onChange={(coffee_rate) => update({ coffee_rate })}
             options={COFFEE}
-            required
+            optional
           />
           {drinksCoffee && (
             <TextInput
