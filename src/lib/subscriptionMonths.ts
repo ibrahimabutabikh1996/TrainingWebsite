@@ -154,6 +154,9 @@ export const NON_ANSWER_KEYS = [
   "renewal_pending",
   "renewal_requested_at",
   "renewal_requested_month",
+  /* The coach's bell: one entry per registration or renewal request, written
+     by /api/submit-form. It belongs to the subscription, not to a month. */
+  "notifications",
 ] as const;
 
 /**

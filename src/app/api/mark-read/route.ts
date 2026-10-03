@@ -10,7 +10,7 @@ export async function POST(request: Request) {
   if (!auth.ok) return auth.response;
 
   try {
-    const { id } = await request.json();
+    const { id, notificationId } = await request.json();
     
     if (!id) {
       return NextResponse.json({ error: "معرّف الملف مفقود" }, { status: 400 });
@@ -34,7 +34,29 @@ export async function POST(request: Request) {
     }
 
 
-    if (data.is_new) {
+    /* One entry in the bell, stamped rather than removed: read entries stay in
+       the list under the "read" filter. */
+    const notices: JsonRecord[] = Array.isArray(data.notifications) ? data.notifications : [];
+    const notice = notificationId ? notices.find((n) => n && n.id === notificationId) : undefined;
+    let marked = false;
+    if (notice && !notice.read_at) {
+      notice.read_at = new Date().toISOString();
+      marked = true;
+    }
+    /* A trainee from before the list existed: the panel shows their unread
+       `is_new` as `legacy-<id>`. Written down as a real, read entry, or it
+       would vanish from the bell instead of moving to "read". */
+    if (!notice && notificationId === `legacy-${id}` && !Array.isArray(data.notifications)) {
+      data.notifications = [{
+        id: notificationId,
+        type: data.is_renewal ? "renewal" : "new",
+        at: new Date(profile.created_at).toISOString(),
+        read_at: new Date().toISOString(),
+      }];
+      marked = true;
+    }
+
+    if (data.is_new || marked) {
       data.is_new = false;
       await prisma.profiles.update({
         where: { id },

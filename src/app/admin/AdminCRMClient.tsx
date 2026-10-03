@@ -1,15 +1,14 @@
 "use client";
 
 import type { JsonRecord } from "@/types";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Profile } from "@/types/admin";
-import { Toaster, toast } from "react-hot-toast";
+import { Toaster } from "react-hot-toast";
 import { PLAN_COLOUR_SLOT } from "@/lib/formLabels";
 import { planNameFrom, planOptions, type PlanNames } from "@/lib/planNames";
 import { planTagStyle } from "@/lib/planCards";
 import { Icon } from "@/components/Icon";
 import { CustomSelect } from "@/components/CustomSelect";
-import { useNow } from "@/hooks/useNow";
 import { formatTimestamp } from "@/lib/trainingDates";
 import "./crm.css";
 import { normalizeArabic, arabicIncludes } from "@/lib/arabicSearch";
@@ -27,6 +26,18 @@ function getProfileData(p: Profile): JsonRecord {
   }
   return p.data || {};
 }
+
+/* One entry in the bell, flattened out of the trainee's `notifications`. */
+type Notice = {
+  id: string;
+  profileId: string;
+  name: string;
+  type: "new" | "renewal";
+  at: string;
+  month?: number;
+  plan: unknown;
+  readAt: string | null;
+};
 
 /* The filter dropdowns here used to be a second `CustomSelect`, declared in
    this file and shadowing the shared one. It named six CSS classes and only one
@@ -52,73 +63,41 @@ export default function AdminCRMClient({
   initialProfiles: Profile[];
   planNames: PlanNames;
 }) {
-  /* The notification counts below are "how many 30-day cycles since this
-     trainee started", so they need the clock. Read through the hook rather
-     than calling Date.now() in the body: a render that answers differently
-     each time it runs is what `react-hooks/purity` is about, and here it would
-     mean two renders disagreeing about whose plan is due. */
-  const now = useNow();
-
   const [search, setSearch] = useState("");
   const [filterPlan, setFilterPlan] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
   const [showNotifications, setShowNotifications] = useState(false);
+  const [noticeFilter, setNoticeFilter] = useState<"unread" | "read" | "all">("unread");
 
   const [profiles, setProfiles] = useState<Profile[]>(initialProfiles || []);
 
-  useEffect(() => {
-    // Show persistent toasts for unread profiles on mount
-    profiles.forEach(p => {
-      const data = getProfileData(p);
-      if (data.is_new) {
-        toast(() => (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--primary)', fontWeight: 'bold' }}>
-              <Icon name="notifications_active" style={{ fontSize: 20 }} />
-              {data.is_renewal ? 'طلب تجديد اشتراك!' : 'مشترك جديد!'}
-            </div>
-            <div>
-              قام <strong>{data.fullname || p.username}</strong> للتو بطلب {data.is_renewal ? 'تجديد الاشتراك' : 'التسجيل'} واختار: 
-              <br/> <span style={{ color: 'var(--primary)' }}>{planNameFrom(planNames, data.plan, "غير محدد")}</span>
-            </div>
-          </div>
-        ), {
-          id: p.id, // Use profile ID so we can dismiss it later
-          duration: Infinity, // Doesn't disappear
-        });
-      }
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const handleSelectProfile = async (profile: Profile) => {
+  const handleSelectProfile = (profile: Profile) => {
     // Open in a new tab immediately
     window.open(`/admin/profile/${profile.id}`, '_blank');
-    
-    const data = getProfileData(profile);
-    if (data.is_new) {
-      // Dismiss the toast
-      toast.dismiss(profile.id);
-      
-      // Update local state to remove the badge
-      setProfiles(prev => prev.map(p => {
-        if (p.id === profile.id) {
-          const pData = getProfileData(p);
-          return { ...p, data: { ...pData, is_new: false } };
-        }
-        return p;
-      }));
+  };
 
-      // Call API to update database
-      try {
-        await fetch("/api/mark-read", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id: profile.id })
-        });
-      } catch (err) {
-        console.error("Failed to mark profile as read", err);
-      }
+  /* The bell's "تم القراءة" button, and the only thing that marks an entry
+     read — opening the trainee no longer does. The entry is stamped, not
+     removed, so it moves to the "read" filter and stays there. */
+  const handleMarkRead = async (notice: Notice) => {
+    const readAt = new Date().toISOString();
+    setProfiles(prev => prev.map(p => {
+      if (p.id !== notice.profileId) return p;
+      const pData = getProfileData(p);
+      const list = Array.isArray(pData.notifications)
+        ? pData.notifications.map((n: JsonRecord) => (n && n.id === notice.id ? { ...n, read_at: readAt } : n))
+        : [{ id: notice.id, type: notice.type, at: notice.at, read_at: readAt }];
+      return { ...p, data: { ...pData, is_new: false, notifications: list } };
+    }));
+
+    try {
+      await fetch("/api/mark-read", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: notice.profileId, notificationId: notice.id })
+      });
+    } catch (err) {
+      console.error("Failed to mark notification as read", err);
     }
   };
 
@@ -219,36 +198,34 @@ export default function AdminCRMClient({
       const dateB = new Date(b.created_at).getTime();
       return sortBy === "newest" ? dateB - dateA : dateA - dateB;
     });
-  // Calculate Notifications
-  const updateNotifications = profiles.reduce((acc, p) => {
+  /* The bell: every registration and renewal request, newest first. A trainee
+     from before `notifications` existed has no list, so an unread `is_new` on
+     them stands in as one entry — /api/mark-read turns it into a real one. */
+  const notices: Notice[] = profiles.flatMap((p) => {
     const data = getProfileData(p);
-    const diffTime = now - new Date(data.activation_date || p.created_at).getTime();
-    const daysSinceStart = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    
-    // Due at the latest 30-day (diet) / 60-day (workout) mark, and cleared once that plan is saved on or after it.
-    // Only the half of the plan the trainee subscribed to counts, and suspended trainees are left out.
-    const dietCycles = Math.floor(daysSinceStart / 30);
-    const workoutCycles = Math.floor(daysSinceStart / 60);
-    const startTime = now - diffTime;
-    const dietDueAt = startTime + dietCycles * 30 * (1000 * 60 * 60 * 24);
-    const workoutDueAt = startTime + workoutCycles * 60 * (1000 * 60 * 60 * 24);
-    const dietDue = data.plan_type !== 'training' && dietCycles > 0 && !(p.diet_updated_at && new Date(p.diet_updated_at).getTime() >= dietDueAt);
-    const workoutDue = data.plan_type !== 'diet' && workoutCycles > 0 && !(p.course_assigned_at && new Date(p.course_assigned_at).getTime() >= workoutDueAt);
-    
-    if (!p.is_suspended && (dietDue || workoutDue)) {
-      const msgs = [];
-      if (dietDue) msgs.push(`النظام الغذائي`);
-      if (workoutDue) msgs.push(`النظام التدريبي`);
-      
-      acc.push({
-        id: p.id,
-        name: data.fullname || p.username || "غير معروف",
-        text: `يحتاج تحديث: ${msgs.join(" و ")}`,
-        days: daysSinceStart
-      });
-    }
-    return acc;
-  }, [] as {id: string, name: string, text: string, days: number}[]).sort((a, b) => b.days - a.days);
+    const name = data.fullname || p.username || "غير معروف";
+    const list: JsonRecord[] = Array.isArray(data.notifications)
+      ? data.notifications
+      : data.is_new
+        ? [{ id: `legacy-${p.id}`, type: data.is_renewal ? "renewal" : "new", at: p.created_at, read_at: null }]
+        : [];
+    return list
+      .filter((n) => n && typeof n.id === "string")
+      .map((n) => ({
+        id: n.id,
+        profileId: p.id,
+        name,
+        type: n.type === "renewal" ? "renewal" as const : "new" as const,
+        at: String(n.at ?? p.created_at),
+        month: typeof n.month === "number" ? n.month : undefined,
+        plan: n.plan ?? data.plan,
+        readAt: typeof n.read_at === "string" ? n.read_at : null,
+      }));
+  }).sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
+  const unreadCount = notices.filter((n) => !n.readAt).length;
+  const shownNotices = notices.filter((n) =>
+    noticeFilter === "all" ? true : noticeFilter === "unread" ? !n.readAt : !!n.readAt
+  );
 
   /* The one stat the header shows. Two more were computed here — subscribers
      joined in the last 30 days, and how many have a plan set — and neither was
@@ -292,9 +269,9 @@ export default function AdminCRMClient({
                 style={{ position: "relative", background: "var(--bg3)", padding: "12px", borderRadius: "var(--radius-lg)", border: "1px solid var(--border)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
               >
                 <Icon name="notifications_active" style={{ fontSize: "24px", color: "var(--warning-text)" }} />
-                {updateNotifications.length > 0 && (
+                {unreadCount > 0 && (
                   <span style={{ position: "absolute", top: "-6px", insetInlineEnd: "-6px", background: "var(--error)", color: "var(--text-inverse)", fontSize: "0.75rem", fontWeight: "bold", width: "22px", height: "22px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    {updateNotifications.length}
+                    {unreadCount}
                   </span>
                 )}
               </button>
@@ -311,42 +288,83 @@ export default function AdminCRMClient({
                 <div style={{ padding: "20px", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <h3 style={{ margin: 0, color: "var(--text)", display: "flex", alignItems: "center", gap: "8px" }}>
                     <Icon name="notifications_active" style={{ color: "var(--warning-text)" }} />
-                    تنبيهات بتحديث الأنظمة
+                    الإشعارات
                   </h3>
                   <button onClick={() => setShowNotifications(false)} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", padding: "4px", display: "flex", alignItems: "center" }}>
                     <Icon name="close" />
                   </button>
                 </div>
                 
-                <div style={{ padding: "20px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "10px" }}>
-                  {updateNotifications.length === 0 ? (
-                    <p style={{ textAlign: "center", color: "var(--text-muted)", margin: "20px 0" }}>لا توجد تنبيهات حالياً.</p>
-                  ) : (
-                    updateNotifications.map((n, idx) => (
-                      <div
-                        key={`${n.id}-${idx}`}
-                        role="button"
-                        tabIndex={0}
-                        onClick={() => { const profile = profiles.find(p => p.id === n.id); if (profile) handleSelectProfile(profile); }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                            e.preventDefault();
-                            const profile = profiles.find(p => p.id === n.id);
-                            if (profile) handleSelectProfile(profile);
-                          }
-                        }}
-                        aria-label={`فتح ملف ${n.name}`}
-                        className="crm-alert-row"
-                        style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", borderRadius: "var(--radius-md)", cursor: "pointer" }}
+                {/* Read / unread filter. A segmented control: only the chosen
+                    segment is filled, so the three read as one control. */}
+                <div style={{ padding: "16px 20px 0" }}>
+                  <div role="group" aria-label="تصفية الإشعارات" style={{ display: "flex", gap: "var(--space-1)", padding: "var(--space-1)", background: "var(--bg)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)" }}>
+                    {([
+                      { value: "unread", label: `غير مقروءة (${unreadCount})` },
+                      { value: "read", label: "مقروءة" },
+                      { value: "all", label: "الكل" },
+                    ] as const).map((f) => (
+                      <button
+                        key={f.value}
+                        type="button"
+                        onClick={() => setNoticeFilter(f.value)}
+                        aria-pressed={noticeFilter === f.value}
+                        style={{ flex: 1, padding: "8px 12px", border: "none", borderRadius: "var(--radius-md)", cursor: "pointer", fontWeight: 700, fontSize: "0.9rem", background: noticeFilter === f.value ? "var(--primary)" : "transparent", color: noticeFilter === f.value ? "var(--text-inverse)" : "var(--text-secondary)" }}
                       >
-                        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                          <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "var(--warning)", flexShrink: 0 }} />
-                          <strong style={{ color: "var(--text)", fontSize: "0.95rem" }}>{n.name}</strong>
-                          <span style={{ color: "var(--text-secondary)", fontSize: "0.9rem" }}>— {n.text}</span>
-                        </div>
-                        <span style={{ fontSize: "0.85rem", color: "var(--text-muted)", background: "var(--bg3)", padding: "4px 8px", borderRadius: "var(--radius-xs)" }}>
-                          مضى {n.days} يوم
-                        </span>
+                        {f.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{ padding: "20px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "10px" }}>
+                  {shownNotices.length === 0 ? (
+                    <p style={{ textAlign: "center", color: "var(--text-muted)", margin: "20px 0" }}>
+                      {noticeFilter === "unread" ? "لا توجد إشعارات غير مقروءة." : noticeFilter === "read" ? "لا توجد إشعارات مقروءة." : "لا توجد إشعارات حالياً."}
+                    </p>
+                  ) : (
+                    shownNotices.map((n) => (
+                      <div
+                        key={n.id}
+                        className="crm-alert-row"
+                        style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", padding: "12px 16px", borderRadius: "var(--radius-md)" }}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => { const profile = profiles.find(p => p.id === n.profileId); if (profile) handleSelectProfile(profile); }}
+                          aria-label={`فتح ملف ${n.name}`}
+                          style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: "12px", background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "start", color: "inherit", font: "inherit" }}
+                        >
+                          <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: n.readAt ? "var(--bg4)" : n.type === "renewal" ? "var(--warning)" : "var(--error)", flexShrink: 0 }} />
+                          <div style={{ display: "flex", flexDirection: "column", gap: "4px", minWidth: 0 }}>
+                            <span>
+                              <strong style={{ color: "var(--text)", fontSize: "0.95rem" }}>{n.name}</strong>
+                              <span style={{ color: "var(--text-secondary)", fontSize: "0.9rem" }}>
+                                {" — "}{n.type === "renewal" ? `طلب تجديد اشتراك${n.month ? ` — الشهر ${n.month}` : ""}` : "مشترك جديد"}
+                              </span>
+                            </span>
+                            <span style={{ color: "var(--text-secondary)", fontSize: "0.85rem" }}>
+                              {planNameFrom(planNames, n.plan, "غير محدد")} · {formatTimestamp(n.at)}
+                            </span>
+                          </div>
+                        </button>
+                        {n.readAt ? (
+                          <span title={`قُرئ ${formatTimestamp(n.readAt)}`} style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0, color: "var(--text-muted)", fontSize: "0.85rem" }}>
+                            <Icon name="check_circle" style={{ fontSize: 18 }} />
+                            مقروء
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleMarkRead(n)}
+                            title="تم القراءة"
+                            aria-label={`تعليم إشعار ${n.name} كمقروء`}
+                            style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0, background: "var(--bg3)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)", padding: "6px 10px", cursor: "pointer", color: "var(--success-text)", fontSize: "0.85rem", fontWeight: 700 }}
+                          >
+                            <Icon name="check_circle" style={{ fontSize: 18 }} />
+                            تم القراءة
+                          </button>
+                        )}
                       </div>
                     ))
                   )}
@@ -430,24 +448,6 @@ export default function AdminCRMClient({
                   >
                     <div className="crm-card-avatar" style={{ position: 'relative' }}>
                       <Icon name="user_male" style={{ fontSize: 28 }} />
-                      {/* `--bg-2` was not a token — the project's are `--bg2` and
-                          `--bg3`. An undefined custom property with no fallback
-                          invalidates the whole `border` shorthand, so the dot lost
-                          the ring meant to separate it from the avatar behind it.
-                          `insetInlineEnd` so it mirrors: `right` pinned it to the
-                          same visual corner in an interface that is entirely
-                          right-to-left. */}
-                      {data.is_new && (
-                        /* The dot means "unread", and the two things it can be
-                           unread about are not the same event. Its tooltip said
-                           "مشترك جديد" for both, so a renewal announced itself
-                           as a stranger — which is the one thing this flow must
-                           never do. */
-                        <div
-                          style={{ position: 'absolute', top: -2, insetInlineEnd: -2, width: 12, height: 12, background: data.is_renewal ? 'var(--warning)' : 'var(--error)', borderRadius: '50%', border: '2px solid var(--bg2)' }}
-                          title={data.is_renewal ? "طلب تجديد اشتراك" : "مشترك جديد"}
-                        ></div>
-                      )}
                     </div>
                     
                     <div className="crm-card-info">

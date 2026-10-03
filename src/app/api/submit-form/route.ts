@@ -389,6 +389,12 @@ export async function POST(request: Request) {
       /* `nextMonthNumber` is the label the approval will use; kept so the panel
          can say which month is being asked for while it is still pending. */
       finalData.renewal_requested_month = nextMonthNumber;
+      /* The coach's bell keeps every request, read or not, so the old entries
+         are carried across and this one is added to the end. */
+      finalData.notifications = [
+        ...(Array.isArray(existingData.notifications) ? existingData.notifications : []),
+        { id: crypto.randomUUID(), type: "renewal", at: new Date().toISOString(), month: nextMonthNumber, plan: jsonData.plan, read_at: null },
+      ];
 
       profile = await prisma.$transaction(async (tx) => {
         const updated = await tx.profiles.update({
@@ -437,6 +443,11 @@ export async function POST(request: Request) {
       }
 
       const hashedPassword = rawUsername && rawPassword ? await hashPassword(rawPassword) : null;
+
+      /* The first entry in the coach's bell. Renewals append to it. */
+      finalData.notifications = [
+        { id: crypto.randomUUID(), type: "new", at: new Date().toISOString(), plan: jsonData.plan, read_at: null },
+      ];
 
       try {
         profile = await prisma.$transaction(async (tx) => {

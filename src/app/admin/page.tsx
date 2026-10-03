@@ -34,6 +34,8 @@ const LIST_FIELDS = [
      a pending renewal was visible only after opening the trainee, which for a
      request that blocks a paid month is the wrong way round. */
   "renewal_pending",
+  /* The bell's entries, read and unread — see /api/submit-form. */
+  "notifications",
   "activation_date",
   "renewals",
 ] as const;
