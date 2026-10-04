@@ -2,6 +2,33 @@
 import React, { useState } from "react";
 import type { DietPlan, Meal, MealItem } from "@/types/diet";
 
+/* The fixed last page of every diet PDF: the same notes for every trainee, so
+   they live here rather than in the database. Changing one is an edit to this
+   list. */
+const CLOSING_NOTES = [
+  {
+    title: "ملاحظات مهمة",
+    items: [
+      "التمن يجب أن يكون بزل وقليل الزيت (والزيت هو زيت الزيتون) وأن يكون أبيض او اصفر وإذا تم استخدام نوع تمن اخر (احمر، اخضر) أو كان يحتوي على زيت كثير، يجب تقليل الوزن المكتوب بواقع 25 غرامًا.",
+      "يمكن طهي الدجاج، اللحم أو السمك بالبهارات المناسبة لكم دون استخدام زيت الطبخ وإذا تم قلي الطعام، يجب استخدام بخاخ الزيت أو القلاية الهوائية.",
+      "المشروبات المسموح بها هي الماء، ببسي دايت، كولا زيرو أو أي مشروب دايت.",
+      "اي قهوة خارج النظام يجب أن تكون سادة حصرا",
+      "الشاي يجب تناوله مع محلي ستيفيا.",
+      "ضروري وزن كل الطعام باستخدام ميزان الطعام، إذ لا يمكن ضمان النتائج دون ذلك.",
+      "يُفضل أداء التمارين بعد ساعة إلى ساعة ونصف من تناول وجبة رئيسية أو مباشرة بعد وجبة خفيفة.",
+    ],
+  },
+  {
+    title: "تعليمات الوجبة المفتوحة",
+    items: [
+      "الوجبة المفتوحة تكون كل جمعة.",
+      "تتكون من وجبة واحدة فقط، إما من أكلة مفضلة أو نوع من الحلويات.",
+      "تُعتبر الوجبة المفتوحة بديلة لوجبة رئيسية والسناكات في النظام.",
+      "لمن لديهم نشاط اجتماعي متكرر، يجب تحضير الوجبات مسبقًا أو الطلب من مطعم دايت قريب من اوزان الوجبات الموجودة بالنظام",
+    ],
+  },
+];
+
 interface ExportDietClientProps {
   traineeName: string;
   startDate: string;
@@ -397,6 +424,31 @@ export default function ExportDietClient({
             );
           })
         )}
+
+        {/* Fixed closing page, printed after the plans — and on its own when there are none */}
+        <div className="pdf-page-card">
+          {renderHeader()}
+          <div style={{ flex: "1 1 auto", display: "flex", flexDirection: "column", gap: "4mm" }}>
+            {CLOSING_NOTES.map((section, sIdx) => (
+              <div key={sIdx} style={{ flex: `${section.items.length} 1 0`, display: "flex", flexDirection: "column" }}>
+                <div className="day-header-strip" style={{ backgroundColor: "hsla(173, 26%, 26%, 1)", backgroundImage: "linear-gradient(90deg, hsla(173, 26%, 26%, 1) 0%, hsla(173, 52%, 33%, 1) 50%, hsla(173, 74%, 41%, 1) 100%)", padding: "12px 20px", borderRadius: "6px", borderLeft: "6px solid #0F4E79", borderRight: "6px solid #0F4E79", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", borderTop: "1px solid #e2e8f0", borderBottom: "1px solid #e2e8f0", flexShrink: 0 }}>
+                  <div style={{ fontSize: "1.25rem", fontWeight: 800, color: "#fff" }}>
+                    {section.title}
+                  </div>
+                </div>
+                <div style={{ flex: "1 1 auto", display: "flex", flexDirection: "column", marginTop: "4mm", borderTop: "0.45mm solid #0F4E79" }}>
+                  {section.items.map((text, iIdx) => (
+                    <div key={iIdx} style={{ flex: "1 1 auto", display: "flex", alignItems: "center", gap: "3mm", padding: "1.5mm 2mm", borderBottom: "0.3mm solid #0F4E79" }}>
+                      <span style={{ flexShrink: 0, width: "7mm", textAlign: "center", fontSize: "4.2mm", fontWeight: 800, color: "#0F4E79" }}>{iIdx + 1}</span>
+                      <span style={{ fontSize: "4mm", fontWeight: 700, lineHeight: 1.6, color: "#1a1a1a" }}>{text}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+          {renderFooter()}
+        </div>
       </div>
     </div>
   );
