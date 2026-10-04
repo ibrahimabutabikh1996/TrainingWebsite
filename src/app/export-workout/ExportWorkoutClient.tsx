@@ -467,7 +467,7 @@ export default function ExportWorkoutClient({
           {renderHeader()}
           <div style={{ flex: "1 1 auto", display: "flex", flexDirection: "column", marginTop: "4mm", borderTop: "0.45mm solid #0F4E79" }}>
             {INTRO_VIDEOS.map((v, vIdx) => (
-              <div key={vIdx} style={{ padding: "5mm 2mm", borderBottom: "0.3mm solid #0F4E79", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "4mm" }}>
+              <div key={vIdx} style={{ flex: "1 1 0", padding: "5mm 2mm", borderBottom: "0.3mm solid #0F4E79", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "4mm" }}>
                 <div style={{ fontSize: "5mm", fontWeight: 800, color: "#0F4E79" }}>
                   {v.title}
                 </div>
