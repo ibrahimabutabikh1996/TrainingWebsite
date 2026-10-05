@@ -178,6 +178,13 @@ export function useCourseBuilder(init: CourseBuilderInit = {}) {
     return id;
   };
 
+  const copyExercise = (ex: DayExercise): DayExercise => ({
+    ...ex,
+    id: newId(),
+    ...(Array.isArray(ex.reps) ? { reps: [...ex.reps] } : {}),
+    ...(Array.isArray(ex.items) ? { items: ex.items.map(copyExercise) } : {}),
+  });
+
   /* Appends a copy of a day as the last one. Every id is fresh — the day's, each
      exercise's and each superset item's — because workout logs are keyed by
      day_id and exercise_id, and removeExercise matches by id: a shared id would
@@ -187,12 +194,6 @@ export function useCourseBuilder(init: CourseBuilderInit = {}) {
     setDays((prev) => {
       const source = prev.find((d) => d.id === dayId);
       if (!source) return prev;
-      const copyExercise = (ex: DayExercise): DayExercise => ({
-        ...ex,
-        id: newId(),
-        ...(Array.isArray(ex.reps) ? { reps: [...ex.reps] } : {}),
-        ...(Array.isArray(ex.items) ? { items: ex.items.map(copyExercise) } : {}),
-      });
       return [
         ...prev,
         {
@@ -205,6 +206,16 @@ export function useCourseBuilder(init: CourseBuilderInit = {}) {
     });
     return id;
   };
+
+  /* Appends a copy of one exercise — a superset whole, with its items — to the
+     end of a day, the same day included. Fresh ids, for the reason above. */
+  const copyExerciseToDay = (fromDayId: string, exId: string, toDayId: string) =>
+    setDays((prev) => {
+      const source = prev.find((d) => d.id === fromDayId)?.exercises.find((ex) => ex.id === exId);
+      if (!source) return prev;
+      const copy = copyExercise(source);
+      return prev.map((d) => (d.id === toDayId ? { ...d, exercises: [...d.exercises, copy] } : d));
+    });
 
   const deleteDay = (dayId: string) =>
     setDays((prev) => prev.filter((d) => d.id !== dayId));
@@ -443,7 +454,7 @@ export function useCourseBuilder(init: CourseBuilderInit = {}) {
     addExerciseToDay, addCustomExerciseToDay,
     addSupersetToDay, addExerciseToSuperset, removeSupersetItem, moveSupersetItem,
     updateSets, updateRep, applyRepsToAll, updateCustomCol, updateCustomTitle,
-    removeExercise, moveExercise, updateRestTime, applyRestPreset,
+    removeExercise, moveExercise, copyExerciseToDay, updateRestTime, applyRestPreset,
     totals,
   };
 }

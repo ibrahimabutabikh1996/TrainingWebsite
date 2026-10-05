@@ -53,7 +53,7 @@ export default function AdminBuilderClient({
     addExerciseToDay, addCustomExerciseToDay,
     addSupersetToDay, addExerciseToSuperset, removeSupersetItem, moveSupersetItem,
     updateSets, updateRep, applyRepsToAll, updateCustomCol, updateCustomTitle,
-    removeExercise, moveExercise, updateRestTime,
+    removeExercise, moveExercise, copyExerciseToDay, updateRestTime,
     totals,
   } = useCourseBuilder({
     name: initialCourse?.name,
@@ -76,6 +76,8 @@ export default function AdminBuilderClient({
   const [pickerSupersetId, setPickerSupersetId] = useState<string | null>(null);
   /* Deleting a training day asks first; this holds what the dialog is about. */
   const [dayToDelete, setDayToDelete] = useState<{ id: string; index: number; exCount: number } | null>(null);
+  /* The exercise whose copy button was pressed; the dialog asks which day. */
+  const [exerciseToCopy, setExerciseToCopy] = useState<{ dayId: string; exId: string; name: string } | null>(null);
 
   /* "Start from an existing course": the picker, its search box, and which
      course the contents on screen were taken from — kept only so the header can
@@ -219,6 +221,14 @@ export default function AdminBuilderClient({
     const newId = duplicateDay(dayId);
     setActiveDayId(newId);
     toast.success(`تم نسخ اليوم ${index + 1} إلى اليوم ${days.length + 1}`, { duration: 1600 });
+  };
+
+  /* Stays on the open day, so the same exercise can go to several days. */
+  const handleCopyExercise = (toDayId: string, toIndex: number) => {
+    if (!exerciseToCopy) return;
+    copyExerciseToDay(exerciseToCopy.dayId, exerciseToCopy.exId, toDayId);
+    toast.success(`تم نسخ ${exerciseToCopy.name} إلى اليوم ${toIndex + 1}`, { duration: 1600 });
+    setExerciseToCopy(null);
   };
 
   const handleDeleteDay = (dayId: string, index: number) => {
@@ -484,6 +494,9 @@ export default function AdminBuilderClient({
                               <button className="diet-icon-btn" onClick={() => moveExercise(currentDay.id, ex.id, 1)} disabled={exIndex === dayExercises.length - 1} title="تحريك السوبر سيت للأسفل" aria-label="تحريك للأسفل">
                                 <Icon name="expand_more" />
                               </button>
+                              <button className="diet-icon-btn" onClick={() => setExerciseToCopy({ dayId: currentDay.id, exId: ex.id, name: "السوبر سيت" })} title="نسخ السوبر سيت إلى يوم آخر" aria-label="نسخ السوبر سيت">
+                                <Icon name="content_copy" />
+                              </button>
                               <button className="diet-icon-btn danger" onClick={() => removeExercise(currentDay.id, ex.id)} title="إزالة السوبر سيت من هذا اليوم" aria-label="إزالة السوبر سيت">
                                 <Icon name="close" />
                               </button>
@@ -626,6 +639,9 @@ export default function AdminBuilderClient({
                             <button className="diet-icon-btn" onClick={() => moveExercise(currentDay.id, ex.id, 1)} disabled={exIndex === dayExercises.length - 1} title="تحريك التمرين للأسفل">
                               <Icon name="expand_more" />
                             </button>
+                            <button className="diet-icon-btn" onClick={() => setExerciseToCopy({ dayId: currentDay.id, exId: ex.id, name: ex.name_ar || "التمرين" })} title="نسخ التمرين إلى يوم آخر" aria-label="نسخ التمرين">
+                              <Icon name="content_copy" />
+                            </button>
                             <button className="diet-icon-btn danger" onClick={() => removeExercise(currentDay.id, ex.id)} title="إزالة التمرين من هذا اليوم">
                               <Icon name="close" />
                             </button>
@@ -665,6 +681,14 @@ export default function AdminBuilderClient({
                               aria-label="تحريك للأسفل"
                             >
                               <Icon name="expand_more" />
+                            </button>
+                            <button
+                              className="diet-icon-btn"
+                              onClick={() => setExerciseToCopy({ dayId: currentDay.id, exId: ex.id, name: ex.name_ar || "التمرين" })}
+                              title="نسخ التمرين إلى يوم آخر"
+                              aria-label="نسخ التمرين"
+                            >
+                              <Icon name="content_copy" />
                             </button>
                             <button
                               className="diet-icon-btn danger"
@@ -872,6 +896,35 @@ export default function AdminBuilderClient({
           <p style={{ margin: "12px 0 0", color: "var(--text-muted)", fontSize: "0.9rem" }}>
             لن يُحفظ الحذف نهائياً إلا بعد الضغط على حفظ الكورس.
           </p>
+        </div>
+      </AdminModal>
+
+      <AdminModal
+        isOpen={exerciseToCopy !== null}
+        onClose={() => setExerciseToCopy(null)}
+        title="نسخ إلى يوم"
+        icon="content_copy"
+        maxWidth={480}
+      >
+        <div className="bldr-tpl">
+          <p className="bldr-tpl-lead">
+            اختر اليوم الذي تُضاف إليه نسخة من <strong>{exerciseToCopy?.name}</strong> بكل تفاصيلها، في آخر تمارينه.
+          </p>
+
+          <ul className="bldr-tpl-list">
+            {days.map((day, dIdx) => (
+              <li key={day.id}>
+                <button type="button" onClick={() => handleCopyExercise(day.id, dIdx)}>
+                  <span className="bldr-tpl-name">
+                    <strong>اليوم {dIdx + 1}{day.id === exerciseToCopy?.dayId ? " (اليوم الحالي)" : ""}</strong>
+                    {(day.muscles ?? []).length > 0 && <small>{(day.muscles ?? []).join(" · ")}</small>}
+                  </span>
+                  <span className="bldr-tpl-meta">{arabicCount(day.exercises.length, EXERCISE)}</span>
+                  <span className="bldr-tpl-take">نسخ هنا</span>
+                </button>
+              </li>
+            ))}
+          </ul>
         </div>
       </AdminModal>
 
