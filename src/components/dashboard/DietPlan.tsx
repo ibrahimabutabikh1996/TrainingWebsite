@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { UserProfile } from "@/types";
 import { t } from "@/lib/translations";
-import { defaultPlanName, fmtMacro } from "@/types/diet";
+import { defaultPlanName } from "@/types/diet";
 import "./diet-plan.css";
 import { Icon } from "@/components/Icon";
 
@@ -140,7 +140,9 @@ export function DietPlan({ profile }: { profile: UserProfile }) {
                                 </td>
                                 <td>
                                   <div className="dpv-serving-text">
-                                    {(() => {
+                                    {item.amount !== undefined ? (
+                                      <span style={{ fontWeight: 700 }}>{item.amount}</span>
+                                    ) : (() => {
                                       const totalWeight = item.weight != null ? Math.round(item.weight * 10) / 10 : Math.round((item.qty || 1) * 100 * 10) / 10;
                                       const unit = item.unit || "غرام";
                                       const prefix = (unit === "غرام" || unit === "كغم") ? "الوزن" : "الكمية";
@@ -148,7 +150,7 @@ export function DietPlan({ profile }: { profile: UserProfile }) {
                                       return (
                                         <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
                                           {item.qty > 0 && (
-                                            <span style={{ fontWeight: 700 }}>العدد: {fmtMacro(item.qty)}</span>
+                                            <span style={{ fontWeight: 700 }}>العدد: {item.qty}</span>
                                           )}
                                           {totalWeight > 0 && (
                                             <span style={{ color: "var(--primary-on-tint)", background: "var(--primary-dim)", border: "1px solid var(--border-primary)", padding: "2px 8px", borderRadius: "var(--radius-xs)", fontSize: "0.78rem", fontWeight: 800 }}>

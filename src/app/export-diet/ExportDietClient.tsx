@@ -399,7 +399,9 @@ export default function ExportDietClient({
                                 const baseGrams = 100;
                                 const displayWeight = item.weight != null ? Math.round(item.weight * 10) / 10 : Math.round(item.qty * baseGrams * 10) / 10;
                                 const unit = item.unit || "غرام";
-                                const amountText = unit === "غرام" || unit === "مل" || unit === "لتر" || unit === "كغم" 
+                                const amountText = item.amount !== undefined
+                                  ? item.amount
+                                  : unit === "غرام" || unit === "مل" || unit === "لتر" || unit === "كغم"
                                   ? `${displayWeight} ${unit}`
                                   : `${item.qty} ${unit} ${item.serving_size ? `(${item.serving_size})` : ""}`;
 
@@ -408,7 +410,7 @@ export default function ExportDietClient({
                                     <td style={{ fontSize: fontSize }}>{itemIdx + 1}</td>
                                     <td style={{ textAlign: "right", fontSize: fontSize }}>{item.name}</td>
                                     <td style={{ fontSize: fontSize }}>{item.category}</td>
-                                    <td style={{ fontWeight: 800, color: "#0F4E79", fontSize: fontSize, direction: "ltr" }}>{amountText}</td>
+                                    <td style={{ fontWeight: 800, color: "#0F4E79", fontSize: fontSize, direction: item.amount !== undefined ? "rtl" : "ltr" }}>{amountText}</td>
                                   </tr>
                                 );
                               })}

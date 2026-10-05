@@ -26,6 +26,8 @@ export type MealItem = {
   qty: number;
   weight?: number | null;
   unit?: string;
+  /** Free-text amount typed by the coach. Absent on items saved before it existed, which keep showing weight + unit. */
+  amount?: string;
   calories: number | null;
   protein: number | null;
   carbs: number | null;
@@ -60,15 +62,6 @@ export type DietPlan = {
   meals: MealsData;
 };
 
-export type Macros = {
-  calories: number;
-  protein: number;
-  carbs: number;
-  fats: number;
-};
-
-export const ZERO_MACROS: Macros = { calories: 0, protein: 0, carbs: 0, fats: 0 };
-
 /** Finite, non-negative, or null. Guards both hand-edited jsonb and form input. */
 function toNumberOrNull(raw: unknown): number | null {
   if (raw === null || raw === undefined || raw === "") return null;
@@ -89,9 +82,7 @@ function normalizeItem(raw: unknown): MealItem | null {
 
   const rawQty = toNumberOrNull(r.qty);
   const w = toNumberOrNull(r.weight);
-  const finalQty = rawQty != null && rawQty >= 0 ? rawQty : (w != null && w > 0 ? 0 : 1);
   const sSize = typeof r.serving_size === "string" ? r.serving_size : null;
-  const finalWeight = w != null && w >= 0 ? w : (finalQty > 0 ? finalQty * getServingBaseGrams(sSize) : 0);
 
   return {
     id: toText(r.id) || crypto.randomUUID(),
@@ -99,9 +90,10 @@ function normalizeItem(raw: unknown): MealItem | null {
     name,
     category: toText(r.category),
     serving_size: sSize,
-    qty: finalQty,
-    weight: finalWeight,
+    qty: rawQty ?? 0,
+    weight: w,
     unit: typeof r.unit === "string" && r.unit.trim() ? r.unit : "غرام",
+    ...(typeof r.amount === "string" ? { amount: r.amount.slice(0, 200) } : {}),
     calories: toNumberOrNull(r.calories),
     protein: toNumberOrNull(r.protein),
     carbs: toNumberOrNull(r.carbs),
@@ -135,63 +127,17 @@ export function asMeals(raw: unknown): MealsData {
   }).filter((m): m is Meal => m !== null);
 }
 
-/** Macros for the prescribed amount of one item — calculated strictly by weight when > 0, otherwise by qty multiplier when > 0. */
-export function itemMacros(item: MealItem): Macros {
-  const baseGrams = getServingBaseGrams(item.serving_size);
-  const ratio = item.weight != null && item.weight > 0
-    ? item.weight / baseGrams
-    : (item.qty > 0 ? item.qty : 0);
-
-  return {
-    calories: (item.calories ?? 0) * ratio,
-    protein: (item.protein ?? 0) * ratio,
-    carbs: (item.carbs ?? 0) * ratio,
-    fats: (item.fats ?? 0) * ratio,
-  };
-}
-
-function addMacros(a: Macros, b: Macros): Macros {
-  return {
-    calories: a.calories + b.calories,
-    protein: a.protein + b.protein,
-    carbs: a.carbs + b.carbs,
-    fats: a.fats + b.fats,
-  };
-}
-
-export function mealTotals(meal: Meal): Macros {
-  return meal.items.reduce((sum, item) => addMacros(sum, itemMacros(item)), { ...ZERO_MACROS });
-}
-
-/** Whole-day totals across all meals. */
-export function planTotals(meals: MealsData): Macros {
-  return meals.reduce(
-    (sum, meal) => addMacros(sum, mealTotals(meal)),
-    { ...ZERO_MACROS }
-  );
-}
-
-/** Trailing zeros dropped: "120" not "120.0", but "12.5" survives. */
-export function fmtMacro(value: number): string {
-  if (!Number.isFinite(value)) return "0";
-  return String(Math.round(value * 10) / 10);
-}
-
-export function countItems(meals: MealsData): number {
-  return meals.reduce((n, meal) => n + meal.items.length, 0);
-}
-
 /** Snapshots a library source into a meal item. See MealItem on why it copies. */
-export function itemFromSource(source: NutritionSource, qty = 1): MealItem {
+export function itemFromSource(source: NutritionSource): MealItem {
   return {
     id: crypto.randomUUID(),
     refId: source.id,
     name: source.name,
     category: source.category,
     serving_size: source.serving_size,
-    qty,
-    weight: getServingBaseGrams(source.serving_size) * qty,
-    unit: "غرام",
+    qty: 0,
+    weight: null,
+    amount: "",
     calories: source.calories,
     protein: source.protein,
     carbs: source.carbs,

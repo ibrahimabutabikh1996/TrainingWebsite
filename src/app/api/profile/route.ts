@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/authGuard";
 import { isSubscriptionExpired } from "@/lib/subscription";
-import { asMeals, planTotals, type DietPlan } from "@/types/diet";
+import { asMeals, type DietPlan } from "@/types/diet";
 import { toISODate } from "@/lib/trainingCycle";
 
 /**
@@ -75,11 +75,7 @@ export async function GET(request: Request) {
     const isExpired = isSubscriptionExpired(profile.subscription_ends_at);
 
     // Calculate actual prescribed calories from the coach's diet plan if available
-    let actualCalories = data.dietCalories || null;
-    if (dietPlans && dietPlans.length > 0) {
-      const calculated = Math.round(planTotals(dietPlans[0].meals).calories);
-      if (calculated > 0) actualCalories = calculated;
-    }
+    const actualCalories = data.dietCalories || null;
 
     // Build basic monthly history timeline
     const monthNamesAr = ["الأول", "الثاني", "الثالث", "الرابع", "الخامس", "السادس", "السابع", "الثامن", "التاسع", "العاشر", "الحادي عشر", "الثاني عشر"];

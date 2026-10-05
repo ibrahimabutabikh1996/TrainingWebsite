@@ -186,21 +186,11 @@ export default function DietPlanBuilder({
      only read as a fallback when displaying a row saved before `weight`
      existed, and nothing edits it. */
 
-  const handleWeightChange = (mealId: string, itemId: string, raw: string) => {
-    const w = Number(raw);
+  const handleAmountChange = (mealId: string, itemId: string, amount: string) => {
     updateMeal(mealId, (meal) => ({
       ...meal,
       items: meal.items.map((i) =>
-        i.id === itemId ? { ...i, weight: Number.isFinite(w) && w >= 0 ? w : i.weight } : i
-      ),
-    }));
-  };
-
-  const handleUnitChange = (mealId: string, itemId: string, newUnit: string) => {
-    updateMeal(mealId, (meal) => ({
-      ...meal,
-      items: meal.items.map((i) =>
-        i.id === itemId ? { ...i, unit: newUnit } : i
+        i.id === itemId ? { ...i, amount } : i
       ),
     }));
   };
@@ -665,46 +655,23 @@ export default function DietPlanBuilder({
                                 </div>
 
                                 {(() => {
-                                  const baseGrams = 100;
-                                  const displayWeight = item.weight != null ? Math.round(item.weight * 10) / 10 : Math.round(item.qty * baseGrams * 10) / 10;
+                                  /* An item saved before `amount` existed keeps its weight + unit
+                                     until the coach types over it — shown here as the placeholder. */
+                                  const legacyAmount = item.amount === undefined && item.weight != null
+                                    ? `${item.weight}${item.unit && item.unit !== "بدون وحدة قياس" ? ` ${item.unit}` : ""}`
+                                    : "";
                                   return (
-                                    <div style={{ display: "inline-flex", alignItems: "center", gap: "10px", flexWrap: "wrap", background: "color-mix(in srgb, var(--bg2) 85%, transparent)", padding: "6px 12px", borderRadius: "var(--radius-lg)", border: "1px solid color-mix(in srgb, var(--primary) 25%, rgba(255,255,255,0.08))", boxShadow: "inset 0 1px 3px rgba(0,0,0,0.4)" }}>
-                                      {/* Weight/Amount & Unit Input */}
-                                      <div className="dplan-qty" style={{ margin: 0, gap: "6px", display: "inline-flex", alignItems: "center" }}>
-                                        <input
-                                          type="number"
-                                          min="0"
-                                          step="0.5"
-                                          style={{ width: "76px", background: "color-mix(in srgb, #071926 75%, var(--bg1, #080808))", fontWeight: 800, color: "#38BDF8", border: "1px solid color-mix(in srgb, #38BDF8 45%, transparent)", borderRadius: "var(--radius-sm)", padding: "6px", textAlign: "center" }}
-                                          value={displayWeight}
-                                          onChange={(e) => handleWeightChange(meal.id, item.id, e.target.value)}
-                                          title="الوزن أو الكمية الإجمالية"
-                                        />
-                                        {/* Wide enough for the longest unit.
-                                            "بدون وحدة قياس" is 114px of text,
-                                            and the trigger spends 50px of the
-                                            box on its padding and caret — at
-                                            110 the label had 60px and was cut
-                                            down to "بدون و…". */}
-                                        <div style={{ width: 165 }}>
-                                          <CustomSelect
-                                            value={item.unit || "غرام"}
-                                            onChange={(v) => handleUnitChange(meal.id, item.id, v)}
-                                            options={[
-                                              { value: "غرام", label: "غرام" },
-                                              { value: "كغم", label: "كغم" },
-                                              { value: "مل", label: "مل" },
-                                              { value: "لتر", label: "لتر" },
-                                              { value: "قطعة", label: "قطعة" },
-                                              { value: "كوب", label: "كوب" },
-                                              { value: "ملعقة طعام", label: "ملعقة طعام" },
-                                              { value: "ملعقة شاي", label: "ملعقة شاي" },
-                                              { value: "شريحة", label: "شريحة" },
-                                              { value: "بدون وحدة قياس", label: "بدون وحدة قياس" },
-                                            ]}
-                                          />
-                                        </div>
-                                      </div>
+                                    <div style={{ display: "flex", alignItems: "center", flex: "1 1 320px", minWidth: 0, background: "color-mix(in srgb, var(--bg2) 85%, transparent)", padding: "6px 12px", borderRadius: "var(--radius-lg)", border: "1px solid color-mix(in srgb, var(--primary) 25%, rgba(255,255,255,0.08))", boxShadow: "inset 0 1px 3px rgba(0,0,0,0.4)" }}>
+                                      {/* Free-text amount */}
+                                      <input
+                                        type="text"
+                                        maxLength={200}
+                                        style={{ width: "100%", background: "color-mix(in srgb, #071926 75%, var(--bg1, #080808))", fontWeight: 800, color: "#38BDF8", border: "1px solid color-mix(in srgb, #38BDF8 45%, transparent)", borderRadius: "var(--radius-sm)", padding: "6px 10px" }}
+                                        value={item.amount ?? ""}
+                                        placeholder={legacyAmount || "الكمية، مثال: 2 بيضة مسلوقة"}
+                                        onChange={(e) => handleAmountChange(meal.id, item.id, e.target.value)}
+                                        title="الكمية"
+                                      />
                                     </div>
                                   );
                                 })()}

@@ -6,9 +6,9 @@ import Link from "next/link";
 import AdminModal from "../../components/AdminModal";
 import { deleteDietPlanAction, deleteGeneralDietGroupAction } from "../plan/actions";
 import { copyDietPlanToTraineeAction, duplicateDietPlanAction } from "./actions";
-import { countItems, fmtMacro, type MealsData } from "@/types/diet";
+import { type MealsData } from "@/types/diet";
 import type { TraineeOption } from "@/types/admin";
-import { arabicCount, CHOICE, ITEM, MEAL } from "@/lib/arabicCount";
+import { arabicCount, CHOICE, MEAL } from "@/lib/arabicCount";
 import { toast, Toaster } from "react-hot-toast";
 import { Icon } from "@/components/Icon";
 import { CustomSelect } from "@/components/CustomSelect";
@@ -359,7 +359,6 @@ export default function DietLibraryClient({
                    and the per-choice figures wait for the dialog. */
                 const first = plan.choices[0];
                 const mealCount = first ? first.meals.length : 0;
-                const itemCount = first ? countItems(first.meals) : 0;
                 const isSelected = selectedPlanId === plan.key;
 
                 return (
@@ -398,7 +397,6 @@ export default function DietLibraryClient({
                           <span className="co-chip co-chip--primary">
                             {arabicCount(mealCount, MEAL)}
                           </span>
-                          <span className="co-chip">{arabicCount(itemCount, ITEM)}</span>
                         </>
                       )}
                     </div>
@@ -657,7 +655,6 @@ export default function DietLibraryClient({
                         <span className="crm-tag primary-tag">
                           {arabicCount(choice.meals.length, MEAL)}
                         </span>
-                        <span className="crm-tag">{arabicCount(countItems(choice.meals), ITEM)}</span>
                       </h3>
                     )}
 
@@ -666,7 +663,6 @@ export default function DietLibraryClient({
                         <span className="crm-tag primary-tag">
                           {arabicCount(choice.meals.length, MEAL)}
                         </span>
-                        <span className="crm-tag">{arabicCount(countItems(choice.meals), ITEM)}</span>
                       </div>
                     )}
 
@@ -783,8 +779,10 @@ export default function DietLibraryClient({
                                           color: "var(--text-secondary)",
                                         }}
                                       >
-                                        {item.weight != null && item.weight > 0
-                                          ? `${fmtMacro(item.weight)} ${item.unit || "غرام"}`
+                                        {item.amount !== undefined
+                                          ? item.amount || "—"
+                                          : item.weight != null && item.weight > 0
+                                          ? `${item.weight} ${item.unit || "غرام"}`
                                           : "—"}
                                       </td>
                                     </tr>
