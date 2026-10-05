@@ -550,7 +550,6 @@ export default function ExportWorkoutClient({
                         {dayTitle}
                       </div>
                       <div style={{ gridColumn: 3, justifySelf: "end", fontSize: "1.15rem", fontWeight: 800, color: "#fff", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
-                        <span></span>
                         {muscles.map((m, mIdx) => (
                           <span key={mIdx} style={{ background: muscleColors[mIdx].bg, color: muscleColors[mIdx].text, borderRadius: "5px", padding: "2px 12px", lineHeight: 1.3, whiteSpace: "nowrap", fontSize: "0.85rem" }}>{m}</span>
                         ))}
