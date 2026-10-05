@@ -178,6 +178,34 @@ export function useCourseBuilder(init: CourseBuilderInit = {}) {
     return id;
   };
 
+  /* Appends a copy of a day as the last one. Every id is fresh — the day's, each
+     exercise's and each superset item's — because workout logs are keyed by
+     day_id and exercise_id, and removeExercise matches by id: a shared id would
+     merge the trainee's logs across both days and delete from both at once. */
+  const duplicateDay = (dayId: string) => {
+    const id = newId();
+    setDays((prev) => {
+      const source = prev.find((d) => d.id === dayId);
+      if (!source) return prev;
+      const copyExercise = (ex: DayExercise): DayExercise => ({
+        ...ex,
+        id: newId(),
+        ...(Array.isArray(ex.reps) ? { reps: [...ex.reps] } : {}),
+        ...(Array.isArray(ex.items) ? { items: ex.items.map(copyExercise) } : {}),
+      });
+      return [
+        ...prev,
+        {
+          ...source,
+          id,
+          muscles: [...(source.muscles ?? [])],
+          exercises: source.exercises.map(copyExercise),
+        },
+      ];
+    });
+    return id;
+  };
+
   const deleteDay = (dayId: string) =>
     setDays((prev) => prev.filter((d) => d.id !== dayId));
 
@@ -411,7 +439,7 @@ export function useCourseBuilder(init: CourseBuilderInit = {}) {
     courseDesc, setCourseDesc,
     selectedTrainee, setSelectedTrainee,
     days, setDays,
-    addDay, deleteDay, moveDay, setDayMuscles,
+    addDay, duplicateDay, deleteDay, moveDay, setDayMuscles,
     addExerciseToDay, addCustomExerciseToDay,
     addSupersetToDay, addExerciseToSuperset, removeSupersetItem, moveSupersetItem,
     updateSets, updateRep, applyRepsToAll, updateCustomCol, updateCustomTitle,

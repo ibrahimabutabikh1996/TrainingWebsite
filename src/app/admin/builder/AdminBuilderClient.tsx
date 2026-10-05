@@ -49,7 +49,7 @@ export default function AdminBuilderClient({
     courseDesc, setCourseDesc,
     selectedTrainee, setSelectedTrainee,
     days, setDays,
-    addDay, deleteDay, moveDay, setDayMuscles,
+    addDay, duplicateDay, deleteDay, moveDay, setDayMuscles,
     addExerciseToDay, addCustomExerciseToDay,
     addSupersetToDay, addExerciseToSuperset, removeSupersetItem, moveSupersetItem,
     updateSets, updateRep, applyRepsToAll, updateCustomCol, updateCustomTitle,
@@ -213,6 +213,12 @@ export default function AdminBuilderClient({
     const newId = addDay();
     setActiveDayId(newId);
     toast.success(`تم إنشاء اليوم التدريبي ${days.length + 1}`, { duration: 1600 });
+  };
+
+  const handleDuplicateDay = (dayId: string, index: number) => {
+    const newId = duplicateDay(dayId);
+    setActiveDayId(newId);
+    toast.success(`تم نسخ اليوم ${index + 1} إلى اليوم ${days.length + 1}`, { duration: 1600 });
   };
 
   const handleDeleteDay = (dayId: string, index: number) => {
@@ -430,6 +436,14 @@ export default function AdminBuilderClient({
                     aria-label="تأخير اليوم"
                   >
                     <Icon name="chevron_left" />
+                  </button>
+                  <button
+                    className="diet-icon-btn"
+                    onClick={() => handleDuplicateDay(currentDay.id, currentDayIndex)}
+                    title="نسخ هذا اليوم بكل تمارينه كيوم جديد في آخر الأيام"
+                    aria-label="نسخ اليوم"
+                  >
+                    <Icon name="content_copy" />
                   </button>
                   <button
                     className="dplan-delete-plan"
