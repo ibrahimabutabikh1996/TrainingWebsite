@@ -545,11 +545,11 @@ export default function ExportWorkoutClient({
                   <div style={{ flex: "1 1 auto", display: "flex", flexDirection: "column", paddingBottom: "0" }}>
                     
                     {/* Day Header Strip */}
-                    <div className="day-header-strip" style={{ backgroundColor: "hsla(203, 83%, 23%, 1)", backgroundImage: "linear-gradient(90deg, hsla(203, 83%, 23%, 1) 0%, hsla(203, 61%, 37%, 1) 50%, hsla(203, 92%, 41%, 1) 100%)", padding: stripPadding, borderRadius: "6px", borderLeft: "6px solid #0F4E79", borderRight: "6px solid #0F4E79", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", marginBottom: headerMarginBottom, borderTop: "1px solid transparent", borderBottom: "1px solid transparent", flexShrink: 0 }}>
-                      <div style={{ fontSize: stripFontSize, fontWeight: 800, color: "#fff" }}>
+                    <div className="day-header-strip" style={{ backgroundColor: "hsla(203, 83%, 23%, 1)", backgroundImage: "linear-gradient(90deg, hsla(203, 83%, 23%, 1) 0%, hsla(203, 61%, 37%, 1) 50%, hsla(203, 92%, 41%, 1) 100%)", padding: stripPadding, borderRadius: "6px", borderLeft: "6px solid #0F4E79", borderRight: "6px solid #0F4E79", display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", flexWrap: "wrap", marginBottom: headerMarginBottom, borderTop: "1px solid transparent", borderBottom: "1px solid transparent", flexShrink: 0 }}>
+                      <div style={{ gridColumn: 2, fontSize: stripFontSize, fontWeight: 800, color: "#fff" }}>
                         {dayTitle}
                       </div>
-                      <div style={{ fontSize: "1.15rem", fontWeight: 800, color: "#fff", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                      <div style={{ gridColumn: 3, justifySelf: "end", fontSize: "1.15rem", fontWeight: 800, color: "#fff", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
                         <span></span>
                         {muscles.map((m, mIdx) => (
                           <span key={mIdx} style={{ background: muscleColors[mIdx].bg, color: muscleColors[mIdx].text, borderRadius: "5px", padding: "2px 12px", lineHeight: 1.3, whiteSpace: "nowrap", fontSize: "0.85rem" }}>{m}</span>
