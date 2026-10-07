@@ -296,7 +296,7 @@ export default function ExportDietClient({
           <button
             onClick={downloadPDF}
             disabled={isDownloading}
-            style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: downloaded ? "#10b981" : "#0F4E79", color: "#fff", border: "none", padding: "10px 20px", borderRadius: "8px", fontSize: "1rem", fontWeight: 700, cursor: isDownloading ? "wait" : "pointer", transition: "all 0.2s" }}
+            style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: downloaded ? "#10b981" : "#0F4E79", color: "#fff", border: "none", padding: "10px 20px", borderRadius: "8px", fontSize: "1rem", fontWeight: 700, cursor: isDownloading ? "wait" : "pointer", transition: "background-color 0.2s" }}
           >
             {isDownloading ? "جاري التجهيز..." : downloaded ? "تم التحميل" : "تحميل النظام الغذائي PDF"}
           </button>
