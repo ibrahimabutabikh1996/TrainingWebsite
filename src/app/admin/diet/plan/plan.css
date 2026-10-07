@@ -316,8 +316,15 @@
   gap: 10px 14px;
   padding: 12px 14px;
   border-radius: var(--radius-lg);
-  border: 1px solid var(--border);
-  background: var(--bg3);
+  border: 1px solid transparent;
+  /* The library card's tint, on this row's own surface: --cat-color is set
+     per item from `getCategoryBadge`. */
+  background: linear-gradient(
+    to left,
+    color-mix(in srgb, var(--cat-color, var(--primary)) 18%, var(--bg3)) 0%,
+    color-mix(in srgb, var(--cat-color, var(--primary)) 7%, var(--bg3)) 45%,
+    var(--bg3) 100%
+  );
 }
 
 .dplan-item > .diet-icon-btn {
@@ -340,7 +347,7 @@
 
 .dplan-item-cat {
   font-size: var(--text-xs);
-  color: var(--text-muted);
+  color: color-mix(in srgb, var(--cat-color, var(--primary)) 70%, var(--text));
 }
 
 .dplan-qty {

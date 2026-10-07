@@ -321,8 +321,17 @@
   padding: var(--space-6);
   padding-inline-end: 84px;
   border-radius: var(--radius-lg);
-  background: var(--bg2);
-  border: 1px solid var(--border);
+  /* Tinted from the right — the side the name starts on — in the category's
+     colour (--cat-color, set per card from `getCategoryBadge`), fading to the
+     plain surface. The border stays as a transparent 1px so the card keeps its
+     size; the gradient alone separates it from the page. */
+  background: linear-gradient(
+    to left,
+    color-mix(in srgb, var(--cat-color, var(--primary)) 18%, var(--bg2)) 0%,
+    color-mix(in srgb, var(--cat-color, var(--primary)) 7%, var(--bg2)) 45%,
+    var(--bg2) 100%
+  );
+  border: 1px solid transparent;
   box-shadow: var(--elev-1);
   transition:
     background-color var(--dur) var(--ease),
@@ -335,9 +344,14 @@
   min-width: 0;
 }
 
+/* No border to light up, so the hover strengthens the tint instead. */
 .diet-card-minimal:hover {
-  background: var(--bg3);
-  border-color: var(--border-primary);
+  background: linear-gradient(
+    to left,
+    color-mix(in srgb, var(--cat-color, var(--primary)) 26%, var(--bg2)) 0%,
+    color-mix(in srgb, var(--cat-color, var(--primary)) 11%, var(--bg2)) 55%,
+    var(--bg3) 100%
+  );
   box-shadow: var(--elev-2);
 }
 
@@ -372,13 +386,13 @@
 }
 
 .diet-card-minimal:hover .diet-card-minimal-text h3 {
-  color: var(--primary-on-tint);
+  color: color-mix(in srgb, var(--cat-color, var(--primary)) 35%, var(--text));
 }
 
 .diet-card-minimal-text p {
   margin: 0;
   font-size: var(--text-sm);
-  color: var(--text-muted);
+  color: color-mix(in srgb, var(--cat-color, var(--primary)) 70%, var(--text));
   line-height: var(--leading-snug);
   word-wrap: break-word;
   font-family: var(--font-primary);
@@ -386,9 +400,7 @@
 }
 
 .diet-card-minimal:hover .diet-card-minimal-text p {
-  /* The token is defined on :root and always resolves; the literal fallback it
-     carried was an off-palette grey that nothing else in the system uses. */
-  color: var(--text-secondary);
+  color: color-mix(in srgb, var(--cat-color, var(--primary)) 50%, var(--text));
 }
 
 .diet-card-minimal-actions {

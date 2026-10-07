@@ -111,6 +111,26 @@ while the two resolve the same.
 
 Tinted status backgrounds: `--success-bg`, `--error-bg`.
 
+## Food-Category Palette
+
+One colour per nutrition-library category, so a food's category reads at a
+glance in the diet library and the plan builder. Like the training-day
+palette, a deliberate exception to the monochromatic-blue rule.
+
+| Category            | Token             | Value     |
+| ------------------- | ----------------- | --------- |
+| مصادر البروتين      | `--food-protein`  | `#F472B6` |
+| مصادر الكاربوهيدرات | `--food-carbs`    | `#FBBF24` |
+| مصادر الدهون الصحية | `--food-fats`     | `#A78BFA` |
+| الخضراوات           | `--food-veggies`  | `#4ADE80` |
+| الفواكه             | `--food-fruit`    | `#FB923C` |
+
+`getCategoryBadge` in `src/types/diet.ts` maps a category to its token (any
+other category gets `--primary`). The component sets it on the card or row as
+`--cat-color`; the stylesheets read `var(--cat-color, var(--primary))` and mix
+it into the surface with `color-mix()` — a light gradient from the right, no
+border. Protein is pink, not red, so it never reads as the delete button.
+
 ## Training-Day Palette
 
 Eight colours giving every day of a training cycle its own identity — day

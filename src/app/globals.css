@@ -119,6 +119,16 @@ html {
     --plan-1: #820911; --plan-1-rgb: 130, 9, 17;
     --plan-2: #FFD700; --plan-2-rgb: 255, 215, 0;
     --plan-3: #370F75; --plan-3-rgb: 55, 15, 117;
+
+    /* Food categories — one per nutrition-library category, read through
+       `getCategoryBadge` and set on each card as --cat-color. Warm and distinct
+       on purpose, so a category is told apart at a glance; protein is pink
+       rather than red so it never reads as the delete button beside it. */
+    --food-protein: #F472B6;
+    --food-carbs: #FBBF24;
+    --food-fats: #A78BFA;
+    --food-veggies: #4ADE80;
+    --food-fruit: #FB923C;
     /* Text laid *on* a plan fill. These fills are light on dark, so the
        label has to go dark. */
     --plan-1-text: #FFFFFF;

@@ -152,24 +152,21 @@ export function normalizeFoodCategory(category?: string): string {
 }
 
 export function getCategoryBadge(category: string): { icon: IconName; color: string; label: string } {
-  const monoStyle = {
-    color: "var(--mono-icon-color)",
-  };
   switch (category) {
     case "مصادر البروتين":
-      return { icon: "food_protein", ...monoStyle, label: "مصادر البروتين" };
+      return { icon: "food_protein", color: "var(--food-protein)", label: "مصادر البروتين" };
     case "مصادر الكاربوهيدرات":
-      return { icon: "food_carbs", ...monoStyle, label: "مصادر الكاربوهيدرات" };
+      return { icon: "food_carbs", color: "var(--food-carbs)", label: "مصادر الكاربوهيدرات" };
     case "مصادر الدهون الصحية":
     case "مصادر الدهون":
-      return { icon: "food_fats", ...monoStyle, label: "مصادر الدهون الصحية" };
+      return { icon: "food_fats", color: "var(--food-fats)", label: "مصادر الدهون الصحية" };
     case "الخضراوات":
     case "مصادر الخضراوات":
-      return { icon: "food_veggies", ...monoStyle, label: "الخضراوات" };
+      return { icon: "food_veggies", color: "var(--food-veggies)", label: "الخضراوات" };
     case "الفواكه":
     case "مصادر الفواكه":
-      return { icon: "food_fruit", ...monoStyle, label: "الفواكه" };
+      return { icon: "food_fruit", color: "var(--food-fruit)", label: "الفواكه" };
     default:
-      return { icon: "restaurant_menu", ...monoStyle, label: category || "صنف غذائي" };
+      return { icon: "restaurant_menu", color: "var(--primary)", label: category || "صنف غذائي" };
   }
 }

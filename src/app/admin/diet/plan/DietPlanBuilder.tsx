@@ -627,8 +627,13 @@ export default function DietPlanBuilder({
                       ) : (
                         <ul className="dplan-items">
                           {meal.items.map((item) => {
+                            const itemBadge = getCategoryBadge(item.category || "");
                             return (
-                              <li key={item.id} className="dplan-item">
+                              <li
+                                key={item.id}
+                                className="dplan-item"
+                                style={{ "--cat-color": itemBadge.color } as React.CSSProperties}
+                              >
                                 <div style={{ display: "flex", alignItems: "center", gap: "12px", flex: "1 1 200px", minWidth: 0 }}>
                                   <div className="dplan-item-main">
                                     <strong>{item.name}</strong>
@@ -819,17 +824,18 @@ function SourcePicker({
                   <button
                     onClick={() => onPick(s)}
                     style={{
+                      "--cat-color": badge.color,
                       display: "flex",
                       alignItems: "center",
                       gap: "14px",
                       padding: "12px 14px",
-                      background: "var(--bg2)",
-                      border: "1px solid rgba(255, 255, 255, 0.06)",
+                      background: "linear-gradient(to left, color-mix(in srgb, var(--cat-color) 18%, var(--bg2)) 0%, color-mix(in srgb, var(--cat-color) 7%, var(--bg2)) 45%, var(--bg2) 100%)",
+                      border: "1px solid transparent",
                       borderRadius: "var(--radius-lg)",
                       width: "100%",
                       textAlign: "right",
                       cursor: "pointer",
-                    }}
+                    } as React.CSSProperties}
                   >
                     <span className="dplan-picker-name" style={{ flex: 1, display: "flex", flexDirection: "column", gap: "4px" }}>
                       <strong style={{ fontSize: "1rem", color: "var(--text)", fontWeight: 800 }}>{s.name}</strong>

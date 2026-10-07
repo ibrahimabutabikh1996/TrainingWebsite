@@ -192,7 +192,11 @@ export default function AdminDietClient({ initialSources }: { initialSources: Nu
           filteredSources.map((source) => {
             const badge = getCategoryBadge(source.category);
             return (
-              <article key={source.id} className="diet-card-minimal">
+              <article
+                key={source.id}
+                className="diet-card-minimal"
+                style={{ "--cat-color": badge.color } as React.CSSProperties}
+              >
                 <div className="diet-card-minimal-text">
                   <h3>{source.name}</h3>
                   <p>{source.notes || badge.label}</p>
