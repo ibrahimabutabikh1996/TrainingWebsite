@@ -193,17 +193,6 @@ export default function AdminDietClient({ initialSources }: { initialSources: Nu
             const badge = getCategoryBadge(source.category);
             return (
               <article key={source.id} className="diet-card-minimal">
-                <div className="diet-card-minimal-icon">
-                  {/* The source's own photograph when it has one, the category
-                      picture when it does not. `image_url` was written by the
-                      form, saved by the action, read back by the page and passed
-                      down here — and then never rendered by anything, so every
-                      card showed one of five generic category pictures and the
-                      photograph the coach uploaded for this food was stored and
-                      never seen. */}
-                  <img src={source.image_url || badge.image} alt={source.name} loading="lazy" />
-                </div>
-
                 <div className="diet-card-minimal-text">
                   <h3>{source.name}</h3>
                   <p>{source.notes || badge.label}</p>

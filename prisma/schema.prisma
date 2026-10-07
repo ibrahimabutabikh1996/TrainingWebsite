@@ -858,7 +858,6 @@ model nutrition_sources {
   id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name         String
   category     String
-  image_url    String?
   serving_size String?
   calories     Decimal?  @db.Decimal(6, 2)
   protein      Decimal?  @db.Decimal(6, 2)

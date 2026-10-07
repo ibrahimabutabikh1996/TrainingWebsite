@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireAdminAction } from "@/lib/authGuard";
 import type { NutritionSource } from "@/types/admin";
-import { STORAGE_PUBLIC_MARKER } from "@/lib/supabaseAdmin";
 
 /* The nutrition library is the coach's reference table — shared by every
    trainee's plan, so one edit reaches all of them. Each action checks the
@@ -23,8 +22,7 @@ const stripHamzas = (text?: string | null) => {
  *
  * A server action takes whatever the request carries, not what the form on the
  * other side happened to render. These fields went in untouched: a name of any
- * length, a category outside the five the UI offers, and — now that the card
- * finally renders it — an `image_url` pointing anywhere at all.
+ * length, and a category outside the five the UI offers.
  * ------------------------------------------------------------------ */
 
 /** Long enough for the longest real food name, short enough to be a cell. */
@@ -51,26 +49,10 @@ function macro(value: unknown): number | null {
   return Math.round(n * 100) / 100;
 }
 
-/**
- * An address this application produced, or nothing.
- *
- * The field is written by the upload above, which returns a public URL inside
- * the project's own bucket. Accepting anything else means the panel fetches
- * images from wherever a crafted request says — and stores the instruction to
- * keep doing it. `null` simply falls back to the category picture.
- */
-function storedImageUrl(value: unknown): string | null {
-  if (typeof value !== "string") return null;
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-  return trimmed.includes(STORAGE_PUBLIC_MARKER) ? trimmed.slice(0, 500) : null;
-}
-
 function narrow(data: Omit<NutritionSource, "id" | "created_at">) {
   return {
     name: stripHamzas(text(data.name, MAX_NAME)) || "",
     category: stripHamzas(text(data.category, MAX_SHORT)) || "",
-    image_url: storedImageUrl(data.image_url),
     serving_size: text(data.serving_size, MAX_SHORT),
     calories: macro(data.calories),
     protein: macro(data.protein),

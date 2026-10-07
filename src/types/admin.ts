@@ -168,7 +168,6 @@ export type NutritionSource = {
   id: string;
   name: string;
   category: string;
-  image_url: string | null;
   serving_size: string | null;
   calories: number | null;
   protein: number | null;

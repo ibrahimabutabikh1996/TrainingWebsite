@@ -71,7 +71,6 @@ console.log(`  site_settings keys: ${manifest.dbRefs.siteSettingsKeys.length}, t
 console.log("\n[3b] OTHER TABLES HOLDING AN uploads PUBLIC URL");
 const others = await q(`
   select 'courses.cover_image' as loc, count(*)::int n from public.courses where cover_image like '%${MARKER}%'
-  union all select 'nutrition_sources.image_url', count(*)::int from public.nutrition_sources where image_url like '%${MARKER}%'
   union all select 'exercises.video_url', count(*)::int from public.exercises where video_url like '%${MARKER}%'
   union all select 'profiles.data (public url)', count(*)::int from public.profiles where data::text like '%${MARKER}%'`);
 for (const o of others) console.log(`  ${o.loc.padEnd(30)} ${o.n}`);

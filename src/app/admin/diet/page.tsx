@@ -23,7 +23,6 @@ export default async function AdminDietPage() {
       id: r.id,
       name: r.name,
       category: r.category,
-      image_url: r.image_url,
       serving_size: r.serving_size,
       calories: r.calories ? Number(r.calories) : null,
       protein: r.protein ? Number(r.protein) : null,

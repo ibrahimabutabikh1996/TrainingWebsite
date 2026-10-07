@@ -47,7 +47,6 @@ export default function NutritionFormModal({
              and macros already stored, one source at a time as the coach edits
              them. Nothing reads those values today, but losing them silently is
              not the same as choosing to drop them. */
-          image_url: editingSource?.image_url ?? null,
           serving_size: editingSource?.serving_size ?? null,
           calories: editingSource?.calories ?? null,
           protein: editingSource?.protein ?? null,

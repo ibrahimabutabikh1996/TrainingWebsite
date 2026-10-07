@@ -71,7 +71,6 @@ export default async function DietPlanPage({
       id: r.id,
       name: r.name,
       category: r.category,
-      image_url: r.image_url,
       calories: r.calories ? Number(r.calories) : null,
       protein: r.protein ? Number(r.protein) : null,
       carbs: r.carbs ? Number(r.carbs) : null,

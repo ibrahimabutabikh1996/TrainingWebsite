@@ -627,27 +627,9 @@ export default function DietPlanBuilder({
                       ) : (
                         <ul className="dplan-items">
                           {meal.items.map((item) => {
-                            const itemBadge = getCategoryBadge(item.category || "");
                             return (
                               <li key={item.id} className="dplan-item">
                                 <div style={{ display: "flex", alignItems: "center", gap: "12px", flex: "1 1 200px", minWidth: 0 }}>
-                                  <div
-                                    style={{
-                                      width: "38px",
-                                      height: "38px",
-                                      borderRadius: "var(--radius-md)",
-                                      flexShrink: 0,
-                                      background: itemBadge.bg,
-                                      border: `1px solid ${itemBadge.border}`,
-                                      display: "flex",
-                                      alignItems: "center",
-                                      justifyContent: "center",
-                                      overflow: "hidden",
-                                      padding: "4px",
-                                    }}
-                                  >
-                                    <img src={itemBadge.image} alt={item.name} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
-                                  </div>
                                   <div className="dplan-item-main">
                                     <strong>{item.name}</strong>
                                     <span className="dplan-item-cat">{item.category}</span>
@@ -849,27 +831,6 @@ function SourcePicker({
                       cursor: "pointer",
                     }}
                   >
-                    <div
-                      style={{
-                        width: "44px",
-                        height: "44px",
-                        borderRadius: "var(--radius-lg)",
-                        flexShrink: 0,
-                        background: badge.bg,
-                        border: `1px solid ${badge.border}`,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        overflow: "hidden",
-                        padding: "4px",
-                      }}
-                    >
-                      {/* Same as the library grid: the food's own photograph
-                          when it has one. Saved plan items below keep the
-                          category picture — a `MealItem` is a snapshot that
-                          deliberately does not carry the library's image. */}
-                      <img src={s.image_url || badge.image} alt={s.name} loading="lazy" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
-                    </div>
                     <span className="dplan-picker-name" style={{ flex: 1, display: "flex", flexDirection: "column", gap: "4px" }}>
                       <strong style={{ fontSize: "1rem", color: "var(--text)", fontWeight: 800 }}>{s.name}</strong>
                       <small style={{ color: badge.color, fontWeight: 700, fontSize: "0.78rem" }}>
