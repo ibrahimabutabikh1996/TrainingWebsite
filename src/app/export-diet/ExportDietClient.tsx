@@ -368,15 +368,14 @@ export default function ExportDietClient({
                       <thead>
                         <tr style={{ height: "11mm" }}>
                           <th style={{ width: "10%", padding: "2mm 1mm" }}>ت</th>
-                          <th style={{ textAlign: "right", padding: "2mm 1.5mm", width: "45%" }}>اسم الصنف</th>
-                          <th style={{ width: "25%", padding: "2mm 1mm" }}>الفئة</th>
-                          <th style={{ width: "20%", padding: "2mm 1mm" }}>الكمية</th>
+                          <th style={{ textAlign: "right", padding: "2mm 1.5mm", width: "60%" }}>اسم الصنف</th>
+                          <th style={{ width: "30%", padding: "2mm 1mm" }}>الكمية</th>
                         </tr>
                       </thead>
                       <tbody>
                         {meals.length === 0 ? (
                           <tr>
-                            <td colSpan={4} style={{ padding: "28px", color: "#64748b", fontWeight: 600 }}>
+                            <td colSpan={3} style={{ padding: "28px", color: "#64748b", fontWeight: 600 }}>
                               لا توجد وجبات مسجلة في هذا النظام
                             </td>
                           </tr>
@@ -384,13 +383,13 @@ export default function ExportDietClient({
                           meals.map((meal: Meal) => (
                             <React.Fragment key={meal.id}>
                               <tr className="meal-title-row" style={{ height: rowHeight }}>
-                                <td colSpan={4} style={{ fontSize: titleFontSize }}>
+                                <td colSpan={3} style={{ fontSize: titleFontSize }}>
                                   {meal.name} {meal.time ? `(${meal.time})` : ""}
                                 </td>
                               </tr>
                               {meal.startNote && (
                                 <tr style={{ height: rowHeight, backgroundColor: "#fafafa" }}>
-                                  <td colSpan={4} style={{ textAlign: "right", paddingRight: "4mm", color: "#555", fontSize: fontSize }}>
+                                  <td colSpan={3} style={{ textAlign: "right", paddingRight: "4mm", color: "#555", fontSize: fontSize }}>
                                     {meal.startNote}
                                   </td>
                                 </tr>
@@ -409,7 +408,6 @@ export default function ExportDietClient({
                                   <tr key={item.id} style={{ height: rowHeight }}>
                                     <td style={{ fontSize: fontSize }}>{itemIdx + 1}</td>
                                     <td style={{ textAlign: "right", fontSize: fontSize }}>{item.name}</td>
-                                    <td style={{ fontSize: fontSize }}>{item.category}</td>
                                     <td style={{ fontWeight: 800, color: "#0F4E79", fontSize: fontSize, direction: item.amount !== undefined ? "rtl" : "ltr" }}>{amountText}</td>
                                   </tr>
                                 );
