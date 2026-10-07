@@ -368,8 +368,8 @@ export default function ExportDietClient({
                       <thead>
                         <tr style={{ height: "11mm" }}>
                           <th style={{ width: "10%", padding: "2mm 1mm" }}>ت</th>
-                          <th style={{ textAlign: "right", padding: "2mm 1.5mm", width: "60%" }}>اسم الصنف</th>
-                          <th style={{ width: "30%", padding: "2mm 1mm" }}>الكمية</th>
+                          <th style={{ textAlign: "right", padding: "2mm 1.5mm", width: "40%" }}>اسم الصنف</th>
+                          <th style={{ width: "50%", padding: "2mm 1mm" }}>الكمية</th>
                         </tr>
                       </thead>
                       <tbody>
