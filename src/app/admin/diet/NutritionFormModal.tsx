@@ -70,7 +70,7 @@ export default function NutritionFormModal({
       icon="restaurant_menu"
       maxWidth={600}
     >
-      <form onSubmit={handleSubmit} className="diet-form">
+      <form onSubmit={handleSubmit} className="diet-form" style={{ minHeight: 360 }}>
         <div className="diet-form-row">
           <div className="diet-field">
             <label>
@@ -100,7 +100,7 @@ export default function NutritionFormModal({
           </div>
         </div>
 
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: 12, marginTop: 16 }}>
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 12, marginTop: "auto" }}>
           <button type="button" onClick={onClose} className="diet-modal-btn diet-modal-btn--ghost">
             إلغاء
           </button>
