@@ -246,7 +246,7 @@ export function CustomDatePicker({ value, minDate, maxDate, onlyToday = false, d
                 fontSize: "0.85rem",
                 fontWeight: 700,
                 cursor: "pointer",
-                transition: "all 0.2s",
+                transition: "border-color 0.2s, color 0.2s",
               }}
               onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--primary)"; e.currentTarget.style.color = "var(--primary)"; }}
               onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--text)"; }}

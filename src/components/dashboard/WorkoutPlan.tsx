@@ -595,7 +595,7 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
                           ? `0 6px 20px color-mix(in srgb, ${dayColor} 35%, transparent)`
                           : "0 2px 8px rgba(0, 0, 0, 0.1)",
                         fontWeight: isSelected ? 800 : 700,
-                        transition: "all 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
+                        transition: "background-color 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s cubic-bezier(0.16, 1, 0.3, 1), color 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
                       } as React.CSSProperties
                     }
                   >
@@ -1417,7 +1417,7 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
                           boxShadow: !canFinishWorkout
                             ? "none"
                             : `0 8px 32px color-mix(in srgb, ${getDayAccent(activeDay)} 42%, transparent)`,
-                          transition: "all 0.25s ease",
+                          transition: "background-color 0.25s ease, color 0.25s ease, opacity 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease, filter 0.25s ease",
                         }}
                       >
                         <Icon
@@ -1588,7 +1588,6 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
                 alignItems: "center",
                 justifyContent: "center",
                 flexShrink: 0,
-                transition: "all 0.2s ease",
               }}
               title="إغلاق التنبيه"
             >

@@ -726,7 +726,7 @@ export default function DietPlanBuilder({
                     fontWeight: 800,
                     fontSize: "1.1rem",
                     cursor: "pointer",
-                    transition: "all 0.2s",
+                    transition: "background-color 0.2s",
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.background = "color-mix(in srgb, var(--primary) 10%, transparent)";
@@ -844,7 +844,6 @@ function SourcePicker({
                       background: "var(--bg2)",
                       border: "1px solid rgba(255, 255, 255, 0.06)",
                       borderRadius: "var(--radius-lg)",
-                      transition: "all 0.25s ease",
                       width: "100%",
                       textAlign: "right",
                       cursor: "pointer",

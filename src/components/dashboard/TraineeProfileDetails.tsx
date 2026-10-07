@@ -73,7 +73,7 @@ function MetricCard({
         display: "flex",
         flexDirection: "column",
         gap: "10px",
-        transition: "all 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
+        transition: "border-color 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
         position: "relative",
         boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
       }}
@@ -230,7 +230,6 @@ export function TraineeProfileDetails({ profile }: TraineeProfileDetailsProps) {
               flexDirection: "column",
               gap: "12px",
               boxShadow: "0 6px 22px color-mix(in srgb, var(--primary) 15%, transparent)",
-              transition: "all 0.25s ease",
             }}
           >
             <span style={{ fontSize: "0.9rem", color: "var(--text-muted)", fontWeight: 700 }}>الخطة المشترك بها</span>
@@ -443,7 +442,7 @@ export function TraineeProfileDetails({ profile }: TraineeProfileDetailsProps) {
                     alignItems: "center",
                     gap: "10px",
                     boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
-                    transition: "all 0.25s ease"
+                    transition: "background-color 0.25s ease, border-color 0.25s ease, transform 0.25s ease"
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.background = "color-mix(in srgb, var(--primary) 20%, var(--bg3))";
@@ -498,7 +497,7 @@ export function TraineeProfileDetails({ profile }: TraineeProfileDetailsProps) {
                   overflow: "hidden",
                   border: "2px solid var(--border)",
                   boxShadow: "0 6px 20px rgba(0, 0, 0, 0.2)",
-                  transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+                  transition: "border-color 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
                   aspectRatio: "3 / 4",
                   background: "var(--bg3)"
                 }}
