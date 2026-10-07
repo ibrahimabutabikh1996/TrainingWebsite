@@ -93,6 +93,8 @@ export default function NutritionFormModal({
                 { value: "مصادر البروتين", label: "مصادر البروتين" },
                 { value: "مصادر الكاربوهيدرات", label: "مصادر الكاربوهيدرات" },
                 { value: "مصادر الدهون الصحية", label: "مصادر الدهون الصحية" },
+                { value: "الخضراوات", label: "الخضراوات" },
+                { value: "الفواكه", label: "الفواكه" },
               ]}
             />
           </div>
