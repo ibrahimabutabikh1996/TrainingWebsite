@@ -369,7 +369,7 @@ export default function ExportDietClient({
                         <tr style={{ height: "11mm" }}>
                           <th style={{ width: "10%", padding: "2mm 1mm" }}>ت</th>
                           <th style={{ textAlign: "right", padding: "2mm 1.5mm", width: "40%" }}>اسم الصنف</th>
-                          <th style={{ width: "50%", padding: "2mm 1mm" }}>الكمية</th>
+                          <th style={{ textAlign: "right", width: "50%", padding: "2mm 1mm" }}>الكمية</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -408,7 +408,7 @@ export default function ExportDietClient({
                                   <tr key={item.id} style={{ height: rowHeight }}>
                                     <td style={{ fontSize: fontSize }}>{itemIdx + 1}</td>
                                     <td style={{ textAlign: "right", fontSize: fontSize }}>{item.name}</td>
-                                    <td style={{ fontWeight: 800, color: "#0F4E79", fontSize: fontSize, direction: item.amount !== undefined ? "rtl" : "ltr" }}>{amountText}</td>
+                                    <td style={{ textAlign: "right", fontWeight: 800, color: "#0F4E79", fontSize: fontSize, direction: item.amount !== undefined ? "rtl" : "ltr" }}>{amountText}</td>
                                   </tr>
                                 );
                               })}
