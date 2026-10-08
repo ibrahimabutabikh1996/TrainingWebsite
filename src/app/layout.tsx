@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   title: "Ibrahim Abutabikh",
   description: "خطط تدريب وأنظمة غذائية مخصصة مع متابعة كاملة",
   icons: {
-    icon: "/images/logo/mainLogo.png",
+    icon: "/icon.png",
   },
 };
 
