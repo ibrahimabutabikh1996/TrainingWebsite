@@ -7,6 +7,7 @@ export const metadata: Metadata = {
   description: "خطط تدريب وأنظمة غذائية مخصصة مع متابعة كاملة",
   icons: {
     icon: "/icon.png",
+    apple: "/apple-icon.png",
   },
 };
 
