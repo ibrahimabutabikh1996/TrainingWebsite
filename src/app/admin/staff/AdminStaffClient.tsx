@@ -385,7 +385,7 @@ export default function AdminStaffClient({
               <article key={member.accountId} className={`staff-card${member.isSuspended ? " is-suspended" : ""}`}>
                 <div className="staff-card-head">
                   <span className="staff-avatar" aria-hidden="true">
-                    {member.username.charAt(0).toUpperCase()}
+                    <Icon name="person" />
                   </span>
                   <div className="staff-card-id">
                     <span className="staff-card-name" dir="ltr">{member.username}</span>

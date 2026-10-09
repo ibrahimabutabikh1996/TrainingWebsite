@@ -128,8 +128,7 @@
   border: 1px solid var(--border-primary);
   background: var(--primary-dim);
   color: var(--primary-on-tint);
-  font-size: var(--text-lg);
-  font-weight: var(--weight-bold);
+  font-size: 22px;
 }
 
 /* align-items: flex-start lets the LTR username shrink to its text and sit at
