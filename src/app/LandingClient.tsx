@@ -645,6 +645,20 @@ export default function LandingClient({
       )
     : [];
 
+  /* Each testimonial takes the colour of the plan its role line names, e.g.
+     "مشترك في خطة المتابعة اليومية". Matched against the same plan names the
+     membership cards show; the longest name wins, so one plan's name sitting
+     inside another's cannot claim the card. No match leaves the card blue. */
+  const testimonialPlans = planOrderFrom(activeData)
+    .map((id, index) => ({
+      n: planNumberOf(id) ?? index + 1,
+      badge: typeof activeData[`${id}_badge`] === "string" ? (activeData[`${id}_badge`] as string).trim() : "",
+    }))
+    .filter((p) => p.badge)
+    .sort((a, b) => b.badge.length - a.badge.length);
+  const testimonialPlanOf = (role?: string) =>
+    role ? testimonialPlans.find((p) => role.includes(p.badge))?.n : undefined;
+
   /* Every `[data-parallax]` layer in the markup below, driven from one scroll
      pass. Keyed on `cmsData` rather than left to run once: the testimonials
      section only exists once a testimonial has been written, so the set of
@@ -1372,8 +1386,20 @@ export default function LandingClient({
                 className={`testimonials-grid membership-grid--scroll${testiScroll.atStart ? "" : " is-faded-start"}${testiScroll.atEnd ? "" : " is-faded-end"}`}
                 ref={testiRowRef}
               >
-                {testimonials.map((t, i) => (
-                  <article className="testimonial-card reveal" key={i}>
+                {testimonials.map((t, i) => {
+                  const planN = testimonialPlanOf(t.author_role);
+                  const accent = planN ? planAccent(planN) : null;
+                  return (
+                  <article
+                    className="testimonial-card reveal"
+                    key={i}
+                    data-plan={planN}
+                    style={accent ? ({
+                      "--primary": accent.fill,
+                      "--primary-rgb": accent.rgb,
+                      "--plan-text": accent.text,
+                    } as React.CSSProperties) : undefined}
+                  >
                     <div className="testimonial-content">
                       {t.type && t.type !== "text" && t.media_url && (
                         <TestimonialMedia
@@ -1384,19 +1410,22 @@ export default function LandingClient({
                       )}
 
                       {t.text && (
-                        <>
+                        <div className="testimonial-quote">
                           <svg className="quote-icon" width="32" height="32" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                             <path d="M7.17 6A5.17 5.17 0 0 0 2 11.17V18h6.83v-6.83H5.17A2 2 0 0 1 7.17 9zm10 0A5.17 5.17 0 0 0 12 11.17V18h6.83v-6.83h-3.66a2 2 0 0 1 2-2.17z" />
                           </svg>
                           <p className="testimonial-text">{t.text}</p>
-                        </>
+                        </div>
                       )}
                     </div>
 
                     {(t.author_name || t.author_role) && (
                       <div className="testimonial-author">
                         <div className="author-avatar" aria-hidden="true">
-                          {(t.author_name || "؟").trim().charAt(0)}
+                          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
+                          </svg>
                         </div>
                         <div className="author-info">
                           <h4>{t.author_name || "مشترك"}</h4>
@@ -1405,7 +1434,8 @@ export default function LandingClient({
                       </div>
                     )}
                   </article>
-                ))}
+                  );
+                })}
               </div>
               </div>
             </div>
