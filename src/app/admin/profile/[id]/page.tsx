@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { requireAdminPage } from "@/lib/authGuard";
+import { requireAdminPage, sessionCan } from "@/lib/authGuard";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Toaster } from "react-hot-toast";
@@ -22,7 +22,7 @@ export default async function ProfileDetailsPage({ params }: { params: Promise<{
      measurements, photos, and the controls that delete them. The proxy covers
      /admin/*, but that is a list of paths and this is the page that would hurt
      most to have off it. It asks for itself. See @/lib/authGuard. */
-  await requireAdminPage("subscribers.view");
+  const session = await requireAdminPage("subscribers.view");
 
   const { id } = await params;
 
@@ -159,7 +159,7 @@ export default async function ProfileDetailsPage({ params }: { params: Promise<{
               </a>
             )}
 
-            {data.plan_type !== 'diet' && (
+            {data.plan_type !== 'diet' && sessionCan(session, "courses.edit") && (
               <Link
                 href={`/admin/builder?traineeId=${profile.id}`}
                 className="crm-btn-primary"
@@ -170,7 +170,7 @@ export default async function ProfileDetailsPage({ params }: { params: Promise<{
               </Link>
             )}
             
-            {data.plan_type !== 'training' && (
+            {data.plan_type !== 'training' && sessionCan(session, "diet.edit") && (
               <Link
                 href={`/admin/diet/plan?traineeId=${profile.id}`}
                 className="crm-btn-primary"
@@ -189,18 +189,32 @@ export default async function ProfileDetailsPage({ params }: { params: Promise<{
           {/* First in the column, above the account card, because it is the one
               thing on this page that is waiting on a decision. It renders
               nothing at all when no request is open. */}
-          <PendingRenewalCard profileId={profile.id} data={data} planNames={planNames} />
+          <PendingRenewalCard
+            profileId={profile.id}
+            data={data}
+            planNames={planNames}
+            canDecide={sessionCan(session, "subscribers.renew")}
+          />
 
-          <AccountManager profileId={profile.id} existingAccount={existingAccount} />
+          <AccountManager
+            profileId={profile.id}
+            existingAccount={existingAccount}
+            canManageAccount={sessionCan(session, "subscribers.accounts")}
+            canSuspend={sessionCan(session, "subscribers.suspend")}
+          />
 
           {/* The monthly record, the logged weights and the weigh-in chart used
               to stand here as three more sections down the page, each showing
               the whole subscription at once. They live inside the timeline now —
               one copy per month, narrowed to that month's dates — so a month is
               read on its own instead of against a running total. */}
-          <AdminSubscriptionTimeline profileId={profile.id} planNames={planNames} />
+          <AdminSubscriptionTimeline
+            profileId={profile.id}
+            planNames={planNames}
+            canEdit={sessionCan(session, "subscribers.edit")}
+          />
 
-          <DeleteSubscriberZone profileId={profile.id} />
+          {sessionCan(session, "subscribers.delete") && <DeleteSubscriberZone profileId={profile.id} />}
 
         </div>
       </div>

@@ -45,6 +45,9 @@ interface Props {
      default, because this renders inside two different trees and only the one
      with a server component above it can supply them. */
   planNames?: PlanNames;
+  /* False for a staff member who may look at a subscriber but not change
+     their record: the delete and restore controls are not drawn. */
+  canEdit?: boolean;
 }
 
 export function SubscriptionHistoryTimeline({
@@ -53,6 +56,7 @@ export function SubscriptionHistoryTimeline({
   isAdminView = false,
   workoutLogs = [],
   trainedDays = [],
+  canEdit = true,
 }: Props) {
   /* Only the subscriber's own details still open in place. The training sheet
      and the diet used to expand here too, each behind its own "view" button
@@ -110,7 +114,7 @@ export function SubscriptionHistoryTimeline({
           اشتراكات سابقة مسجلة لهذا اللاعب. تتيح لك الصلاحيات إمكانية الإبقاء
           على البيانات أو استعادتها في أي وقت.
         </p>
-        {((raw.deleted_months && (raw.deleted_months as number[]).length > 0) ||
+        {canEdit && ((raw.deleted_months && (raw.deleted_months as number[]).length > 0) ||
           raw.delete_all_history) && (
           <button
             type="button"
@@ -329,7 +333,7 @@ export function SubscriptionHistoryTimeline({
         </div>
       </div>
 
-      {isAdminView && (
+      {isAdminView && canEdit && (
         <div
           style={{
             padding: "20px 24px",
@@ -593,7 +597,7 @@ export function SubscriptionHistoryTimeline({
                     flexWrap: "wrap",
                   }}
                 >
-                  {isAdminView && (
+                  {isAdminView && canEdit && (
                     <button
                       type="button"
                       className="timeline-danger-btn"
@@ -1167,6 +1171,7 @@ export function SubscriptionHistoryTimeline({
                           monthIndex={monthRecord.index}
                           profileId={profile.id}
                           planNames={planNames}
+                          canEdit={canEdit}
                         />
                       ) : null}
 

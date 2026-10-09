@@ -55,10 +55,10 @@ export default function AdminLayout({
     };
   }, []);
 
-  const allNavItems: { name: string; path: string; icon: IconName; section: StaffSection }[] = [
+  const allNavItems: { name: string; path: string; icon: IconName; section: StaffSection; edit?: true }[] = [
     { name: "إدارة المشتركين", path: "/admin", icon: "group", section: "subscribers" },
     { name: "مكتبة الكورسات", path: "/admin/courses", icon: "library_books", section: "courses" },
-    { name: "صانع الكورسات", path: "/admin/builder", icon: "fitness_center", section: "courses" },
+    { name: "صانع الكورسات", path: "/admin/builder", icon: "fitness_center", section: "courses", edit: true },
     { name: "التمارين", path: "/admin/exercises", icon: "biceps_flexed", section: "exercises" },
     { name: "النظام الغذائي", path: "/admin/diet", icon: "restaurant_menu", section: "diet" },
     { name: "مكتبة الأنظمة الغذائية", path: "/admin/diet/library", icon: "nutrition", section: "diet" },
@@ -67,7 +67,7 @@ export default function AdminLayout({
   const navItems = allNavItems.filter(
     (item) =>
       access !== null &&
-      (access.isOwner || hasPermission(access.permissions, `${item.section}.view`))
+      (access.isOwner || hasPermission(access.permissions, `${item.section}.${item.edit ? "edit" : "view"}`))
   );
 
   return (

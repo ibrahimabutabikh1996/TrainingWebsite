@@ -14,7 +14,14 @@ import { Icon } from "@/components/Icon";
 import "../crm.css";
 import "./exercises.css";
 
-export default function AdminExercisesClient({ initialExercises }: { initialExercises: Exercise[] }) {
+export default function AdminExercisesClient({
+  initialExercises,
+  canEdit = true,
+}: {
+  initialExercises: Exercise[];
+  /** False for a staff member with view only: no add, edit or delete. */
+  canEdit?: boolean;
+}) {
   /* The two hosts a Drive video comes from, opened while the page is still
      being read rather than when a card is clicked. A cold DNS lookup and TLS
      handshake are a few hundred milliseconds on a phone, and they were being
@@ -85,10 +92,12 @@ export default function AdminExercisesClient({ initialExercises }: { initialExer
           </div>
         </div>
 
+        {canEdit && (
         <button onClick={openAddModal} className="ex-add-btn">
           <Icon name="add" style={{ fontSize: 20 }} />
           <span>إضافة تمرين جديد</span>
         </button>
+        )}
       </header>
 
       <div className="ex-toolbar">
@@ -148,7 +157,7 @@ export default function AdminExercisesClient({ initialExercises }: { initialExer
                 : "لا توجد تمارين تطابق البحث أو التصفية الحالية"}
             </p>
             {exercises.length === 0 ? (
-              <button onClick={openAddModal} className="ex-add-btn">
+              canEdit && <button onClick={openAddModal} className="ex-add-btn">
                 <Icon name="add" style={{ fontSize: 20 }} />
                 <span>إضافة تمرين جديد</span>
               </button>
@@ -208,6 +217,7 @@ export default function AdminExercisesClient({ initialExercises }: { initialExer
                       مشاهدة الفيديو
                     </button>
                   )}
+                  {canEdit && (
                   <div className="ex-card-actions">
                     <button
                       className="ex-icon-btn"
@@ -226,6 +236,7 @@ export default function AdminExercisesClient({ initialExercises }: { initialExer
                       <Icon name="delete" />
                     </button>
                   </div>
+                  )}
                 </div>
               </article>
             );

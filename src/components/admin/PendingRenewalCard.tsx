@@ -32,6 +32,9 @@ interface Props {
   /** The live intake blob. Read for the three flags and the receipt. */
   data: JsonRecord;
   planNames: PlanNames;
+  /** False for a staff member not granted renewals: the request still shows,
+   *  the approve and reject buttons do not. */
+  canDecide?: boolean;
 }
 
 function receiptsFrom(data: JsonRecord): string[] {
@@ -40,7 +43,7 @@ function receiptsFrom(data: JsonRecord): string[] {
   return typeof value === "string" && value ? [value] : [];
 }
 
-export default function PendingRenewalCard({ profileId, data, planNames }: Props) {
+export default function PendingRenewalCard({ profileId, data, planNames, canDecide = true }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [approving, setApproving] = useState(false);
@@ -234,6 +237,7 @@ export default function PendingRenewalCard({ profileId, data, planNames }: Props
         )}
       </div>
 
+      {canDecide && (
       <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", alignItems: "center" }}>
         {armed === "approve" ? (
           <>
@@ -304,6 +308,7 @@ export default function PendingRenewalCard({ profileId, data, planNames }: Props
           </>
         )}
       </div>
+      )}
 
       <p style={{ margin: 0, fontSize: "0.85rem", color: "var(--text-muted)", lineHeight: 1.7 }}>
         الموافقة تضيف <b>30 يوماً</b> فوق ما تبقّى من اشتراكه الحالي — لا تُلغى الأيام المتبقية.

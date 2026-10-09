@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { requireAdminPage } from "@/lib/authGuard";
+import { requireAdminPage, sessionCan } from "@/lib/authGuard";
 import AdminCoursesClient from "./AdminCoursesClient";
 import LiveRefresh from "@/components/LiveRefresh";
 import type { Course, CourseAssignments, TraineeOption } from "@/types/admin";
@@ -22,7 +22,7 @@ export default async function AdminCoursesPage() {
      matcher is a list of paths, and this page reads every subscriber it can
      find. It proves the caller for itself rather than inheriting the answer.
      See @/lib/authGuard. */
-  await requireAdminPage("courses.view");
+  const session = await requireAdminPage("courses.view");
 
   let courses: Course[] = [];
   let trainees: TraineeOption[] = [];
@@ -95,6 +95,7 @@ export default async function AdminCoursesPage() {
         initialTrainees={trainees}
         initialAssignments={assignments}
         exerciseVideos={exerciseVideos}
+        canEdit={sessionCan(session, "courses.edit")}
       />
     </>
   );

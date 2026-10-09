@@ -75,9 +75,13 @@ const SORTS: [string, string][] = [
 export default function DietLibraryClient({
   initialPlans,
   initialTrainees = [],
+  canEdit = true,
 }: {
   initialPlans: LibraryPlan[];
   initialTrainees?: TraineeOption[];
+  /** False for a staff member with view only: plans can be opened and
+   *  printed, not designed, copied, edited or deleted. */
+  canEdit?: boolean;
 }) {
   const router = useRouter();
 
@@ -283,10 +287,12 @@ export default function DietLibraryClient({
               </div>
             </div>
 
+            {canEdit && (
             <Link href="/admin/diet/plan" className="co-add-btn">
               <Icon name="add" style={{ fontSize: 20 }} />
               <span>تصميم نظام غذائي</span>
             </Link>
+            )}
           </header>
 
           <div className="co-toolbar">
@@ -339,7 +345,7 @@ export default function DietLibraryClient({
                     : "لا توجد أنظمة تطابق البحث الحالي"}
                 </p>
                 {plans.length === 0 ? (
-                  <Link href="/admin/diet/plan" className="co-add-btn">
+                  canEdit && <Link href="/admin/diet/plan" className="co-add-btn">
                     <Icon name="add" style={{ fontSize: 20 }} />
                     <span>تصميم نظام غذائي</span>
                   </Link>
@@ -423,6 +429,8 @@ export default function DietLibraryClient({
                         >
                           <Icon name="visibility" />
                         </button>
+                        {canEdit && (
+                        <>
                         <button
                           className="co-icon-btn"
                           onClick={(e) => {
@@ -469,6 +477,8 @@ export default function DietLibraryClient({
                         >
                           <Icon name="delete" />
                         </button>
+                        </>
+                        )}
                       </div>
                     </div>
                   </article>
@@ -524,6 +534,8 @@ export default function DietLibraryClient({
                     <span>تحميل النظام الغذائي PDF</span>
                   </a>
                 )}
+                {canEdit && (
+                <>
                 <button
                   onClick={() => {
                     handleDuplicatePlan(selectedPlan);
@@ -578,6 +590,8 @@ export default function DietLibraryClient({
                   <Icon name="edit" style={{ fontSize: 18 }} />
                   <span>تعديل النظام</span>
                 </Link>
+                </>
+                )}
               </div>
             }
           >

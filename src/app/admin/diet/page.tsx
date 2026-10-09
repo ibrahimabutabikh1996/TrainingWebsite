@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { requireAdminPage } from "@/lib/authGuard";
+import { requireAdminPage, sessionCan } from "@/lib/authGuard";
 import AdminDietClient from "./AdminDietClient";
 import LiveRefresh from "@/components/LiveRefresh";
 import type { NutritionSource } from "@/types/admin";
@@ -11,7 +11,7 @@ export default async function AdminDietPage() {
      matcher is a list of paths, and this page reads every subscriber it can
      find. It proves the caller for itself rather than inheriting the answer.
      See @/lib/authGuard. */
-  await requireAdminPage("diet.view");
+  const session = await requireAdminPage("diet.view");
 
   let sources: NutritionSource[] = [];
 
@@ -42,7 +42,7 @@ export default async function AdminDietPage() {
           lists, so a refresh arriving mid-look costs nothing. */}
       <LiveRefresh scope="panel" />
       <div className="crm-main-area">
-        <AdminDietClient initialSources={sources} />
+        <AdminDietClient initialSources={sources} canEdit={sessionCan(session, "diet.edit")} />
       </div>
     </div>
   );

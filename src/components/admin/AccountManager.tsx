@@ -17,9 +17,19 @@ interface AccountManagerProps {
     renewals?: { date: string, label: string }[];
     is_suspended?: boolean;
   } | null;
+  /** Creating the account and changing its username or password. False hides
+   *  those buttons for a staff member not granted them. */
+  canManageAccount?: boolean;
+  /** Suspending and reactivating. False hides that button. */
+  canSuspend?: boolean;
 }
 
-export default function AccountManager({ profileId, existingAccount: initialAccount }: AccountManagerProps) {
+export default function AccountManager({
+  profileId,
+  existingAccount: initialAccount,
+  canManageAccount = true,
+  canSuspend = true,
+}: AccountManagerProps) {
   const [account, setAccount] = useState(initialAccount);
   const [isCreating, setIsCreating] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -281,6 +291,7 @@ export default function AccountManager({ profileId, existingAccount: initialAcco
           </div>
 
           <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+            {canManageAccount && (
             <button
               onClick={() => setIsChangingPassword(!isChangingPassword)}
               className="crm-btn-secondary"
@@ -298,6 +309,8 @@ export default function AccountManager({ profileId, existingAccount: initialAcco
               <Icon name="lock" style={{ fontSize: "18px", color: "var(--primary)" }} />
               <span>تغيير كلمة المرور</span>
             </button>
+            )}
+            {canManageAccount && (
             <button
               onClick={() => setIsChangingUsername(!isChangingUsername)}
               className="crm-btn-secondary"
@@ -315,6 +328,8 @@ export default function AccountManager({ profileId, existingAccount: initialAcco
               <Icon name="badge" style={{ fontSize: "18px", color: "var(--primary)" }} />
               <span>تغيير اسم المستخدم</span>
             </button>
+            )}
+            {canSuspend && (
             <button
               onClick={handleToggleSuspend}
               disabled={isSuspendLoading}
@@ -334,6 +349,7 @@ export default function AccountManager({ profileId, existingAccount: initialAcco
               <Icon name={isSuspended ? "check_circle" : "block"} style={{ fontSize: "18px" }} />
               <span>{isSuspendLoading ? "جاري التمكين..." : isSuspended ? "تفعيل الحساب" : "تعطيل الحساب"}</span>
             </button>
+            )}
           </div>
         </div>
 
@@ -691,8 +707,8 @@ export default function AccountManager({ profileId, existingAccount: initialAcco
             <p style={{ margin: '4px 0 0 0', fontSize: '0.9rem', color: 'var(--text-muted)' }}>لم يتم إنشاء حساب دخول لهذا المشترك بعد.</p>
           </div>
         </div>
-        {!isCreating && (
-          <button 
+        {!isCreating && canManageAccount && (
+          <button
             onClick={() => setIsCreating(true)}
             className="crm-btn-primary"
             style={{ padding: '8px 20px', borderRadius: "var(--radius-sm)" }}

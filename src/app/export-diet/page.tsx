@@ -74,7 +74,9 @@ export default async function ExportDietPage({
 
   if (!profileId) notFound();
 
-  if (!(await sessionOwnsProfile(session, profileId, "view"))) notFound();
+  /* A staff member granted the diet section may print the plans they can open
+     in the library, whoever they belong to. */
+  if (!sessionCan(session, "diet.view") && !(await sessionOwnsProfile(session, profileId, "view"))) notFound();
 
   const profile = await prisma.profiles.findUnique({
     where: { id: profileId },

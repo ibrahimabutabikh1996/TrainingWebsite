@@ -38,6 +38,7 @@ export default function AdminCoursesClient({
   initialTrainees = [],
   initialAssignments = {},
   exerciseVideos = {},
+  canEdit = true,
 }: {
   initialCourses: Course[],
   initialTrainees?: TraineeOption[],
@@ -45,6 +46,9 @@ export default function AdminCoursesClient({
   /** Library videos keyed by exercise id and by name — the fallback for
    *  programmes saved before an exercise carried its own `video_url`. */
   exerciseVideos?: Record<string, string>,
+  /** False for a staff member with view only: courses can be opened and
+   *  printed, not created, copied, assigned, edited or deleted. */
+  canEdit?: boolean,
 }) {
   /* Same two hosts the exercise library opens early, for the same reason: the
      player here is one click away from a course the coach is already reading. */
@@ -216,10 +220,12 @@ export default function AdminCoursesClient({
               </div>
             </div>
 
+            {canEdit && (
             <Link href="/admin/builder" className="co-add-btn">
               <Icon name="add" style={{ fontSize: 20 }} />
               <span>إنشاء كورس جديد</span>
             </Link>
+            )}
           </header>
 
           <div className="co-toolbar">
@@ -266,7 +272,7 @@ export default function AdminCoursesClient({
                     : "لا توجد كورسات تطابق البحث أو التصفية الحالية"}
                 </p>
                 {courses.length === 0 ? (
-                  <Link href="/admin/builder" className="co-add-btn">
+                  canEdit && <Link href="/admin/builder" className="co-add-btn">
                     <Icon name="add" style={{ fontSize: 20 }} />
                     <span>إنشاء كورس جديد</span>
                   </Link>
@@ -350,6 +356,8 @@ export default function AdminCoursesClient({
                         >
                           <Icon name="visibility" />
                         </button>
+                        {canEdit && (
+                        <>
                         <button
                           className="co-icon-btn"
                           onClick={(e) => { e.stopPropagation(); setShowAssignModal(course.id); }}
@@ -384,6 +392,8 @@ export default function AdminCoursesClient({
                         >
                           <Icon name="delete" />
                         </button>
+                        </>
+                        )}
                       </div>
                     </div>
                   </article>
@@ -422,6 +432,8 @@ export default function AdminCoursesClient({
                   <Icon name="file_download" style={{ fontSize: 18 }} />
                   <span>تحميل النظام التدريبي PDF</span>
                 </a>
+                {canEdit && (
+                <>
                 <button
                   onClick={() => { handleDuplicateCourse(selectedCourse.id); setSelectedCourseId(null); }}
                   disabled={isActionLoading}
@@ -447,6 +459,8 @@ export default function AdminCoursesClient({
                   <Icon name="edit" style={{ fontSize: 18 }} />
                   <span>تعديل البرنامج</span>
                 </Link>
+                </>
+                )}
               </div>
             }
           >

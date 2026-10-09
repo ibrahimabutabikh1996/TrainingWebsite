@@ -279,6 +279,21 @@
   max-width: 78ch;
 }
 
+/* Shown above the editor to a staff member who may only look. */
+.cms-readonly-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 16px;
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-primary);
+  background: var(--primary-dim);
+  color: var(--primary-on-tint);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}
+
 /* A title with a control on the far end of the same line. */
 .cms-card-head {
   display: flex;

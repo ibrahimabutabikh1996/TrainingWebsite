@@ -29,7 +29,9 @@ export default async function AdminBuilderPage({
      matcher is a list of paths, and this page reads every subscriber it can
      find. It proves the caller for itself rather than inheriting the answer.
      See @/lib/authGuard. */
-  await requireAdminPage("courses.view");
+  /* Edit, not view: the builder is an editor and nothing else, so a staff
+     member who may only look at courses is not sent into it. */
+  await requireAdminPage("courses.edit");
 
   const { courseId, traineeId } = await searchParams;
 

@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { requireAdminPage } from "@/lib/authGuard";
+import { requireAdminPage, sessionCan } from "@/lib/authGuard";
 import LiveRefresh from "@/components/LiveRefresh";
 import DietLibraryClient, { type LibraryPlan } from "./DietLibraryClient";
 import { asMeals } from "@/types/diet";
@@ -23,7 +23,7 @@ export default async function DietLibraryPage() {
      matcher is a list of paths, and this page reads every subscriber's diet.
      It proves the caller for itself rather than inheriting the answer.
      See @/lib/authGuard. */
-  await requireAdminPage("diet.view");
+  const session = await requireAdminPage("diet.view");
 
   let plans: LibraryPlan[] = [];
   let trainees: TraineeOption[] = [];
@@ -157,7 +157,11 @@ export default async function DietLibraryPage() {
           arriving mid-read costs nothing — the search box and any open dialog
           survive it. */}
       <LiveRefresh scope="panel" />
-      <DietLibraryClient initialPlans={plans} initialTrainees={trainees} />
+      <DietLibraryClient
+        initialPlans={plans}
+        initialTrainees={trainees}
+        canEdit={sessionCan(session, "diet.edit")}
+      />
     </>
   );
 }

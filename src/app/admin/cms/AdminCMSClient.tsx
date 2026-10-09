@@ -925,7 +925,15 @@ const TestimonialsEditor = () => {
   );
 };
 
-export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord }) {
+export default function AdminCMSClient({
+  initialAr,
+  canEdit = true,
+}: {
+  initialAr: JsonRecord;
+  /** False for a staff member with view only: every field is read-only and
+   *  there is nothing to save. */
+  canEdit?: boolean;
+}) {
   const [contentAr, setContentAr] = useState(initialAr);
   /* Snapshot of what is actually stored, so edits can be compared against it.
      Nothing tracked unsaved state before: switching tab or closing the tab
@@ -1580,6 +1588,16 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
           </div>
 
           <div className="cms-content-pane">
+            {!canEdit && (
+              <p className="cms-readonly-note">
+                <Icon name="visibility" />
+                <span>وضع المشاهدة فقط — لا يمكنك تعديل محتوى الموقع.</span>
+              </p>
+            )}
+            {/* One switch for every field, upload and delete below: a disabled
+                fieldset disables each native control inside it. `contents` so
+                it adds no box to the pane's layout. */}
+            <fieldset disabled={!canEdit} style={{ display: "contents" }}>
             {activeTab === "visibility" && (
               <div className="cms-section-card">
                 <h3 className="cms-card-title">
@@ -2078,6 +2096,8 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
               </div>
             )}
 
+            </fieldset>
+
           {/* Lifts and follows only while there is something to save. At rest the
               bar says "كل التغييرات محفوظة" with its save button disabled, and held
               89px of a screen that already gives 72px to the nav bar and 58px to
@@ -2105,6 +2125,7 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
             )}
 
 
+            {canEdit && (
             <button
               onClick={handleSave}
               /* Nothing to publish when the content matches what is stored. */
@@ -2122,6 +2143,7 @@ export default function AdminCMSClient({ initialAr }: { initialAr: JsonRecord })
                 </>
               )}
             </button>
+            )}
           </div>
           </div>
         </div>

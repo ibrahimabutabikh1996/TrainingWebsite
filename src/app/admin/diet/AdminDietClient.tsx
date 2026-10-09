@@ -22,7 +22,14 @@ const normalizeCat = (c?: string) => {
   return c || "";
 };
 
-export default function AdminDietClient({ initialSources }: { initialSources: NutritionSource[] }) {
+export default function AdminDietClient({
+  initialSources,
+  canEdit = true,
+}: {
+  initialSources: NutritionSource[];
+  /** False for a staff member with view only: no add, edit or delete. */
+  canEdit?: boolean;
+}) {
   const [sources, setSources] = useState<NutritionSource[]>(() =>
     initialSources.map((s) => ({ ...s, category: normalizeCat(s.category) }))
   );
@@ -116,6 +123,7 @@ export default function AdminDietClient({ initialSources }: { initialSources: Nu
           <h1>النظام الغذائي</h1>
         </div>
 
+        {canEdit && (
         <div className="diet-header-actions">
           <Link href="/admin/diet/plan" className="diet-btn-secondary">
             <Icon name="edit_document" style={{ fontSize: 20 }} />
@@ -126,6 +134,7 @@ export default function AdminDietClient({ initialSources }: { initialSources: Nu
             <span>إضافة مصدر غذائي</span>
           </button>
         </div>
+        )}
       </header>
 
       <div className="diet-toolbar">
@@ -182,10 +191,10 @@ export default function AdminDietClient({ initialSources }: { initialSources: Nu
             <div className="diet-empty">
               <Icon name="restaurant_menu" />
               <p>لا توجد مصادر غذائية مضافة في هذا التصنيف بعد.</p>
-              <button onClick={openAddModal} className="diet-add-btn" style={{ marginTop: 8 }}>
+              {canEdit && <button onClick={openAddModal} className="diet-add-btn" style={{ marginTop: 8 }}>
                 <Icon name="add" style={{ fontSize: 20 }} />
                 <span>إضافة مصدر جديد</span>
-              </button>
+              </button>}
             </div>
           )
         ) : (
@@ -202,6 +211,7 @@ export default function AdminDietClient({ initialSources }: { initialSources: Nu
                   <p>{source.notes || badge.label}</p>
                 </div>
 
+                {canEdit && (
                 <div className="diet-card-minimal-actions">
                   <button
                     className="minimal-action-btn edit-btn"
@@ -218,6 +228,7 @@ export default function AdminDietClient({ initialSources }: { initialSources: Nu
                     <Icon name="delete" />
                   </button>
                 </div>
+                )}
               </article>
             );
           })

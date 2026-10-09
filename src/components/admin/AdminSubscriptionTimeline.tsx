@@ -16,6 +16,8 @@ import type { TrainedDay } from "@/components/dashboard/TrainingCalendarMonth";
 interface Props {
   profileId: string;
   planNames: PlanNames;
+  /** False draws the record without its delete and restore controls. */
+  canEdit?: boolean;
 }
 
 /**
@@ -245,7 +247,7 @@ async function loadTimeline({ profileId, planNames }: Props) {
   }
 }
 
-export default async function AdminSubscriptionTimeline({ profileId, planNames }: Props) {
+export default async function AdminSubscriptionTimeline({ profileId, planNames, canEdit = true }: Props) {
   const loaded = await loadTimeline({ profileId, planNames });
   if (!loaded) return null;
 
@@ -294,6 +296,7 @@ export default async function AdminSubscriptionTimeline({ profileId, planNames }
           planNames={planNames}
           workoutLogs={workoutLogs}
           trainedDays={trainedDays}
+          canEdit={canEdit}
         />
       </div>
     </details>

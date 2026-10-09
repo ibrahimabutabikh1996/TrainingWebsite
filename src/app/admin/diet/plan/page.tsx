@@ -30,7 +30,9 @@ export default async function DietPlanPage({
      matcher is a list of paths, and this page reads every subscriber it can
      find. It proves the caller for itself rather than inheriting the answer.
      See @/lib/authGuard. */
-  await requireAdminPage("diet.view");
+  /* Edit, not view: like the course builder, this screen is an editor, and a
+     staff member who may only look at plans reads them in the library. */
+  await requireAdminPage("diet.edit");
 
   const { traineeId, groupId } = await searchParams;
   const selectedTraineeId = traineeId && isValidUUID(traineeId) ? traineeId : "";

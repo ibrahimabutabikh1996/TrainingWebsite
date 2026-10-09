@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { requireAdminPage } from "@/lib/authGuard";
+import { requireAdminPage, sessionCan } from "@/lib/authGuard";
 import AdminExercisesClient from "./AdminExercisesClient";
 import LiveRefresh from "@/components/LiveRefresh";
 import type { Exercise } from "@/types/admin";
@@ -11,7 +11,7 @@ export default async function AdminExercisesPage() {
      matcher is a list of paths, and this page reads every subscriber it can
      find. It proves the caller for itself rather than inheriting the answer.
      See @/lib/authGuard. */
-  await requireAdminPage("exercises.view");
+  const session = await requireAdminPage("exercises.view");
 
   let exercises: Exercise[] = [];
 
@@ -49,7 +49,7 @@ export default async function AdminExercisesPage() {
           lists, so a refresh arriving mid-look costs nothing. */}
       <LiveRefresh scope="panel" />
       <div className="crm-main-area">
-        <AdminExercisesClient initialExercises={exercises} />
+        <AdminExercisesClient initialExercises={exercises} canEdit={sessionCan(session, "exercises.edit")} />
       </div>
     </div>
   );

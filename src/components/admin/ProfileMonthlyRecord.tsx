@@ -105,12 +105,15 @@ export function MonthSection({
   monthIndex,
   profileId,
   planNames,
+  canEdit = true,
 }: {
   month: SubscriptionMonth;
   /** Index into `history`, or null for the month still running. */
   monthIndex: number | null;
   profileId: string;
   planNames: PlanNames;
+  /** False hides every delete control — for a staff member with view only. */
+  canEdit?: boolean;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -268,6 +271,7 @@ export function MonthSection({
                       <Icon name={icon} style={{ fontSize: "20px" }} />
                       {label} {files.length > 1 ? idx + 1 : ""}
                     </a>
+                    {canEdit && (
                     <DeleteControl
                       armed={armed}
                       setArmed={setArmed}
@@ -276,6 +280,7 @@ export function MonthSection({
                       title={`حذف ${label} نهائياً`}
                       onConfirm={() => removeOne(field as AttachmentField, url, `${label} ${files.length > 1 ? idx + 1 : ""}`)}
                     />
+                    )}
                   </div>
                 ))
               )}
@@ -289,7 +294,7 @@ export function MonthSection({
           )}
 
           {/* Clearing the lot at once, for when the coach no longer needs any of it. */}
-          {attachmentCount > 1 && (
+          {canEdit && attachmentCount > 1 && (
             <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--border)", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
               <span style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>
                 {attachmentCount} مرفقاً في هذا الشهر. الحذف نهائي: يُمسح الملف من الموقع ومن قاعدة البيانات ولا يمكن التراجع عنه.
@@ -329,6 +334,7 @@ export function MonthSection({
                   )}
                   {/* Sits over the photo it deletes, so there is no chance of the
                       coach confirming against the wrong one. */}
+                  {canEdit && (
                   <div
                     style={{
                       position: "absolute",
@@ -351,6 +357,7 @@ export function MonthSection({
                       onConfirm={() => removeOne("body_photos", url, `الصورة ${idx + 1}`)}
                     />
                   </div>
+                  )}
                 </div>
                 );
               })}

@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { requireAdminPage } from "@/lib/authGuard";
+import { requireAdminPage, sessionCan } from "@/lib/authGuard";
 import AdminCMSClient from "./AdminCMSClient";
 import { translations as defaultTranslations } from "@/lib/translations";
 import type { JsonRecord } from "@/types";
@@ -9,7 +9,7 @@ export default async function AdminCMSPage() {
      matcher is a list of paths, and this page reads every subscriber it can
      find. It proves the caller for itself rather than inheriting the answer.
      See @/lib/authGuard. */
-  await requireAdminPage("cms.view");
+  const session = await requireAdminPage("cms.view");
 
   const settings = await prisma.site_settings.findUnique({
     where: { id: "landing_content" },
@@ -23,7 +23,7 @@ export default async function AdminCMSPage() {
        main element — see `.cms-page-shell` in cms.css for why. `padding: 0` was
        a no-op on a bare div and is gone with it. */
     <div className="cms-page-shell">
-      <AdminCMSClient initialAr={contentAr} />
+      <AdminCMSClient initialAr={contentAr} canEdit={sessionCan(session, "cms.edit")} />
     </div>
   );
 }
