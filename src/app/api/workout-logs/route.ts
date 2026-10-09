@@ -42,6 +42,12 @@ export async function GET(request: Request) {
 
     const auth = await requireProfileAccess(profileId, "view");
     if (!auth.ok) return auth.response;
+    /* The trainee's own dashboard uses this; the panel never does. The coach
+       keeps access as before. A staff member is refused outright, because what it returns is
+       the coach's programme — the exercises, sets and weights of it. */
+    if (auth.session.isStaff) {
+      return NextResponse.json({ error: "غير مصرح لك بهذا الإجراء" }, { status: 403 });
+    }
 
     const logs = await prisma.workout_logs.findMany({
       where: {
@@ -102,6 +108,12 @@ export async function POST(request: Request) {
 
     const auth = await requireProfileAccess(profileId);
     if (!auth.ok) return auth.response;
+    /* The trainee's own dashboard uses this; the panel never does. The coach
+       keeps access as before. A staff member is refused outright, because what it returns is
+       the coach's programme — the exercises, sets and weights of it. */
+    if (auth.session.isStaff) {
+      return NextResponse.json({ error: "غير مصرح لك بهذا الإجراء" }, { status: 403 });
+    }
 
     if (!dayId || !exerciseId || !exerciseName) {
       return NextResponse.json({ error: "بيانات التمرين ناقصة" }, { status: 400 });

@@ -41,6 +41,12 @@ export async function GET(request: Request) {
 
     const auth = await requireProfileAccess(profileId, "view");
     if (!auth.ok) return auth.response;
+    /* The trainee's own dashboard uses this; the panel never does. The coach
+       keeps access as before. A staff member is refused outright, because what it returns is
+       the coach's programme — the exercises, sets and weights of it. */
+    if (auth.session.isStaff) {
+      return NextResponse.json({ error: "غير مصرح لك بهذا الإجراء" }, { status: 403 });
+    }
 
     /* The dashboard's calendar needs one thing: which days were trained, and
        which day of the plan each was. Answered on its own rather than out of the
@@ -183,6 +189,12 @@ export async function PATCH(request: Request) {
   try {
     const auth = await requireUser();
     if (!auth.ok) return auth.response;
+    /* The trainee's own dashboard uses this; the panel never does. The coach
+       keeps access as before. A staff member is refused outright, because what it returns is
+       the coach's programme — the exercises, sets and weights of it. */
+    if (auth.session.isStaff) {
+      return NextResponse.json({ error: "غير مصرح لك بهذا الإجراء" }, { status: 403 });
+    }
 
     const { sessionId, notes, performedOn } = await request.json();
 
