@@ -67,7 +67,7 @@ export default async function AdminDashboardPage() {
      matcher is a list of paths, and this page reads every subscriber it can
      find. It proves the caller for itself rather than inheriting the answer.
      See @/lib/authGuard. */
-  await requireAdminPage();
+  await requireAdminPage("subscribers.view");
 
   /* The account row carries the current username; the profile row can hold a
      stale copy of it, so the list reads through the relation — but only that one

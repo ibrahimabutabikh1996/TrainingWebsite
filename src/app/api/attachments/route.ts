@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { requireUser, sessionOwnsProfile } from "@/lib/authGuard";
+import { requireUser, sessionCan, sessionOwnsProfile } from "@/lib/authGuard";
 import { isPrivatePath, isStoragePath, PUBLIC_PREFIX } from "@/lib/attachments";
 import { prisma } from "@/lib/db";
 import { supabaseAdmin, PUBLIC_MEDIA_BUCKET, UPLOADS_BUCKET } from "@/lib/supabaseAdmin";
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
   const auth = await requireUser();
   if (!auth.ok) return auth.response;
 
-  if (auth.session.isAdmin) {
+  if (sessionCan(auth.session, "subscribers.view")) {
     return redirectToSigned(path);
   }
 
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
   });
 
   if (item?.status === "attached" && item.upload_sessions.profile_id) {
-    if (await sessionOwnsProfile(auth.session, item.upload_sessions.profile_id)) {
+    if (await sessionOwnsProfile(auth.session, item.upload_sessions.profile_id, "view")) {
       return redirectToSigned(path);
     }
     return NextResponse.json({ error: "غير مصرح لك بهذا الإجراء" }, { status: 403 });

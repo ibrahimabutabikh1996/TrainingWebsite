@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireUser } from "@/lib/authGuard";
+import { requireUser, sessionCan } from "@/lib/authGuard";
 import { isSubscriptionExpired } from "@/lib/subscription";
 import { asMeals, type DietPlan } from "@/types/diet";
 import { toISODate } from "@/lib/trainingCycle";
@@ -25,7 +25,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const requested = searchParams.get("userId");
     const userId =
-      auth.session.isAdmin && requested ? requested : auth.session.userId;
+      sessionCan(auth.session, "subscribers.view") && requested ? requested : auth.session.userId;
 
     // 1. Fetch the user's profile
     const profile = await prisma.profiles.findFirst({

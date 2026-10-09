@@ -92,7 +92,7 @@ function displayName(profile: { username: string; data: unknown }): string {
  * happens to start life identical to another one.
  */
 export async function duplicateCourseAction(courseId: string) {
-  const session = await requireAdminAction();
+  const session = await requireAdminAction("courses.edit");
   if (!session) return DENIED;
 
   if (!isValidUUID(courseId)) return { success: false, error: "معرّف الكورس غير صالح" };
@@ -132,7 +132,7 @@ export async function duplicateCourseAction(courseId: string) {
  * caller does with this can be saved over the original.
  */
 export async function loadCourseTemplateAction(courseId: string) {
-  const session = await requireAdminAction();
+  const session = await requireAdminAction("courses.view");
   if (!session) return { success: false as const, error: "غير مصرح لك بهذا الإجراء" };
 
   if (!isValidUUID(courseId)) {
@@ -166,7 +166,7 @@ export async function saveCourseAction(data: {
   traineeId?: string;
   daysData: Day[];
 }) {
-  const session = await requireAdminAction();
+  const session = await requireAdminAction("courses.edit");
   if (!session) return DENIED;
 
   try {
@@ -248,7 +248,7 @@ export async function saveCourseAction(data: {
 }
 
 export async function deleteCourseAction(courseId: string) {
-  const session = await requireAdminAction();
+  const session = await requireAdminAction("courses.edit");
   if (!session) return DENIED;
 
   try {
@@ -287,7 +287,7 @@ export async function deleteCourseAction(courseId: string) {
  * "برنامج التنشيف" is a library the coach has to open one by one.
  */
 export async function assignCourseAction(courseId: string, traineeId: string) {
-  const session = await requireAdminAction();
+  const session = await requireAdminAction("courses.edit");
   if (!session) return DENIED;
 
   if (!isValidUUID(courseId) || !isValidUUID(traineeId)) {

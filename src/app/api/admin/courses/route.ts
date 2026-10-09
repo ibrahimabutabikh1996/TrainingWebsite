@@ -7,7 +7,7 @@ export const runtime = "nodejs";
 /* Every course the coach has written, including the ones assigned to named
    trainees. `/api/courses` is the trainee-facing view; this one is the panel's. */
 export async function GET() {
-  const auth = await requireAdmin();
+  const auth = await requireAdmin(["courses.view", "subscribers.view"]);
   if (!auth.ok) return auth.response;
 
   try {

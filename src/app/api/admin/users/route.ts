@@ -9,7 +9,7 @@ export async function GET() {
      notes, photos, measurements. Without this line it was the open internet's
      for the asking, and it handed out the very `profileId` values that
      /api/admin/change-password takes. */
-  const auth = await requireAdmin();
+  const auth = await requireAdmin("subscribers.view");
   if (!auth.ok) return auth.response;
 
   try {

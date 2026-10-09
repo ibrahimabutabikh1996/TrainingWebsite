@@ -65,7 +65,7 @@ function narrow(data: Omit<NutritionSource, "id" | "created_at">) {
 export async function addNutritionSource(
   data: Omit<NutritionSource, "id" | "created_at">
 ) {
-  if (!(await requireAdminAction())) return DENIED;
+  if (!(await requireAdminAction("diet.edit"))) return DENIED;
 
   const fields = narrow(data);
   if (!fields.name) {
@@ -86,7 +86,7 @@ export async function updateNutritionSource(
   id: string,
   data: Omit<NutritionSource, "id" | "created_at">
 ) {
-  if (!(await requireAdminAction())) return DENIED;
+  if (!(await requireAdminAction("diet.edit"))) return DENIED;
 
   const fields = narrow(data);
   if (!fields.name) {
@@ -104,7 +104,7 @@ export async function updateNutritionSource(
 }
 
 export async function deleteNutritionSource(id: string) {
-  if (!(await requireAdminAction())) return DENIED;
+  if (!(await requireAdminAction("diet.edit"))) return DENIED;
 
   try {
     await prisma.nutrition_sources.delete({

@@ -41,7 +41,7 @@ export async function copyDietPlanToTraineeAction(input: {
   groupId?: string;
   traineeId: string;
 }) {
-  if (!(await requireAdminAction())) return DENIED;
+  if (!(await requireAdminAction("diet.edit"))) return DENIED;
 
   const { planIds, groupId, traineeId } = input;
 
@@ -213,7 +213,7 @@ export async function duplicateDietPlanAction(input: {
   /** A whole general template — every choice in it. */
   groupId?: string;
 }) {
-  if (!(await requireAdminAction())) return DENIED;
+  if (!(await requireAdminAction("diet.edit"))) return DENIED;
 
   const { planIds, groupId } = input;
 

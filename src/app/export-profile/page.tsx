@@ -27,7 +27,7 @@ export default async function ExportProfilePage({
 
   /* The fullest single view of a trainee there is — answers, measurements,
      photos, plans. Same rule as the dashboard it mirrors. */
-  if (!(await sessionOwnsProfile(session, profileId))) notFound();
+  if (!(await sessionOwnsProfile(session, profileId, "view"))) notFound();
 
   const profile = await prisma.profiles.findUnique({
     where: { id: profileId },

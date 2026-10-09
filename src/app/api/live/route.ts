@@ -183,7 +183,7 @@ export async function GET(request: NextRequest) {
       /* The coach's own screens. A trainee asking for this is refused rather
          than quietly served their own scope — a wrong answer to a question the
          caller had no business asking is still an answer. */
-      if (!admin) return DENIED;
+      if (!admin && !session.isStaff) return DENIED;
       v = await panelFingerprint();
     } else if (scope === "profile") {
       if (!id || !isValidUUID(id)) {
@@ -191,7 +191,7 @@ export async function GET(request: NextRequest) {
       }
       /* The coach may watch any trainee; a trainee may watch only themselves,
          and `sessionOwnsProfile` is the same check every write path uses. */
-      if (!admin && !(await sessionOwnsProfile(session, id))) return DENIED;
+      if (!admin && !(await sessionOwnsProfile(session, id, "view"))) return DENIED;
       v = await profileFingerprint(id);
     } else if (scope === "me") {
       const own = await prisma.profiles.findFirst({

@@ -144,6 +144,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: REFUSED }, { status: 401 });
     }
 
+    /* A staff member the coach has suspended — see `staff_accounts`. Checked
+       after the password, so only someone who knows it learns of the suspension;
+       the guards would refuse the session anyway, but signing in only to be
+       sent back here with no reason would be a puzzle. */
+    const staff = await prisma.staff_accounts.findUnique({
+      where: { account_id: account.id },
+      select: { is_suspended: true },
+    });
+    if (staff?.is_suspended) {
+      return NextResponse.json(
+        { error: "الحساب متوقف يرجى التواصل مع الادارة" },
+        { status: 403 }
+      );
+    }
+
     /* The rehash-on-sign-in that used to sit here is gone with the branch it
        served. It could only ever fire for a password that had just been
        compared as text, and nothing is compared as text any more. */

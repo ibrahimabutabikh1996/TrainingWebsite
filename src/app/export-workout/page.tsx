@@ -1,7 +1,7 @@
 import React from "react";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { requireUserPage } from "@/lib/authGuard";
+import { requireUserPage, sessionCan } from "@/lib/authGuard";
 import { readIntakeData } from "@/lib/intakeData";
 import { subscriptionStartOf } from "@/lib/subscription";
 import ExportWorkoutClient from "@/app/export-workout/ExportWorkoutClient";
@@ -83,7 +83,7 @@ export default async function ExportWorkoutPage({
 
   const { courseId, cycleId, profileId } = await searchParams;
 
-  if (!session.isAdmin && !(await traineeMayPrint(session.userId, { courseId, cycleId, profileId }))) {
+  if (!sessionCan(session, ["courses.view", "subscribers.view"]) && !(await traineeMayPrint(session.userId, { courseId, cycleId, profileId }))) {
     notFound();
   }
 

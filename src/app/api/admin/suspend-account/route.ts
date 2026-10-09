@@ -6,7 +6,7 @@ import { requireAdmin } from "@/lib/authGuard";
 
 /* Suspension gates sign-in, so who may set it is the whole point of it. */
 export async function POST(request: Request) {
-  const auth = await requireAdmin();
+  const auth = await requireAdmin("subscribers.suspend");
   if (!auth.ok) return auth.response;
 
   try {

@@ -38,6 +38,19 @@ export interface Session {
   userId: string;
   username: string;
   isAdmin: boolean;
+  /**
+   * A staff member the coach created — see `staff_accounts`. Carried in the
+   * token only so the proxy, which cannot query the database, can let them
+   * reach the panel. What they may do there is never read from here: the guards
+   * in `@/lib/authGuard` look it up on every request.
+   */
+  isStaff: boolean;
+  /**
+   * The staff member's grant, filled in by the guards in `@/lib/authGuard` from
+   * the database once the session has been checked. Never carried in the token,
+   * and absent on a session nothing has checked yet.
+   */
+  permissions?: readonly string[];
   /** Unix seconds. */
   expiresAt: number;
   /**
@@ -61,6 +74,8 @@ interface TokenPayload {
   e: number;
   /** Issued at, unix seconds. */
   i: number;
+  /** 1 for a staff member, absent for everyone else. */
+  k?: 1;
 }
 
 /* Bumped if the payload shape ever changes, so old tokens are rejected rather
@@ -153,11 +168,13 @@ function base64UrlToBytes(value: string): Uint8Array<ArrayBuffer> {
  */
 export async function createSessionToken(
   account: { id: string; username: string },
-  ttlSeconds: number = SESSION_TTL_SECONDS
+  ttlSeconds: number = SESSION_TTL_SECONDS,
+  isStaff = false
 ): Promise<{ token: string; expiresAt: number }> {
   const issuedAt = Math.floor(Date.now() / 1000);
   const expiresAt = issuedAt + ttlSeconds;
   const payload: TokenPayload = { s: account.id, u: account.username, e: expiresAt, i: issuedAt };
+  if (isStaff) payload.k = 1;
 
   const body = `${TOKEN_VERSION}.${bytesToBase64Url(new TextEncoder().encode(JSON.stringify(payload)))}`;
   const signature = await crypto.subtle.sign(
@@ -219,6 +236,7 @@ export async function verifySessionToken(token: string | undefined | null): Prom
          account off the admin list has to take effect on the next request, not
          whenever their cookie happens to expire. */
       isAdmin: isAdminUsername(payload.u),
+      isStaff: payload.k === 1 && !isAdminUsername(payload.u),
       expiresAt: payload.e,
       issuedAt: payload.i,
     };

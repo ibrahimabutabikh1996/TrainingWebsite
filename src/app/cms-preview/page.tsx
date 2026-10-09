@@ -28,7 +28,7 @@ import LandingClient from "../LandingClient";
 export const dynamic = "force-dynamic";
 
 export default async function CmsPreviewPage() {
-  await requireAdminPage();
+  await requireAdminPage("cms.view");
 
   const settings = await getLandingContent();
   const initialCmsData = settings ? (settings.content_ar as JsonRecord) : null;

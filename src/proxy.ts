@@ -39,8 +39,16 @@ export async function proxy(request: NextRequest) {
 
   /* A signed-in trainee is sent to their own dashboard, not back to a sign-in
      screen they have already satisfied. */
-  if (needsAdmin && !session.isAdmin) {
+  if (needsAdmin && !session.isAdmin && !session.isStaff) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
+  }
+
+  /* A staff member has no trainee dashboard. Everything that sends a signed-in
+     non-coach there — the sign-in screen, the landing page's panel link, the
+     password screen's back link — lands them in the panel instead, where each
+     screen's own guard decides what they may see. */
+  if (session.isStaff && (pathname === "/dashboard" || pathname.startsWith("/dashboard/"))) {
+    return NextResponse.redirect(new URL("/admin", request.url));
   }
 
   return NextResponse.next();

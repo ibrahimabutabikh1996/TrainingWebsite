@@ -23,7 +23,7 @@ export default async function DietLibraryPage() {
      matcher is a list of paths, and this page reads every subscriber's diet.
      It proves the caller for itself rather than inheriting the answer.
      See @/lib/authGuard. */
-  await requireAdminPage();
+  await requireAdminPage("diet.view");
 
   let plans: LibraryPlan[] = [];
   let trainees: TraineeOption[] = [];

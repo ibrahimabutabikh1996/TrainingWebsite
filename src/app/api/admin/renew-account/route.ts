@@ -14,7 +14,7 @@ const UUID_PATTERN =
  * and there was no button anywhere that granted the month. See
  * `PendingRenewalCard`, which is the caller. */
 export async function POST(request: Request) {
-  const auth = await requireAdmin();
+  const auth = await requireAdmin("subscribers.renew");
   if (!auth.ok) return auth.response;
 
   try {

@@ -27,7 +27,7 @@ export async function saveDietPlanAction(input: {
   name: string;
   meals: unknown;
 }) {
-  if (!(await requireAdminAction())) return DENIED;
+  if (!(await requireAdminAction("diet.edit"))) return DENIED;
 
   const { traineeId, position } = input;
 
@@ -80,7 +80,7 @@ export async function saveDietPlanAction(input: {
 }
 
 export async function deleteDietPlanAction(input: { traineeId: string; position: number }) {
-  if (!(await requireAdminAction())) return DENIED;
+  if (!(await requireAdminAction("diet.edit"))) return DENIED;
 
   const { traineeId, position } = input;
 
@@ -153,7 +153,7 @@ export async function saveGeneralDietPlanAction(input: {
   groupName: string;
   meals: unknown;
 }) {
-  if (!(await requireAdminAction())) return DENIED;
+  if (!(await requireAdminAction("diet.edit"))) return DENIED;
 
   /* Checked for being a string before it is trimmed, and capped after — the
      same reasoning `saveDietPlanAction` gives: a server action is reached over
@@ -263,7 +263,7 @@ export async function saveGeneralDietPlanAction(input: {
  * through `deleteGeneralDietPlanAction` below.
  */
 export async function deleteGeneralDietGroupAction(input: { groupId: string }) {
-  if (!(await requireAdminAction())) return DENIED;
+  if (!(await requireAdminAction("diet.edit"))) return DENIED;
 
   if (!isValidUUID(input.groupId)) {
     return { success: false as const, error: "معرّف القالب غير صالح" };
@@ -283,7 +283,7 @@ export async function deleteGeneralDietGroupAction(input: { groupId: string }) {
 }
 
 export async function deleteGeneralDietPlanAction(input: { planId: string }) {
-  if (!(await requireAdminAction())) return DENIED;
+  if (!(await requireAdminAction("diet.edit"))) return DENIED;
 
   if (!isValidUUID(input.planId)) {
     return { success: false as const, error: "معرّف النظام غير صالح" };

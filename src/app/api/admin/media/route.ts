@@ -21,7 +21,7 @@ export const runtime = "nodejs";
  * what may be stored, or by whom, changes by arriving here instead.
  */
 export async function POST(request: NextRequest) {
-  const auth = await requireAdmin();
+  const auth = await requireAdmin("cms.edit");
   if (!auth.ok) return auth.response;
 
   try {

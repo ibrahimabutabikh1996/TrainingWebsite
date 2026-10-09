@@ -6,7 +6,7 @@ import { requireAdmin } from "@/lib/authGuard";
    is guarded the same way, whatever its path suggests. A trainee's own course
    reaches them through /api/profile, which returns just theirs. */
 export async function GET() {
-  const auth = await requireAdmin();
+  const auth = await requireAdmin(["courses.view", "subscribers.view"]);
   if (!auth.ok) return auth.response;
 
   try {

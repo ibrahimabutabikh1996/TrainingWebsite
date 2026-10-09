@@ -15,7 +15,7 @@ import { requireAdmin } from "@/lib/authGuard";
  * to lose it.
  */
 export async function POST(request: Request) {
-  const auth = await requireAdmin();
+  const auth = await requireAdmin("subscribers.accounts");
   if (!auth.ok) return auth.response;
 
   try {

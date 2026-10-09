@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { hashPassword } from "@/lib/auth";
+import { isAdminUsername } from "@/lib/adminUsernames";
 import { requireAdmin, startSession } from "@/lib/authGuard";
 
 /* Sets a password without knowing the current one — which is the coach's
    prerogative and nobody else's. Unguarded, it was an account takeover for any
    `profileId`: the trainee's, and the coach's own. */
 export async function POST(request: Request) {
-  const auth = await requireAdmin();
+  const auth = await requireAdmin("subscribers.accounts");
   if (!auth.ok) return auth.response;
 
   try {
@@ -36,6 +37,18 @@ export async function POST(request: Request) {
         { error: "لم يتم العثور على الحساب" },
         { status: 404 }
       );
+    }
+
+    /* A staff member granted this may reset trainees' passwords, never the
+       coach's — that would be the whole panel, handed over by its own button. */
+    if (!auth.session.isAdmin) {
+      const target = await prisma.accounts.findUnique({
+        where: { id: profile.user_id },
+        select: { username: true },
+      });
+      if (!target || isAdminUsername(target.username)) {
+        return NextResponse.json({ error: "غير مصرح لك بهذا الإجراء" }, { status: 403 });
+      }
     }
 
     const hashedPassword = await hashPassword(newPassword);

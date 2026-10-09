@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { comparePassword, isBcryptHash } from "@/lib/auth";
 import { requireAdminAction } from "@/lib/authGuard";
+import type { StaffPermission } from "@/lib/staffPermissions";
 import { storagePathOf, supabaseAdmin, UPLOADS_BUCKET } from "@/lib/supabaseAdmin";
 import type { JsonRecord } from "@/types";
 import { NON_ANSWER_KEYS } from "@/lib/subscriptionMonths";
@@ -93,7 +94,7 @@ async function removeFromStorage(url: string): Promise<void> {
 export async function deleteAttachmentAction(input: DeleteAttachmentInput): Promise<DeleteResult> {
   /* Permanently destroys a trainee's uploaded file. A server action is a public
      endpoint however it reads at the call site, so it asks for itself. */
-  if (!(await requireAdminAction())) {
+  if (!(await requireAdminAction("subscribers.edit"))) {
     return { success: false, error: "غير مصرح لك بهذا الإجراء" };
   }
 
@@ -169,7 +170,7 @@ export async function deleteAllAttachmentsAction(
   profileId: string,
   monthIndex: number | null
 ): Promise<DeleteResult & { deleted?: number }> {
-  if (!(await requireAdminAction())) {
+  if (!(await requireAdminAction("subscribers.edit"))) {
     return { success: false, error: "غير مصرح لك بهذا الإجراء" };
   }
 
@@ -270,7 +271,7 @@ export async function deleteSubscriberAction(
   profileId: string,
   adminPassword: string
 ): Promise<{ success: boolean; error?: string }> {
-  const session = await requireAdminAction();
+  const session = await requireAdminAction("subscribers.delete");
   if (!session) return { success: false, error: "غير مصرح لك بهذا الإجراء" };
 
   if (!profileId || !isValidUUID(profileId)) {
@@ -328,12 +329,14 @@ export async function deleteSubscriberAction(
 /**
  * Reads the profile's blob, hands it to `edit`, and writes back whatever that
  * returns. The three history actions differ only in that one function.
+ * `need` is what a staff member must hold to do it.
  */
 async function updateBlob(
   profileId: string,
-  edit: (blob: JsonRecord) => void
+  edit: (blob: JsonRecord) => void,
+  need: StaffPermission = "subscribers.edit"
 ): Promise<{ success: boolean; error?: string }> {
-  const session = await requireAdminAction();
+  const session = await requireAdminAction(need);
   if (!session) return { success: false, error: "غير مصرح لك بهذا الإجراء" };
 
   if (!profileId || !isValidUUID(profileId)) {
@@ -442,7 +445,7 @@ export async function rejectRenewalAction(
       delete blob.renewal_pending;
       delete blob.renewal_requested_at;
       delete blob.renewal_requested_month;
-    });
+    }, "subscribers.renew");
   } catch (error) {
     console.error("Failed to reject the renewal request:", error);
     return { success: false, error: "حدث خطأ أثناء رفض الطلب" };

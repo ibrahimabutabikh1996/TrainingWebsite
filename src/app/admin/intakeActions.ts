@@ -103,7 +103,7 @@ export async function getTraineeIntakeAction(
   traineeId: string,
   view: IntakeView
 ): Promise<IntakeSummary> {
-  const session = await requireAdminAction();
+  const session = await requireAdminAction(["subscribers.view", "courses.view", "diet.view"]);
   if (!session) return DENIED;
 
   /* An unknown view name is not a field list to fall back to. Reject it rather

@@ -11,7 +11,7 @@ export default async function AdminExercisesPage() {
      matcher is a list of paths, and this page reads every subscriber it can
      find. It proves the caller for itself rather than inheriting the answer.
      See @/lib/authGuard. */
-  await requireAdminPage();
+  await requireAdminPage("exercises.view");
 
   let exercises: Exercise[] = [];
 

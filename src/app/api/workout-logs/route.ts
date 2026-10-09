@@ -40,7 +40,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "معرّف المشترك غير صالح" }, { status: 400 });
     }
 
-    const auth = await requireProfileAccess(profileId);
+    const auth = await requireProfileAccess(profileId, "view");
     if (!auth.ok) return auth.response;
 
     const logs = await prisma.workout_logs.findMany({

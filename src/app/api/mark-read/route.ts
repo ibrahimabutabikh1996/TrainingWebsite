@@ -6,7 +6,7 @@ import type { JsonRecord } from "@/types";
 /* Clears the "new subscriber" flag the panel's list draws. Only the coach sees
    that list, so only the coach can have read it. */
 export async function POST(request: Request) {
-  const auth = await requireAdmin();
+  const auth = await requireAdmin("subscribers.view");
   if (!auth.ok) return auth.response;
 
   try {

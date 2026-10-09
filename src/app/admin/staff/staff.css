@@ -1,0 +1,334 @@
+/* ─── Staff management ─────────────────────────────────────────────────────
+   Scoped under .staff-page and the modal's .staff-form. Surfaces and type
+   follow the exercise library (exercises.css) so the panel reads as one. */
+
+.staff-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding-bottom: 48px;
+}
+
+/* ─── Header ─── */
+
+.staff-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.staff-header h1 {
+  margin: 0 0 8px;
+  font-family: var(--font-display);
+  font-size: clamp(28px, 4vw, 40px);
+  font-weight: 400;
+  line-height: var(--leading-tight);
+  color: var(--admin-on-surface);
+}
+
+.staff-lead {
+  margin: 0;
+  max-width: 60ch;
+  font-size: var(--text-base);
+  color: var(--text-secondary);
+}
+
+.staff-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--primary);
+  background: var(--primary);
+  color: var(--text-inverse);
+  font-family: inherit;
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.25s, border-color 0.25s;
+}
+
+.staff-add-btn:hover {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+}
+
+/* ─── List ─── */
+
+.staff-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 48px 16px;
+  border-radius: var(--admin-radius-lg);
+  border: 1px dashed var(--border-strong);
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.staff-empty .app-icon {
+  font-size: 36px;
+  color: var(--primary-on-tint);
+}
+
+.staff-empty p {
+  margin: 0;
+}
+
+.staff-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr));
+  gap: 16px;
+}
+
+.staff-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px;
+  border-radius: var(--admin-radius-lg);
+  border: 1px solid var(--admin-card-border);
+  background: var(--admin-card-bg);
+  box-shadow: var(--admin-card-shadow);
+  min-width: 0;
+}
+
+.staff-card.is-suspended {
+  opacity: 0.7;
+}
+
+.staff-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.staff-card-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  color: var(--admin-on-surface);
+}
+
+.staff-card-name span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.staff-card-name .app-icon {
+  color: var(--primary-on-tint);
+}
+
+.staff-status {
+  flex-shrink: 0;
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  background: var(--success-bg);
+  color: var(--success-text);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.staff-status.is-off {
+  background: var(--error-bg);
+  color: var(--error-text);
+}
+
+.staff-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.staff-chip {
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-primary);
+  background: var(--primary-dim);
+  color: var(--primary-on-tint);
+  font-size: var(--text-sm);
+}
+
+.staff-chip[data-level="view"] {
+  border-color: var(--border-strong);
+  background: var(--bg3);
+  color: var(--text-secondary);
+}
+
+.staff-chip[data-level="action"] {
+  border-color: color-mix(in srgb, var(--warning) 35%, transparent);
+  background: color-mix(in srgb, var(--warning) 12%, transparent);
+  color: var(--warning-text);
+}
+
+.staff-chip.is-empty {
+  border-style: dashed;
+  border-color: var(--border-strong);
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.staff-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.staff-card-actions .crm-btn-secondary {
+  padding: 8px 12px;
+  font-size: var(--text-sm);
+}
+
+.staff-card-actions .crm-btn-secondary .app-icon {
+  font-size: 18px;
+}
+
+.staff-card-actions .staff-danger {
+  color: var(--error-text);
+  border-color: color-mix(in srgb, var(--error) 35%, transparent);
+}
+
+.staff-card-actions .staff-danger:hover {
+  background: var(--error-bg);
+}
+
+/* ─── Modal ─── */
+
+.staff-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.staff-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+  gap: 16px;
+}
+
+.staff-perms {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.staff-perms-title {
+  margin: 8px 0 0;
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  color: var(--admin-on-surface);
+}
+
+.staff-perms-note {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.staff-perm-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--bg3);
+}
+
+.staff-perm-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1 1 180px;
+}
+
+.staff-perm-label {
+  font-weight: var(--weight-semibold);
+  color: var(--text);
+}
+
+.staff-perm-hint {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.staff-segment {
+  display: inline-flex;
+  padding: 3px;
+  gap: 2px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-strong);
+  background: var(--bg2);
+}
+
+.staff-segment-btn {
+  padding: 6px 12px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: var(--text-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s, color 0.2s;
+}
+
+.staff-segment-btn:hover {
+  color: var(--text);
+}
+
+.staff-segment-btn.is-active {
+  background: var(--primary);
+  color: var(--text-inverse);
+  font-weight: var(--weight-semibold);
+}
+
+.staff-segment-btn.is-active[data-level="none"] {
+  background: var(--bg4);
+  color: var(--text);
+}
+
+.staff-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--bg3);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.staff-check input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary);
+  flex-shrink: 0;
+}
+
+.staff-check.is-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.staff-modal-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}

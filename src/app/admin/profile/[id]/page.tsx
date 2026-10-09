@@ -22,7 +22,7 @@ export default async function ProfileDetailsPage({ params }: { params: Promise<{
      measurements, photos, and the controls that delete them. The proxy covers
      /admin/*, but that is a list of paths and this is the page that would hurt
      most to have off it. It asks for itself. See @/lib/authGuard. */
-  await requireAdminPage();
+  await requireAdminPage("subscribers.view");
 
   const { id } = await params;
 

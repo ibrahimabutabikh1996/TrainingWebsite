@@ -1,6 +1,6 @@
 import React from "react";
 import { prisma } from "@/lib/db";
-import { requireUserPage, sessionOwnsProfile } from "@/lib/authGuard";
+import { requireUserPage, sessionCan, sessionOwnsProfile } from "@/lib/authGuard";
 import { readIntakeData } from "@/lib/intakeData";
 import { asMeals, type DietPlan } from "@/types/diet";
 import { subscriptionStartOf } from "@/lib/subscription";
@@ -37,7 +37,7 @@ export default async function ExportDietPage({
      uuid. The whole branch returns before the prescribed path begins, which is
      left exactly as it was. */
   if (groupId) {
-    if (!session.isAdmin || !isValidUUID(groupId)) notFound();
+    if (!sessionCan(session, "diet.view") || !isValidUUID(groupId)) notFound();
 
     const rows = await prisma.diet_plans.findMany({
       where: { group_id: groupId, profile_id: null },
@@ -74,7 +74,7 @@ export default async function ExportDietPage({
 
   if (!profileId) notFound();
 
-  if (!(await sessionOwnsProfile(session, profileId))) notFound();
+  if (!(await sessionOwnsProfile(session, profileId, "view"))) notFound();
 
   const profile = await prisma.profiles.findUnique({
     where: { id: profileId },

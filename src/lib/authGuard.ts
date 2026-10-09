@@ -34,6 +34,7 @@ import {
   type Session,
 } from "@/lib/session";
 import { SESSION_COOKIE, USER_HINT_COOKIE } from "@/lib/sessionCookies";
+import { firstAllowedPath, hasPermission, type StaffPermission } from "@/lib/staffPermissions";
 
 export type { Session } from "@/lib/session";
 
@@ -126,15 +127,21 @@ function suspended(): NextResponse {
  *
  * A missing account is refused too: the row was deleted while the cookie lived.
  *
- * Suspension is checked only for trainees. The coach cannot be suspended —
- * membership is a username in `@/lib/adminUsernames`, not a column — but their
- * password change counts the same as anyone's.
+ * Suspension is checked only for trainees and staff. The coach cannot be
+ * suspended — membership is a username in `@/lib/adminUsernames`, not a column —
+ * but their password change counts the same as anyone's.
+ *
+ * A staff member's grant comes back on the same round trip, and is written onto
+ * the session as `permissions` for the guards below to read. A token that says
+ * staff with no `staff_accounts` row behind it is refused as stale: the coach
+ * removed them.
  */
 async function sessionRefusal(session: Session): Promise<"suspended" | "stale" | null> {
   const account = await prisma.accounts.findUnique({
     where: { id: session.userId },
     select: {
       password_changed_at: true,
+      staff_accounts: { select: { permissions: true, is_suspended: true } },
       /* Newest first, matching /api/auth/login and /api/profile: that is the
          profile the dashboard loads, so it is the one whose flag governs. */
       profiles: {
@@ -156,9 +163,40 @@ async function sessionRefusal(session: Session): Promise<"suspended" | "stale" |
     if (changedAt > session.issuedAt) return "stale";
   }
 
+  if (session.isStaff) {
+    if (!account.staff_accounts) return "stale";
+    if (account.staff_accounts.is_suspended) return "suspended";
+    session.permissions = account.staff_accounts.permissions;
+    return null;
+  }
+
   if (!session.isAdmin && account.profiles[0]?.is_suspended === true) return "suspended";
 
   return null;
+}
+
+/* ------------------------------------------------------------------ *
+ * Staff
+ * ------------------------------------------------------------------ */
+
+/**
+ * What a guard asks of a staff member: one permission, any one of several, or
+ * "any" for nothing more than being staff at all. Leaving it out of an admin
+ * guard means the coach only.
+ */
+export type AdminNeed = StaffPermission | readonly StaffPermission[] | "any";
+
+/**
+ * Whether this session may do what `need` names. The coach always may; a
+ * trainee never. Only meaningful on a session a guard has already checked,
+ * since that is what fills in a staff member's `permissions`.
+ */
+export function sessionCan(session: Session, need: AdminNeed): boolean {
+  if (session.isAdmin) return true;
+  if (!session.isStaff) return false;
+  if (need === "any") return true;
+  const needs: readonly StaffPermission[] = typeof need === "string" ? [need] : need;
+  return needs.some((n) => hasPermission(session.permissions, n));
 }
 
 /** Any signed-in account whose session is still good. Call it as the first line of the handler, before the try block. */
@@ -189,17 +227,23 @@ export async function requireUser(): Promise<ApiGuard> {
  *
  * Ordered so `isAdmin` is settled first: a trainee who wanders in is refused on
  * the token alone and never costs a query.
+ *
+ * With `need`, a staff member holding it is admitted too — see `AdminNeed`.
+ * Without it, the coach only.
  */
-export async function requireAdmin(): Promise<ApiGuard> {
+export async function requireAdmin(need?: AdminNeed): Promise<ApiGuard> {
   const session = await getSession();
   if (!session) return { ok: false, response: unauthorized() };
-  if (!session.isAdmin) return { ok: false, response: forbidden() };
+  if (!session.isAdmin && !(need && session.isStaff)) return { ok: false, response: forbidden() };
 
   /* Answered as "not signed in", matching `requireUser`: the credential this
-     token was issued against no longer exists. Suspension cannot arise here —
-     `sessionRefusal` only reads that flag for non-admins — so the only refusal
-     this can return is "stale". */
-  if (await sessionRefusal(session)) return { ok: false, response: unauthorized() };
+     token was issued against no longer exists. Suspension can only arise for a
+     staff member — `sessionRefusal` does not read it for the coach. */
+  const refusal = await sessionRefusal(session);
+  if (refusal === "suspended") return { ok: false, response: suspended() };
+  if (refusal) return { ok: false, response: unauthorized() };
+
+  if (need && !sessionCan(session, need)) return { ok: false, response: forbidden() };
 
   return { ok: true, session };
 }
@@ -222,13 +266,16 @@ export async function requireUserAction(): Promise<Session | null> {
   return (await sessionRefusal(session)) ? null : session;
 }
 
-export async function requireAdminAction(): Promise<Session | null> {
+export async function requireAdminAction(need?: AdminNeed): Promise<Session | null> {
   const session = await getSession();
-  if (!session?.isAdmin) return null;
+  if (!session) return null;
+  if (!session.isAdmin && !(need && session.isStaff)) return null;
   /* Same revocation check as `requireAdmin` — see the note there. A server
      action is a public endpoint, so the eighteen of them behind this guard were
      reachable with a withdrawn token exactly as the route handlers were. */
-  return (await sessionRefusal(session)) ? null : session;
+  if (await sessionRefusal(session)) return null;
+  if (need && !sessionCan(session, need)) return null;
+  return session;
 }
 
 /* ------------------------------------------------------------------ *
@@ -252,16 +299,22 @@ export async function requireUserPage(): Promise<Session> {
   return session;
 }
 
-export async function requireAdminPage(): Promise<Session> {
+export async function requireAdminPage(need?: AdminNeed): Promise<Session> {
   const session = await getSession();
   if (!session) redirect("/login");
   /* A signed-in trainee who wanders into the panel goes back to their own
      dashboard rather than to the sign-in screen they just came from. */
-  if (!session.isAdmin) redirect("/dashboard");
+  if (!session.isAdmin && !session.isStaff) redirect("/dashboard");
   /* Same revocation check as `requireAdmin` — see the note there. To /login
      rather than /dashboard: a token whose account is gone or whose password has
      changed is not a trainee in the wrong place, it is nobody. */
   if (await sessionRefusal(session)) redirect("/login");
+  /* A staff member on a screen they were not granted goes to the first one they
+     were — which their grant does open, so this cannot loop — or out of the
+     panel if they were granted none. */
+  if (!session.isAdmin && !(need && sessionCan(session, need))) {
+    redirect(firstAllowedPath(session.permissions) ?? "/");
+  }
   return session;
 }
 
@@ -276,10 +329,16 @@ export async function requireAdminPage(): Promise<Session> {
  * changing one digit reached somebody else's training log. The id is still what
  * names the row, but it is checked against `profiles.user_id` before anything is
  * read or written. The coach passes, because the panel is built on acting for
- * other people.
+ * other people — and so does a staff member granted the subscribers section at
+ * `need`: "view" for a path that only reads, "edit" (the default) for one that
+ * writes.
  */
-export async function sessionOwnsProfile(session: Session, profileId: string): Promise<boolean> {
-  if (session.isAdmin) return true;
+export async function sessionOwnsProfile(
+  session: Session,
+  profileId: string,
+  need: "view" | "edit" = "edit"
+): Promise<boolean> {
+  if (sessionCan(session, `subscribers.${need}`)) return true;
 
   const profile = await prisma.profiles.findUnique({
     where: { id: profileId },
@@ -295,11 +354,14 @@ export async function sessionOwnsProfile(session: Session, profileId: string): P
  * answered identically, so the endpoint cannot be used to find out which ids
  * are real.
  */
-export async function requireProfileAccess(profileId: string): Promise<ApiGuard> {
+export async function requireProfileAccess(
+  profileId: string,
+  need: "view" | "edit" = "edit"
+): Promise<ApiGuard> {
   const auth = await requireUser();
   if (!auth.ok) return auth;
 
-  if (!(await sessionOwnsProfile(auth.session, profileId))) {
+  if (!(await sessionOwnsProfile(auth.session, profileId, need))) {
     return { ok: false, response: forbidden() };
   }
   return auth;
@@ -345,7 +407,16 @@ export async function startSession(
       : remember
         ? SESSION_TTL_REMEMBER_SECONDS
         : SESSION_TTL_SECONDS;
-  const { token, expiresAt } = await createSessionToken(account, ttl);
+  /* Whether this is a staff member is settled here, once, and carried in the
+     token so the proxy can admit them to the panel. Their grant is not: the
+     guards read that on every request. */
+  const isStaff =
+    !isAdminUsername(account.username) &&
+    (await prisma.staff_accounts.findUnique({
+      where: { account_id: account.id },
+      select: { account_id: true },
+    })) !== null;
+  const { token, expiresAt } = await createSessionToken(account, ttl, isStaff);
   const store = await cookies();
 
   store.set(SESSION_COOKIE, token, {
@@ -379,6 +450,7 @@ export async function startSession(
     userId: account.id,
     username: account.username,
     isAdmin: isAdminUsername(account.username),
+    isStaff,
     expiresAt,
     issuedAt: expiresAt - ttl,
   };

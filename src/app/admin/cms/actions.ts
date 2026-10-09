@@ -30,7 +30,7 @@ import { storeCmsMedia } from "@/lib/cmsMedia";
 const MAX_CONTENT_BYTES = 512 * 1024;
 
 export async function saveLandingContent(contentAr: JsonRecord) {
-  if (!(await requireAdminAction())) {
+  if (!(await requireAdminAction("cms.edit"))) {
     return { success: false, error: "غير مصرح لك بهذا الإجراء" };
   }
 
@@ -93,7 +93,7 @@ export async function getLandingContent() {
  * screens that show the upload window use the endpoint instead.
  */
 export async function uploadImageServer(formData: FormData): Promise<string | null> {
-  if (!(await requireAdminAction())) return null;
+  if (!(await requireAdminAction("cms.edit"))) return null;
 
   const file = formData.get('file');
   if (!(file instanceof File)) return null;
@@ -112,7 +112,7 @@ export interface MediaListing {
 }
 
 export async function listImagesServer(): Promise<MediaListing> {
-  if (!(await requireAdminAction())) return { images: [], hasMore: false };
+  if (!(await requireAdminAction("cms.view"))) return { images: [], hasMore: false };
 
   try {
     /* Supabase's `list` caps at whatever is asked for and says nothing about
@@ -156,7 +156,7 @@ export async function listImagesServer(): Promise<MediaListing> {
 }
 
 export async function deleteImageServer(publicUrl: string): Promise<boolean> {
-  if (!(await requireAdminAction())) return false;
+  if (!(await requireAdminAction("cms.edit"))) return false;
 
   try {
     /* Resolved through `storagePathOf`, which understands both the current

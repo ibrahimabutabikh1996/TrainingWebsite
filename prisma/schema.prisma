@@ -511,6 +511,20 @@ model accounts {
   courses             courses[]
   profiles        profiles[]
   upload_sessions upload_sessions[]
+  staff_accounts  staff_accounts?
+
+  @@schema("public")
+}
+
+/// A staff member: an account the coach created for a helper, with the panel
+/// sections and actions the coach granted. See prisma/manual/2026-10-09-staff-permissions.sql
+/// and src/lib/staffPermissions.ts.
+model staff_accounts {
+  account_id   String   @id @db.Uuid
+  permissions  String[] @default([])
+  is_suspended Boolean  @default(false)
+  created_at   DateTime @default(now()) @db.Timestamptz(6)
+  accounts     accounts @relation(fields: [account_id], references: [id], onDelete: Cascade)
 
   @@schema("public")
 }

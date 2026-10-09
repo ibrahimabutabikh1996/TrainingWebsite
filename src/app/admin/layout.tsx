@@ -8,6 +8,7 @@ import "./admin.css";
 import { Icon, type IconName } from "@/components/Icon";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { optimizedSrc, optimizedSrcSet } from "@/lib/imageOptim";
+import { hasPermission, type StaffSection } from "@/lib/staffPermissions";
 
 export default function AdminLayout({
   children,
@@ -35,15 +36,39 @@ export default function AdminLayout({
     };
   }, []);
 
-  const navItems: { name: string; path: string; icon: IconName }[] = [
-    { name: "إدارة المشتركين", path: "/admin", icon: "group" },
-    { name: "مكتبة الكورسات", path: "/admin/courses", icon: "library_books" },
-    { name: "صانع الكورسات", path: "/admin/builder", icon: "fitness_center" },
-    { name: "التمارين", path: "/admin/exercises", icon: "biceps_flexed" },
-    { name: "النظام الغذائي", path: "/admin/diet", icon: "restaurant_menu" },
-    { name: "مكتبة الأنظمة الغذائية", path: "/admin/diet/library", icon: "nutrition" },
-    { name: "محتوى الموقع", path: "/admin/cms", icon: "web" },
+  /* Who is looking, so the bar draws only what they may open. Drawing only:
+     every screen behind these links checks for itself on the server. Null
+     until answered, and nothing is drawn meanwhile — a staff member must not
+     see, even for a moment, a section they were not given. */
+  const [access, setAccess] = useState<{ isOwner: boolean; permissions: string[] } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/admin/me")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!cancelled && data) setAccess(data);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const allNavItems: { name: string; path: string; icon: IconName; section: StaffSection }[] = [
+    { name: "إدارة المشتركين", path: "/admin", icon: "group", section: "subscribers" },
+    { name: "مكتبة الكورسات", path: "/admin/courses", icon: "library_books", section: "courses" },
+    { name: "صانع الكورسات", path: "/admin/builder", icon: "fitness_center", section: "courses" },
+    { name: "التمارين", path: "/admin/exercises", icon: "biceps_flexed", section: "exercises" },
+    { name: "النظام الغذائي", path: "/admin/diet", icon: "restaurant_menu", section: "diet" },
+    { name: "مكتبة الأنظمة الغذائية", path: "/admin/diet/library", icon: "nutrition", section: "diet" },
+    { name: "محتوى الموقع", path: "/admin/cms", icon: "web", section: "cms" },
   ];
+  const navItems = allNavItems.filter(
+    (item) =>
+      access !== null &&
+      (access.isOwner || hasPermission(access.permissions, `${item.section}.view`))
+  );
 
   return (
     <div className="admin-layout-wrapper" dir="rtl">
@@ -143,6 +168,17 @@ export default function AdminLayout({
                 <Icon name="lock_reset" />
                 <span>تغيير كلمة المرور</span>
               </Link>
+
+              {access?.isOwner && (
+                <Link
+                  href="/admin/staff"
+                  className="admin-dropdown-item"
+                  onClick={() => setIsSettingsOpen(false)}
+                >
+                  <Icon name="verified_user" />
+                  <span>إدارة المشرفين</span>
+                </Link>
+              )}
 
               <div className="admin-dropdown-divider"></div>
 

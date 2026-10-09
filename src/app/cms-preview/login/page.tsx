@@ -25,7 +25,7 @@ import "../../login/login.css";
 export const dynamic = "force-dynamic";
 
 export default async function LoginPreviewPage() {
-  await requireAdminPage();
+  await requireAdminPage("cms.view");
 
   const settings = await getLandingContent();
   const initialCmsData = settings ? (settings.content_ar as JsonRecord) : null;
