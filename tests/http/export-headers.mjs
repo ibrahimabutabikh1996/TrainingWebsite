@@ -19,7 +19,7 @@
  */
 import crypto from "node:crypto";
 import bcrypt from "bcrypt";
-import { db, mintSession, cookieFor, BASE_URL } from "./_lib.mjs";
+import { db, mintSession, cookieFor, BASE_URL, COACH_USERNAME } from "./_lib.mjs";
 
 const RUN = "EXPHDR_" + crypto.randomBytes(3).toString("hex").toUpperCase();
 const DAY = 86400000;
@@ -209,7 +209,7 @@ try {
      the stricter check. */
   const adminRes = await fetch(
     `${BASE_URL}/export-workout?courseId=${theirs.course.id}&profileId=${theirs.profile.id}`,
-    { headers: { Cookie: cookieFor(mintSession({ id: mine.acc.id, username: "admin" })) }, redirect: "manual" }
+    { headers: { Cookie: cookieFor(mintSession({ id: mine.acc.id, username: COACH_USERNAME })) }, redirect: "manual" }
   );
   const adminHtml = await adminRes.text();
   check("D.6 the coach still prints any subscriber's sheet",

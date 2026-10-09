@@ -10,7 +10,7 @@
  */
 import crypto from "node:crypto";
 import bcrypt from "bcrypt";
-import { db, mintSession, cookieFor, http, record, results } from "./_lib.mjs";
+import { db, mintSession, cookieFor, http, record, results, COACH_USERNAME } from "./_lib.mjs";
 
 const { q, end } = await db();
 const RUN = `SECURITY_TEST_${Date.now()}_${crypto.randomBytes(3).toString("hex")}`;
@@ -91,8 +91,8 @@ console.log("G1-1 — a live trainee opens a session for their OWN profile");
 /* ================================================================== G1-2 == */
 console.log("\nG1-2 — a LIVE coach: intended behaviour preserved");
 {
-  const own = await openRenewal(live(coach.acc, "admin"), coach.pro.id);
-  const other = await openRenewal(live(coach.acc, "admin"), victim.pro.id);
+  const own = await openRenewal(live(coach.acc, COACH_USERNAME), coach.pro.id);
+  const other = await openRenewal(live(coach.acc, COACH_USERNAME), victim.pro.id);
   console.log(`      own profile ${own.status}, trainee's profile ${other.status}`);
   record({
     test: "G1-2 live coach, own profile",
@@ -114,7 +114,7 @@ console.log("\nG1-2 — a LIVE coach: intended behaviour preserved");
 /* ================================================================== G1-3 == */
 console.log("\nG1-3 — a REVOKED coach cannot open a session for a trainee (the fix)");
 {
-  const r = await openRenewal(revoked(coach.acc, "admin"), victim.pro.id);
+  const r = await openRenewal(revoked(coach.acc, COACH_USERNAME), victim.pro.id);
   console.log(`      ${r.status} ${r.json?.error ?? ""}   (before the fix: 200)`);
 
   /* Prove it at the database too: no session row may exist for the victim

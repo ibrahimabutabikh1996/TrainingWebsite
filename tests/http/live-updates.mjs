@@ -13,7 +13,7 @@
 import crypto from "node:crypto";
 import bcrypt from "bcrypt";
 import puppeteer from "puppeteer";
-import { db, mintSession, BASE_URL } from "./_lib.mjs";
+import { db, mintSession, BASE_URL, COACH_USERNAME } from "./_lib.mjs";
 
 const { q, end } = await db();
 const RUN = "LIVE_" + crypto.randomBytes(3).toString("hex").toUpperCase();
@@ -81,7 +81,7 @@ try {
   check("an unknown scope is rejected", (await ask(tPage, "?scope=everything")).status === 400);
 
   const aPage = await browser.newPage();
-  await aPage.setCookie({ name: "gym_session", value: mintSession({ id: adminAcc.id, username: "admin" }), domain: "localhost", path: "/" });
+  await aPage.setCookie({ name: "gym_session", value: mintSession({ id: adminAcc.id, username: COACH_USERNAME }), domain: "localhost", path: "/" });
   await aPage.goto(`${BASE_URL}/admin`, { waitUntil: "domcontentloaded", timeout: 120000 });
   await new Promise((r) => setTimeout(r, 2000));
   const p1 = await ask(aPage, `?scope=profile&id=${trainee}`);
@@ -118,7 +118,7 @@ try {
 
   /* ── the page updates itself, with no navigation ────────────────────── */
   const watch = await browser.newPage();
-  await watch.setCookie({ name: "gym_session", value: mintSession({ id: adminAcc.id, username: "admin" }), domain: "localhost", path: "/" });
+  await watch.setCookie({ name: "gym_session", value: mintSession({ id: adminAcc.id, username: COACH_USERNAME }), domain: "localhost", path: "/" });
   await watch.goto(`${BASE_URL}/admin/profile/${trainee}`, { waitUntil: "domcontentloaded", timeout: 120000 });
   await watch.waitForFunction(() => (document.body.innerText || "").trim().length > 60, { timeout: 90000, polling: 500 }).catch(() => {});
   await new Promise((r) => setTimeout(r, 2500));

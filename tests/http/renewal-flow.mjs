@@ -33,6 +33,7 @@ import {
   results,
   daysBetween,
   BASE_URL,
+  COACH_USERNAME,
 } from "./_lib.mjs";
 
 const RUN = "RENEWAL_TEST_" + crypto.randomBytes(3).toString("hex").toUpperCase();
@@ -169,7 +170,7 @@ try {
   const otherCookie = cookieFor(mintSession({ id: other.id, username: other.username }));
   /* `requireAdmin` reads the role off the username in the token and confirms
      the account row still exists; no admin row is created for this run. */
-  const adminCookie = cookieFor(mintSession({ id: acc.id, username: "admin" }));
+  const adminCookie = cookieFor(mintSession({ id: acc.id, username: COACH_USERNAME }));
 
   function payload() {
     return {

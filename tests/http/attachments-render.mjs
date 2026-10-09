@@ -18,7 +18,7 @@
 import crypto from "node:crypto";
 import bcrypt from "bcrypt";
 import puppeteer from "puppeteer";
-import { db, mintSession, BASE_URL, readEnv } from "./_lib.mjs";
+import { db, mintSession, BASE_URL, readEnv, COACH_USERNAME } from "./_lib.mjs";
 
 const RUN = "ATT_" + crypto.randomBytes(3).toString("hex").toUpperCase();
 const DAY = 86400000;
@@ -174,7 +174,7 @@ try {
 
   console.log("\nA — the coach's month record");
 
-  const coach = await open(mintSession({ id: acc.id, username: "admin" }), `${BASE_URL}/admin/profile/${pro.id}`);
+  const coach = await open(mintSession({ id: acc.id, username: COACH_USERNAME }), `${BASE_URL}/admin/profile/${pro.id}`);
   await coach.page.evaluate(() => {
     document.querySelectorAll('[title="عرض التفاصيل"]').forEach((n) => n.click());
   });
@@ -299,7 +299,7 @@ try {
   const traversal = await fetch(
     `${BASE_URL}/api/attachments?path=${encodeURIComponent("usersData/../images/x")}`,
     {
-      headers: { Cookie: `gym_session=${mintSession({ id: acc.id, username: "admin" })}` },
+      headers: { Cookie: `gym_session=${mintSession({ id: acc.id, username: COACH_USERNAME })}` },
       redirect: "manual",
     }
   );

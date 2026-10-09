@@ -49,6 +49,12 @@ export function saveManifest(m) {
 
 /* ----------------------------------------------------------- session -- */
 
+/* The username a session needs to carry to be the coach. `isAdmin` is read
+   from the name inside the token, so this must be an entry of ADMIN_USERNAMES
+   in src/lib/adminUsernames.ts — copied rather than imported, because this
+   plain .mjs cannot load a .ts module. Change both together. */
+export const COACH_USERNAME = "ibrahimabutabikh1996@gmail.com";
+
 /* Mints the same token `@/lib/session` verifies: v2.<payload>.<hmac>. Used to
    act as a seeded test account without going through a password. */
 export function mintSession({ id, username }, { ttl = 3600, issuedAt } = {}) {

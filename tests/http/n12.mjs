@@ -10,7 +10,7 @@
  */
 import crypto from "node:crypto";
 import bcrypt from "bcrypt";
-import { db, mintSession, cookieFor, http, record, results } from "./_lib.mjs";
+import { db, mintSession, cookieFor, http, record, results, COACH_USERNAME } from "./_lib.mjs";
 
 const { q, end } = await db();
 const RUN = `SECURITY_TEST_${Date.now()}_${crypto.randomBytes(3).toString("hex")}`;
@@ -61,7 +61,7 @@ const owner = await makeTrainee("owner");
 const stranger = await makeTrainee("stranger");
 /* An admin token. `isAdmin` comes from the username inside the token; `s` points
    at a real row so the guards' revocation check has something to find. */
-const adminCookie = cookieFor(mintSession({ id: stranger.acc.id, username: "admin" }));
+const adminCookie = cookieFor(mintSession({ id: stranger.acc.id, username: COACH_USERNAME }));
 console.log(`owner ${owner.acc.id} / stranger ${stranger.acc.id}\n`);
 
 /* An owned (renewal-scope) session, created the way the app creates one. */

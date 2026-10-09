@@ -7,7 +7,7 @@
 import crypto from "node:crypto";
 import bcrypt from "bcrypt";
 import puppeteer from "puppeteer";
-import { db, mintSession, BASE_URL } from "./_lib.mjs";
+import { db, mintSession, BASE_URL, COACH_USERNAME } from "./_lib.mjs";
 
 const { q, end } = await db();
 const RUN = "TIHP_" + crypto.randomBytes(3).toString("hex").toUpperCase();
@@ -32,7 +32,7 @@ const check = (name, ok, note = "") => {
 
 try {
   const page = await browser.newPage();
-  await page.setCookie({ name: "gym_session", value: mintSession({ id: admin.id, username: "admin" }), domain: "localhost", path: "/" });
+  await page.setCookie({ name: "gym_session", value: mintSession({ id: admin.id, username: COACH_USERNAME }), domain: "localhost", path: "/" });
   await page.setViewport({ width: W, height: H, deviceScaleFactor: 1, hasTouch: W < 800, isMobile: W < 800 });
 
   const go = async (url) => {

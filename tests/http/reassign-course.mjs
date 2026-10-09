@@ -13,7 +13,7 @@
 import crypto from "node:crypto";
 import bcrypt from "bcrypt";
 import puppeteer from "puppeteer";
-import { db, mintSession, BASE_URL } from "./_lib.mjs";
+import { db, mintSession, BASE_URL, COACH_USERNAME } from "./_lib.mjs";
 
 const { q, end } = await db();
 const RUN = "RASG_" + crypto.randomBytes(3).toString("hex").toUpperCase();
@@ -71,7 +71,7 @@ try {
   /* ── assign NEW through the admin UI ── */
   browser = await puppeteer.launch({ headless: "new", args: ["--no-sandbox", "--disable-gpu"] });
   const page = await browser.newPage();
-  await page.setCookie({ name: "gym_session", value: mintSession({ id: adminAcc.id, username: "admin" }), domain: "localhost", path: "/" });
+  await page.setCookie({ name: "gym_session", value: mintSession({ id: adminAcc.id, username: COACH_USERNAME }), domain: "localhost", path: "/" });
   await page.setViewport({ width: 1440, height: 900, deviceScaleFactor: 1 });
 
   await page.goto(`${BASE_URL}/admin/builder?courseId=${newCourse}&traineeId=${trainee}`, { waitUntil: "domcontentloaded", timeout: 120000 });

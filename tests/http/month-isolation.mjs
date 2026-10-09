@@ -15,7 +15,7 @@
 import crypto from "node:crypto";
 import bcrypt from "bcrypt";
 import puppeteer from "puppeteer";
-import { db, mintSession, BASE_URL } from "./_lib.mjs";
+import { db, mintSession, BASE_URL, COACH_USERNAME } from "./_lib.mjs";
 
 const RUN = "ISO_" + crypto.randomBytes(3).toString("hex").toUpperCase();
 const DAY = 86400000;
@@ -124,7 +124,7 @@ try {
   await page.setViewport({ width: 1400, height: 1400 });
   await page.setCookie({
     name: "gym_session",
-    value: mintSession({ id: acc.id, username: "admin" }),
+    value: mintSession({ id: acc.id, username: COACH_USERNAME }),
     domain: "localhost", path: "/",
   });
   const errors = [];

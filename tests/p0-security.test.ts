@@ -17,7 +17,7 @@ import assert from "node:assert/strict";
 
 import { isReservedUsername, isBcryptHash, credentialError } from "@/lib/auth";
 import { subscriptionExtendFrom, subscriptionEndFrom, SUBSCRIPTION_DAYS } from "@/lib/subscription";
-import { isAdminUsername } from "@/lib/adminUsernames";
+import { ADMIN_USERNAMES, isAdminUsername } from "@/lib/adminUsernames";
 import { validateSubmission } from "@/app/api/submit-form/validate";
 import {
   withCarriedFields,
@@ -39,26 +39,39 @@ describe("VULN-03 — reserved usernames cannot be registered", () => {
     /* The real invariant: nothing `isAdminUsername` says yes to may be
        registrable. Written against that function rather than against a repeated
        list, so adding a coach to the list cannot leave a hole behind. */
-    for (const name of ["admin", "mkm94admin"]) {
+    assert.ok(ADMIN_USERNAMES.length > 0, "the coach list must not be empty");
+    for (const name of ADMIN_USERNAMES) {
       assert.equal(isAdminUsername(name), true, `${name} should grant admin`);
       assert.equal(isReservedUsername(name), true, `${name} must be reserved`);
     }
   });
 
   test("case variants are reserved too", () => {
-    for (const name of ["Admin", "ADMIN", "MkM94Admin", "aDmIn"]) {
+    const coachVariants = ADMIN_USERNAMES.flatMap((n) => [n.toUpperCase(), n[0].toUpperCase() + n.slice(1)]);
+    for (const name of [...coachVariants, "Administrator", "ROOT", "cOaCh"]) {
       assert.equal(isReservedUsername(name), true, `${name} must be reserved`);
     }
   });
 
   test("surrounding whitespace does not evade the check", () => {
-    assert.equal(isReservedUsername("  admin  "), true);
-    assert.equal(isReservedUsername("\tadmin\n"), true);
+    assert.equal(isReservedUsername(`  ${ADMIN_USERNAMES[0]}  `), true);
+    assert.equal(isReservedUsername("\tadministrator\n"), true);
   });
 
   test("other privileged-sounding names are reserved", () => {
     for (const name of ["administrator", "root", "system", "support", "coach"]) {
       assert.equal(isReservedUsername(name), true, `${name} must be reserved`);
+    }
+  });
+
+  /* Taken off the coach list on purpose (2026-10-08), and deliberately not
+     moved onto the reserved one: the owner wants them to be ordinary names.
+     If either is ever reserved or made admin again, this is the test to change
+     — on purpose, not by accident. */
+  test("the removed names grant nothing and are not reserved", () => {
+    for (const name of ["admin", "mkm94admin", "ADMIN"]) {
+      assert.equal(isAdminUsername(name), false, `${name} must not grant admin`);
+      assert.equal(isReservedUsername(name), false, `${name} must not be reserved`);
     }
   });
 
@@ -75,8 +88,10 @@ describe("VULN-03 — reserved usernames cannot be registered", () => {
   });
 
   test("credentialError refuses a reserved name (admin create-account path)", () => {
-    assert.match(credentialError("admin", "goodpassword1") ?? "", /محجوز/);
-    assert.match(credentialError("Admin", "goodpassword1") ?? "", /محجوز/);
+    /* Not the coach's own name: it is an email, and the `@` fails the username
+       pattern before the reserved check is reached. */
+    assert.match(credentialError("administrator", "goodpassword1") ?? "", /محجوز/);
+    assert.match(credentialError("Coach", "goodpassword1") ?? "", /محجوز/);
     assert.equal(credentialError("ahmed", "goodpassword1"), null);
   });
 
@@ -90,7 +105,7 @@ describe("VULN-03 — reserved usernames cannot be registered", () => {
       coffee_rate: "opt_coffee_0", buy_supp: "opt_supp_1", injuries: "لا",
     };
 
-    const reserved = validateSubmission({ ...base, username: "admin", password: "goodpassword1" });
+    const reserved = validateSubmission({ ...base, username: "administrator", password: "goodpassword1" });
     assert.equal(reserved.ok, false);
     assert.ok(
       reserved.errors.some((e) => e.includes("reserved")),
@@ -208,8 +223,8 @@ describe("N-2 — subscriptionExtendFrom adds to what is already there", () => {
  *   VULN-02  renewal with a suspended account                    → 403
  *   VULN-02  renewal with a token older than password_changed_at → 401
  *   VULN-02  anonymous registration                              → still 200
- *   VULN-03  POST /api/submit-form username "admin"              → 400
- *   VULN-03  POST /api/admin/create-account username "admin"     → 400
+ *   VULN-03  POST /api/submit-form username "administrator"      → 400
+ *   VULN-03  POST /api/admin/create-account username "administrator" → 400
  *   VULN-07  sign in / change password / delete-confirm against a seeded
  *            $2y$ row                                            → all three
  *            verify via bcrypt, and the raw hash is refused as a password

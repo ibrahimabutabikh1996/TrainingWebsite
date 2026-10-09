@@ -16,7 +16,7 @@
 import crypto from "node:crypto";
 import bcrypt from "bcrypt";
 import puppeteer from "puppeteer";
-import { db, mintSession, BASE_URL } from "./_lib.mjs";
+import { db, mintSession, BASE_URL, COACH_USERNAME } from "./_lib.mjs";
 
 const RUN = "CARDS_" + crypto.randomBytes(3).toString("hex").toUpperCase();
 const DAY = 86400000;
@@ -108,7 +108,7 @@ try {
   console.log("\nA — the coach's page");
 
   const coach = await open(
-    mintSession({ id: acc.id, username: "admin" }),
+    mintSession({ id: acc.id, username: COACH_USERNAME }),
     `${BASE_URL}/admin/profile/${pro.id}`
   );
 

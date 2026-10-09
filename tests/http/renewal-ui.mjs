@@ -17,7 +17,7 @@ import fs from "node:fs";
 import path from "node:path";
 import bcrypt from "bcrypt";
 import puppeteer from "puppeteer";
-import { db, mintSession, BASE_URL } from "./_lib.mjs";
+import { db, mintSession, BASE_URL, COACH_USERNAME } from "./_lib.mjs";
 
 const RUN = "RENEWAL_UI_" + crypto.randomBytes(3).toString("hex").toUpperCase();
 const DAY = 86400000;
@@ -96,7 +96,7 @@ try {
      token `@/lib/session` verifies, so no password is entered anywhere. The
      cookie the server reads is httpOnly when it sets one, but it only ever
      reads the value — one set here is indistinguishable to it. */
-  const adminToken = mintSession({ id: acc.id, username: "admin" });
+  const adminToken = mintSession({ id: acc.id, username: COACH_USERNAME });
   await page.setCookie({
     name: "gym_session", value: adminToken, domain: "localhost", path: "/",
   });

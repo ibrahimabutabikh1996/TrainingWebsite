@@ -11,7 +11,7 @@
 import crypto from "node:crypto";
 import bcrypt from "bcrypt";
 import puppeteer from "puppeteer";
-import { db, mintSession, BASE_URL } from "./_lib.mjs";
+import { db, mintSession, BASE_URL, COACH_USERNAME } from "./_lib.mjs";
 
 const RUN = "FONT_" + crypto.randomBytes(3).toString("hex").toUpperCase();
 const FLOOR = parseFloat(process.env.FLOOR || "13");
@@ -58,7 +58,7 @@ try {
   browser = await puppeteer.launch({ headless: "new", args: ["--no-sandbox", "--disable-gpu"] });
   const ctx = await browser.createBrowserContext();
   const page = await ctx.newPage();
-  await page.setCookie({ name: "gym_session", value: mintSession({ id: acc.id, username: "admin" }), domain: "localhost", path: "/" });
+  await page.setCookie({ name: "gym_session", value: mintSession({ id: acc.id, username: COACH_USERNAME }), domain: "localhost", path: "/" });
 
   let total = 0;
   for (const path of PAGES) {

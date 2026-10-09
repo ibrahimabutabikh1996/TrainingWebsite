@@ -2,7 +2,7 @@
 import crypto from "node:crypto";
 import bcrypt from "bcrypt";
 import puppeteer from "puppeteer";
-import { db, mintSession, BASE_URL } from "./_lib.mjs";
+import { db, mintSession, BASE_URL, COACH_USERNAME } from "./_lib.mjs";
 const { q, end } = await db();
 const RUN = "BTLB_" + crypto.randomBytes(3).toString("hex").toUpperCase();
 const hash = await bcrypt.hash("TestOnly_" + RUN, 10);
@@ -12,7 +12,7 @@ let fails = 0;
 const check = (n, ok, note="") => { console.log(`  [${ok?"PASS":"FAIL"}] ${n}${note?" — "+note:""}`); if(!ok) fails++; };
 try {
   const page = await browser.newPage();
-  await page.setCookie({ name:"gym_session", value: mintSession({id:acc.id,username:"admin"}), domain:"localhost", path:"/" });
+  await page.setCookie({ name:"gym_session", value: mintSession({id:acc.id,username:COACH_USERNAME}), domain:"localhost", path:"/" });
   await page.setViewport({ width:1280, height:900, deviceScaleFactor:1 });
   await page.goto(`${BASE_URL}/admin/builder`, { waitUntil:"domcontentloaded", timeout:120000 });
   await page.waitForFunction(()=> (document.body.innerText||"").trim().length>60, {timeout:90000,polling:500}).catch(()=>{});

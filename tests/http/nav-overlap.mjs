@@ -10,7 +10,7 @@
 import crypto from "node:crypto";
 import bcrypt from "bcrypt";
 import puppeteer from "puppeteer";
-import { db, mintSession, BASE_URL } from "./_lib.mjs";
+import { db, mintSession, BASE_URL, COACH_USERNAME } from "./_lib.mjs";
 const { q, end } = await db();
 const RUN = "NAVO_" + crypto.randomBytes(3).toString("hex").toUpperCase();
 const WIDTHS = (process.env.WIDTHS || "375,768").split(",").map(Number);
@@ -22,7 +22,7 @@ const [acc] = await q(`insert into public.accounts (username,password,password_c
 const browser = await puppeteer.launch({ headless: "new", args: ["--no-sandbox","--disable-gpu"] });
 try {
   const page = await browser.newPage();
-  await page.setCookie({ name:"gym_session", value: mintSession({ id: acc.id, username:"admin" }), domain:"localhost", path:"/" });
+  await page.setCookie({ name:"gym_session", value: mintSession({ id: acc.id, username:COACH_USERNAME }), domain:"localhost", path:"/" });
   for (const path of PAGES) {
     for (const w of WIDTHS) {
       await page.setViewport({ width:w, height:parseInt(process.env.VH||"812",10), deviceScaleFactor:1, hasTouch:true, isMobile:true });

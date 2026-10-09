@@ -18,7 +18,7 @@
 import crypto from "node:crypto";
 import bcrypt from "bcrypt";
 import puppeteer from "puppeteer";
-import { db, mintSession, BASE_URL } from "./_lib.mjs";
+import { db, mintSession, BASE_URL, COACH_USERNAME } from "./_lib.mjs";
 
 const RUN = "ARS_" + crypto.randomBytes(3).toString("hex").toUpperCase();
 
@@ -74,7 +74,7 @@ try {
   page.on("pageerror", (e) => errors.push(String(e)));
   await page.setCookie({
     name: "gym_session",
-    value: mintSession({ id: acc.id, username: "admin" }),
+    value: mintSession({ id: acc.id, username: COACH_USERNAME }),
     domain: "localhost", path: "/",
   });
   await page.goto(`${BASE_URL}/admin/courses`, { waitUntil: "networkidle0", timeout: 90000 });

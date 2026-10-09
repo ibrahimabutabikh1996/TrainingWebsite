@@ -4,7 +4,7 @@
  * the database read directly before and after each one. Unit tests prove what a
  * function returns; only this proves what an endpoint does.
  */
-import { db, loadManifest, mintSession, cookieFor, http, snapshot, record, results, daysBetween, BASE_URL } from "./_lib.mjs";
+import { db, loadManifest, mintSession, cookieFor, http, snapshot, record, results, daysBetween, BASE_URL, COACH_USERNAME } from "./_lib.mjs";
 
 const { q, end } = await db();
 const m = loadManifest();
@@ -33,7 +33,7 @@ const sessFor = (tag) =>
 
 /* The coach. `requireAdmin` derives the role from the username in the token and
    does not read the database, so no admin row is created for this run. */
-const adminCookie = cookieFor(mintSession({ id: F.accounts.active, username: "admin" }));
+const adminCookie = cookieFor(mintSession({ id: F.accounts.active, username: COACH_USERNAME }));
 
 /* A complete, valid intake payload. gender=female on purpose: the male branch
    additionally requires body_photos, and this run uploads no files. */
@@ -333,7 +333,7 @@ console.log("\nTEST 8 — $2y$ password path (all three comparison sites)");
 /* ================================================================ TEST 9 == */
 console.log("\nTEST 9 — Reserved usernames via PUBLIC signup");
 {
-  for (const name of ["admin", "mkm94admin", "ADMIN", "Admin", "administrator", "root"]) {
+  for (const name of ["administrator", "ADMINISTRATOR", "Administrator", "root", "Coach", "support"]) {
     const res = await http("POST", "/api/submit-form", {
       body: { data: JSON.stringify(payload({ username: name, password: "TestOnlyPass123" })) },
     });
@@ -369,7 +369,7 @@ console.log("\nTEST 9 — Reserved usernames via PUBLIC signup");
 /* =============================================================== TEST 10 == */
 console.log("\nTEST 10 — Reserved usernames via ADMIN create-account");
 {
-  for (const name of ["admin", "mkm94admin", "ADMIN"]) {
+  for (const name of ["administrator", "ROOT", "coach"]) {
     const res = await http("POST", "/api/admin/create-account", {
       body: { profileId: F.profiles.y2hash, username: name, password: "TestOnlyPass123" },
       cookie: adminCookie,

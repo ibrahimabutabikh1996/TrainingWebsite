@@ -12,7 +12,7 @@
 import crypto from "node:crypto";
 import bcrypt from "bcrypt";
 import puppeteer from "puppeteer";
-import { db, mintSession, BASE_URL } from "./_lib.mjs";
+import { db, mintSession, BASE_URL, COACH_USERNAME } from "./_lib.mjs";
 
 const RUN = "STCK_" + crypto.randomBytes(3).toString("hex").toUpperCase();
 const WIDTHS = (process.env.WIDTHS || "375,768").split(",").map(Number);
@@ -100,7 +100,7 @@ try {
   const page = await ctx.newPage();
   await page.setCookie({
     name: "gym_session",
-    value: mintSession({ id: acc.id, username: acc.username || "admin" }),
+    value: mintSession({ id: acc.id, username: acc.username || COACH_USERNAME }),
     domain: "localhost",
     path: "/",
   });

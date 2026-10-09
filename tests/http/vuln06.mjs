@@ -15,7 +15,7 @@
  */
 import crypto from "node:crypto";
 import bcrypt from "bcrypt";
-import { db, mintSession, cookieFor, http, record, results } from "./_lib.mjs";
+import { db, mintSession, cookieFor, http, record, results, COACH_USERNAME } from "./_lib.mjs";
 
 const { q, end } = await db();
 const RUN = `SECURITY_TEST_${Date.now()}_${crypto.randomBytes(3).toString("hex")}`;
@@ -37,7 +37,7 @@ async function cleanup() {
 const hash = await bcrypt.hash(`TestOnly_${RUN}`, 10);
 
 /* Two independent admin accounts. `isAdmin` comes from the username inside the
-   token, so the token says "admin" while `s` points at a fixture row — which is
+   token, so the token carries the coach's name while `s` points at a fixture row — which is
    what `sessionRefusal` looks up. That is the whole point: the account behind
    the token is now consulted. */
 async function makeAdminAccount(tag) {
@@ -54,7 +54,7 @@ const adminA = await makeAdminAccount("adminA");
 const adminB = await makeAdminAccount("adminB");
 console.log(`fixtures: adminA ${adminA.id} / adminB ${adminB.id}\n`);
 
-const asAdmin = (acc, opts) => cookieFor(mintSession({ id: acc.id, username: "admin" }, opts));
+const asAdmin = (acc, opts) => cookieFor(mintSession({ id: acc.id, username: COACH_USERNAME }, opts));
 
 /* One endpoint of each guard shape, so all three are actually exercised:
      requireAdmin       -> GET /api/admin/users        (route handler, JSON 401)
@@ -216,7 +216,7 @@ console.log("\nV6-4 — a deleted admin account cannot keep using its token");
 console.log("\nV6-5 — an expired admin token is refused (unchanged behaviour)");
 {
   const expired = cookieFor(
-    mintSession({ id: adminB.id, username: "admin" }, { ttl: -60 })
+    mintSession({ id: adminB.id, username: COACH_USERNAME }, { ttl: -60 })
   );
   const route = await http("GET", ROUTE, { cookie: expired });
   record({

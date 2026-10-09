@@ -7,7 +7,7 @@
 import crypto from "node:crypto";
 import bcrypt from "bcrypt";
 import { createClient } from "@supabase/supabase-js";
-import { db, readEnv, mintSession, cookieFor, http, record, results } from "./_lib.mjs";
+import { db, readEnv, mintSession, cookieFor, http, record, results, COACH_USERNAME } from "./_lib.mjs";
 
 const url = readEnv("NEXT_PUBLIC_SUPABASE_URL");
 const anon = createClient(url, readEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY"), { auth: { persistSession: false } });
@@ -34,7 +34,7 @@ async function trainee(tag) {
 try {
   const owner = await trainee("owner");
   const stranger = await trainee("stranger");
-  const adminCookie = cookieFor(mintSession({ id: stranger.a.id, username: "admin" }));
+  const adminCookie = cookieFor(mintSession({ id: stranger.a.id, username: COACH_USERNAME }));
 
   /* Full real upload owned by `owner`, attached to the profile. */
   const s = await http("POST", "/api/uploads/session", { body: { scope: "renewal", profileId: owner.p.id }, cookie: owner.cookie });
