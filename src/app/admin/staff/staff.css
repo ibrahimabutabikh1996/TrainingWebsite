@@ -208,7 +208,14 @@
 .staff-form {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: var(--space-6);
+  padding: var(--space-5) var(--space-6) var(--space-6);
+}
+
+@media (max-width: 640px) {
+  .staff-form {
+    padding: var(--space-4);
+  }
 }
 
 .staff-fields {
@@ -220,32 +227,78 @@
 .staff-perms {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-6);
+}
+
+/* A titled group: icon tile, title and one-line description over its body. */
+.staff-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.staff-group-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.staff-group-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-sm);
+  background: var(--primary-dim);
+  color: var(--primary-on-tint);
+  font-size: 18px;
+}
+
+.staff-group-icon.is-warning {
+  background: color-mix(in srgb, var(--warning) 14%, transparent);
+  color: var(--warning-text);
 }
 
 .staff-perms-title {
-  margin: 8px 0 0;
+  margin: 0;
   font-size: var(--text-base);
   font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
   color: var(--admin-on-surface);
 }
 
 .staff-perms-note {
-  margin: 0;
+  margin: var(--space-1) 0 0;
   font-size: var(--text-sm);
   color: var(--text-muted);
+}
+
+/* One bordered list per group, rows split by hairlines rather than each row
+   being a box of its own. Sits a step below the modal surface, as a well. */
+.staff-list {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-strong);
+  background: color-mix(in srgb, var(--bg) 50%, var(--bg2));
+  overflow: hidden;
 }
 
 .staff-perm-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
   flex-wrap: wrap;
-  padding: 12px 14px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border);
-  background: var(--bg3);
+  padding: var(--space-3) var(--space-4);
+}
+
+.staff-perm-row + .staff-perm-row,
+.staff-switch-row + .staff-switch-row {
+  border-top: 1px solid var(--border);
 }
 
 .staff-perm-text {
@@ -266,17 +319,26 @@
   color: var(--text-muted);
 }
 
+/* Equal-width segments, so every row's control lines up with the next. */
 .staff-segment {
-  display: inline-flex;
-  padding: 3px;
-  gap: 2px;
+  display: inline-grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  padding: var(--space-1);
+  gap: var(--space-1);
   border-radius: var(--radius-md);
   border: 1px solid var(--border-strong);
   background: var(--bg2);
 }
 
+@media (max-width: 480px) {
+  .staff-segment {
+    width: 100%;
+  }
+}
+
 .staff-segment-btn {
-  padding: 6px 12px;
+  padding: var(--space-2) var(--space-3);
   border: none;
   border-radius: var(--radius-sm);
   background: transparent;
@@ -285,7 +347,7 @@
   font-size: var(--text-sm);
   cursor: pointer;
   white-space: nowrap;
-  transition: background 0.2s, color 0.2s;
+  transition: background-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
 }
 
 .staff-segment-btn:hover {
@@ -295,7 +357,11 @@
 .staff-segment-btn.is-active {
   background: var(--primary);
   color: var(--text-inverse);
-  font-weight: var(--weight-semibold);
+}
+
+.staff-segment-btn.is-active[data-level="view"] {
+  background: var(--primary-dim);
+  color: var(--primary-on-tint);
 }
 
 .staff-segment-btn.is-active[data-level="none"] {
@@ -303,28 +369,38 @@
   color: var(--text);
 }
 
-.staff-check {
+/* The switch itself is `.ui-switch` from globals.css; this is the row. */
+.staff-switch-row {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border);
-  background: var(--bg3);
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
   color: var(--text);
   cursor: pointer;
+  transition: background-color var(--dur) var(--ease);
 }
 
-.staff-check input {
-  width: 18px;
-  height: 18px;
-  accent-color: var(--primary);
-  flex-shrink: 0;
+.staff-switch-row:hover {
+  background: color-mix(in srgb, var(--bg3) 45%, transparent);
 }
 
-.staff-check.is-disabled {
-  opacity: 0.5;
+.staff-switch-text {
+  min-width: 0;
+}
+
+.staff-switch-row.is-disabled,
+.staff-switch-row.is-disabled .ui-switch {
   cursor: not-allowed;
+}
+
+.staff-switch-row.is-disabled:hover {
+  background: transparent;
+}
+
+.staff-switch-row.is-disabled .staff-switch-text {
+  color: var(--text-muted);
 }
 
 .staff-modal-foot {

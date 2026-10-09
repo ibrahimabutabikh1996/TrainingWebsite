@@ -174,7 +174,17 @@ export default function AdminStaffClient({ staff }: { staff: StaffMember[] }) {
 
   const permissionsEditor = (
     <div className="staff-perms">
-      <p className="staff-perms-title">الأقسام</p>
+      <section className="staff-group">
+        <div className="staff-group-head">
+          <span className="staff-group-icon">
+            <Icon name="layers" />
+          </span>
+          <div>
+            <p className="staff-perms-title">الأقسام</p>
+            <p className="staff-perms-note">حدد ما يراه المشرف في كل قسم.</p>
+          </div>
+        </div>
+        <div className="staff-list">
       {STAFF_SECTIONS.map((section) => (
         <div key={section.key} className="staff-perm-row">
           <div className="staff-perm-text">
@@ -198,26 +208,44 @@ export default function AdminStaffClient({ staff }: { staff: StaffMember[] }) {
           </div>
         </div>
       ))}
+        </div>
+      </section>
 
-      <p className="staff-perms-title">صلاحيات حساسة على المشتركين</p>
-      {subscribersHidden && (
-        <p className="staff-perms-note">تحتاج هذه الصلاحيات إلى إظهار قسم المشتركين أولاً.</p>
-      )}
+      <section className="staff-group">
+        <div className="staff-group-head">
+          <span className="staff-group-icon is-warning">
+            <Icon name="warning" />
+          </span>
+          <div>
+            <p className="staff-perms-title">صلاحيات حساسة على المشتركين</p>
+            <p className="staff-perms-note">
+              {subscribersHidden
+                ? "تحتاج هذه الصلاحيات إلى إظهار قسم المشتركين أولاً."
+                : "تمنح المشرف تحكماً مباشراً في حسابات المشتركين."}
+            </p>
+          </div>
+        </div>
+        <div className="staff-list">
       {STAFF_ACTIONS.map((action) => (
-        <label key={action.key} className={`staff-check${subscribersHidden ? " is-disabled" : ""}`}>
-          <input
-            type="checkbox"
-            disabled={subscribersHidden}
-            checked={!subscribersHidden && actions.includes(action.key)}
-            onChange={(e) =>
-              setActions((prev) =>
-                e.target.checked ? [...prev, action.key] : prev.filter((k) => k !== action.key)
-              )
-            }
-          />
-          <span>{action.label}</span>
+        <label key={action.key} className={`staff-switch-row${subscribersHidden ? " is-disabled" : ""}`}>
+          <span className="staff-switch-text">{action.label}</span>
+          <span className="ui-switch">
+            <input
+              type="checkbox"
+              disabled={subscribersHidden}
+              checked={!subscribersHidden && actions.includes(action.key)}
+              onChange={(e) =>
+                setActions((prev) =>
+                  e.target.checked ? [...prev, action.key] : prev.filter((k) => k !== action.key)
+                )
+              }
+            />
+            <span className="ui-switch-track" aria-hidden="true" />
+          </span>
         </label>
       ))}
+        </div>
+      </section>
     </div>
   );
 
@@ -327,6 +355,16 @@ export default function AdminStaffClient({ staff }: { staff: StaffMember[] }) {
       >
         <form id="staff-form" className="staff-form" onSubmit={submit}>
           {editor?.mode === "create" && (
+            <section className="staff-group">
+            <div className="staff-group-head">
+              <span className="staff-group-icon">
+                <Icon name="key" />
+              </span>
+              <div>
+                <p className="staff-perms-title">بيانات الدخول</p>
+                <p className="staff-perms-note">يستخدمها المشرف لتسجيل الدخول إلى اللوحة.</p>
+              </div>
+            </div>
             <div className="staff-fields">
               <label className="ui-field">
                 <span className="ui-label">اسم المستخدم</span>
@@ -352,6 +390,7 @@ export default function AdminStaffClient({ staff }: { staff: StaffMember[] }) {
                 />
               </label>
             </div>
+            </section>
           )}
 
           {editor?.mode === "password" && (
