@@ -735,8 +735,8 @@ const TestimonialsEditor = () => {
   };
 
   const addTestimonial = () => {
-    setContent("testimonials", [...testimonials, { type: "text", text: "", author_name: "", author_role: "", media_url: "" }]);
-    setExpandedIndex(testimonials.length);
+    setContent("testimonials", [{ type: "text", text: "", author_name: "", author_role: "", media_url: "" }, ...testimonials]);
+    setExpandedIndex(0);
   };
 
   const removeTestimonial = (index: number) => {
