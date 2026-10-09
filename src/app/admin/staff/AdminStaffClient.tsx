@@ -452,12 +452,12 @@ export default function AdminStaffClient({
                       type="button"
                       className={`staff-icon-btn${noteOpen ? " is-active" : ""}`}
                       onClick={() => setNoteFor(noteOpen ? null : member.accountId)}
-                      title="عرض الصلاحيات"
-                      aria-label="عرض الصلاحيات"
+                      title={noteOpen ? "إخفاء الصلاحيات" : "عرض الصلاحيات"}
+                      aria-label={noteOpen ? "إخفاء الصلاحيات" : "عرض الصلاحيات"}
                       aria-expanded={noteOpen}
                       aria-controls={noteOpen ? noteId : undefined}
                     >
-                      <Icon name="visibility" />
+                      <Icon name={noteOpen ? "visibility_off" : "visibility"} />
                     </button>
                     <button
                       type="button"

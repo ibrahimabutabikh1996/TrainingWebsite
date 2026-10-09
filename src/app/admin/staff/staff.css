@@ -216,6 +216,14 @@
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-md);
   background: var(--bg3);
+  animation: staff-note-in var(--dur-slow) var(--ease-out);
+}
+
+@keyframes staff-note-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
 }
 
 .staff-note-title {
@@ -310,6 +318,15 @@
 
 .staff-card-actions .crm-btn-secondary .app-icon {
   font-size: 18px;
+  transition: transform var(--dur) var(--ease);
+}
+
+.staff-card-actions .crm-btn-secondary:hover:not(:disabled) .app-icon {
+  transform: scale(1.05);
+}
+
+.staff-card-actions .crm-btn-secondary:active:not(:disabled) {
+  transform: scale(0.94);
 }
 
 .staff-card-tools {
@@ -338,11 +355,20 @@
   background: transparent;
   color: var(--text-secondary);
   cursor: pointer;
-  transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease);
+  transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease), transform var(--dur) var(--ease);
 }
 
 .staff-icon-btn .app-icon {
   font-size: 18px;
+  transition: transform var(--dur) var(--ease);
+}
+
+.staff-icon-btn:hover:not(:disabled) .app-icon {
+  transform: scale(1.05);
+}
+
+.staff-icon-btn:active:not(:disabled) {
+  transform: scale(0.94);
 }
 
 .staff-icon-btn:hover:not(:disabled) {
