@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { requireAdminPage, sessionMaySeeTrainee, traineeScope } from "@/lib/authGuard";
+import { ownWorkScope, requireAdminPage, sessionMaySeeTrainee, traineeScope } from "@/lib/authGuard";
 import DietPlanBuilder from "./DietPlanBuilder";
 import { asMeals, type DietPlan } from "@/types/diet";
 import type { NutritionSource, TraineeOption } from "@/types/admin";
@@ -49,6 +49,9 @@ export default async function DietPlanPage({
   let trainees: TraineeOption[] = [];
   let sources: NutritionSource[] = [];
   let plans: DietPlan[] = [];
+  /* Slots of the trainee held by plans this viewer may not see — the coach's,
+     for a staff member. Always empty for the coach, who sees every plan. */
+  let blockedPositions: number[] = [];
   /* The template's own name. Empty for a trainee's plans, which are not a
      template, and for a template saved before `group_name` existed — the coach
      names that one the next time it is saved. */
@@ -90,9 +93,13 @@ export default async function DietPlanPage({
       const planRows = await prisma.diet_plans.findMany({
         where: { profile_id: selectedTraineeId },
         orderBy: { position: "asc" },
-        select: { id: true, name: true, position: true, meals_data: true },
+        select: { id: true, name: true, position: true, meals_data: true, created_by: true },
       });
-      plans = planRows.map((row) => ({
+      /* A staff member works only on the plans they made; the others still hold
+         their slots, so the builder is told which ones to leave alone. */
+      const mine = session.isAdmin ? planRows : planRows.filter((row) => row.created_by === session.userId);
+      blockedPositions = planRows.filter((row) => !mine.includes(row)).map((row) => row.position);
+      plans = mine.map((row) => ({
         id: row.id,
         name: row.name,
         position: row.position,
@@ -107,7 +114,8 @@ export default async function DietPlanPage({
          it: a hand-edited ?groupId= cannot reach a prescribed diet, and no
          prescribed row carries a group_id in the first place. */
       const rows = await prisma.diet_plans.findMany({
-        where: { group_id: generalGroupId, profile_id: null },
+        /* A staff member opens only a template they made. */
+        where: { group_id: generalGroupId, profile_id: null, ...ownWorkScope(session) },
         orderBy: { position: "asc" },
         select: { id: true, name: true, group_name: true, position: true, meals_data: true },
       });
@@ -139,6 +147,7 @@ export default async function DietPlanPage({
           initialTraineeId={selectedTraineeId}
           initialGeneralGroupId={generalGroupId}
           initialGeneralName={generalName}
+          blockedPositions={blockedPositions}
         />
       </div>
     </div>

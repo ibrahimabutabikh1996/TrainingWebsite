@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { requireAdminPage, sessionCan, sessionMaySeeTrainee } from "@/lib/authGuard";
+import { ownWorkScope, requireAdminPage, sessionCan, sessionMaySeeTrainee } from "@/lib/authGuard";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Toaster } from "react-hot-toast";
@@ -47,6 +47,16 @@ export default async function ProfileDetailsPage({ params }: { params: Promise<{
   if (!profile) {
     notFound();
   }
+
+  /* The training-sheet button prints the trainee's current course, so a staff
+     member sees it only when that course is one they made. */
+  const courseIsViewers =
+    session.isAdmin ||
+    (profile.current_course_id !== null &&
+      (await prisma.courses.findFirst({
+        where: { id: profile.current_course_id, ...ownWorkScope(session) },
+        select: { id: true },
+      })) !== null);
 
   /* What the packages are called, from the panel rather than from a fixed copy
      in the code — the same names the card, the form and the sign-up email use. */
@@ -152,7 +162,7 @@ export default async function ProfileDetailsPage({ params }: { params: Promise<{
           </div>
           
           <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
-            {data.plan_type !== 'diet' && Array.isArray(data.workouts) && data.workouts.length > 0 && (
+            {data.plan_type !== 'diet' && Array.isArray(data.workouts) && data.workouts.length > 0 && courseIsViewers && (
               <a
                 href={`/export-workout?profileId=${profile.id}`}
                 target="_blank"
@@ -218,6 +228,7 @@ export default async function ProfileDetailsPage({ params }: { params: Promise<{
             profileId={profile.id}
             planNames={planNames}
             canEdit={sessionCan(session, "subscribers.edit")}
+            madeBy={session.isAdmin ? undefined : session.userId}
           />
 
           {sessionCan(session, "subscribers.delete") && <DeleteSubscriberZone profileId={profile.id} />}

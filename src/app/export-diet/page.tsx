@@ -1,6 +1,6 @@
 import React from "react";
 import { prisma } from "@/lib/db";
-import { requireUserPage, sessionCan, sessionMaySeeTrainee, sessionOwnsProfile } from "@/lib/authGuard";
+import { ownWorkScope, requireUserPage, sessionCan, sessionMaySeeTrainee, sessionOwnsProfile } from "@/lib/authGuard";
 import { readIntakeData } from "@/lib/intakeData";
 import { asMeals, type DietPlan } from "@/types/diet";
 import { subscriptionStartOf } from "@/lib/subscription";
@@ -40,7 +40,8 @@ export default async function ExportDietPage({
     if (!sessionCan(session, "diet.view") || !isValidUUID(groupId)) notFound();
 
     const rows = await prisma.diet_plans.findMany({
-      where: { group_id: groupId, profile_id: null },
+      /* A staff member prints only a template they made. */
+      where: { group_id: groupId, profile_id: null, ...ownWorkScope(session) },
       orderBy: { position: "asc" },
       select: { id: true, name: true, group_name: true, position: true, meals_data: true },
     });
@@ -105,7 +106,9 @@ export default async function ExportDietPage({
   }
 
   const dietPlanRows = await prisma.diet_plans.findMany({
-    where: { profile_id: profile.id },
+    /* A staff member's sheet carries only the plans they made. The trainee and
+       the coach get every plan, as before. */
+    where: { profile_id: profile.id, ...(session.isStaff ? ownWorkScope(session) : {}) },
     orderBy: { position: "asc" },
   });
 

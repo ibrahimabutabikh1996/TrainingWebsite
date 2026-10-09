@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { profileRowScope, requireAdminPage, sessionCan, traineeScope } from "@/lib/authGuard";
+import { ownWorkScope, profileRowScope, requireAdminPage, sessionCan, traineeScope } from "@/lib/authGuard";
 import LiveRefresh from "@/components/LiveRefresh";
 import DietLibraryClient, { type LibraryPlan } from "./DietLibraryClient";
 import { asMeals } from "@/types/diet";
@@ -36,8 +36,9 @@ export default async function DietLibraryPage() {
        saved with nobody on it. Both kinds live in this one list, which is the
        point of it. */
     const rows = await prisma.diet_plans.findMany({
-      /* A staff member sees no prescribed plan of a trainee they were not given. */
-      where: profileRowScope(session),
+      /* A staff member sees no prescribed plan of a trainee they were not given,
+         and of the rest only the plans they made. */
+      where: { ...profileRowScope(session), ...ownWorkScope(session) },
       orderBy: [{ created_at: "desc" }, { position: "asc" }],
       select: {
         id: true,
@@ -48,6 +49,8 @@ export default async function DietLibraryPage() {
         meals_data: true,
         created_at: true,
         updated_at: true,
+        created_by: true,
+        created_by_name: true,
         profiles: { select: { id: true, username: true, data: true } },
       },
     });
@@ -95,6 +98,13 @@ export default async function DietLibraryPage() {
         groupNames.set(groupKey, row.group_name);
       }
 
+      /* The coach's badge on a staff member's work; "مشرف سابق" once that
+         account is gone and only the copied name is left. */
+      const madeBy =
+        session.isAdmin && row.created_by_name
+          ? `من عمل: ${row.created_by_name}${row.created_by ? "" : " (مشرف سابق)"}`
+          : undefined;
+
       if (groupKey) {
         const existing = byGroup.get(groupKey);
         if (existing) {
@@ -109,6 +119,7 @@ export default async function DietLibraryPage() {
           }
           existing.choices.sort((a, b) => a.position - b.position);
           existing.name = groupNames.get(groupKey) || existing.choices[0].name;
+          existing.madeBy ??= madeBy;
           continue;
         }
       }
@@ -130,6 +141,7 @@ export default async function DietLibraryPage() {
            a non-empty `groupId` as "this is a general template". */
         groupId: owner ? "" : groupKey,
         position: row.position,
+        madeBy,
       });
     }
 

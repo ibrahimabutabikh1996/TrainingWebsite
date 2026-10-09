@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
-import { requireAdminAction, sessionMaySeeTrainee } from "@/lib/authGuard";
+import { createdBy, ownWorkScope, requireAdminAction, sessionMadeIt, sessionMaySeeTrainee } from "@/lib/authGuard";
 import { asMeals, MAX_PLANS_PER_TRAINEE, type MealsData } from "@/types/diet";
 
 /* Prescribing food to a named trainee is the coach's act, so both actions ask
@@ -66,11 +66,22 @@ export async function saveDietPlanAction(input: {
       return { success: false as const, error: "المشترك غير موجود" };
     }
 
+    /* A slot holding someone else's plan is not this caller's to write: for a
+       staff member that is the coach's plan, which they cannot even see. The
+       builder already skips such slots; this is the refusal behind it. */
+    const occupant = await prisma.diet_plans.findUnique({
+      where: { profile_id_position: { profile_id: traineeId, position } },
+      select: { created_by: true },
+    });
+    if (occupant && !sessionMadeIt(session, occupant.created_by)) {
+      return { success: false as const, error: "هذه الخانة يشغلها نظام آخر لهذا المشترك" };
+    }
+
     /* Upsert on (profile_id, position) — the unique index the migration creates.
        Saving the same slot twice must update it, never add a second row. */
     const saved = await prisma.diet_plans.upsert({
       where: { profile_id_position: { profile_id: traineeId, position } },
-      create: { profile_id: traineeId, position, name, meals_data: meals },
+      create: { profile_id: traineeId, position, name, meals_data: meals, ...createdBy(session) },
       update: { name, meals_data: meals },
       select: { id: true },
     });
@@ -100,7 +111,8 @@ export async function deleteDietPlanAction(input: { traineeId: string; position:
     /* deleteMany, not delete: removing a slot that was never saved is a no-op,
        not a P2025 the caller has to special-case. */
     await prisma.diet_plans.deleteMany({
-      where: { profile_id: traineeId, position },
+      /* A staff member deletes only a plan they made. */
+      where: { profile_id: traineeId, position, ...ownWorkScope(session) },
     });
 
     revalidateFor(traineeId);
@@ -161,7 +173,8 @@ export async function saveGeneralDietPlanAction(input: {
   groupName: string;
   meals: unknown;
 }) {
-  if (!(await requireAdminAction("diet.edit"))) return DENIED;
+  const session = await requireAdminAction("diet.edit");
+  if (!session) return DENIED;
 
   /* Checked for being a string before it is trimmed, and capped after — the
      same reasoning `saveDietPlanAction` gives: a server action is reached over
@@ -195,6 +208,16 @@ export async function saveGeneralDietPlanAction(input: {
   const meals: MealsData = asMeals(input.meals);
 
   try {
+    /* A staff member works only in a template they made: adding a choice to
+       the coach's would put their row inside the coach's work. */
+    if (input.groupId && !session.isAdmin) {
+      const own = await prisma.diet_plans.findFirst({
+        where: { group_id: input.groupId, profile_id: null, ...ownWorkScope(session) },
+        select: { id: true },
+      });
+      if (!own) return { success: false as const, error: "النظام العام غير موجود" };
+    }
+
     if (input.planId) {
       /* updateMany with `profile_id: null` in the filter, not update by id:
          it makes the "this row has no owner" check part of the write itself, so
@@ -206,7 +229,7 @@ export async function saveGeneralDietPlanAction(input: {
          belongs to, and which choice it is, are decided when the row is created
          and are not the coach's to retype. */
       const { count } = await prisma.diet_plans.updateMany({
-        where: { id: input.planId, profile_id: null },
+        where: { id: input.planId, profile_id: null, ...ownWorkScope(session) },
         data: { name, meals_data: meals },
       });
       if (count === 0) {
@@ -219,7 +242,7 @@ export async function saveGeneralDietPlanAction(input: {
          above gives. */
       if (input.groupId) {
         await prisma.diet_plans.updateMany({
-          where: { group_id: input.groupId, profile_id: null },
+          where: { group_id: input.groupId, profile_id: null, ...ownWorkScope(session) },
           data: { group_name: groupName },
         });
       }
@@ -234,7 +257,15 @@ export async function saveGeneralDietPlanAction(input: {
     const groupId = input.groupId || crypto.randomUUID();
 
     const created = await prisma.diet_plans.create({
-      data: { profile_id: null, group_id: groupId, group_name: groupName, position, name, meals_data: meals },
+      data: {
+        profile_id: null,
+        group_id: groupId,
+        group_name: groupName,
+        position,
+        name,
+        meals_data: meals,
+        ...createdBy(session),
+      },
       select: { id: true },
     });
 
@@ -244,7 +275,7 @@ export async function saveGeneralDietPlanAction(input: {
        just created is the whole template. */
     if (input.groupId) {
       await prisma.diet_plans.updateMany({
-        where: { group_id: input.groupId, profile_id: null },
+        where: { group_id: input.groupId, profile_id: null, ...ownWorkScope(session) },
         data: { group_name: groupName },
       });
     }
@@ -271,7 +302,8 @@ export async function saveGeneralDietPlanAction(input: {
  * through `deleteGeneralDietPlanAction` below.
  */
 export async function deleteGeneralDietGroupAction(input: { groupId: string }) {
-  if (!(await requireAdminAction("diet.edit"))) return DENIED;
+  const session = await requireAdminAction("diet.edit");
+  if (!session) return DENIED;
 
   if (!isValidUUID(input.groupId)) {
     return { success: false as const, error: "معرّف القالب غير صالح" };
@@ -279,7 +311,8 @@ export async function deleteGeneralDietGroupAction(input: { groupId: string }) {
 
   try {
     await prisma.diet_plans.deleteMany({
-      where: { group_id: input.groupId, profile_id: null },
+      /* A staff member deletes only a template they made. */
+      where: { group_id: input.groupId, profile_id: null, ...ownWorkScope(session) },
     });
 
     revalidateGeneral();
@@ -291,7 +324,8 @@ export async function deleteGeneralDietGroupAction(input: { groupId: string }) {
 }
 
 export async function deleteGeneralDietPlanAction(input: { planId: string }) {
-  if (!(await requireAdminAction("diet.edit"))) return DENIED;
+  const session = await requireAdminAction("diet.edit");
+  if (!session) return DENIED;
 
   if (!isValidUUID(input.planId)) {
     return { success: false as const, error: "معرّف النظام غير صالح" };
@@ -303,7 +337,7 @@ export async function deleteGeneralDietPlanAction(input: { planId: string }) {
        is handed. deleteMany, so removing one that has already gone is a no-op
        rather than a P2025 the caller has to special-case. */
     await prisma.diet_plans.deleteMany({
-      where: { id: input.planId, profile_id: null },
+      where: { id: input.planId, profile_id: null, ...ownWorkScope(session) },
     });
 
     revalidateGeneral();

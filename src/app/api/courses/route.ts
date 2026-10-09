@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireAdmin } from "@/lib/authGuard";
+import { ownWorkScope, requireAdmin } from "@/lib/authGuard";
 
 /* Returns every course there is, the same rows as /api/admin/courses — so it
    is guarded the same way, whatever its path suggests. A trainee's own course
@@ -11,6 +11,8 @@ export async function GET() {
 
   try {
     const allCourses = await prisma.courses.findMany({
+      /* A staff member gets only the courses they made. */
+      where: ownWorkScope(auth.session),
       orderBy: { created_at: 'desc' }
     });
 

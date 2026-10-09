@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { requireAdminPage, sessionCan, traineeScope } from "@/lib/authGuard";
+import { ownWorkScope, requireAdminPage, sessionCan, traineeScope } from "@/lib/authGuard";
 import AdminCoursesClient from "./AdminCoursesClient";
 import LiveRefresh from "@/components/LiveRefresh";
 import type { Course, CourseAssignments, TraineeOption } from "@/types/admin";
@@ -30,9 +30,19 @@ export default async function AdminCoursesPage() {
   const exerciseVideos: Record<string, string> = {};
 
   try {
+    /* A staff member's library holds only the courses they made. */
     const courseRows = await prisma.courses.findMany({
+      where: ownWorkScope(session),
       orderBy: { created_at: "desc" },
-      select: { id: true, name: true, description: true, days_data: true, created_at: true },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        days_data: true,
+        created_at: true,
+        created_by: true,
+        created_by_name: true,
+      },
     });
 
     courses = courseRows.map((c) => ({
@@ -41,6 +51,12 @@ export default async function AdminCoursesPage() {
       description: c.description ?? "",
       days_data: c.days_data ?? [],
       created_at: c.created_at.toISOString(),
+      /* The coach's badge on a staff member's work; "مشرف سابق" once that
+         account is gone and only the copied name is left. */
+      madeBy:
+        session.isAdmin && c.created_by_name
+          ? `من عمل: ${c.created_by_name}${c.created_by ? "" : " (مشرف سابق)"}`
+          : undefined,
     }));
 
     /* Only id + display name reach the browser — the intake `data` blob (phone,

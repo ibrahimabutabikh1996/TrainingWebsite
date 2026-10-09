@@ -18,6 +18,9 @@ interface Props {
   planNames: PlanNames;
   /** False draws the record without its delete and restore controls. */
   canEdit?: boolean;
+  /** A staff member's account id: the record then shows only the courses and
+   *  diets that account made. Absent for the coach, who sees everything. */
+  madeBy?: string;
 }
 
 /**
@@ -31,7 +34,7 @@ interface Props {
  * database hiccup and claim, in the log line, that the timeline had failed to
  * generate. Rendering failures belong to an error boundary; this belongs here.
  */
-async function loadTimeline({ profileId, planNames }: Props) {
+async function loadTimeline({ profileId, planNames, madeBy }: Props) {
   try {
     const profile = await prisma.profiles.findUnique({
       where: { id: profileId },
@@ -51,7 +54,7 @@ async function loadTimeline({ profileId, planNames }: Props) {
     }
 
     const dietPlanRows = await prisma.diet_plans.findMany({
-      where: { profile_id: profile.id },
+      where: { profile_id: profile.id, ...(madeBy ? { created_by: madeBy } : {}) },
       orderBy: { position: "asc" },
       select: { id: true, name: true, position: true, meals_data: true },
     });
@@ -94,7 +97,9 @@ async function loadTimeline({ profileId, planNames }: Props) {
     let workoutLogs: WorkoutLogRow[] = [];
     try {
       const logs = await prisma.workout_logs.findMany({
-        where: { profile_id: profile.id },
+        /* The logged sets name the exercises of the course they were done on,
+           so a staff member sees only the sets done on a course they made. */
+        where: { profile_id: profile.id, ...(madeBy ? { courses: { created_by: madeBy } } : {}) },
         orderBy: [{ session_date: "asc" }, { exercise_name: "asc" }, { set_index: "asc" }],
         select: {
           exercise_id: true,
@@ -126,7 +131,11 @@ async function loadTimeline({ profileId, planNames }: Props) {
       const sessions = await prisma.training_sessions.findMany({
         where: {
           performed_on: { not: null },
-          training_cycles: { profile_id: profile.id },
+          /* Same rule as the logged sets above, through the cycle's course. */
+          training_cycles: {
+            profile_id: profile.id,
+            ...(madeBy ? { courses: { created_by: madeBy } } : {}),
+          },
         },
         orderBy: { performed_on: "asc" },
         select: {
@@ -183,9 +192,13 @@ async function loadTimeline({ profileId, planNames }: Props) {
       let courseName = defaultCourseName;
       let days: Day[] = month.isCurrent ? defaultWorkouts : [];
       let courseId = profile.courses?.id;
+      /* Who made the course shown for this month — read beside `courseId` so the
+         two always describe the same course. */
+      let courseCreator = profile.courses?.created_by ?? null;
 
       if (inEffect?.courses) {
         courseId = inEffect.courses.id;
+        courseCreator = inEffect.courses.created_by;
         courseName = inEffect.courses.name;
         const parsedDays = typeof inEffect.courses.days_data === "string"
           ? JSON.parse(inEffect.courses.days_data)
@@ -199,7 +212,8 @@ async function loadTimeline({ profileId, planNames }: Props) {
         startDate: month.startDate ? toISODate(new Date(month.startDate)) : "",
         endDate: month.endDate ? toISODate(new Date(month.endDate)) : "",
         status: month.isCurrent ? "current" : "completed",
-        workout: days.length > 0 ? {
+        /* A staff member is shown a month's course only if they made it. */
+        workout: days.length > 0 && (!madeBy || courseCreator === madeBy) ? {
           courseId,
           courseName,
           daysCount: days.length,
@@ -247,8 +261,8 @@ async function loadTimeline({ profileId, planNames }: Props) {
   }
 }
 
-export default async function AdminSubscriptionTimeline({ profileId, planNames, canEdit = true }: Props) {
-  const loaded = await loadTimeline({ profileId, planNames });
+export default async function AdminSubscriptionTimeline({ profileId, planNames, canEdit = true, madeBy }: Props) {
+  const loaded = await loadTimeline({ profileId, planNames, madeBy });
   if (!loaded) return null;
 
   const { mockProfile, monthCount, workoutLogs, trainedDays } = loaded;

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireAdmin } from "@/lib/authGuard";
+import { ownWorkScope, requireAdmin } from "@/lib/authGuard";
 
 export const runtime = "nodejs";
 
@@ -12,6 +12,8 @@ export async function GET() {
 
   try {
     const courses = await prisma.courses.findMany({
+      /* A staff member gets only the courses they made. */
+      where: ownWorkScope(auth.session),
       orderBy: { created_at: "desc" },
     });
 

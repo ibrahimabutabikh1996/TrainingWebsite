@@ -565,6 +565,14 @@ model courses {
   created_at      DateTime          @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
   cover_image     String?
   description     String?
+  /// The staff member who made this course; NULL for the coach's own. A plain
+  /// column here — the foreign key (ON DELETE SET NULL) is declared in
+  /// prisma/manual/2026-10-09-created-by.sql, so `coach_id` keeps the only
+  /// relation to accounts. See `createdBy` in @/lib/authGuard.
+  created_by      String?           @db.Uuid
+  /// That staff member's username, copied at creation, so the badge survives
+  /// their account being deleted.
+  created_by_name String?
   client_courses  client_courses[]
   users           accounts?         @relation(fields: [coach_id], references: [id], onUpdate: NoAction)
   profiles        profiles[]
@@ -818,6 +826,11 @@ model diet_plans {
   meals_data Json     @default("{}")
   created_at DateTime @default(now()) @db.Timestamptz(6)
   updated_at DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  /// The staff member who made this plan; NULL for the coach's own. Same shape
+  /// as `courses.created_by` — see prisma/manual/2026-10-09-created-by.sql.
+  created_by      String? @db.Uuid
+  /// That staff member's username, copied at creation.
+  created_by_name String?
   profiles   profiles? @relation(fields: [profile_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([profile_id, position], map: "uq_diet_plans_profile_position")

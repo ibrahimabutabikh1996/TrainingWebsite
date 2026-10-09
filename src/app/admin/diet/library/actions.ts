@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
-import { profileRowScope, requireAdminAction, sessionMaySeeTrainee } from "@/lib/authGuard";
+import { createdBy, ownWorkScope, profileRowScope, requireAdminAction, sessionMaySeeTrainee } from "@/lib/authGuard";
 import { asMeals, MAX_PLANS_PER_TRAINEE } from "@/types/diet";
 import { arabicCount, CHOICE, PLAN } from "@/lib/arabicCount";
 
@@ -77,13 +77,14 @@ export async function copyDietPlanToTraineeAction(input: {
     const [sources, target] = await Promise.all([
       groupId
         ? prisma.diet_plans.findMany({
-            where: { group_id: groupId, profile_id: null },
+            /* A staff member copies only from a template they made. */
+            where: { group_id: groupId, profile_id: null, ...ownWorkScope(session) },
             orderBy: { position: "asc" },
             select: { name: true, meals_data: true },
           })
         : prisma.diet_plans.findMany({
             /* …and only from a plan they can see in the library. */
-            where: { id: { in: ids }, ...profileRowScope(session) },
+            where: { id: { in: ids }, ...profileRowScope(session), ...ownWorkScope(session) },
             orderBy: { position: "asc" },
             select: { name: true, meals_data: true },
           }),
@@ -144,6 +145,7 @@ export async function copyDietPlanToTraineeAction(input: {
            function every reader of this column goes through, so the copy cannot
            carry a shape the original's readers would have rejected. */
         meals_data: asMeals(source.meals_data),
+        ...createdBy(session),
       };
     });
 
@@ -240,13 +242,14 @@ export async function duplicateDietPlanAction(input: {
   try {
     const sources = groupId
       ? await prisma.diet_plans.findMany({
-          where: { group_id: groupId, profile_id: null },
+          /* A staff member duplicates only a template they made. */
+          where: { group_id: groupId, profile_id: null, ...ownWorkScope(session) },
           orderBy: { position: "asc" },
           select: { name: true, group_name: true, meals_data: true },
         })
       : await prisma.diet_plans.findMany({
           /* A staff member duplicates only a plan they can see in the library. */
-          where: { id: { in: ids }, ...profileRowScope(session) },
+          where: { id: { in: ids }, ...profileRowScope(session), ...ownWorkScope(session) },
           orderBy: { position: "asc" },
           select: { name: true, group_name: true, meals_data: true },
         });
@@ -274,6 +277,7 @@ export async function duplicateDietPlanAction(input: {
          legacy row's shape is normalised on the way into the copy rather than
          carried forward for another year. */
       meals_data: asMeals(source.meals_data),
+      ...createdBy(session),
     }));
 
     /* One transaction: a template that exists with only half its choices is not

@@ -1,7 +1,7 @@
 import React from "react";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { requireUserPage, sessionCan, sessionMaySeeTrainee, type Session } from "@/lib/authGuard";
+import { ownWorkScope, requireUserPage, sessionCan, sessionMaySeeTrainee, type Session } from "@/lib/authGuard";
 import { readIntakeData } from "@/lib/intakeData";
 import { subscriptionStartOf } from "@/lib/subscription";
 import ExportWorkoutClient from "@/app/export-workout/ExportWorkoutClient";
@@ -72,8 +72,9 @@ async function traineeMayPrint(userId: string, keys: ExportKeys): Promise<boolea
  * Whether the coach or a staff member may print the sheet these keys name.
  *
  * The coach always may. A staff member needs the courses or subscribers
- * section, and any trainee the keys name — directly, or through a cycle — has
- * to be one the coach gave them.
+ * section, any trainee the keys name — directly, or through a cycle — has to be
+ * one the coach gave them, and the course the sheet would print has to be one
+ * they made: the coach's programmes are not theirs to see.
  */
 async function panelMayPrint(session: Session, keys: ExportKeys): Promise<boolean> {
   if (!sessionCan(session, ["courses.view", "subscribers.view"])) return false;
@@ -81,15 +82,48 @@ async function panelMayPrint(session: Session, keys: ExportKeys): Promise<boolea
 
   if (keys.profileId && !sessionMaySeeTrainee(session, keys.profileId)) return false;
 
+  /* The course behind the sheet, found the way the page below finds it: named
+     outright, or through the cycle, or the trainee's latest cycle and then
+     their current course. */
+  let printedCourseId: string | null = keys.courseId ?? null;
+
   if (keys.cycleId) {
     const cycle = await prisma.training_cycles.findUnique({
       where: { id: keys.cycleId },
-      select: { profile_id: true },
+      select: { profile_id: true, course_id: true },
     });
     if (!cycle || !sessionMaySeeTrainee(session, cycle.profile_id)) return false;
+    printedCourseId ??= cycle.course_id;
   }
 
-  return true;
+  if (!printedCourseId && keys.profileId) {
+    const latest =
+      (await prisma.training_cycles.findFirst({
+        where: { profile_id: keys.profileId, completed_at: null },
+        orderBy: { cycle_number: "desc" },
+        select: { course_id: true },
+      })) ??
+      (await prisma.training_cycles.findFirst({
+        where: { profile_id: keys.profileId },
+        orderBy: { cycle_number: "desc" },
+        select: { course_id: true },
+      }));
+    printedCourseId = latest?.course_id ?? null;
+    if (!printedCourseId) {
+      const profile = await prisma.profiles.findUnique({
+        where: { id: keys.profileId },
+        select: { current_course_id: true },
+      });
+      printedCourseId = profile?.current_course_id ?? null;
+    }
+  }
+
+  if (!printedCourseId) return false;
+  const own = await prisma.courses.findFirst({
+    where: { id: printedCourseId, ...ownWorkScope(session) },
+    select: { id: true },
+  });
+  return own !== null;
 }
 
 export default async function ExportWorkoutPage({

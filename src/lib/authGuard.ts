@@ -239,6 +239,32 @@ export function profileRowScope(
     : { OR: [{ profile_id: null }, { profile_id: { in: [...(session.traineeIds ?? [])] } }] };
 }
 
+/* ------------------------------------------------------------------ *
+ * Who made it — courses and diet plans
+ * ------------------------------------------------------------------ *
+ *
+ * A staff member sees only the courses and diets they made; the coach sees
+ * everything. `created_by` on both tables records the staff member, NULL being
+ * the coach's own — see prisma/manual/2026-10-09-created-by.sql.
+ */
+
+/** The stamp for a row this session is making: the staff member, or nobody for the coach. */
+export function createdBy(session: Session): { created_by: string | null; created_by_name: string | null } {
+  return session.isAdmin || !session.isStaff
+    ? { created_by: null, created_by_name: null }
+    : { created_by: session.userId, created_by_name: session.username };
+}
+
+/** A Prisma filter on `created_by`: a staff member's own rows, or an empty object for the coach. */
+export function ownWorkScope(session: Session): { created_by?: string } {
+  return session.isAdmin ? {} : { created_by: session.userId };
+}
+
+/** Whether this session may open or change a row made by `createdById`. */
+export function sessionMadeIt(session: Session, createdById: string | null | undefined): boolean {
+  return session.isAdmin || (session.isStaff && createdById === session.userId);
+}
+
 /** Any signed-in account whose session is still good. Call it as the first line of the handler, before the try block. */
 export async function requireUser(): Promise<ApiGuard> {
   const session = await getSession();

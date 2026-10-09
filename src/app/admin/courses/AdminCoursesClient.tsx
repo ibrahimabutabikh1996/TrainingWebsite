@@ -331,6 +331,12 @@ export default function AdminCoursesClient({
                           {arabicCount(assigned.length, TRAINEE)}
                         </span>
                       )}
+                      {course.madeBy && (
+                        <span className="co-chip co-chip--assigned">
+                          <Icon name="verified_user" />
+                          {course.madeBy}
+                        </span>
+                      )}
                     </div>
 
                     <div className="co-card-foot">

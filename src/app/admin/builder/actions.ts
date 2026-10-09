@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/db";
-import { requireAdminAction, sessionMaySeeTrainee } from "@/lib/authGuard";
+import { createdBy, ownWorkScope, requireAdminAction, sessionMaySeeTrainee } from "@/lib/authGuard";
 import { revalidatePath } from "next/cache";
 import { asDays, type Day } from "@/types/admin";
 
@@ -98,8 +98,9 @@ export async function duplicateCourseAction(courseId: string) {
   if (!isValidUUID(courseId)) return { success: false, error: "معرّف الكورس غير صالح" };
 
   try {
-    const source = await prisma.courses.findUnique({
-      where: { id: courseId },
+    /* A staff member copies only a course they made. */
+    const source = await prisma.courses.findFirst({
+      where: { id: courseId, ...ownWorkScope(session) },
       select: { name: true, description: true, days_data: true },
     });
     if (!source) return { success: false, error: "الكورس غير موجود" };
@@ -113,6 +114,7 @@ export async function duplicateCourseAction(courseId: string) {
            than carried forward for another year. */
         days_data: asDays(source.days_data),
         coach_id: session.userId,
+        ...createdBy(session),
       },
     });
 
@@ -140,8 +142,9 @@ export async function loadCourseTemplateAction(courseId: string) {
   }
 
   try {
-    const course = await prisma.courses.findUnique({
-      where: { id: courseId },
+    /* A staff member starts only from a course they made. */
+    const course = await prisma.courses.findFirst({
+      where: { id: courseId, ...ownWorkScope(session) },
       select: { name: true, description: true, days_data: true },
     });
     if (!course) return { success: false as const, error: "الكورس غير موجود" };
@@ -190,6 +193,14 @@ export async function saveCourseAction(data: {
     const description = data.description?.trim() ? data.description.trim() : null;
 
     if (data.courseId) {
+      /* A staff member saves over only a course they made. */
+      if (!session.isAdmin) {
+        const own = await prisma.courses.findFirst({
+          where: { id: data.courseId, ...ownWorkScope(session) },
+          select: { id: true },
+        });
+        if (!own) return DENIED;
+      }
       // Update existing course
       savedCourse = await prisma.courses.update({
         where: { id: data.courseId },
@@ -207,6 +218,7 @@ export async function saveCourseAction(data: {
           description,
           days_data: data.daysData,
           coach_id: validCoachId,
+          ...createdBy(session),
         },
       });
     }
@@ -255,6 +267,15 @@ export async function deleteCourseAction(courseId: string) {
   if (!session) return DENIED;
 
   try {
+    /* A staff member deletes only a course they made. */
+    if (!session.isAdmin) {
+      const own = await prisma.courses.findFirst({
+        where: { id: courseId, ...ownWorkScope(session) },
+        select: { id: true },
+      });
+      if (!own) return DENIED;
+    }
+
     /* Detach, unlink and delete atomically: if the final delete failed after
        the first two ran, trainees silently lost their programme while the
        course stayed in the library. */
@@ -301,8 +322,9 @@ export async function assignCourseAction(courseId: string, traineeId: string) {
 
   try {
     const [source, trainee] = await Promise.all([
-      prisma.courses.findUnique({
-        where: { id: courseId },
+      /* A staff member assigns only a course they made. */
+      prisma.courses.findFirst({
+        where: { id: courseId, ...ownWorkScope(session) },
         select: { name: true, description: true, days_data: true },
       }),
       prisma.profiles.findUnique({
@@ -332,6 +354,7 @@ export async function assignCourseAction(courseId: string, traineeId: string) {
           description: source.description,
           days_data: asDays(source.days_data),
           coach_id: session.userId,
+          ...createdBy(session),
         },
       });
 

@@ -94,6 +94,9 @@ export type Course = {
   /* Persisted as jsonb, so treat it as unstructured on read and narrow with
      asDays() before walking it — older rows predate the current shape. */
   days_data?: unknown;
+  /** "من عمل: …" for a course a staff member made, shown to the coach. Absent
+   *  on the coach's own courses and on everything a staff member is sent. */
+  madeBy?: string;
 };
 
 /* Names of the trainees a course is currently assigned to, keyed by course id. */

@@ -56,6 +56,8 @@ export type LibraryPlan = {
   /** The slot of the row this card was opened by. Delete walks `choices` now,
       each of which carries its own. */
   position: number;
+  /** "من عمل: …" for a plan a staff member made, shown to the coach. */
+  madeBy?: string;
 };
 
 /** Where the builder opens this card — by trainee, or by the template's group. */
@@ -404,6 +406,12 @@ export default function DietLibraryClient({
                             {arabicCount(mealCount, MEAL)}
                           </span>
                         </>
+                      )}
+                      {plan.madeBy && (
+                        <span className="co-chip co-chip--assigned">
+                          <Icon name="verified_user" />
+                          {plan.madeBy}
+                        </span>
                       )}
                     </div>
 

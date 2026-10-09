@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { requireAdminPage, sessionMaySeeTrainee, traineeScope } from "@/lib/authGuard";
+import { ownWorkScope, requireAdminPage, sessionMaySeeTrainee, traineeScope } from "@/lib/authGuard";
 import AdminBuilderClient from "./AdminBuilderClient";
 import { countDays, countExercises, type CourseTemplate, type Exercise, type TraineeOption } from "@/types/admin";
 
@@ -88,6 +88,8 @@ export default async function AdminBuilderPage({
        picker. Counted here so the days themselves never leave the server —
        see `CourseTemplate`. */
     const templateRows = await prisma.courses.findMany({
+      /* A staff member starts only from courses they made. */
+      where: ownWorkScope(session),
       orderBy: { created_at: "desc" },
       select: { id: true, name: true, description: true, days_data: true, created_at: true },
     });
@@ -101,8 +103,9 @@ export default async function AdminBuilderPage({
     }));
 
     if (courseId && isValidUUID(courseId)) {
-      const course = await prisma.courses.findUnique({
-        where: { id: courseId },
+      /* …and opens only a course they made. */
+      const course = await prisma.courses.findFirst({
+        where: { id: courseId, ...ownWorkScope(session) },
         select: { id: true, name: true, description: true, days_data: true },
       });
       if (course) {

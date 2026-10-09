@@ -1,6 +1,6 @@
 import React from "react";
 import { prisma } from "@/lib/db";
-import { requireUserPage, sessionOwnsProfile } from "@/lib/authGuard";
+import { ownWorkScope, requireUserPage, sessionOwnsProfile } from "@/lib/authGuard";
 import { readIntakeData } from "@/lib/intakeData";
 import { asMeals, type DietPlan } from "@/types/diet";
 import { toISODate } from "@/lib/trainingCycle";
@@ -44,8 +44,10 @@ export default async function ExportProfilePage({
       : (profile.courses.days_data || null);
   }
 
+  /* A staff member's copy carries only the plans they made. The trainee and
+     the coach get every plan, as before. */
   const dietPlanRows = await prisma.diet_plans.findMany({
-    where: { profile_id: profile.id },
+    where: { profile_id: profile.id, ...(session.isStaff ? ownWorkScope(session) : {}) },
     orderBy: { position: "asc" },
     select: { id: true, name: true, position: true, meals_data: true },
   });
@@ -96,6 +98,8 @@ export default async function ExportProfilePage({
     let matchedCourseName = defaultCourseName;
     let matchedDays: Day[] = defaultWorkouts;
     let matchedCourseId = profile.courses?.id;
+    /* Who made the course shown for this month, kept beside its id. */
+    let matchedCreator = profile.courses?.created_by ?? null;
 
     if (clientCourses.length > 0) {
       const matched = clientCourses.find(cc => {
@@ -105,6 +109,7 @@ export default async function ExportProfilePage({
 
       if (matched && matched.courses) {
         matchedCourseId = matched.courses.id;
+        matchedCreator = matched.courses.created_by;
         matchedCourseName = matched.courses.name;
         const parsedDays = typeof matched.courses.days_data === "string"
           ? JSON.parse(matched.courses.days_data)
@@ -119,7 +124,8 @@ export default async function ExportProfilePage({
       startDate: toISODate(start),
       endDate: toISODate(end),
       status: isCurrent ? "current" : "completed",
-      workout: matchedDays.length > 0 ? {
+      /* A staff member is shown a month's course only if they made it. */
+      workout: matchedDays.length > 0 && (!session.isStaff || matchedCreator === session.userId) ? {
         courseId: matchedCourseId,
         courseName: matchedCourseName,
         daysCount: matchedDays.length,

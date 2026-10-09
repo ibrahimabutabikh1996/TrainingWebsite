@@ -39,10 +39,12 @@ function buildSnapshots(plans: EditablePlan[]): Record<number, string> {
   return Object.fromEntries(plans.map((p) => [p.position, snapshot(p)]));
 }
 
-/** Lowest slot the trainee is not already using, or null when both are taken. */
-function nextFreePosition(plans: EditablePlan[]): number | null {
+/** Lowest slot the trainee is not already using, or null when both are taken.
+ *  `blocked` are slots held by plans this screen does not show — the coach's,
+ *  when a staff member is the one building. */
+function nextFreePosition(plans: EditablePlan[], blocked: readonly number[] = []): number | null {
   for (let p = 1; p <= MAX_PLANS_PER_TRAINEE; p++) {
-    if (!plans.some((plan) => plan.position === p)) return p;
+    if (!plans.some((plan) => plan.position === p) && !blocked.includes(p)) return p;
   }
   return null;
 }
@@ -56,6 +58,7 @@ export default function DietPlanBuilder({
   initialTraineeId,
   initialGeneralGroupId = "",
   initialGeneralName = "",
+  blockedPositions = [],
 }: {
   trainees: TraineeOption[];
   sources: NutritionSource[];
@@ -66,6 +69,10 @@ export default function DietPlanBuilder({
   /** That template's own name. Empty for a new one, and for one saved before
       templates had a name of their own. */
   initialGeneralName?: string;
+  /** Slots of this trainee taken by plans a staff member may not see. The
+      server refuses a save into them; skipping them here is what keeps a new
+      plan from being sent there at all. */
+  blockedPositions?: number[];
 }) {
   const router = useRouter();
 
@@ -144,9 +151,13 @@ export default function DietPlanBuilder({
   };
 
   const handleAddPlan = () => {
-    const position = nextFreePosition(plans);
+    const position = nextFreePosition(plans, blockedPositions);
     if (position === null) {
-      toast.error(`لا يمكن إضافة أكثر من ${MAX_PLANS_PER_TRAINEE} نظامين للمشترك`);
+      toast.error(
+        blockedPositions.length > 0
+          ? "لا توجد خانة فارغة لهذا المشترك"
+          : `لا يمكن إضافة أكثر من ${MAX_PLANS_PER_TRAINEE} نظامين للمشترك`
+      );
       return;
     }
     setPlans((prev) =>
@@ -494,13 +505,20 @@ export default function DietPlanBuilder({
                 </button>
               ))}
 
-              {nextFreePosition(plans) !== null && (
+              {nextFreePosition(plans, blockedPositions) !== null && (
                 <button onClick={handleAddPlan} className="dplan-tab dplan-tab--add">
                   <Icon name="add" style={{ fontSize: 18 }} />
                   <span>{plans.length === 0 ? "إنشاء نظام غذائي" : "إضافة نظام ثانٍ"}</span>
                 </button>
               )}
             </div>
+          )}
+
+          {!isGeneral && plans.length === 0 && nextFreePosition(plans, blockedPositions) === null && (
+            <p className="dplan-general-note">
+              <Icon name="info" />
+              لا توجد خانة فارغة لهذا المشترك: خانتا النظام الغذائي مشغولتان بنظامين آخرين.
+            </p>
           )}
 
           {isGeneral && !generalMissing && (
