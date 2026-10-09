@@ -228,21 +228,6 @@
   padding: 16px 22px 24px 22px;
 }
 
-/* Custom Scrollbar for CMS Content Pane */
-.cms-content-pane::-webkit-scrollbar {
-  width: 5px;
-}
-.cms-content-pane::-webkit-scrollbar-track {
-  background: transparent;
-}
-.cms-content-pane::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: var(--radius-md);
-}
-.cms-content-pane::-webkit-scrollbar-thumb:hover {
-  background: var(--muted);
-}
-
 /* --- Section Cards --- */
 /* Page-level panel: same glass surface as .admin-card / .dashboard-card. */
 .cms-section-card {

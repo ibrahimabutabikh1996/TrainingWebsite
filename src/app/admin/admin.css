@@ -558,24 +558,6 @@
   justify-content: space-between;
 }
 
-/* Custom Scrollbar for Admin Area & Sidebar */
-.admin-main-content::-webkit-scrollbar,
-.admin-sidebar-glass::-webkit-scrollbar {
-  width: 6px;
-}
-.admin-main-content::-webkit-scrollbar-track,
-.admin-sidebar-glass::-webkit-scrollbar-track {
-  background: transparent;
-}
-.admin-main-content::-webkit-scrollbar-thumb,
-.admin-sidebar-glass::-webkit-scrollbar-thumb {
-  background: var(--admin-outline);
-  border-radius: var(--admin-radius-sm);
-}
-.admin-sidebar-glass::-webkit-scrollbar-thumb:hover {
-  background: var(--primary);
-}
-
 .admin-loading-screen {
   display: flex;
   flex-direction: column;

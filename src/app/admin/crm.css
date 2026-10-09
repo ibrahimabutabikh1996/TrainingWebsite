@@ -64,19 +64,6 @@
   transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), opacity var(--dur) var(--ease), transform var(--dur) var(--ease);
 }
 
-/* Custom Scrollbar — for the drawer, which is the only one of these that still
-   scrolls on its own. */
-.crm-drawer-scroll-area::-webkit-scrollbar {
-  width: 4px;
-}
-.crm-drawer-scroll-area::-webkit-scrollbar-track {
-  background: transparent;
-}
-.crm-drawer-scroll-area::-webkit-scrollbar-thumb {
-  background: var(--admin-outline);
-  border-radius: var(--radius-xs);
-}
-
 /* Side Drawer */
 .crm-side-drawer {
   width: 480px;
