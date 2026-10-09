@@ -90,6 +90,44 @@ html {
     }
 }
 
+/* ─── Scrollbars ──────────────────────────────────────────────────────────
+   One look for every scrolling element that does not set its own. Without
+   it the site, which never declares itself dark, got the browser's light
+   default — a white track with arrows on Windows, inside every dialog.
+
+   A 10px gutter holding a 6px pill: the transparent border is the grab
+   margin. Areas with their own rule (admin.css, cms.css, crm.css,
+   CustomSelect.css) and strips that hide theirs win on specificity. */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--bg4);
+    border: 2px solid transparent;
+    background-clip: padding-box;
+    border-radius: var(--radius-pill);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background-color: var(--text-muted);
+}
+
+/* Firefox only. Chrome ignores every ::-webkit-scrollbar rule on an element
+   that has scrollbar-color, and would draw its arrows again. */
+@supports not selector(::-webkit-scrollbar) {
+    * {
+        scrollbar-width: thin;
+        scrollbar-color: var(--bg4) transparent;
+    }
+}
+
 
 :root {
     /* --- Colours (Blue Monochromatic) ---
