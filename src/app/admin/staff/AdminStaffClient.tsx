@@ -6,6 +6,7 @@ import { Toaster, toast } from "react-hot-toast";
 import AdminModal from "../components/AdminModal";
 import { Icon } from "@/components/Icon";
 import { confirmDialog } from "@/lib/confirmDialog";
+import { formatTimestamp } from "@/lib/trainingDates";
 import {
   SECTION_LEVELS,
   STAFF_ACTIONS,
@@ -78,6 +79,8 @@ export default function AdminStaffClient({
   const [busy, setBusy] = useState(false);
   const [chosenTrainees, setChosenTrainees] = useState<string[]>([]);
   const [traineeQuery, setTraineeQuery] = useState("");
+  /** The one card whose permissions note is open. */
+  const [noteFor, setNoteFor] = useState<string | null>(null);
 
   const openCreate = () => {
     setUsername("");
@@ -371,37 +374,69 @@ export default function AdminStaffClient({
       ) : (
         <div className="staff-grid">
           {staff.map((member) => {
+            const traineeCount = member.traineeIds.length;
+            const suspendLabel = member.isSuspended ? "تفعيل" : "إيقاف";
+            const noteOpen = noteFor === member.accountId;
+            const noteId = `staff-note-${member.accountId}`;
             const memberLevels = levelsOf(member.permissions);
-            const granted = STAFF_SECTIONS.filter((s) => memberLevels[s.key] !== "none");
+            const grantedSections = STAFF_SECTIONS.filter((s) => memberLevels[s.key] !== "none");
             const grantedActions = STAFF_ACTIONS.filter((a) => member.permissions.includes(a.key));
             return (
               <article key={member.accountId} className={`staff-card${member.isSuspended ? " is-suspended" : ""}`}>
                 <div className="staff-card-head">
-                  <div className="staff-card-name">
-                    <Icon name="person" />
-                    <span dir="ltr">{member.username}</span>
+                  <span className="staff-avatar" aria-hidden="true">
+                    {member.username.charAt(0).toUpperCase()}
+                  </span>
+                  <div className="staff-card-id">
+                    <span className="staff-card-name" dir="ltr">{member.username}</span>
+                    <span className="staff-card-sub">
+                      مشرف منذ {formatTimestamp(member.createdAt)}
+                    </span>
                   </div>
                   <span className={`staff-status${member.isSuspended ? " is-off" : ""}`}>
                     {member.isSuspended ? "موقوف" : "نشط"}
                   </span>
                 </div>
 
-                <div className="staff-chips">
-                  {granted.length === 0 && <span className="staff-chip is-empty">لا توجد صلاحيات</span>}
-                  {granted.map((s) => (
-                    <span key={s.key} className="staff-chip" data-level={memberLevels[s.key]}>
-                      {s.label}: {LEVEL_LABEL[memberLevels[s.key]]}
-                    </span>
-                  ))}
-                  {grantedActions.map((a) => (
-                    <span key={a.key} className="staff-chip" data-level="action">
-                      {a.label}
-                    </span>
-                  ))}
-                  <span className="staff-chip" data-level="view">
-                    المشتركون: {member.traineeIds.length}
-                  </span>
-                </div>
+                <p className="staff-card-meta">
+                  <Icon name="group" />
+                  <span>المشتركون المسندون</span>
+                  <strong>{traineeCount}</strong>
+                </p>
+
+                {noteOpen && (
+                  <div id={noteId} className="staff-note">
+                    <p className="staff-note-title">الصلاحيات المعطاة</p>
+                    {grantedSections.length === 0 && grantedActions.length === 0 ? (
+                      <p className="staff-note-empty">لا توجد صلاحيات.</p>
+                    ) : (
+                      <>
+                        {grantedSections.length > 0 && (
+                          <ul className="staff-note-levels">
+                            {grantedSections.map((s) => (
+                              <li key={s.key}>
+                                <span>{s.label}</span>
+                                <span className="staff-note-level" data-level={memberLevels[s.key]}>
+                                  {LEVEL_LABEL[memberLevels[s.key]]}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                        {grantedActions.length > 0 && (
+                          <>
+                            <p className="staff-note-title">صلاحيات حساسة</p>
+                            <ul className="staff-note-actions">
+                              {grantedActions.map((a) => (
+                                <li key={a.key}>{a.label}</li>
+                              ))}
+                            </ul>
+                          </>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
 
                 <div className="staff-card-actions">
                   <button type="button" className="crm-btn-secondary" onClick={() => openPermissions(member)} disabled={busy}>
@@ -412,18 +447,49 @@ export default function AdminStaffClient({
                     <Icon name="group" />
                     المشتركون
                   </button>
-                  <button type="button" className="crm-btn-secondary" onClick={() => openPassword(member)} disabled={busy}>
-                    <Icon name="lock_reset" />
-                    كلمة المرور
-                  </button>
-                  <button type="button" className="crm-btn-secondary" onClick={() => toggleSuspended(member)} disabled={busy}>
-                    <Icon name={member.isSuspended ? "check_circle" : "block"} />
-                    {member.isSuspended ? "تفعيل" : "إيقاف"}
-                  </button>
-                  <button type="button" className="crm-btn-secondary staff-danger" onClick={() => remove(member)} disabled={busy}>
-                    <Icon name="delete" />
-                    حذف
-                  </button>
+                  <div className="staff-card-tools">
+                    <button
+                      type="button"
+                      className={`staff-icon-btn${noteOpen ? " is-active" : ""}`}
+                      onClick={() => setNoteFor(noteOpen ? null : member.accountId)}
+                      title="عرض الصلاحيات"
+                      aria-label="عرض الصلاحيات"
+                      aria-expanded={noteOpen}
+                      aria-controls={noteOpen ? noteId : undefined}
+                    >
+                      <Icon name="visibility" />
+                    </button>
+                    <button
+                      type="button"
+                      className="staff-icon-btn"
+                      onClick={() => openPassword(member)}
+                      disabled={busy}
+                      title="كلمة المرور"
+                      aria-label="كلمة المرور"
+                    >
+                      <Icon name="lock_reset" />
+                    </button>
+                    <button
+                      type="button"
+                      className="staff-icon-btn"
+                      onClick={() => toggleSuspended(member)}
+                      disabled={busy}
+                      title={suspendLabel}
+                      aria-label={suspendLabel}
+                    >
+                      <Icon name={member.isSuspended ? "check_circle" : "block"} />
+                    </button>
+                    <button
+                      type="button"
+                      className="staff-icon-btn is-danger"
+                      onClick={() => remove(member)}
+                      disabled={busy}
+                      title="حذف"
+                      aria-label="حذف"
+                    >
+                      <Icon name="delete" />
+                    </button>
+                  </div>
                 </div>
               </article>
             );
