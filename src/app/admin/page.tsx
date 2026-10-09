@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 import { Prisma } from "@prisma/client";
-import { requireAdminPage } from "@/lib/authGuard";
+import { requireAdminPage, sessionMaySeeTrainee } from "@/lib/authGuard";
 import AdminCRMClient from "./AdminCRMClient";
 import LiveRefresh from "@/components/LiveRefresh";
 import type { JsonRecord } from "@/types";
@@ -67,7 +67,7 @@ export default async function AdminDashboardPage() {
      matcher is a list of paths, and this page reads every subscriber it can
      find. It proves the caller for itself rather than inheriting the answer.
      See @/lib/authGuard. */
-  await requireAdminPage("subscribers.view");
+  const session = await requireAdminPage("subscribers.view");
 
   /* The account row carries the current username; the profile row can hold a
      stale copy of it, so the list reads through the relation — but only that one
@@ -127,6 +127,11 @@ export default async function AdminDashboardPage() {
   } catch (error) {
     console.error("Failed to fetch profiles for admin CRM:", error);
   }
+
+  /* A staff member sees only the trainees the coach gave them. Filtered after
+     the query rather than inside it: the rows are ten keys each, and the raw
+     statement above stays exactly as it was. */
+  profiles = profiles.filter((p) => sessionMaySeeTrainee(session, p.id));
 
   // Pass JSON serializable profiles
   const serializedProfiles = profiles.map(p => ({

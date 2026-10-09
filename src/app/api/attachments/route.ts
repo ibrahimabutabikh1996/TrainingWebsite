@@ -47,7 +47,9 @@ export async function GET(request: NextRequest) {
   const auth = await requireUser();
   if (!auth.ok) return auth.response;
 
-  if (sessionCan(auth.session, "subscribers.view")) {
+  /* The coach may open any file. A staff member goes through the checks below,
+     which `sessionOwnsProfile` keeps to the trainees the coach gave them. */
+  if (auth.session.isAdmin) {
     return redirectToSigned(path);
   }
 
@@ -69,6 +71,14 @@ export async function GET(request: NextRequest) {
      They are still referenced from the profile's own answers, so that is what is
      consulted — the same rule, applied to the older shape. */
   if (await profileReferencesPath(auth.session.userId, path)) {
+    return redirectToSigned(path);
+  }
+
+  /* The same older shape for a staff member, over their own trainees. */
+  if (
+    sessionCan(auth.session, "subscribers.view") &&
+    (await traineesReferencePath(auth.session.traineeIds ?? [], path))
+  ) {
     return redirectToSigned(path);
   }
 
@@ -96,6 +106,22 @@ async function profileReferencesPath(accountId: string, path: string): Promise<b
      grant access to a path the trainee's own record already names, and the path
      segment is random enough that a partial match is not a practical concern. */
   return blob.includes(path);
+}
+
+/**
+ * Whether any of these trainees' answers mention this path — the staff member's
+ * form of `profileReferencesPath`, for the files a trainee uploaded before the
+ * upload lifecycle existed.
+ */
+async function traineesReferencePath(profileIds: readonly string[], path: string): Promise<boolean> {
+  if (profileIds.length === 0) return false;
+  const profiles = await prisma.profiles.findMany({
+    where: { id: { in: [...profileIds] } },
+    select: { data: true },
+  });
+  return profiles.some((p) =>
+    (typeof p.data === "string" ? p.data : JSON.stringify(p.data ?? {})).includes(path)
+  );
 }
 
 async function redirectToSigned(path: string): Promise<NextResponse> {

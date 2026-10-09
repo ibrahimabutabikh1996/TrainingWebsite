@@ -525,7 +525,21 @@ model staff_accounts {
   is_suspended Boolean  @default(false)
   created_at   DateTime @default(now()) @db.Timestamptz(6)
   accounts     accounts @relation(fields: [account_id], references: [id], onDelete: Cascade)
+  staff_trainees staff_trainees[]
 
+  @@schema("public")
+}
+
+/// A trainee the coach let one staff member see. A staff member sees only the
+/// trainees listed here. See prisma/manual/2026-10-09-staff-trainees.sql.
+model staff_trainees {
+  staff_account_id String         @db.Uuid
+  profile_id       String         @db.Uuid
+  created_at       DateTime       @default(now()) @db.Timestamptz(6)
+  staff_accounts   staff_accounts @relation(fields: [staff_account_id], references: [account_id], onDelete: Cascade)
+  profiles         profiles       @relation(fields: [profile_id], references: [id], onDelete: Cascade)
+
+  @@id([staff_account_id, profile_id])
   @@schema("public")
 }
 
@@ -606,6 +620,7 @@ model profiles {
   training_cycles      training_cycles[]
   upload_sessions      upload_sessions[]
   workout_logs         workout_logs[]
+  staff_trainees       staff_trainees[]
 
   @@index([username, created_at(sort: Desc)], map: "idx_profiles_username_created")
   @@index([current_course_id], map: "idx_profiles_current_course_id")

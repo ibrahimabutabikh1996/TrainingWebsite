@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { subscriptionExtendFrom } from "@/lib/subscription";
 import type { JsonRecord } from "@/types";
-import { requireAdmin } from "@/lib/authGuard";
+import { requireAdmin, sessionMaySeeTrainee } from "@/lib/authGuard";
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -19,6 +19,11 @@ export async function POST(request: Request) {
 
   try {
     const { profileId } = await request.json();
+
+    /* A staff member acts only on a trainee the coach gave them. */
+    if (!sessionMaySeeTrainee(auth.session, profileId)) {
+      return NextResponse.json({ error: "غير مصرح لك بهذا الإجراء" }, { status: 403 });
+    }
 
     if (!profileId) {
       return NextResponse.json(

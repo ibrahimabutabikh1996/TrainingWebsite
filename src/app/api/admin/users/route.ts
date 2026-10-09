@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireAdmin } from "@/lib/authGuard";
+import { requireAdmin, traineeScope } from "@/lib/authGuard";
 
 export const runtime = "nodejs";
 
@@ -14,6 +14,8 @@ export async function GET() {
 
   try {
     const profiles = await prisma.profiles.findMany({
+      /* A staff member gets only the trainees the coach gave them. */
+      where: traineeScope(auth.session),
       orderBy: { created_at: "desc" },
     });
 

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireUser, sessionCan } from "@/lib/authGuard";
+import { requireUser } from "@/lib/authGuard";
 import { isSubscriptionExpired } from "@/lib/subscription";
 import { asMeals, type DietPlan } from "@/types/diet";
 import { toISODate } from "@/lib/trainingCycle";
@@ -24,8 +24,11 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const requested = searchParams.get("userId");
+    /* The coach only. Nothing in the panel calls this with a `userId`, and the
+       answer carries the trainee's course and diets — the coach's work, which a
+       staff member is not to see. */
     const userId =
-      sessionCan(auth.session, "subscribers.view") && requested ? requested : auth.session.userId;
+      auth.session.isAdmin && requested ? requested : auth.session.userId;
 
     // 1. Fetch the user's profile
     const profile = await prisma.profiles.findFirst({

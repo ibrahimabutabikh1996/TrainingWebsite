@@ -132,7 +132,8 @@ function suspended(): NextResponse {
  * but their password change counts the same as anyone's.
  *
  * A staff member's grant comes back on the same round trip, and is written onto
- * the session as `permissions` for the guards below to read. A token that says
+ * the session as `permissions` for the guards below to read — and with it the
+ * trainees they were given, as `traineeIds`. A token that says
  * staff with no `staff_accounts` row behind it is refused as stale: the coach
  * removed them.
  */
@@ -141,7 +142,13 @@ async function sessionRefusal(session: Session): Promise<"suspended" | "stale" |
     where: { id: session.userId },
     select: {
       password_changed_at: true,
-      staff_accounts: { select: { permissions: true, is_suspended: true } },
+      staff_accounts: {
+        select: {
+          permissions: true,
+          is_suspended: true,
+          staff_trainees: { select: { profile_id: true } },
+        },
+      },
       /* Newest first, matching /api/auth/login and /api/profile: that is the
          profile the dashboard loads, so it is the one whose flag governs. */
       profiles: {
@@ -167,6 +174,7 @@ async function sessionRefusal(session: Session): Promise<"suspended" | "stale" |
     if (!account.staff_accounts) return "stale";
     if (account.staff_accounts.is_suspended) return "suspended";
     session.permissions = account.staff_accounts.permissions;
+    session.traineeIds = account.staff_accounts.staff_trainees.map((t) => t.profile_id);
     return null;
   }
 
@@ -197,6 +205,38 @@ export function sessionCan(session: Session, need: AdminNeed): boolean {
   if (need === "any") return true;
   const needs: readonly StaffPermission[] = typeof need === "string" ? [need] : need;
   return needs.some((n) => hasPermission(session.permissions, n));
+}
+
+/**
+ * Whether this session may see this trainee at all. The coach sees every one;
+ * a staff member only those the coach gave them. Nothing else is decided here —
+ * what they may do with the trainee is still `sessionCan`'s question.
+ */
+export function sessionMaySeeTrainee(session: Session, profileId: string): boolean {
+  if (session.isAdmin) return true;
+  return session.isStaff && (session.traineeIds ?? []).includes(profileId);
+}
+
+/**
+ * A Prisma filter on `profiles.id` that keeps a staff member to their own
+ * trainees, or an empty object for the coach. Spread it into a `where`:
+ * `where: { ...traineeScope(session), … }`.
+ */
+export function traineeScope(session: Session): { id?: { in: string[] } } {
+  return session.isAdmin ? {} : { id: { in: [...(session.traineeIds ?? [])] } };
+}
+
+/**
+ * The same rule for a row that hangs off a trainee by `profile_id`, such as a
+ * diet plan: a staff member reaches the rows of their own trainees and the rows
+ * that belong to no trainee at all. An empty object for the coach.
+ */
+export function profileRowScope(
+  session: Session
+): { OR?: ({ profile_id: null } | { profile_id: { in: string[] } })[] } {
+  return session.isAdmin
+    ? {}
+    : { OR: [{ profile_id: null }, { profile_id: { in: [...(session.traineeIds ?? [])] } }] };
 }
 
 /** Any signed-in account whose session is still good. Call it as the first line of the handler, before the try block. */
@@ -330,15 +370,15 @@ export async function requireAdminPage(need?: AdminNeed): Promise<Session> {
  * names the row, but it is checked against `profiles.user_id` before anything is
  * read or written. The coach passes, because the panel is built on acting for
  * other people — and so does a staff member granted the subscribers section at
- * `need`: "view" for a path that only reads, "edit" (the default) for one that
- * writes.
+ * `need`, for a trainee the coach gave them: "view" for a path that only reads,
+ * "edit" (the default) for one that writes.
  */
 export async function sessionOwnsProfile(
   session: Session,
   profileId: string,
   need: "view" | "edit" = "edit"
 ): Promise<boolean> {
-  if (sessionCan(session, `subscribers.${need}`)) return true;
+  if (sessionCan(session, `subscribers.${need}`)) return sessionMaySeeTrainee(session, profileId);
 
   const profile = await prisma.profiles.findUnique({
     where: { id: profileId },

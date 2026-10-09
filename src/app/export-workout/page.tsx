@@ -1,7 +1,7 @@
 import React from "react";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { requireUserPage, sessionCan } from "@/lib/authGuard";
+import { requireUserPage, sessionCan, sessionMaySeeTrainee, type Session } from "@/lib/authGuard";
 import { readIntakeData } from "@/lib/intakeData";
 import { subscriptionStartOf } from "@/lib/subscription";
 import ExportWorkoutClient from "@/app/export-workout/ExportWorkoutClient";
@@ -68,6 +68,30 @@ async function traineeMayPrint(userId: string, keys: ExportKeys): Promise<boolea
   return true;
 }
 
+/**
+ * Whether the coach or a staff member may print the sheet these keys name.
+ *
+ * The coach always may. A staff member needs the courses or subscribers
+ * section, and any trainee the keys name — directly, or through a cycle — has
+ * to be one the coach gave them.
+ */
+async function panelMayPrint(session: Session, keys: ExportKeys): Promise<boolean> {
+  if (!sessionCan(session, ["courses.view", "subscribers.view"])) return false;
+  if (session.isAdmin) return true;
+
+  if (keys.profileId && !sessionMaySeeTrainee(session, keys.profileId)) return false;
+
+  if (keys.cycleId) {
+    const cycle = await prisma.training_cycles.findUnique({
+      where: { id: keys.cycleId },
+      select: { profile_id: true },
+    });
+    if (!cycle || !sessionMaySeeTrainee(session, cycle.profile_id)) return false;
+  }
+
+  return true;
+}
+
 export default async function ExportWorkoutPage({
   searchParams,
 }: {
@@ -83,7 +107,7 @@ export default async function ExportWorkoutPage({
 
   const { courseId, cycleId, profileId } = await searchParams;
 
-  if (!sessionCan(session, ["courses.view", "subscribers.view"]) && !(await traineeMayPrint(session.userId, { courseId, cycleId, profileId }))) {
+  if (!(await panelMayPrint(session, { courseId, cycleId, profileId })) && !(await traineeMayPrint(session.userId, { courseId, cycleId, profileId }))) {
     notFound();
   }
 

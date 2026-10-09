@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { comparePassword, isBcryptHash } from "@/lib/auth";
-import { requireAdminAction } from "@/lib/authGuard";
+import { requireAdminAction, sessionMaySeeTrainee } from "@/lib/authGuard";
 import type { StaffPermission } from "@/lib/staffPermissions";
 import { storagePathOf, supabaseAdmin, UPLOADS_BUCKET } from "@/lib/supabaseAdmin";
 import type { JsonRecord } from "@/types";
@@ -93,8 +93,10 @@ async function removeFromStorage(url: string): Promise<void> {
 
 export async function deleteAttachmentAction(input: DeleteAttachmentInput): Promise<DeleteResult> {
   /* Permanently destroys a trainee's uploaded file. A server action is a public
-     endpoint however it reads at the call site, so it asks for itself. */
-  if (!(await requireAdminAction("subscribers.edit"))) {
+     endpoint however it reads at the call site, so it asks for itself — and a
+     staff member only for a trainee the coach gave them. */
+  const session = await requireAdminAction("subscribers.edit");
+  if (!session || !sessionMaySeeTrainee(session, input.profileId)) {
     return { success: false, error: "غير مصرح لك بهذا الإجراء" };
   }
 
@@ -170,7 +172,8 @@ export async function deleteAllAttachmentsAction(
   profileId: string,
   monthIndex: number | null
 ): Promise<DeleteResult & { deleted?: number }> {
-  if (!(await requireAdminAction("subscribers.edit"))) {
+  const session = await requireAdminAction("subscribers.edit");
+  if (!session || !sessionMaySeeTrainee(session, profileId)) {
     return { success: false, error: "غير مصرح لك بهذا الإجراء" };
   }
 
@@ -272,7 +275,9 @@ export async function deleteSubscriberAction(
   adminPassword: string
 ): Promise<{ success: boolean; error?: string }> {
   const session = await requireAdminAction("subscribers.delete");
-  if (!session) return { success: false, error: "غير مصرح لك بهذا الإجراء" };
+  if (!session || !sessionMaySeeTrainee(session, profileId)) {
+    return { success: false, error: "غير مصرح لك بهذا الإجراء" };
+  }
 
   if (!profileId || !isValidUUID(profileId)) {
     return { success: false, error: "معرّف المشترك غير صالح" };
@@ -337,7 +342,9 @@ async function updateBlob(
   need: StaffPermission = "subscribers.edit"
 ): Promise<{ success: boolean; error?: string }> {
   const session = await requireAdminAction(need);
-  if (!session) return { success: false, error: "غير مصرح لك بهذا الإجراء" };
+  if (!session || !sessionMaySeeTrainee(session, profileId)) {
+    return { success: false, error: "غير مصرح لك بهذا الإجراء" };
+  }
 
   if (!profileId || !isValidUUID(profileId)) {
     return { success: false, error: "معرّف المشترك غير صالح" };

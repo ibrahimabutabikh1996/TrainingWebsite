@@ -17,7 +17,7 @@
  * their profile page.
  */
 
-import { requireAdminAction } from "@/lib/authGuard";
+import { requireAdminAction, sessionMaySeeTrainee } from "@/lib/authGuard";
 import { prisma } from "@/lib/db";
 import { answerLabel, EMPTY } from "@/lib/formLabels";
 import { translations } from "@/lib/translations";
@@ -114,6 +114,9 @@ export async function getTraineeIntakeAction(
   if (!traineeId || !isValidUUID(traineeId)) {
     return { success: false, error: "لم يتم اختيار مشترك" };
   }
+
+  /* A staff member may read only the trainees the coach gave them. */
+  if (!sessionMaySeeTrainee(session, traineeId)) return DENIED;
 
   try {
     const profile = await prisma.profiles.findUnique({

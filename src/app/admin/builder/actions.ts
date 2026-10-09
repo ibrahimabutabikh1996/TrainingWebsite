@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/db";
-import { requireAdminAction } from "@/lib/authGuard";
+import { requireAdminAction, sessionMaySeeTrainee } from "@/lib/authGuard";
 import { revalidatePath } from "next/cache";
 import { asDays, type Day } from "@/types/admin";
 
@@ -168,6 +168,9 @@ export async function saveCourseAction(data: {
 }) {
   const session = await requireAdminAction("courses.edit");
   if (!session) return DENIED;
+  /* The course may be assigned on save; only to a trainee this staff member
+     was given. */
+  if (data.traineeId && !sessionMaySeeTrainee(session, data.traineeId)) return DENIED;
 
   try {
     if (!data.name) {
@@ -289,6 +292,8 @@ export async function deleteCourseAction(courseId: string) {
 export async function assignCourseAction(courseId: string, traineeId: string) {
   const session = await requireAdminAction("courses.edit");
   if (!session) return DENIED;
+  /* A staff member assigns only to a trainee the coach gave them. */
+  if (!sessionMaySeeTrainee(session, traineeId)) return DENIED;
 
   if (!isValidUUID(courseId) || !isValidUUID(traineeId)) {
     return { success: false, error: "طلب غير صالح" };

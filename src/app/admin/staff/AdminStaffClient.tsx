@@ -24,6 +24,14 @@ export interface StaffMember {
   permissions: string[];
   isSuspended: boolean;
   createdAt: string;
+  /** The trainees (profile ids) this staff member may see. */
+  traineeIds: string[];
+}
+
+export interface StaffTraineeOption {
+  id: string;
+  name: string;
+  username: string;
 }
 
 type Levels = Record<StaffSection, SectionLevel>;
@@ -32,6 +40,7 @@ type Editor =
   | { mode: "create" }
   | { mode: "permissions"; member: StaffMember }
   | { mode: "password"; member: StaffMember }
+  | { mode: "trainees"; member: StaffMember }
   | null;
 
 const LEVEL_LABEL: Record<SectionLevel, string> = Object.fromEntries(
@@ -51,7 +60,14 @@ function grantOf(levels: Levels, actions: readonly string[]): string[] {
   return normalizePermissions([...sections, ...actions]);
 }
 
-export default function AdminStaffClient({ staff }: { staff: StaffMember[] }) {
+export default function AdminStaffClient({
+  staff,
+  trainees,
+}: {
+  staff: StaffMember[];
+  /** Every trainee, for choosing whom each staff member sees. */
+  trainees: StaffTraineeOption[];
+}) {
   const router = useRouter();
 
   const [editor, setEditor] = useState<Editor>(null);
@@ -60,6 +76,8 @@ export default function AdminStaffClient({ staff }: { staff: StaffMember[] }) {
   const [levels, setLevels] = useState<Levels>(() => levelsOf([]));
   const [actions, setActions] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
+  const [chosenTrainees, setChosenTrainees] = useState<string[]>([]);
+  const [traineeQuery, setTraineeQuery] = useState("");
 
   const openCreate = () => {
     setUsername("");
@@ -78,6 +96,12 @@ export default function AdminStaffClient({ staff }: { staff: StaffMember[] }) {
   const openPassword = (member: StaffMember) => {
     setPassword("");
     setEditor({ mode: "password", member });
+  };
+
+  const openTrainees = (member: StaffMember) => {
+    setChosenTrainees(member.traineeIds);
+    setTraineeQuery("");
+    setEditor({ mode: "trainees", member });
   };
 
   const close = () => {
@@ -127,6 +151,13 @@ export default function AdminStaffClient({ staff }: { staff: StaffMember[] }) {
         "PATCH",
         { accountId: editor.member.accountId, permissions: grantOf(levels, actions) },
         "تم حفظ الصلاحيات"
+      );
+    } else if (editor.mode === "trainees") {
+      ok = await send(
+        "/api/admin/staff",
+        "PATCH",
+        { accountId: editor.member.accountId, traineeIds: chosenTrainees },
+        "تم حفظ المشتركين"
       );
     } else {
       ok = await send(
@@ -249,6 +280,61 @@ export default function AdminStaffClient({ staff }: { staff: StaffMember[] }) {
     </div>
   );
 
+  const query = traineeQuery.trim().toLowerCase();
+  const shownTrainees = query
+    ? trainees.filter(
+        (t) => t.name.toLowerCase().includes(query) || t.username.toLowerCase().includes(query)
+      )
+    : trainees;
+
+  const traineePicker = (
+    <div className="staff-perms">
+      <section className="staff-group">
+        <div className="staff-group-head">
+          <span className="staff-group-icon">
+            <Icon name="group" />
+          </span>
+          <div>
+            <p className="staff-perms-title">المشتركون المسموح بهم ({chosenTrainees.length})</p>
+            <p className="staff-perms-note">لن يرى المشرف إلا هؤلاء، في كل أقسام اللوحة.</p>
+          </div>
+        </div>
+        <input
+          className="form-input ui-control"
+          type="search"
+          placeholder="ابحث بالاسم أو اسم المستخدم..."
+          value={traineeQuery}
+          onChange={(e) => setTraineeQuery(e.target.value)}
+          aria-label="بحث عن مشترك"
+        />
+        <div className="staff-list staff-trainee-list">
+          {shownTrainees.length === 0 && (
+            <p className="staff-perms-note staff-trainee-empty">لا يوجد مشترك مطابق.</p>
+          )}
+          {shownTrainees.map((t) => (
+            <label key={t.id} className="staff-switch-row">
+              <span className="staff-switch-text">
+                {t.name} <span className="staff-perm-hint" dir="ltr">{t.username}</span>
+              </span>
+              <span className="ui-switch">
+                <input
+                  type="checkbox"
+                  checked={chosenTrainees.includes(t.id)}
+                  onChange={(e) =>
+                    setChosenTrainees((prev) =>
+                      e.target.checked ? [...prev, t.id] : prev.filter((id) => id !== t.id)
+                    )
+                  }
+                />
+                <span className="ui-switch-track" aria-hidden="true" />
+              </span>
+            </label>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+
   const modalTitle =
     editor?.mode === "create"
       ? "إضافة مشرف"
@@ -256,7 +342,9 @@ export default function AdminStaffClient({ staff }: { staff: StaffMember[] }) {
         ? `صلاحيات «${editor.member.username}»`
         : editor?.mode === "password"
           ? `كلمة مرور «${editor.member.username}»`
-          : "";
+          : editor?.mode === "trainees"
+            ? `مشتركو «${editor.member.username}»`
+            : "";
 
   return (
     <div className="staff-page">
@@ -310,12 +398,19 @@ export default function AdminStaffClient({ staff }: { staff: StaffMember[] }) {
                       {a.label}
                     </span>
                   ))}
+                  <span className="staff-chip" data-level="view">
+                    المشتركون: {member.traineeIds.length}
+                  </span>
                 </div>
 
                 <div className="staff-card-actions">
                   <button type="button" className="crm-btn-secondary" onClick={() => openPermissions(member)} disabled={busy}>
                     <Icon name="edit" />
                     الصلاحيات
+                  </button>
+                  <button type="button" className="crm-btn-secondary" onClick={() => openTrainees(member)} disabled={busy}>
+                    <Icon name="group" />
+                    المشتركون
                   </button>
                   <button type="button" className="crm-btn-secondary" onClick={() => openPassword(member)} disabled={busy}>
                     <Icon name="lock_reset" />
@@ -410,6 +505,8 @@ export default function AdminStaffClient({ staff }: { staff: StaffMember[] }) {
           )}
 
           {(editor?.mode === "create" || editor?.mode === "permissions") && permissionsEditor}
+
+          {editor?.mode === "trainees" && traineePicker}
         </form>
       </AdminModal>
     </div>

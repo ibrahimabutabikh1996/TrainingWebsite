@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { hashPassword } from "@/lib/auth";
 import { isAdminUsername } from "@/lib/adminUsernames";
-import { requireAdmin, startSession } from "@/lib/authGuard";
+import { requireAdmin, sessionMaySeeTrainee, startSession } from "@/lib/authGuard";
 
 /* Sets a password without knowing the current one — which is the coach's
    prerogative and nobody else's. Unguarded, it was an account takeover for any
@@ -13,6 +13,11 @@ export async function POST(request: Request) {
 
   try {
     const { profileId, newPassword } = await request.json();
+
+    /* A staff member acts only on a trainee the coach gave them. */
+    if (!sessionMaySeeTrainee(auth.session, profileId)) {
+      return NextResponse.json({ error: "غير مصرح لك بهذا الإجراء" }, { status: 403 });
+    }
 
     if (!profileId || !newPassword) {
       return NextResponse.json(

@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { requireAdminPage, sessionCan } from "@/lib/authGuard";
+import { requireAdminPage, sessionCan, sessionMaySeeTrainee } from "@/lib/authGuard";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Toaster } from "react-hot-toast";
@@ -31,6 +31,12 @@ export default async function ProfileDetailsPage({ params }: { params: Promise<{
      unhandled error and a 500, where the honest answer is that there is no such
      subscriber. */
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
+    notFound();
+  }
+
+  /* A trainee the coach did not give this staff member is answered exactly as
+     one that does not exist, so the address reveals nothing either way. */
+  if (!sessionMaySeeTrainee(session, id)) {
     notFound();
   }
 

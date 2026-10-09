@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
-import { requireAdminAction } from "@/lib/authGuard";
+import { requireAdminAction, sessionMaySeeTrainee } from "@/lib/authGuard";
 import { asMeals, MAX_PLANS_PER_TRAINEE, type MealsData } from "@/types/diet";
 
 /* Prescribing food to a named trainee is the coach's act, so both actions ask
@@ -27,9 +27,13 @@ export async function saveDietPlanAction(input: {
   name: string;
   meals: unknown;
 }) {
-  if (!(await requireAdminAction("diet.edit"))) return DENIED;
+  const session = await requireAdminAction("diet.edit");
+  if (!session) return DENIED;
 
   const { traineeId, position } = input;
+
+  /* A staff member writes only for a trainee the coach gave them. */
+  if (!sessionMaySeeTrainee(session, traineeId)) return DENIED;
 
   if (!isValidUUID(traineeId)) {
     return { success: false as const, error: "لم يتم تحديد المشترك" };
@@ -80,9 +84,13 @@ export async function saveDietPlanAction(input: {
 }
 
 export async function deleteDietPlanAction(input: { traineeId: string; position: number }) {
-  if (!(await requireAdminAction("diet.edit"))) return DENIED;
+  const session = await requireAdminAction("diet.edit");
+  if (!session) return DENIED;
 
   const { traineeId, position } = input;
+
+  /* A staff member deletes only for a trainee the coach gave them. */
+  if (!sessionMaySeeTrainee(session, traineeId)) return DENIED;
 
   if (!isValidUUID(traineeId)) {
     return { success: false as const, error: "لم يتم تحديد المشترك" };

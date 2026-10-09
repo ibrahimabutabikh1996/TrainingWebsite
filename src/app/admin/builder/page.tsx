@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { requireAdminPage } from "@/lib/authGuard";
+import { requireAdminPage, sessionMaySeeTrainee, traineeScope } from "@/lib/authGuard";
 import AdminBuilderClient from "./AdminBuilderClient";
 import { countDays, countExercises, type CourseTemplate, type Exercise, type TraineeOption } from "@/types/admin";
 
@@ -31,7 +31,7 @@ export default async function AdminBuilderPage({
      See @/lib/authGuard. */
   /* Edit, not view: the builder is an editor and nothing else, so a staff
      member who may only look at courses is not sent into it. */
-  await requireAdminPage("courses.edit");
+  const session = await requireAdminPage("courses.edit");
 
   const { courseId, traineeId } = await searchParams;
 
@@ -39,10 +39,14 @@ export default async function AdminBuilderPage({
   let exercises: Exercise[] = [];
   let templates: CourseTemplate[] = [];
   let courseToEdit: { id: string; name: string; description: string; days_data: unknown } | null = null;
-  let assignedTraineeId = traineeId && isValidUUID(traineeId) ? traineeId : "";
+  /* A staff member may only preselect a trainee the coach gave them. */
+  let assignedTraineeId =
+    traineeId && isValidUUID(traineeId) && sessionMaySeeTrainee(session, traineeId) ? traineeId : "";
 
   try {
     const profiles = await prisma.profiles.findMany({
+      /* A staff member's picker lists only their own trainees. */
+      where: traineeScope(session),
       orderBy: { created_at: "desc" },
       select: { id: true, username: true, data: true },
     });
@@ -111,7 +115,7 @@ export default async function AdminBuilderPage({
         // An explicit ?traineeId= wins; otherwise fall back to the current assignee.
         if (!assignedTraineeId) {
           const assignedProfile = await prisma.profiles.findFirst({
-            where: { current_course_id: courseId },
+            where: { current_course_id: courseId, ...traineeScope(session) },
             select: { id: true },
           });
           if (assignedProfile) assignedTraineeId = assignedProfile.id;

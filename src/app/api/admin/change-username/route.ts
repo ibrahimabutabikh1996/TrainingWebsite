@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { USERNAME_PATTERN, isReservedUsername } from "@/lib/auth";
 import { isAdminUsername } from "@/lib/adminUsernames";
-import { requireAdmin } from "@/lib/authGuard";
+import { requireAdmin, sessionMaySeeTrainee } from "@/lib/authGuard";
 
 /* Renaming a trainee's sign-in name, which is the coach's prerogative and
  * nobody else's — the same standing as /api/admin/change-password next door.
@@ -20,6 +20,11 @@ export async function POST(request: Request) {
 
   try {
     const { profileId, newUsername } = await request.json();
+
+    /* A staff member acts only on a trainee the coach gave them. */
+    if (!sessionMaySeeTrainee(auth.session, profileId)) {
+      return NextResponse.json({ error: "غير مصرح لك بهذا الإجراء" }, { status: 403 });
+    }
 
     if (!profileId || !newUsername) {
       return NextResponse.json(

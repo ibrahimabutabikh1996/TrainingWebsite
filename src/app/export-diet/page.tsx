@@ -1,6 +1,6 @@
 import React from "react";
 import { prisma } from "@/lib/db";
-import { requireUserPage, sessionCan, sessionOwnsProfile } from "@/lib/authGuard";
+import { requireUserPage, sessionCan, sessionMaySeeTrainee, sessionOwnsProfile } from "@/lib/authGuard";
 import { readIntakeData } from "@/lib/intakeData";
 import { asMeals, type DietPlan } from "@/types/diet";
 import { subscriptionStartOf } from "@/lib/subscription";
@@ -75,8 +75,11 @@ export default async function ExportDietPage({
   if (!profileId) notFound();
 
   /* A staff member granted the diet section may print the plans they can open
-     in the library, whoever they belong to. */
-  if (!sessionCan(session, "diet.view") && !(await sessionOwnsProfile(session, profileId, "view"))) notFound();
+     in the library — for a trainee the coach gave them. */
+  if (
+    !(sessionCan(session, "diet.view") && sessionMaySeeTrainee(session, profileId)) &&
+    !(await sessionOwnsProfile(session, profileId, "view"))
+  ) notFound();
 
   const profile = await prisma.profiles.findUnique({
     where: { id: profileId },

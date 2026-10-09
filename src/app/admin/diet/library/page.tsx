@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { requireAdminPage, sessionCan } from "@/lib/authGuard";
+import { profileRowScope, requireAdminPage, sessionCan, traineeScope } from "@/lib/authGuard";
 import LiveRefresh from "@/components/LiveRefresh";
 import DietLibraryClient, { type LibraryPlan } from "./DietLibraryClient";
 import { asMeals } from "@/types/diet";
@@ -36,6 +36,8 @@ export default async function DietLibraryPage() {
        saved with nobody on it. Both kinds live in this one list, which is the
        point of it. */
     const rows = await prisma.diet_plans.findMany({
+      /* A staff member sees no prescribed plan of a trainee they were not given. */
+      where: profileRowScope(session),
       orderBy: [{ created_at: "desc" }, { position: "asc" }],
       select: {
         id: true,
@@ -134,6 +136,8 @@ export default async function DietLibraryPage() {
     plans = [...byGroup.values()];
 
     const profileRows = await prisma.profiles.findMany({
+      /* The copy dialog lists only a staff member's own trainees. */
+      where: traineeScope(session),
       orderBy: { created_at: "desc" },
       select: { id: true, username: true, data: true },
     });

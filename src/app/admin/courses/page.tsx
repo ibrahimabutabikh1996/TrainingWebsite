@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { requireAdminPage, sessionCan } from "@/lib/authGuard";
+import { requireAdminPage, sessionCan, traineeScope } from "@/lib/authGuard";
 import AdminCoursesClient from "./AdminCoursesClient";
 import LiveRefresh from "@/components/LiveRefresh";
 import type { Course, CourseAssignments, TraineeOption } from "@/types/admin";
@@ -45,7 +45,10 @@ export default async function AdminCoursesPage() {
 
     /* Only id + display name reach the browser — the intake `data` blob (phone,
        health history, body-photo URLs) has no business in a dropdown. */
+    /* A staff member sees only their own trainees — in the assign dialog and
+       in the names listed on each course. */
     const profileRows = await prisma.profiles.findMany({
+      where: traineeScope(session),
       orderBy: { created_at: "desc" },
       select: { id: true, username: true, data: true, current_course_id: true },
     });

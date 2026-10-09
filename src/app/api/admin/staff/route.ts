@@ -56,10 +56,11 @@ export async function POST(request: Request) {
 }
 
 /**
- * Changes a staff member: any of their grant, their suspension, their password.
+ * Changes a staff member: any of their grant, their suspension, their password,
+ * and the trainees they may see.
  *
- * The grant and the suspension apply from the staff member's next request —
- * the guards read both on every one. A new password also signs them out, by
+ * The grant, the suspension and the trainees apply from the staff member's next
+ * request — the guards read all three on every one. A new password also signs them out, by
  * the same `password_changed_at` stamp every other reset uses.
  */
 export async function PATCH(request: Request) {
@@ -67,7 +68,7 @@ export async function PATCH(request: Request) {
   if (!auth.ok) return auth.response;
 
   try {
-    const { accountId, permissions, isSuspended, password } = await request.json();
+    const { accountId, permissions, isSuspended, password, traineeIds } = await request.json();
 
     if (typeof accountId !== "string" || !isValidUUID(accountId)) {
       return NextResponse.json(FORBIDDEN_TARGET, { status: 404 });
@@ -96,7 +97,28 @@ export async function PATCH(request: Request) {
       }
     }
 
+    /* The whole list, replacing the old one. Only real trainee ids survive: an
+       unknown or malformed one is dropped rather than failing the save. */
+    let nextTrainees: string[] | null = null;
+    if (traineeIds !== undefined) {
+      if (!Array.isArray(traineeIds)) {
+        return NextResponse.json({ error: "قائمة المشتركين غير صالحة" }, { status: 400 });
+      }
+      const wanted = [...new Set(traineeIds.filter((id): id is string => typeof id === "string" && isValidUUID(id)))];
+      const found = await prisma.profiles.findMany({
+        where: { id: { in: wanted } },
+        select: { id: true },
+      });
+      nextTrainees = found.map((p) => p.id);
+    }
+
     await prisma.$transaction(async (tx) => {
+      if (nextTrainees) {
+        await tx.staff_trainees.deleteMany({ where: { staff_account_id: accountId } });
+        await tx.staff_trainees.createMany({
+          data: nextTrainees.map((profile_id) => ({ staff_account_id: accountId, profile_id })),
+        });
+      }
       if (permissions !== undefined || typeof isSuspended === "boolean") {
         await tx.staff_accounts.update({
           where: { account_id: accountId },

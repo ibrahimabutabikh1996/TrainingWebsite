@@ -51,6 +51,12 @@ export interface Session {
    * and absent on a session nothing has checked yet.
    */
   permissions?: readonly string[];
+  /**
+   * The trainees (profile ids) the coach let this staff member see, filled in
+   * alongside `permissions` and never carried in the token. A staff member sees
+   * these and no other trainee.
+   */
+  traineeIds?: readonly string[];
   /** Unix seconds. */
   expiresAt: number;
   /**

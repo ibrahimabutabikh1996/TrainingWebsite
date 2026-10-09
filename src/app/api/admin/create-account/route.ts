@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { credentialError, hashPassword } from "@/lib/auth";
-import { requireAdmin } from "@/lib/authGuard";
+import { requireAdmin, sessionMaySeeTrainee } from "@/lib/authGuard";
 import type { JsonRecord } from "@/types";
 
 export async function POST(request: Request) {
@@ -10,6 +10,11 @@ export async function POST(request: Request) {
 
   try {
     const { profileId, username, password } = await request.json();
+
+    /* A staff member acts only on a trainee the coach gave them. */
+    if (!sessionMaySeeTrainee(auth.session, profileId)) {
+      return NextResponse.json({ error: "غير مصرح لك بهذا الإجراء" }, { status: 403 });
+    }
 
     if (!profileId || !username || !password) {
       return NextResponse.json(

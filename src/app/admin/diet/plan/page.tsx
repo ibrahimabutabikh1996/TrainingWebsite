@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { requireAdminPage } from "@/lib/authGuard";
+import { requireAdminPage, sessionMaySeeTrainee, traineeScope } from "@/lib/authGuard";
 import DietPlanBuilder from "./DietPlanBuilder";
 import { asMeals, type DietPlan } from "@/types/diet";
 import type { NutritionSource, TraineeOption } from "@/types/admin";
@@ -32,10 +32,12 @@ export default async function DietPlanPage({
      See @/lib/authGuard. */
   /* Edit, not view: like the course builder, this screen is an editor, and a
      staff member who may only look at plans reads them in the library. */
-  await requireAdminPage("diet.edit");
+  const session = await requireAdminPage("diet.edit");
 
   const { traineeId, groupId } = await searchParams;
-  const selectedTraineeId = traineeId && isValidUUID(traineeId) ? traineeId : "";
+  /* A staff member may only open a trainee the coach gave them. */
+  const selectedTraineeId =
+    traineeId && isValidUUID(traineeId) && sessionMaySeeTrainee(session, traineeId) ? traineeId : "";
 
   /* With no trainee named, this screen writes a general template — a diet with
      no owner, the way the programme builder saves a course with nobody on it.
@@ -54,6 +56,8 @@ export default async function DietPlanPage({
 
   try {
     const profiles = await prisma.profiles.findMany({
+      /* A staff member's picker lists only their own trainees. */
+      where: traineeScope(session),
       orderBy: { created_at: "desc" },
       select: { id: true, username: true, data: true },
     });

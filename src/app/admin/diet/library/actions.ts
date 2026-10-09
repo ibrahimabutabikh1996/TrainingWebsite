@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
-import { requireAdminAction } from "@/lib/authGuard";
+import { profileRowScope, requireAdminAction, sessionMaySeeTrainee } from "@/lib/authGuard";
 import { asMeals, MAX_PLANS_PER_TRAINEE } from "@/types/diet";
 import { arabicCount, CHOICE, PLAN } from "@/lib/arabicCount";
 
@@ -41,9 +41,13 @@ export async function copyDietPlanToTraineeAction(input: {
   groupId?: string;
   traineeId: string;
 }) {
-  if (!(await requireAdminAction("diet.edit"))) return DENIED;
+  const session = await requireAdminAction("diet.edit");
+  if (!session) return DENIED;
 
   const { planIds, groupId, traineeId } = input;
+
+  /* A staff member copies only to a trainee the coach gave them. */
+  if (!sessionMaySeeTrainee(session, traineeId)) return DENIED;
 
   if (!isValidUUID(traineeId)) {
     return { success: false as const, error: "طلب غير صالح" };
@@ -78,7 +82,8 @@ export async function copyDietPlanToTraineeAction(input: {
             select: { name: true, meals_data: true },
           })
         : prisma.diet_plans.findMany({
-            where: { id: { in: ids } },
+            /* …and only from a plan they can see in the library. */
+            where: { id: { in: ids }, ...profileRowScope(session) },
             orderBy: { position: "asc" },
             select: { name: true, meals_data: true },
           }),
@@ -213,7 +218,8 @@ export async function duplicateDietPlanAction(input: {
   /** A whole general template — every choice in it. */
   groupId?: string;
 }) {
-  if (!(await requireAdminAction("diet.edit"))) return DENIED;
+  const session = await requireAdminAction("diet.edit");
+  if (!session) return DENIED;
 
   const { planIds, groupId } = input;
 
@@ -239,7 +245,8 @@ export async function duplicateDietPlanAction(input: {
           select: { name: true, group_name: true, meals_data: true },
         })
       : await prisma.diet_plans.findMany({
-          where: { id: { in: ids } },
+          /* A staff member duplicates only a plan they can see in the library. */
+          where: { id: { in: ids }, ...profileRowScope(session) },
           orderBy: { position: "asc" },
           select: { name: true, group_name: true, meals_data: true },
         });

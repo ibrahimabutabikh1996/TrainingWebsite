@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireAdmin } from "@/lib/authGuard";
+import { requireAdmin, sessionMaySeeTrainee } from "@/lib/authGuard";
 import type { JsonRecord } from "@/types";
 
 /* Clears the "new subscriber" flag the panel's list draws. Only the coach sees
@@ -11,6 +11,11 @@ export async function POST(request: Request) {
 
   try {
     const { id, notificationId } = await request.json();
+
+    /* A staff member acts only on a trainee the coach gave them. */
+    if (!sessionMaySeeTrainee(auth.session, id)) {
+      return NextResponse.json({ error: "غير مصرح لك بهذا الإجراء" }, { status: 403 });
+    }
     
     if (!id) {
       return NextResponse.json({ error: "معرّف الملف مفقود" }, { status: 400 });

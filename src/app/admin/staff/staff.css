@@ -408,3 +408,15 @@
   justify-content: flex-end;
   gap: 10px;
 }
+
+/* The trainee picker: the same well as the other lists, but it scrolls, so a
+   long roster does not push the save button off the screen. */
+.staff-trainee-list {
+  max-height: min(50vh, 420px);
+  overflow-y: auto;
+}
+
+.staff-trainee-empty {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+}
