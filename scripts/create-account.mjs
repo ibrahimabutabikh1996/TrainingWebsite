@@ -1,18 +1,15 @@
 /*
  * إنشاء حساب.
  *
- * حسابان لا ثالث لهما في هذا الموقع:
- *
- *   admin    لوحة الكابتن، وتُفتح لحساب اسمه "admin" تحديداً. لا يُنشأ من داخل
- *            الموقع لأن إنشاء الحسابات هناك يتطلّب ملف مشترك موجوداً أصلاً.
- *
  *   trainee  حساب مشترك ومعه ملفه. الطريق الطبيعي أن يملأ المشترك استمارة
  *            التسجيل فيُنشأ ملفه، ثم ينشئ له الكابتن حساباً من لوحته. هذا
  *            الأمر يختصر الطريقين معاً، للتجربة أو لإدخال مشترك يدوياً.
  *
+ * حساب الكابتن لا يُنشأ من هنا: اسمه في src/lib/adminUsernames.ts، وإن نُسيت
+ * كلمة مروره فـ scripts/reset-password.mjs. والمشرفون يُنشؤون من لوحة الكابتن.
+ *
  * كلمة المرور تُكتب في سطر الأوامر وتُخزَّن مشفّرة ولا تُطبع أبداً.
  *
- *   node --env-file=.env scripts/create-account.mjs admin "كلمة-المرور"
  *   node --env-file=.env scripts/create-account.mjs trainee "اسم-المستخدم" "كلمة-المرور" ["الاسم الكامل"] [أيام-التمرين]
  *
  * إعادة تشغيل الأمر على اسم موجود تُحدّث كلمة مروره بدل أن تفشل.
@@ -32,17 +29,20 @@ const die = (...lines) => {
 
 const usage = [
   "الاستعمال:",
-  '  node --env-file=.env scripts/create-account.mjs admin "كلمة-المرور"',
   '  node --env-file=.env scripts/create-account.mjs trainee "اسم-المستخدم" "كلمة-المرور" ["الاسم الكامل"] [أيام-التمرين]',
 ];
 
 const [role, ...rest] = process.argv.slice(2);
 
-if (role !== "admin" && role !== "trainee") die("النوع يجب أن يكون admin أو trainee.", ...usage);
+if (role === "admin") die(
+  "طريقة admin أُزيلت: الحساب الذي كانت تنشئه لم يعد يفتح لوحة الكابتن.",
+  "لاستعادة كلمة مرور الكابتن: node --env-file=.env scripts/reset-password.mjs <الإيميل> <كلمة-المرور>"
+);
+if (role !== "trainee") die("النوع يجب أن يكون trainee.", ...usage);
 if (!process.env.DIRECT_URL) die("لم يُقرأ عنوان قاعدة البيانات. شغّل الأمر مع: --env-file=.env");
 
-const username = role === "admin" ? "admin" : rest[0];
-const password = role === "admin" ? rest[0] : rest[1];
+const username = rest[0];
+const password = rest[1];
 const fullname = role === "trainee" ? rest[2] || username : null;
 const workoutDays = role === "trainee" ? Number(rest[3] ?? DEFAULT_WORKOUT_DAYS) : null;
 
@@ -108,8 +108,6 @@ try {
       );
       console.log("تم إنشاء حساب المشترك وملفه.");
     }
-  } else {
-    console.log(account.created ? "تم إنشاء حساب الكابتن." : "الحساب موجود، وحُدّثت كلمة مروره.");
   }
 
   await client.query("commit");
