@@ -336,7 +336,7 @@ export default function ExportDietClient({
             const planTitle = plan.name || `النظام الغذائي ${planIdx + 1}`;
             const meals = Array.isArray(plan.meals) ? plan.meals : [];
             const totalItems = meals.reduce((sum, m) => sum + (m.items?.length || 0), 0);
-            const totalRows = meals.length + totalItems;
+            const totalRows = meals.length + totalItems + meals.reduce((sum, m) => sum + (m.startNote ? 1 : 0) + (m.note ? 1 : 0), 0);
 
             let rowHeight = "9.5mm";
             let fontSize = "4.0mm";
@@ -412,6 +412,13 @@ export default function ExportDietClient({
                                   </tr>
                                 );
                               })}
+                              {meal.note && (
+                                <tr style={{ height: rowHeight, backgroundColor: "#fafafa" }}>
+                                  <td colSpan={3} style={{ textAlign: "right", paddingRight: "4mm", color: "#555", fontSize: fontSize }}>
+                                    {meal.note}
+                                  </td>
+                                </tr>
+                              )}
                             </React.Fragment>
                           ))
                         )}
