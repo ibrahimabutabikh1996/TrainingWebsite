@@ -16,10 +16,13 @@
    never be able to claim one of these names through the public intake form —
    the only thing that stood between them and the coach's panel was whether the
    row happened to exist already. */
-export const ADMIN_USERNAMES: readonly string[] = ["ibrahimabutabikh1996@gmail.com"];
+export const ADMIN_USERNAMES: readonly string[] = [
+  "ibrahimabutabikh1996@gmail.com",
+  "mkm94sports@gmail.com",
+];
 
 export function isAdminUsername(username: string | null | undefined): boolean {
   if (typeof username !== "string") return false;
   const lower = username.toLowerCase();
-  return ADMIN_USERNAMES.some(u => u.toLowerCase() === lower);
+  return ADMIN_USERNAMES.some((u) => u.toLowerCase() === lower);
 }
