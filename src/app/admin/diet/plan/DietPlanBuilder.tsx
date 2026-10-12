@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import toast, { Toaster } from "react-hot-toast";
 import type { NutritionSource, TraineeOption } from "@/types/admin";
@@ -108,6 +108,10 @@ export default function DietPlanBuilder({
   const [saved, setSaved] = useState<Record<number, string>>(() => buildSnapshots(seedPlans));
   const [activePosition, setActivePosition] = useState(seedPlans[0]?.position ?? 1);
   const [pickerMealId, setPickerMealId] = useState<string | null>(null);
+  /* Set when the picker was opened to change an item: the pick replaces it. */
+  const [pickerReplace, setPickerReplace] = useState<{ id: string; name: string } | null>(null);
+  /* The item whose copy button was pressed; the dialog asks which meal. */
+  const [itemToCopy, setItemToCopy] = useState<{ mealId: string; itemId: string; name: string } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   /* Empty until the first save of a brand-new template, which is the one call
      that mints it. Held in state rather than read from the URL because the two
@@ -190,6 +194,98 @@ export default function DietPlanBuilder({
 
   const handleRemoveItem = (mealId: string, itemId: string) => {
     updateMeal(mealId, (meal) => ({ ...meal, items: meal.items.filter((i) => i.id !== itemId) }));
+  };
+
+  /* Copies the open choice whole, every meal and item with a fresh id so the
+     two choices never share one. Goes into the free slot as a new choice; with
+     none free, it replaces the other choice's meals after asking. */
+  const handleDuplicatePlan = async () => {
+    if (!activePlan) return;
+    const meals = activePlan.meals.map((m) => ({
+      ...m,
+      id: crypto.randomUUID(),
+      items: m.items.map((i) => ({ ...i, id: crypto.randomUUID() })),
+    }));
+    const position = nextFreePosition(plans, blockedPositions);
+    if (position !== null) {
+      setPlans((prev) =>
+        [...prev, { id: null, name: defaultPlanName(position), position, meals }].sort(
+          (a, b) => a.position - b.position
+        )
+      );
+      setActivePosition(position);
+      toast.success("تم نسخ الخيار كاملاً كخيار جديد");
+      return;
+    }
+    const other = plans.find((p) => p.position !== activePosition);
+    if (!other) {
+      toast.error("لا توجد خانة فارغة لهذا المشترك");
+      return;
+    }
+    const otherName = other.name || defaultPlanName(other.position);
+    if (!(await confirmDialog(`سيحل هذا الخيار محل وجبات "${otherName}". المتابعة؟`))) return;
+    setPlans((prev) => prev.map((p) => (p.position === other.position ? { ...p, meals } : p)));
+    setActivePosition(other.position);
+    toast.success(`تم نسخ الخيار كاملاً إلى "${otherName}"`);
+  };
+
+  /* Meal order is the order the trainee eats them, so it has to be editable
+     after the fact. Moving past either end is a no-op. */
+  const handleMoveMeal = (mealId: string, direction: -1 | 1) => {
+    updateActivePlan((plan) => {
+      const from = plan.meals.findIndex((m) => m.id === mealId);
+      const to = from + direction;
+      if (from === -1 || to < 0 || to >= plan.meals.length) return plan;
+      const meals = [...plan.meals];
+      [meals[from], meals[to]] = [meals[to], meals[from]];
+      return { ...plan, meals };
+    });
+  };
+
+  const handleMoveItem = (mealId: string, itemId: string, direction: -1 | 1) => {
+    updateMeal(mealId, (meal) => {
+      const from = meal.items.findIndex((i) => i.id === itemId);
+      const to = from + direction;
+      if (from === -1 || to < 0 || to >= meal.items.length) return meal;
+      const items = [...meal.items];
+      [items[from], items[to]] = [items[to], items[from]];
+      return { ...meal, items };
+    });
+  };
+
+  /* Appends a copy of one item, amount included, to the end of a meal in
+     either choice — the same meal included. Fresh id, because removing matches
+     by id. */
+  const handleCopyItem = (toPosition: number, toMealId: string, toMealName: string) => {
+    if (!itemToCopy) return;
+    const source = activePlan?.meals
+      .find((m) => m.id === itemToCopy.mealId)
+      ?.items.find((i) => i.id === itemToCopy.itemId);
+    if (!source) return;
+    setPlans((prev) =>
+      prev.map((p) =>
+        p.position === toPosition
+          ? {
+              ...p,
+              meals: p.meals.map((m) =>
+                m.id === toMealId ? { ...m, items: [...m.items, { ...source, id: crypto.randomUUID() }] } : m
+              ),
+            }
+          : p
+      )
+    );
+    toast.success(`تم نسخ ${itemToCopy.name} إلى ${toMealName}`);
+    setItemToCopy(null);
+  };
+
+  /* Swaps the item in place: its position is kept, its amount is not — a
+     quantity written for one food rarely fits another. */
+  const handleReplaceItem = (mealId: string, itemId: string, source: NutritionSource) => {
+    updateMeal(mealId, (meal) => ({
+      ...meal,
+      items: meal.items.map((i) => (i.id === itemId ? itemFromSource(source) : i)),
+    }));
+    toast.success(`تم التغيير إلى ${source.name}`);
   };
 
   /* `handleQtyChange` used to live here, editing `item.qty` — a multiplier of a
@@ -569,18 +665,29 @@ export default function DietPlanBuilder({
                 </label>
 
 
-                <button
-                  onClick={() => handleDeletePlan(activePlan)}
-                  className="dplan-delete-plan"
-                  title="حذف هذا النظام"
-                >
-                  <Icon name="delete" />
-                  <span>حذف النظام</span>
-                </button>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <button
+                    className="diet-icon-btn"
+                    onClick={handleDuplicatePlan}
+                    disabled={activePlan.meals.length === 0}
+                    title="نسخ هذا الخيار بكل وجباته إلى الخيار الآخر"
+                    aria-label="نسخ الخيار"
+                  >
+                    <Icon name="content_copy" />
+                  </button>
+                  <button
+                    onClick={() => handleDeletePlan(activePlan)}
+                    className="dplan-delete-plan"
+                    title="حذف هذا النظام"
+                  >
+                    <Icon name="delete" />
+                    <span>حذف النظام</span>
+                  </button>
+                </div>
               </div>
 
               <div className="dplan-meals">
-                {activePlan.meals.map((meal) => {
+                {activePlan.meals.map((meal, mealIndex) => {
 
                   return (
                     <section key={meal.id} className="dplan-meal">
@@ -618,6 +725,24 @@ export default function DietPlanBuilder({
                             maxLength={40}
                           />
                           <button
+                            className="diet-icon-btn"
+                            onClick={() => handleMoveMeal(meal.id, -1)}
+                            disabled={mealIndex === 0}
+                            title="تحريك الوجبة للأعلى"
+                            aria-label="تحريك للأعلى"
+                          >
+                            <Icon name="expand_less" />
+                          </button>
+                          <button
+                            className="diet-icon-btn"
+                            onClick={() => handleMoveMeal(meal.id, 1)}
+                            disabled={mealIndex === activePlan.meals.length - 1}
+                            title="تحريك الوجبة للأسفل"
+                            aria-label="تحريك للأسفل"
+                          >
+                            <Icon name="expand_more" />
+                          </button>
+                          <button
                             className="diet-icon-btn danger"
                             onClick={() => handleRemoveMeal(meal.id)}
                             title="حذف الوجبة"
@@ -644,7 +769,7 @@ export default function DietPlanBuilder({
                         <p className="dplan-meal-empty">لم تُضف أصناف لهذه الوجبة بعد.</p>
                       ) : (
                         <ul className="dplan-items">
-                          {meal.items.map((item) => {
+                          {meal.items.map((item, itemIndex) => {
                             const itemBadge = getCategoryBadge(item.category || "");
                             return (
                               <li
@@ -682,13 +807,27 @@ export default function DietPlanBuilder({
                                 })()}
 
 
-                                <button
-                                  className="diet-icon-btn danger"
-                                  onClick={() => handleRemoveItem(meal.id, item.id)}
-                                  title="إزالة الصنف"
-                                >
-                                  <Icon name="close" />
-                                </button>
+                                <div style={{ display: "flex", alignItems: "center", gap: 4, flex: "0 0 auto", marginInlineStart: "auto" }}>
+                                  <button className="diet-icon-btn" onClick={() => handleMoveItem(meal.id, item.id, -1)} disabled={itemIndex === 0} title="تحريك الصنف للأعلى" aria-label="تحريك للأعلى">
+                                    <Icon name="expand_less" />
+                                  </button>
+                                  <button className="diet-icon-btn" onClick={() => handleMoveItem(meal.id, item.id, 1)} disabled={itemIndex === meal.items.length - 1} title="تحريك الصنف للأسفل" aria-label="تحريك للأسفل">
+                                    <Icon name="expand_more" />
+                                  </button>
+                                  <button className="diet-icon-btn" onClick={() => setItemToCopy({ mealId: meal.id, itemId: item.id, name: item.name })} title="نسخ الصنف إلى وجبة" aria-label="نسخ الصنف">
+                                    <Icon name="content_copy" />
+                                  </button>
+                                  <button className="diet-icon-btn" onClick={() => { setPickerReplace({ id: item.id, name: item.name }); setPickerMealId(meal.id); }} title="تغيير الصنف" aria-label="تغيير الصنف">
+                                    <Icon name="edit" />
+                                  </button>
+                                  <button
+                                    className="diet-icon-btn danger"
+                                    onClick={() => handleRemoveItem(meal.id, item.id)}
+                                    title="إزالة الصنف"
+                                  >
+                                    <Icon name="close" />
+                                  </button>
+                                </div>
                               </li>
                             );
                           })}
@@ -752,10 +891,72 @@ export default function DietPlanBuilder({
       {pickerMealId && (
         <SourcePicker
           sources={sources}
-          slotLabel={activePlan?.meals.find(m => m.id === pickerMealId)?.name || "الوجبة"}
-          onPick={(source) => handleAddItem(pickerMealId, source)}
-          onClose={() => setPickerMealId(null)}
+          title={pickerReplace ? "تغيير الصنف" : undefined}
+          slotLabel={(pickerReplace ? `بدلاً من ${pickerReplace.name} — ` : "") + (activePlan?.meals.find(m => m.id === pickerMealId)?.name || "الوجبة")}
+          onPick={(source) => {
+            if (pickerReplace) {
+              handleReplaceItem(pickerMealId, pickerReplace.id, source);
+              setPickerMealId(null);
+              setPickerReplace(null);
+            } else {
+              handleAddItem(pickerMealId, source);
+            }
+          }}
+          onClose={() => { setPickerMealId(null); setPickerReplace(null); }}
         />
+      )}
+
+      {itemToCopy && activePlan && (
+        <div className="dplan-picker-backdrop" onClick={() => setItemToCopy(null)}>
+          <div
+            className="dplan-picker"
+            role="dialog"
+            aria-label="نسخ إلى وجبة"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <header className="dplan-picker-head">
+              <div>
+                <h3>نسخ إلى وجبة</h3>
+                <p>اختر الوجبة التي تُضاف إليها نسخة من {itemToCopy.name} بكميتها، في آخر أصنافها.</p>
+              </div>
+              <button className="diet-icon-btn" onClick={() => setItemToCopy(null)} title="إغلاق">
+                <Icon name="close" />
+              </button>
+            </header>
+
+            <ul className="dplan-picker-list">
+              {plans.map((plan) => {
+                const planName = plan.name || defaultPlanName(plan.position);
+                const isCurrent = plan.position === activePosition;
+                return (
+                  <Fragment key={plan.position}>
+                    {plans.length > 1 && (
+                      <li style={{ padding: "8px 12px 2px", fontSize: "var(--text-xs)", fontWeight: 700, color: "var(--text-secondary)" }}>
+                        {planName}{isCurrent ? " (الخيار الحالي)" : ""}
+                      </li>
+                    )}
+                    {plan.meals.length === 0 && (
+                      <li className="dplan-picker-empty">لا توجد وجبات في هذا الخيار.</li>
+                    )}
+                    {plan.meals.map((meal, mIdx) => {
+                      const mealName = meal.name.trim() || `الوجبة ${mIdx + 1}`;
+                      return (
+                        <li key={meal.id}>
+                          <button onClick={() => handleCopyItem(plan.position, meal.id, isCurrent ? mealName : `${mealName} — ${planName}`)}>
+                            <strong style={{ flex: 1 }}>
+                              {mealName}{meal.id === itemToCopy.mealId ? " (الوجبة الحالية)" : ""}
+                            </strong>
+                            <small style={{ color: "var(--text-secondary)" }}>{meal.items.length} صنف</small>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </Fragment>
+                );
+              })}
+            </ul>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -765,11 +966,13 @@ export default function DietPlanBuilder({
    on every choice would mean reopening and re-filtering for each one. */
 function SourcePicker({
   sources,
+  title = "إضافة صنف",
   slotLabel,
   onPick,
   onClose,
 }: {
   sources: NutritionSource[];
+  title?: string;
   slotLabel: string;
   onPick: (source: NutritionSource) => void;
   onClose: () => void;
@@ -806,7 +1009,7 @@ function SourcePicker({
       >
         <header className="dplan-picker-head">
           <div>
-            <h3>إضافة صنف</h3>
+            <h3>{title}</h3>
             <p>{slotLabel}</p>
           </div>
           <button className="diet-icon-btn" onClick={onClose} title="إغلاق">
