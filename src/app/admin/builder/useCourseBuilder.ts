@@ -317,6 +317,18 @@ export function useCourseBuilder(init: CourseBuilderInit = {}) {
       ],
     }));
 
+  /* Swaps the exercise in place: position, sets, reps and rest are kept. A new
+     id, because the trainee's logs are keyed by it and belong to the old one. */
+  const replaceExercise = (dayId: string, exId: string, ex: Exercise) =>
+    mapExercise(dayId, exId, (old) => ({
+      ...old,
+      id: newId(),
+      refId: ex.id,
+      name_ar: ex.name_ar,
+      target_muscle: ex.target_muscle || "",
+      video_url: ex.video_url || null,
+    }));
+
   const removeSupersetItem = (dayId: string, supersetId: string, itemId: string) =>
     mapExercise(dayId, supersetId, (s) => ({
       ...s,
@@ -452,7 +464,7 @@ export function useCourseBuilder(init: CourseBuilderInit = {}) {
     days, setDays,
     addDay, duplicateDay, deleteDay, moveDay, setDayMuscles,
     addExerciseToDay, addCustomExerciseToDay,
-    addSupersetToDay, addExerciseToSuperset, removeSupersetItem, moveSupersetItem,
+    addSupersetToDay, addExerciseToSuperset, replaceExercise, removeSupersetItem, moveSupersetItem,
     updateSets, updateRep, applyRepsToAll, updateCustomCol, updateCustomTitle,
     removeExercise, moveExercise, copyExerciseToDay, updateRestTime, applyRestPreset,
     totals,

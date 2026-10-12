@@ -51,7 +51,7 @@ export default function AdminBuilderClient({
     days, setDays,
     addDay, duplicateDay, deleteDay, moveDay, setDayMuscles,
     addExerciseToDay, addCustomExerciseToDay,
-    addSupersetToDay, addExerciseToSuperset, removeSupersetItem, moveSupersetItem,
+    addSupersetToDay, addExerciseToSuperset, replaceExercise, removeSupersetItem, moveSupersetItem,
     updateSets, updateRep, applyRepsToAll, updateCustomCol, updateCustomTitle,
     removeExercise, moveExercise, copyExerciseToDay, updateRestTime,
     totals,
@@ -74,6 +74,8 @@ export default function AdminBuilderClient({
   const [pickerDayId, setPickerDayId] = useState<string | null>(null);
   /* Set when the picker was opened from a superset frame: picks go into it. */
   const [pickerSupersetId, setPickerSupersetId] = useState<string | null>(null);
+  /* Set when the picker was opened to change an exercise: the pick replaces it. */
+  const [pickerReplace, setPickerReplace] = useState<{ id: string; name: string } | null>(null);
   /* Deleting a training day asks first; this holds what the dialog is about. */
   const [dayToDelete, setDayToDelete] = useState<{ id: string; index: number; exCount: number } | null>(null);
   /* The exercise whose copy button was pressed; the dialog asks which day. */
@@ -526,6 +528,9 @@ export default function AdminBuilderClient({
                                     <button className="diet-icon-btn" onClick={() => moveSupersetItem(currentDay.id, ex.id, item.id, 1)} disabled={itemIndex === items.length - 1} title="تحريك التمرين للأسفل" aria-label="تحريك للأسفل">
                                       <Icon name="expand_more" />
                                     </button>
+                                    <button className="diet-icon-btn" onClick={() => { setPickerReplace({ id: item.id, name: item.name_ar || "التمرين" }); setPickerDayId(currentDay.id); }} title="تغيير التمرين" aria-label="تغيير التمرين">
+                                      <Icon name="edit" />
+                                    </button>
                                     <button className="diet-icon-btn danger" onClick={() => removeSupersetItem(currentDay.id, ex.id, item.id)} title="إزالة التمرين من السوبر سيت" aria-label="إزالة التمرين">
                                       <Icon name="close" />
                                     </button>
@@ -689,6 +694,14 @@ export default function AdminBuilderClient({
                               aria-label="نسخ التمرين"
                             >
                               <Icon name="content_copy" />
+                            </button>
+                            <button
+                              className="diet-icon-btn"
+                              onClick={() => { setPickerReplace({ id: ex.id, name: ex.name_ar || "التمرين" }); setPickerDayId(currentDay.id); }}
+                              title="تغيير التمرين"
+                              aria-label="تغيير التمرين"
+                            >
+                              <Icon name="edit" />
                             </button>
                             <button
                               className="diet-icon-btn danger"
@@ -991,17 +1004,23 @@ export default function AdminBuilderClient({
       {pickerDayId && (
         <ExercisePicker
           exercises={initialExercises}
-          dayLabel={pickerSupersetId ? `سوبر سيت — اليوم التدريبي ${currentDayIndex + 1}` : `اليوم التدريبي ${currentDayIndex + 1}`}
+          title={pickerReplace ? "تغيير التمرين" : undefined}
+          dayLabel={pickerReplace ? `بدلاً من ${pickerReplace.name} — اليوم التدريبي ${currentDayIndex + 1}` : pickerSupersetId ? `سوبر سيت — اليوم التدريبي ${currentDayIndex + 1}` : `اليوم التدريبي ${currentDayIndex + 1}`}
           usedInDay={usedInDay}
           onPick={(ex) => {
-            if (pickerSupersetId) {
+            if (pickerReplace) {
+              replaceExercise(pickerDayId, pickerReplace.id, ex);
+              toast.success(`تم التغيير إلى ${ex.name_ar}`);
+              setPickerDayId(null);
+              setPickerReplace(null);
+            } else if (pickerSupersetId) {
               addExerciseToSuperset(pickerDayId, pickerSupersetId, ex);
               toast.success(`أُضيف ${ex.name_ar}`);
             } else {
               handleAddExercise(pickerDayId, ex);
             }
           }}
-          onClose={() => { setPickerDayId(null); setPickerSupersetId(null); }}
+          onClose={() => { setPickerDayId(null); setPickerSupersetId(null); setPickerReplace(null); }}
         />
       )}
     </div>
@@ -1012,12 +1031,14 @@ export default function AdminBuilderClient({
    and closing on every choice would mean reopening and re-filtering for each. */
 function ExercisePicker({
   exercises,
+  title = "إضافة تمرين",
   dayLabel,
   usedInDay,
   onPick,
   onClose,
 }: {
   exercises: Exercise[];
+  title?: string;
   dayLabel: string;
   usedInDay: Map<string, number>;
   onPick: (ex: Exercise) => void;
@@ -1050,7 +1071,7 @@ function ExercisePicker({
       >
         <header className="dplan-picker-head">
           <div>
-            <h3>إضافة تمرين</h3>
+            <h3>{title}</h3>
             <p>{dayLabel}</p>
           </div>
           <button className="diet-icon-btn" onClick={onClose} title="إغلاق">
