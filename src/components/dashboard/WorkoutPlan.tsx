@@ -852,7 +852,7 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
                       if (isSupersetExercise(ex)) {
                         const items = ex.items || [];
                         return (
-                          <div key={ex.id} className="wl-ex" style={{ marginBottom: "15px" }}>
+                          <div key={ex.id} className="wl-ex" style={{ marginBottom: "15px", background: "color-mix(in srgb, var(--primary) 12%, var(--bg2))", borderColor: "var(--border-primary)" }}>
                             <div className="wl-ex-head">
                               <div>
                                 <h4 className="wl-ex-name">سوبر سيت</h4>

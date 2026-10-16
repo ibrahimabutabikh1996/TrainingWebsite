@@ -117,6 +117,14 @@ export default function WorkoutProgress({
       if (!planOrder.has(e.id)) planOrder.set(e.id, planOrder.size);
     }
   }
+  /* The exercises inside a superset frame, whose rows carry a tint of their own. */
+  const supersetIds = new Set<string>();
+  for (const d of planDays ?? []) {
+    for (const s of (d.exercises ?? []).filter(isSupersetExercise)) {
+      for (const it of s.items ?? []) supersetIds.add(it.id);
+    }
+  }
+  const supersetTint = "color-mix(in srgb, var(--primary) 12%, var(--bg2))";
   const dayRows = [...dayExercises.entries()].sort(
     ([a], [b]) =>
       (planOrder.get(a) ?? planOrder.size) -
@@ -332,7 +340,7 @@ export default function WorkoutProgress({
                               borderInlineEnd: "1px solid var(--border)",
                               position: "sticky",
                               insetInlineStart: 0,
-                              background: "var(--bg2)",
+                              background: supersetIds.has(exId) ? supersetTint : "var(--bg2)",
                             }}
                           >
                             {ex.name}
@@ -348,6 +356,7 @@ export default function WorkoutProgress({
                                   whiteSpace: "nowrap",
                                   verticalAlign: "middle",
                                   borderBottom: "1px solid var(--border)",
+                                  background: supersetIds.has(exId) ? supersetTint : undefined,
                                 }}
                               >
                                 {cell ? (
