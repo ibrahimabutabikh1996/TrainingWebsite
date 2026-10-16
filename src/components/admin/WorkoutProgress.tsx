@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { formatDayAndDate } from "@/lib/trainingDates";
 import { Icon } from "@/components/Icon";
+import { isSupersetExercise, type Day } from "@/types/admin";
 import {
   TrainingCalendarMonth,
   type TrainedDay,
@@ -46,15 +47,18 @@ type Row = WorkoutLogRow;
  *                      narrowed to the period.
  * @param emptyNote  what to say when there are none — a month with no sessions
  *                   is a different statement from a trainee who never logged
+ * @param planDays  the period's course, whose order the day's exercises follow
  */
 export default function WorkoutProgress({
   rows,
   calendarDays = [],
+  planDays,
   emptyNote = "لم يسجّل المشترك أي أوزان بعد. تظهر هنا الأوزان التي يدخلها أثناء التمرين.",
 }: {
   rows: Row[];
   trainedDays?: TrainedDay[];
   calendarDays?: TrainedDay[];
+  planDays?: Day[];
   emptyNote?: string;
 }) {
   /* The day the coach pressed on in the calendar, or null for none yet.
@@ -103,6 +107,21 @@ export default function WorkoutProgress({
     }
   }
   const daySets = [...daySetIndexes].sort((a, b) => a - b);
+
+  /* The rows in the order the plan lists them, not the alphabetical order the
+     query returns. An exercise the plan no longer holds goes last, in the order
+     it came. */
+  const planOrder = new Map<string, number>();
+  for (const d of planDays ?? []) {
+    for (const e of (d.exercises ?? []).flatMap((e) => (isSupersetExercise(e) ? e.items ?? [] : [e]))) {
+      if (!planOrder.has(e.id)) planOrder.set(e.id, planOrder.size);
+    }
+  }
+  const dayRows = [...dayExercises.entries()].sort(
+    ([a], [b]) =>
+      (planOrder.get(a) ?? planOrder.size) -
+      (planOrder.get(b) ?? planOrder.size),
+  );
 
   /* Same container as the month record and the weigh-in chart beside it: one
      radius, one border, one background, so the three tabs of a month read as
@@ -296,7 +315,7 @@ export default function WorkoutProgress({
                       </tr>
                     </thead>
                     <tbody>
-                      {[...dayExercises.entries()].map(([exId, ex]) => (
+                      {dayRows.map(([exId, ex]) => (
                         <tr key={exId}>
                           {/* The name column is sticky, so it needs a fill to hide what
                     scrolls under it — `--bg2` is the panel's own ground, which

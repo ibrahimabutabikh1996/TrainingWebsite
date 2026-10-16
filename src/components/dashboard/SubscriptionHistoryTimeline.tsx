@@ -1179,6 +1179,7 @@ export function SubscriptionHistoryTimeline({
                         rows={monthWorkoutRows}
                         trainedDays={monthTrainedDays}
                         calendarDays={trainedDays}
+                        planDays={item.workout?.daysData}
                         emptyNote={`لم تُسجَّل أي أوزان تمارين خلال ${item.monthName}.`}
                       />
 
