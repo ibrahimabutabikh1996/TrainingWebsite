@@ -40,6 +40,7 @@ export async function GET(request: NextRequest) {
       params,
       origin,
       sessionCookie: request.cookies.get(SESSION_COOKIE)?.value,
+      readySelector: "[data-fit-done]",
     });
 
     return new NextResponse(new Uint8Array(pdf), {

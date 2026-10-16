@@ -101,6 +101,9 @@ export interface RenderRequest {
   origin: string;
   /** The caller's session, so the guarded page renders for them and not the sign-in screen. */
   sessionCookie?: string;
+  /** When set, the page is laid out with print styles and this selector is
+      awaited before printing — for a page that sizes itself after it loads. */
+  readySelector?: string;
 }
 
 /**
@@ -136,11 +139,16 @@ export async function renderPagePdf(request: RenderRequest): Promise<Uint8Array>
     const page = await browser.newPage();
     page.setDefaultTimeout(NAVIGATION_TIMEOUT_MS);
 
+    if (request.readySelector) await page.emulateMediaType("print");
+
     await page.goto(pageUrl.toString(), {
       waitUntil: "networkidle0",
       timeout: NAVIGATION_TIMEOUT_MS,
     });
     await page.evaluateHandle("document.fonts.ready");
+    if (request.readySelector) {
+      await page.waitForSelector(request.readySelector, { timeout: RENDER_TIMEOUT_MS });
+    }
 
     /* The pages carry their own `@page { size: A4; margin: 15mm }` rule, so
        Chrome's print engine is told to defer to it via preferCSSPageSize rather

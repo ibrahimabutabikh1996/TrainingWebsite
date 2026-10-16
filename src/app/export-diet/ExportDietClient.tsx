@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import type { DietPlan, Meal, MealItem } from "@/types/diet";
 
 /* The fixed last page of every diet PDF: the same notes for every trainee, so
@@ -29,6 +29,16 @@ const CLOSING_NOTES = [
   },
 ];
 
+/* Sizes a plan page steps down through until its table fits the sheet. Level 0
+   is full size; each later one is tighter. The page measures itself once the
+   fonts load and moves an overflowing plan down one level at a time. */
+const FIT_LEVELS = [
+  { rowHeight: "9.5mm", fontSize: "4.0mm", titleFontSize: "4.5mm", cellPadY: "1mm",   headerMarginBottom: "12px", stripPadding: "12px 20px", stripFontSize: "1.25rem", tableMarginTop: "4mm" },
+  { rowHeight: "7.8mm", fontSize: "3.5mm", titleFontSize: "3.9mm", cellPadY: "0.8mm", headerMarginBottom: "8px",  stripPadding: "8px 16px",  stripFontSize: "1.1rem",  tableMarginTop: "2.5mm" },
+  { rowHeight: "6.5mm", fontSize: "3.2mm", titleFontSize: "3.6mm", cellPadY: "0.5mm", headerMarginBottom: "6px",  stripPadding: "8px 16px",  stripFontSize: "1.05rem", tableMarginTop: "2mm" },
+  { rowHeight: "5.5mm", fontSize: "3.0mm", titleFontSize: "3.3mm", cellPadY: "0.3mm", headerMarginBottom: "4px",  stripPadding: "6px 14px",  stripFontSize: "1rem",    tableMarginTop: "1.5mm" },
+];
+
 interface ExportDietClientProps {
   traineeName: string;
   startDate: string;
@@ -53,6 +63,31 @@ export default function ExportDietClient({
 }: ExportDietClientProps) {
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloaded, setDownloaded] = useState(false);
+  const [fitLevels, setFitLevels] = useState<number[]>(() => dietPlans.map(() => 0));
+  const [fitDone, setFitDone] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  /* A plan page whose content runs past the sheet steps down one size level and
+     is measured again, until everything fits or the smallest level is reached.
+     The headless PDF render waits for data-fit-done before it prints. */
+  useEffect(() => {
+    let cancelled = false;
+    document.fonts.ready.then(() => {
+      if (cancelled || !contentRef.current) return;
+      const next = [...fitLevels];
+      let changed = false;
+      contentRef.current.querySelectorAll<HTMLElement>("[data-plan-idx]").forEach((card) => {
+        const idx = Number(card.dataset.planIdx);
+        if (card.scrollHeight > card.clientHeight + 1 && next[idx] < FIT_LEVELS.length - 1) {
+          next[idx]++;
+          changed = true;
+        }
+      });
+      if (changed) setFitLevels(next);
+      else setFitDone(true);
+    });
+    return () => { cancelled = true; };
+  }, [fitLevels]);
 
   const downloadPDF = async () => {
     setIsDownloading(true);
@@ -208,8 +243,7 @@ export default function ExportDietClient({
           background: transparent;
           border: none;
           border-bottom: 0.3mm solid #0F4E79;
-          height: 10mm;
-          padding: 1mm 1.5mm;
+          padding: var(--cell-pad-y, 1mm) 1.5mm;
           vertical-align: middle;
         }
 
@@ -322,7 +356,7 @@ export default function ExportDietClient({
         </div>
       </div>
 
-      <div id="pdf-content-area" style={{ maxWidth: "960px", margin: "0 auto" }}>
+      <div id="pdf-content-area" ref={contentRef} data-fit-done={fitDone ? "" : undefined} style={{ maxWidth: "960px", margin: "0 auto" }}>
         {dietPlans.length === 0 ? (
           <div className="pdf-page-card">
             {renderHeader()}
@@ -335,26 +369,12 @@ export default function ExportDietClient({
           dietPlans.map((plan: DietPlan, planIdx: number) => {
             const planTitle = plan.name || `النظام الغذائي ${planIdx + 1}`;
             const meals = Array.isArray(plan.meals) ? plan.meals : [];
-            const totalItems = meals.reduce((sum, m) => sum + (m.items?.length || 0), 0);
-            const totalRows = meals.length + totalItems + meals.reduce((sum, m) => sum + (m.startNote ? 1 : 0) + (m.note ? 1 : 0), 0);
 
-            let rowHeight = "9.5mm";
-            let fontSize = "4.0mm";
-            let titleFontSize = "4.5mm";
-            let headerMarginBottom = "12px";
-            let stripPadding = "12px 20px";
-            let stripFontSize = "1.25rem";
-            let tableMarginTop = "4mm";
-
-            if (totalRows > 24) {
-              rowHeight = "6.5mm"; fontSize = "3.2mm"; titleFontSize = "3.6mm"; headerMarginBottom = "6px"; stripPadding = "8px 16px"; stripFontSize = "1.05rem"; tableMarginTop = "2mm";
-            } else if (totalRows > 20) {
-              rowHeight = "7.8mm"; fontSize = "3.5mm"; titleFontSize = "3.9mm"; headerMarginBottom = "8px"; stripPadding = "8px 16px"; stripFontSize = "1.1rem"; tableMarginTop = "2.5mm";
-            }
+            const { rowHeight, fontSize, titleFontSize, cellPadY, headerMarginBottom, stripPadding, stripFontSize, tableMarginTop } = FIT_LEVELS[fitLevels[planIdx] ?? 0];
 
             return (
               <React.Fragment key={planIdx}>
-                <div className="pdf-page-card">
+                <div className="pdf-page-card" data-plan-idx={planIdx}>
                   {renderHeader()}
                   <div style={{ flex: "1 1 auto", display: "flex", flexDirection: "column", paddingBottom: "0" }}>
                     
@@ -364,7 +384,7 @@ export default function ExportDietClient({
                       </div>
                     </div>
 
-                    <table className="table-grid" style={{ marginTop: tableMarginTop, flex: "1 1 auto" }}>
+                    <table className="table-grid" style={{ marginTop: tableMarginTop, flex: "1 1 auto", "--cell-pad-y": cellPadY } as React.CSSProperties}>
                       <thead>
                         <tr style={{ height: "11mm" }}>
                           <th style={{ width: "10%", padding: "2mm 1mm" }}>ت</th>
