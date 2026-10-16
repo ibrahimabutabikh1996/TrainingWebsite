@@ -229,7 +229,7 @@ export default function WeightLog({ profile, readonly, embedded, onSaveSuccess }
                     <tr>
                       <th style={{ padding: "var(--space-3) var(--space-6)", color: "var(--text-secondary)", fontSize: "0.85rem", fontWeight: 600, borderBottom: "1px solid var(--border)" }}>التاريخ</th>
                       <th style={{ padding: "var(--space-3) var(--space-4)", color: "var(--text-secondary)", fontSize: "0.85rem", fontWeight: 600, borderBottom: "1px solid var(--border)" }}>الوزن</th>
-                      <th style={{ padding: "var(--space-3) var(--space-6)", color: "var(--text-secondary)", fontSize: "0.85rem", fontWeight: 600, borderBottom: "1px solid var(--border)" }}>التغير</th>
+                      <th style={{ padding: "var(--space-3) var(--space-6)", color: "var(--text-secondary)", fontSize: "0.85rem", fontWeight: 600, borderBottom: "1px solid var(--border)" }}>مقدار التغير بالوزن</th>
                     </tr>
                   </thead>
                   <tbody>
