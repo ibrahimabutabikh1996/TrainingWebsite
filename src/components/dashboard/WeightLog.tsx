@@ -258,8 +258,8 @@ export default function WeightLog({ profile, readonly, embedded, onSaveSuccess }
                                 display: "inline-flex", alignItems: "center", gap: "4px",
                                 fontSize: "0.85rem", fontWeight: 700, padding: "2px 8px",
                                 borderRadius: "var(--radius-pill)",
-                                background: diff > 0 ? "var(--error-bg)" : "var(--success-bg)",
-                                color: diff > 0 ? "var(--error-text)" : "var(--success-text)"
+                                background: diff > 0 ? "var(--success-bg)" : "var(--error-bg)",
+                                color: diff > 0 ? "var(--success-text)" : "var(--error-text)"
                               }}>
                                 <Icon name={diff > 0 ? "trending_up" : "trending_down"} style={{ fontSize: "14px" }} />
                                 {Math.abs(diff).toFixed(1)}
