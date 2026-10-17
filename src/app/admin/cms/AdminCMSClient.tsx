@@ -881,7 +881,7 @@ const TestimonialsEditor = () => {
                         {t.media_url && (
                           <div className="cms-media-preview">
                             {t.type === "image" && <img src={previewSrc(t.media_url, 384)} alt={t.author_name ? `صورة نتيجة ${t.author_name}` : "معاينة الصورة المرفقة"} loading="lazy" decoding="async" />}
-                            {t.type === "video" && <video src={t.media_url} controls />}
+                            {t.type === "video" && <video src={t.media_url} controls preload="none" />}
                             {t.type === "audio" && <audio src={t.media_url} controls />}
                           </div>
                         )}

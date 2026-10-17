@@ -262,7 +262,7 @@ function TestimonialMedia({
           className="testimonial-video"
           src={url}
           controls
-          preload="metadata"
+          preload="none"
           onError={() => setFailed(true)}
         />
       )}
