@@ -260,9 +260,9 @@ function TestimonialMedia({
       {type === "video" && (
         <video
           className="testimonial-video"
-          src={url}
+          src={`${url}#t=0.1`}
           controls
-          preload="none"
+          preload="metadata"
           onError={() => setFailed(true)}
         />
       )}
