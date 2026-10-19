@@ -4,7 +4,7 @@ import { DEFAULT_MAX_EDGE } from "@/lib/cropUtils";
 import { compressForUpload } from "@/lib/imageUpload";
 import { beginUpload } from "@/lib/uploadProgress";
 import { uploadToSignedUrlWithProgress } from "@/lib/signedUpload";
-import { parseJsonBody } from "@/lib/xhrUpload";
+import { parseJsonBody, xhrUpload } from "@/lib/xhrUpload";
 
 /* The coach's side of an upload: prepare the picture, send it, report the whole
  * journey to the window.
@@ -52,32 +52,55 @@ export async function uploadMediaWithProgress(
        request body over ~4.5 MB, which a testimonial video easily is. The app
        names the slot first and checks the stored file afterwards — see
        `issueCmsMediaSlot` in `@/lib/cmsMedia`. */
+    /* Video and audio wait in R2 instead of Supabase, so a testimonial clip
+       costs no Supabase egress even on the way in — see `CmsMediaTarget` in
+       `@/lib/cmsMedia`. */
+    const target = /^(video|audio)\//.test(prepared.type) ? "av" : "image";
+
     const slotResponse = await fetch("/api/admin/media", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "slot" }),
+      body: JSON.stringify({ action: "slot", target }),
     });
-    const slot = parseJsonBody<{ bucket?: string; path?: string; token?: string; error?: string }>(
-      await slotResponse.text()
-    );
+    const slot = parseJsonBody<{
+      bucket?: string;
+      path?: string;
+      token?: string;
+      uploadUrl?: string;
+      error?: string;
+    }>(await slotResponse.text());
 
-    if (!slotResponse.ok || !slot?.bucket || !slot.path || !slot.token) {
+    if (!slotResponse.ok || !slot?.path || !(slot.uploadUrl || (slot.bucket && slot.token))) {
       task.fail(slot?.error ?? "تعذّر تجهيز الرفع");
       return null;
     }
 
-    await uploadToSignedUrlWithProgress({
-      bucket: slot.bucket,
-      path: slot.path,
-      token: slot.token,
-      file: prepared,
-      onProgress: (percent) => task.uploading(percent),
-    });
+    if (slot.uploadUrl) {
+      /* A plain PUT of the file to the address the server signed. */
+      const sent = await xhrUpload({
+        url: slot.uploadUrl,
+        method: "PUT",
+        body: prepared,
+        headers: { "Content-Type": prepared.type || "application/octet-stream" },
+        onProgress: (percent) => task.uploading(percent),
+      });
+      if (sent.status < 200 || sent.status >= 300) {
+        throw new Error("تعذّر رفع الملف");
+      }
+    } else {
+      await uploadToSignedUrlWithProgress({
+        bucket: slot.bucket!,
+        path: slot.path,
+        token: slot.token!,
+        file: prepared,
+        onProgress: (percent) => task.uploading(percent),
+      });
+    }
 
     const response = await fetch("/api/admin/media", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "confirm", path: slot.path }),
+      body: JSON.stringify({ action: "confirm", path: slot.path, target }),
     });
 
     const parsed = parseJsonBody<{ url?: string; error?: string }>(await response.text());

@@ -7,6 +7,7 @@ import { requireAdminAction } from "@/lib/authGuard";
 import { revalidatePath } from "next/cache";
 import { supabaseAdmin, PUBLIC_MEDIA_BUCKET, storagePathOf } from "@/lib/supabaseAdmin";
 import { storeCmsMedia } from "@/lib/cmsMedia";
+import { r2Delete, r2KeyOf, r2List, r2PublicUrl, R2_MEDIA_PREFIX } from "@/lib/r2";
 
 /* These run against the service-role Supabase client, which is above every
    storage policy — so the only thing standing between a caller and the bucket
@@ -134,19 +135,43 @@ export async function listImagesServer(): Promise<MediaListing> {
 
     if (!data) return { images: [], hasMore: false };
 
-    const hasMore = data.length > MEDIA_PAGE_SIZE;
+    /* The testimonial video and audio live in R2 — see `@/lib/r2` — and are
+       listed beside the pictures, newest first across both, so a clip can be
+       found and deleted here like any other file. R2 failing to answer leaves
+       the pictures listed rather than the whole library empty. */
+    let clips: Array<{ name: string; url: string; time: string }> = [];
+    let clipsTruncated = false;
+    try {
+      const listed = await r2List(R2_MEDIA_PREFIX);
+      clips = listed.objects.map(object => ({
+        name: object.key.slice(R2_MEDIA_PREFIX.length),
+        url: r2PublicUrl(object.key),
+        time: object.lastModified,
+      }));
+      clipsTruncated = listed.truncated;
+    } catch (error) {
+      console.error('Error listing R2 media:', error);
+    }
 
     /* Ask the client for the address rather than assembling it from the project
        URL by hand — the same call the upload path already uses. */
     const publicUrlBase = supabaseAdmin.storage.from(PUBLIC_MEDIA_BUCKET).getPublicUrl("images/").data.publicUrl;
 
-    const images = data
+    const files = data
       .slice(0, MEDIA_PAGE_SIZE)
       .filter(file => file.name !== '.emptyFolderPlaceholder')
       .map(file => ({
         name: file.name,
-        url: `${publicUrlBase}${file.name}`
+        url: `${publicUrlBase}${file.name}`,
+        time: file.created_at ?? "",
       }));
+
+    const all = [...files, ...clips].sort(
+      (a, b) => (Date.parse(b.time) || 0) - (Date.parse(a.time) || 0)
+    );
+
+    const hasMore = data.length > MEDIA_PAGE_SIZE || clipsTruncated || all.length > MEDIA_PAGE_SIZE;
+    const images = all.slice(0, MEDIA_PAGE_SIZE).map(({ name, url }) => ({ name, url }));
 
     return { images, hasMore };
   } catch (error) {
@@ -162,12 +187,16 @@ export async function deleteImageServer(publicUrl: string): Promise<boolean> {
     /* Resolved through `storagePathOf`, which understands both the current
        public-media address and the one the CMS wrote before the buckets were
        split — so a row stored under the old shape still deletes. */
-    const filePath = storagePathOf(publicUrl);
-    if (!filePath) return false;
+    const r2Key = r2KeyOf(publicUrl);
+    const filePath = r2Key ? null : storagePathOf(publicUrl);
+    if (!r2Key && !filePath) return false;
 
-    const { error } = await supabaseAdmin.storage
-      .from(PUBLIC_MEDIA_BUCKET)
-      .remove([filePath]);
+    /* A testimonial clip lives in R2, everything else in the Supabase bucket. */
+    const { error } = r2Key
+      ? await r2Delete(r2Key)
+      : await supabaseAdmin.storage
+          .from(PUBLIC_MEDIA_BUCKET)
+          .remove([filePath!]);
 
     if (error) {
       console.error('Error securely deleting image:', error);

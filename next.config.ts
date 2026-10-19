@@ -20,6 +20,14 @@ const supabaseUrl = (() => {
 
 const supabaseOrigin = supabaseUrl?.origin ?? null;
 
+/* The R2 endpoint the content manager PUTs testimonial video and audio to —
+   see `@/lib/r2`. Built from the account id, and only from one that looks like
+   an account id, so a malformed variable adds nothing to the policy. */
+const r2AccountId = process.env.R2_ACCOUNT_ID ?? "";
+const r2Origin = /^[0-9a-f]{32}$/.test(r2AccountId)
+  ? `https://${r2AccountId}.r2.cloudflarestorage.com`
+  : null;
+
 /* Sent on every response. Each of these was absent, and the absences show up
    only in the cases they exist to cover.
 
@@ -111,7 +119,7 @@ const CSP = [
   "font-src 'self'",
   "frame-src https:",
   ...(supabaseOrigin
-    ? [`connect-src 'self' ${supabaseOrigin}`]
+    ? [`connect-src 'self' ${supabaseOrigin}${r2Origin ? ` ${r2Origin}` : ""}`]
     : /* No Supabase URL at build time: same-origin only, which is what the app
          can do without storage anyway. */
       ["connect-src 'self'"]),

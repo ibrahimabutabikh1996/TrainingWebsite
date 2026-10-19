@@ -29,19 +29,25 @@ export async function POST(request: NextRequest) {
        storage — see `issueCmsMediaSlot` in `@/lib/cmsMedia`. */
     if (request.headers.get("content-type")?.includes("application/json")) {
       const body = (await request.json().catch(() => null)) as
-        | { action?: unknown; path?: unknown }
+        | { action?: unknown; path?: unknown; target?: unknown }
         | null;
 
+      /* Video and audio wait in R2 rather than Supabase — see `CmsMediaTarget`. */
+      const target = body?.target === "av" ? "av" : "image";
+
       if (body?.action === "slot") {
-        const slot = await issueCmsMediaSlot();
+        const slot = await issueCmsMediaSlot(target);
         if (!slot.ok) {
           return NextResponse.json({ error: slot.error }, { status: 500 });
+        }
+        if ("uploadUrl" in slot) {
+          return NextResponse.json({ path: slot.path, uploadUrl: slot.uploadUrl });
         }
         return NextResponse.json({ bucket: slot.bucket, path: slot.path, token: slot.token });
       }
 
       if (body?.action === "confirm" && typeof body.path === "string") {
-        const stored = await confirmCmsMedia(body.path);
+        const stored = await confirmCmsMedia(body.path, target);
         if (!stored.ok) {
           return NextResponse.json({ error: stored.error }, { status: 400 });
         }

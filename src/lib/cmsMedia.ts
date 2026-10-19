@@ -1,6 +1,7 @@
 import "server-only";
 import { supabaseAdmin, PUBLIC_MEDIA_BUCKET } from "@/lib/supabaseAdmin";
 import { checkUpload, CMS_MEDIA_RULE, storageFilename } from "@/lib/uploads";
+import { r2Delete, r2Get, r2PresignedPut, r2PublicUrl, r2Put, R2_MEDIA_PREFIX } from "@/lib/r2";
 
 /**
  * Stores one file for the coach and hands back its public address.
@@ -41,6 +42,18 @@ export async function storeCmsMedia(file: File): Promise<StoredMedia> {
          reason — a type that is not allowed, a file over the ceiling — and the
          person choosing the file is the one who can act on it. */
       return { ok: false, error: checked.error };
+    }
+
+    /* Video and audio go to R2, decided here from the bytes rather than from
+       which route the file came by — see `@/lib/r2` for why. */
+    if (/^(video|audio)\//.test(checked.file.mime)) {
+      const key = `${R2_MEDIA_PREFIX}${storageFilename("cms", checked.file)}`;
+      const { error } = await r2Put(key, checked.bytes, checked.file.mime, "public, max-age=31536000, immutable");
+      if (error) {
+        console.error("Error uploading media to R2:", error);
+        return { ok: false, error: "تعذّر حفظ الملف في المخزن" };
+      }
+      return { ok: true, url: r2PublicUrl(key) };
     }
 
     /* Name and extension built here, from what the bytes turned out to be.
@@ -90,8 +103,17 @@ const PENDING_PATH = /^pending\/cms_\d+_[0-9a-f]{8}$/;
    than this is one whose confirm never came — a tab closed in between. */
 const PENDING_GRACE_MS = 60 * 60 * 1000;
 
+/* Which store the waiting copy goes to: Supabase for a picture, R2 for video
+   and audio, so a testimonial clip never passes through Supabase at all — not
+   even for the read-back below. The browser says which from the file's type;
+   `storeCmsMedia` still decides where the kept copy lives from its bytes. R2's
+   `pending/` is emptied by a lifecycle rule on the bucket, not by
+   `removeStalePending`. */
+export type CmsMediaTarget = "image" | "av";
+
 export type CmsMediaSlot =
   | { ok: true; bucket: string; path: string; token: string }
+  | { ok: true; path: string; uploadUrl: string }
   | { ok: false; error: string };
 
 /* Nothing else visits `pending/`, so each new upload clears what earlier ones
@@ -120,12 +142,21 @@ async function removeStalePending(): Promise<void> {
   }
 }
 
-export async function issueCmsMediaSlot(): Promise<CmsMediaSlot> {
+export async function issueCmsMediaSlot(target: CmsMediaTarget = "image"): Promise<CmsMediaSlot> {
+  const path = `${PENDING_PREFIX}cms_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
+
+  if (target === "av") {
+    try {
+      return { ok: true, path, uploadUrl: await r2PresignedPut(path) };
+    } catch (error) {
+      console.error("Failed to sign an R2 CMS upload URL:", error);
+      return { ok: false, error: "تعذّر تجهيز الرفع" };
+    }
+  }
+
   await removeStalePending().catch((error) =>
     console.error("Exception while clearing pending CMS uploads:", error)
   );
-
-  const path = `${PENDING_PREFIX}cms_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
 
   const { data, error } = await supabaseAdmin.storage
     .from(PUBLIC_MEDIA_BUCKET)
@@ -139,10 +170,36 @@ export async function issueCmsMediaSlot(): Promise<CmsMediaSlot> {
   return { ok: true, bucket: PUBLIC_MEDIA_BUCKET, path, token: data.token };
 }
 
-export async function confirmCmsMedia(path: string): Promise<StoredMedia> {
+export async function confirmCmsMedia(path: string, target: CmsMediaTarget = "image"): Promise<StoredMedia> {
   /* Only a path `issueCmsMediaSlot` could have named. */
   if (!PENDING_PATH.test(path)) {
     return { ok: false, error: "الملف غير موجود" };
+  }
+
+  if (target === "av") {
+    try {
+      const response = await r2Get(path);
+      if (!response.ok) {
+        return { ok: false, error: "لم يُعثر على الملف المرفوع" };
+      }
+
+      /* The signed URL bounds nothing about size, so it is checked here before
+         the body is read into memory, not after. */
+      if (Number(response.headers.get("content-length") ?? 0) > CMS_MEDIA_RULE.maxBytes) {
+        await response.body?.cancel();
+        return {
+          ok: false,
+          error: `حجم الملف يتجاوز الحد المسموح (${Math.round(CMS_MEDIA_RULE.maxBytes / (1024 * 1024))} ميغابايت)`,
+        };
+      }
+
+      return await storeCmsMedia(new File([await response.arrayBuffer()], "upload"));
+    } finally {
+      const { error } = await r2Delete(path);
+      if (error) {
+        console.error(`Failed to delete a pending R2 upload (${path}):`, error);
+      }
+    }
   }
 
   try {

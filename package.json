@@ -14,6 +14,7 @@
     "@prisma/client": "^7.10.0",
     "@sparticuz/chromium": "^149.0.0",
     "@supabase/supabase-js": "^2.112.4",
+    "aws4fetch": "^1.0.20",
     "bcrypt": "^6.0.0",
     "browser-image-compression": "^2.0.2",
     "docxtemplater": "^3.69.3",
