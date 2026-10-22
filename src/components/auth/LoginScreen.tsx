@@ -10,6 +10,7 @@ import { safeMediaUrl } from "@/lib/richText";
 import { optimizedSrc, optimizedSrcSet } from "@/lib/imageOptim";
 import { getLandingContent } from "@/app/admin/cms/actions";
 import { usePreviewGuard } from "@/hooks/usePreviewGuard";
+import { InstallAppButton } from "@/components/pwa/InstallAppButton";
 
 interface Props {
   /**
@@ -136,6 +137,8 @@ export function LoginScreen({ isPreview = false, initialCmsData = null }: Props)
         </Link>
 
         <div className="nav-actions">
+          {/* Not in the coach's preview: it would offer to install from the panel. */}
+          {!isPreview && <InstallAppButton />}
           <Link href="/#membership" className="btn-nav-register">
             تسجيل جديد
           </Link>

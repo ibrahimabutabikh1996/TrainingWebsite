@@ -528,7 +528,9 @@ body::before {
 /* ─── RESPONSIVE ─── */
 @media (max-width: 992px) {
   .page { grid-template-columns: 1fr; height: auto; }
-  .panel-image { height: 280px; }
+  /* The bar above grows by the status-bar inset in the installed iPhone app;
+     the image grows with it so the bar does not cover the headline. */
+  .panel-image { height: calc(280px + env(safe-area-inset-top)); }
   .panel-form { padding: 52px 32px; min-height: auto; overflow: visible; }
   .top-bar { padding: 12px 24px; }
 }
@@ -584,6 +586,13 @@ body::before {
   justify-content: space-between;
   align-items: center;
   padding: 16px 40px;
+  /* Installed on an iPhone, the page is drawn under the status bar
+     (`black-translucent` + `viewport-fit=cover` in the root layout), so the
+     logo and the register button would sit beneath the clock and the Dynamic
+     Island. The insets are zero everywhere else. */
+  padding-top: calc(16px + env(safe-area-inset-top));
+  padding-left: calc(40px + env(safe-area-inset-left));
+  padding-right: calc(40px + env(safe-area-inset-right));
   z-index: 100;
   background: var(--nav-bg-glass);
   backdrop-filter: blur(16px);
@@ -622,6 +631,64 @@ body::before {
 }
 .btn-nav-register:active {
   transform: translateY(1px);
+}
+
+/* --- Install App (Top Bar) — see @/components/pwa/InstallAppButton --- */
+.install-app {
+  position: relative;
+}
+.btn-install-app {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  height: var(--tap-min);
+  padding: 0 var(--space-4);
+  background: var(--bg3);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  font-family: var(--font-primary);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+}
+.btn-install-app:hover {
+  color: var(--primary-on-tint);
+  border-color: var(--border-primary);
+}
+.btn-install-app:active {
+  transform: translateY(1px);
+}
+/* Icon only on a phone: the logo and the register button already fill the bar. */
+@media (max-width: 640px) {
+  .btn-install-app {
+    width: var(--tap-min);
+    padding: 0;
+  }
+  .btn-install-app-text {
+    display: none;
+  }
+}
+
+.install-app-help {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  inset-inline-end: 0;
+  width: min(280px, calc(100vw - var(--space-8)));
+  padding: var(--space-4);
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--elev-3);
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--text-secondary);
+}
+.install-app-help svg {
+  display: inline-block;
+  vertical-align: -3px;
+  color: var(--primary-on-tint);
 }
 
 /* --- Register Card Button (Inside Login Form) --- */
