@@ -57,12 +57,12 @@ export default function AdminLayout({
 
   const allNavItems: { name: string; path: string; icon: IconName; section: StaffSection; edit?: true }[] = [
     { name: "إدارة المشتركين", path: "/admin", icon: "group", section: "subscribers" },
-    { name: "مكتبة الكورسات", path: "/admin/courses", icon: "library_books", section: "courses" },
-    { name: "صانع الكورسات", path: "/admin/builder", icon: "fitness_center", section: "courses", edit: true },
-    { name: "التمارين", path: "/admin/exercises", icon: "biceps_flexed", section: "exercises" },
-    { name: "النظام الغذائي", path: "/admin/diet", icon: "restaurant_menu", section: "diet" },
-    { name: "مكتبة الأنظمة الغذائية", path: "/admin/diet/library", icon: "nutrition", section: "diet" },
-    { name: "محتوى الموقع", path: "/admin/cms", icon: "web", section: "cms" },
+    { name: "مكتبة الكورسات", path: "/admin/courses", icon: "library_big", section: "courses" },
+    { name: "صانع الكورسات", path: "/admin/builder", icon: "clipboard_pen", section: "courses", edit: true },
+    { name: "التمارين", path: "/admin/exercises", icon: "fitness_center", section: "exercises" },
+    { name: "النظام الغذائي", path: "/admin/diet", icon: "restaurant", section: "diet" },
+    { name: "مكتبة الأنظمة الغذائية", path: "/admin/diet/library", icon: "notebook_text", section: "diet" },
+    { name: "محتوى الموقع", path: "/admin/cms", icon: "app_window", section: "cms" },
   ];
   const navItems = allNavItems.filter(
     (item) =>

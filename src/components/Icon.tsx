@@ -17,6 +17,7 @@ import {
   History, KeyRound, Power, RefreshCw, RotateCcw, Layers, Repeat,
   Drumstick, Wheat, Nut, Salad, GripVertical, Sheet, TrendingUp, TrendingDown, Settings,
   BicepsFlexed,
+  LibraryBig, ClipboardPen, NotebookText, AppWindow,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -66,7 +67,8 @@ export type IconName =
   | "activity" | "gauge" | "ruler" | "hourglass" | "timer"
   | "history" | "key" | "account_box" | "power_settings_new" | "event_note" | "update" | "restore" | "layers" | "repeat"
   | "food_protein" | "food_carbs" | "food_fats" | "food_veggies" | "food_fruit" | "drag_indicator" | "excel"
-  | "trending_up" | "trending_down" | "settings" | "biceps_flexed";
+  | "trending_up" | "trending_down" | "settings" | "biceps_flexed"
+  | "library_big" | "clipboard_pen" | "notebook_text" | "app_window";
 
 const LUCIDE: Partial<Record<IconName, LucideIcon>> = {
   alternate_email: AtSign,
@@ -196,6 +198,10 @@ const LUCIDE: Partial<Record<IconName, LucideIcon>> = {
   trending_down: TrendingDown,
   settings: Settings,
   biceps_flexed: BicepsFlexed,
+  library_big: LibraryBig,
+  clipboard_pen: ClipboardPen,
+  notebook_text: NotebookText,
+  app_window: AppWindow,
 };
 
 /**
