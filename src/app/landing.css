@@ -220,6 +220,26 @@ body::before {
   top: 14px;
 }
 
+/* ─── READING PROGRESS ─── */
+/* Above the nav (200) so it sits on the bar's top edge rather than under it;
+   under the skip link (400) and the promotional window. Scaled rather than
+   resized, so following the scroll never reflows anything. It fills from the
+   start edge, which on this page is the right. */
+.reading-progress {
+  position: fixed;
+  top: 0;
+  inset-inline: 0;
+  z-index: 201;
+  height: 3px;
+  background: var(--primary);
+  transform: scaleX(0);
+  transform-origin: left center;
+  pointer-events: none;
+}
+[dir="rtl"] .reading-progress {
+  transform-origin: right center;
+}
+
 /* ─── NAV ─── */
 .landing-wrapper nav {
   position: fixed;

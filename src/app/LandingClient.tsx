@@ -999,11 +999,138 @@ export default function LandingClient({
     }
   }, [cmsData, isPreview]);
 
+  /* The coach's numbers count up from zero the first time they come into view.
+   *
+   * Declared after the DOM pass above on purpose: that pass is what writes these
+   * fields, on load, after the fetch and on every change of content, and effects
+   * run in declaration order — so by the time this one reads an element, it
+   * holds the value the page is meant to show. Each run zeroes the numbers that
+   * have not counted yet, and its cleanup puts them back for the pass to
+   * overwrite.
+   *
+   * The count gives way to anything else that writes to the element: a frame
+   * that finds text it did not put there stops, and the newer value stands. That
+   * is the content manager's live preview, which rewrites these fields without
+   * always re-rendering. Anything that is not one run of digits with optional
+   * text either side ("ISSA", "1,000") is left alone. The width is held in `ch`
+   * while counting, so the dividers between the columns do not move as digits
+   * are added, and it follows the font size at every breakpoint. */
+  const countedStats = useRef(new WeakSet<Element>());
+
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    type Stat = { original: string; prefix: string; target: number; suffix: string; zero: string };
+    const pending = new Map<HTMLElement, Stat>();
+    const frames = new Map<HTMLElement, number>();
+
+    const run = (el: HTMLElement, s: Stat) => {
+      const duration = 1400;
+      let start = 0;
+      let written = s.zero;
+      const step = (now: number) => {
+        if (el.textContent !== written) {
+          frames.delete(el);
+          el.style.minInlineSize = "";
+          return;
+        }
+        if (!start) start = now;
+        const t = Math.min((now - start) / duration, 1);
+        written =
+          t < 1 ? `${s.prefix}${Math.round(s.target * (1 - Math.pow(1 - t, 3)))}${s.suffix}` : s.original;
+        el.textContent = written;
+        if (t < 1) {
+          frames.set(el, requestAnimationFrame(step));
+        } else {
+          frames.delete(el);
+          el.style.minInlineSize = "";
+        }
+      };
+      frames.set(el, requestAnimationFrame(step));
+    };
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (!e.isIntersecting) return;
+          const el = e.target as HTMLElement;
+          observer.unobserve(el);
+          countedStats.current.add(el);
+          const s = pending.get(el);
+          if (s) run(el, s);
+        });
+      },
+      { threshold: 0.5 },
+    );
+
+    document.querySelectorAll<HTMLElement>(".coach-stats strong").forEach((el) => {
+      if (countedStats.current.has(el)) return;
+      const original = el.textContent ?? "";
+      const match = original.trim().match(/^(\D*)(\d+)(\D*)$/);
+      if (!match) return;
+      const [, prefix, digits, suffix] = match;
+      const zero = `${prefix}0${suffix}`;
+      el.style.minInlineSize = `${original.trim().length}ch`;
+      el.textContent = zero;
+      pending.set(el, { original, prefix, target: Number(digits), suffix, zero });
+      observer.observe(el);
+    });
+
+    return () => {
+      observer.disconnect();
+      /* A count cut off halfway, or a zero still waiting for its turn, goes back
+         to the full value for the DOM pass to overwrite. */
+      pending.forEach((s, el) => {
+        const id = frames.get(el);
+        if (id !== undefined) {
+          cancelAnimationFrame(id);
+          el.textContent = s.original;
+        } else if (el.textContent === s.zero) {
+          el.textContent = s.original;
+        }
+        el.style.minInlineSize = "";
+      });
+    };
+  }, [cmsData]);
+
+  /* How far down the page the reader is, as a hairline along the top edge.
+     Written straight to the element's transform rather than kept in state: it
+     changes on every scroll event, and a render per event is a render for
+     nothing. One write per frame at most. */
+  const progressRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const bar = progressRef.current;
+    if (!bar) return;
+
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      const progress = max > 0 ? Math.min(Math.max(window.scrollY / max, 0), 1) : 0;
+      bar.style.transform = `scaleX(${progress})`;
+    };
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+
+    update();
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
+    return () => {
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+      cancelAnimationFrame(frame);
+    };
+  }, []);
+
   return (
     <div className="landing-wrapper">
       <a href="#main" className="skip-link" data-i18n="skip_link">
         تخطي إلى المحتوى
       </a>
+
+      <div ref={progressRef} className="reading-progress" aria-hidden="true" />
 
       {/* NAV */}
       <nav id="navbar">
