@@ -155,6 +155,11 @@ body::before {
 .form-card:hover {
   border-color: var(--border-strong);
 }
+/* A failed sign-in: one short shake, so the eye goes back to the card.
+   The global reduced-motion rule collapses it to nothing. */
+.form-card.is-shaking {
+  animation: loginShake 0.4s var(--ease);
+}
 
 /* Top eyebrow */
 .form-eyebrow {
@@ -297,6 +302,12 @@ body::before {
 }
 .field-toggle:hover { color: var(--primary-on-tint); }
 
+/* Caps Lock warning under the password field. */
+.field-hint {
+  font-size: var(--text-xs);
+  color: var(--warning-text);
+}
+
 /* The target, which is larger than the button.
    The only control for checking a mistyped password was a 24px square. Growing
    the button itself would move it — its inset is measured from the field's
@@ -332,15 +343,28 @@ body::before {
   gap: 8px;
   cursor: pointer;
   user-select: none;
+  position: relative;
 }
-.remember input[type="checkbox"] { display: none; }
+/* Hidden from the eye only. `display: none` also took it out of the Tab
+   order, so "remember me" could not be reached from the keyboard. */
+.remember input[type="checkbox"] {
+  position: absolute;
+  width: 1px; height: 1px;
+  margin: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+.remember input[type="checkbox"]:focus-visible + .checkbox-box {
+  border-color: var(--primary);
+  box-shadow: var(--focus-ring);
+}
 .checkbox-box {
   width: 16px; height: 16px;
   border: 1px solid var(--border-primary);
   border-radius: var(--radius-xs);
   background: var(--bg3);
   display: flex; align-items: center; justify-content: center;
-  transition: background 0.2s, border-color 0.2s;
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
   flex-shrink: 0;
 }
 .remember input[type="checkbox"]:checked + .checkbox-box {
@@ -389,13 +413,34 @@ body::before {
   text-transform: uppercase;
   cursor: pointer;
   margin-bottom: 28px;
-  opacity: 0;
-  animation: fadeUp 0.6s 0.55s ease forwards;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  /* `backwards`, not `forwards` with a starting `opacity: 0`: a forwards fill
+     keeps holding `transform` after the entrance ends, and an animated value
+     beats every rule below — which is why `:active` never moved the button. */
+  animation: fadeUp 0.6s 0.55s ease backwards;
 }
 .btn-submit:hover {
   background: var(--primary-hover);
 }
-.btn-submit:active { transform: translateY(0); }
+.btn-submit:active { transform: translateY(1px); }
+.btn-submit:disabled {
+  opacity: 0.75;
+  cursor: wait;
+}
+.btn-submit:disabled:hover { background: var(--primary); }
+.btn-submit:disabled:active { transform: none; }
+
+.btn-spinner {
+  width: 14px; height: 14px;
+  border: 2px solid currentColor;
+  border-inline-end-color: transparent;
+  border-radius: var(--radius-circle);
+  flex-shrink: 0;
+  animation: btnSpin 0.7s linear infinite;
+}
 
 /* Divider OR */
 .or-divider {
@@ -468,6 +513,16 @@ body::before {
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(20px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes btnSpin {
+  to { transform: rotate(360deg); }
+}
+@keyframes loginShake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
 }
 
 /* ─── RESPONSIVE ─── */
@@ -566,7 +621,7 @@ body::before {
   color: var(--text-inverse);
 }
 .btn-nav-register:active {
-  transform: translateY(0);
+  transform: translateY(1px);
 }
 
 /* --- Register Card Button (Inside Login Form) --- */
@@ -586,8 +641,8 @@ body::before {
   letter-spacing: 1px;
   text-decoration: none;
   transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), opacity var(--dur) var(--ease), transform var(--dur) var(--ease);
-  opacity: 0;
-  animation: fadeUp 0.6s 0.65s ease forwards;
+  /* `backwards` for the same reason as `.btn-submit`. */
+  animation: fadeUp 0.6s 0.65s ease backwards;
 }
 .btn-register-card:hover {
   background: var(--primary);
@@ -595,7 +650,7 @@ body::before {
   color: var(--text-inverse);
 }
 .btn-register-card:active {
-  transform: translateY(0);
+  transform: translateY(1px);
 }
 
 

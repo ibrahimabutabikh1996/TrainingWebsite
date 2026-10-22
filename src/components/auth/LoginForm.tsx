@@ -9,21 +9,37 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 
 export function LoginForm() {
-  const { login, isLoading, error } = useAuth();
+  const { login, isLoading, error, setError } = useAuth();
 
   
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [capsLock, setCapsLock] = useState(false);
+  const [shake, setShake] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await login(username, password, remember, t("login_error_msg"));
+    /* Cleared first so a second failure restarts the shake rather than
+       leaving the class on and the card still. */
+    setShake(false);
+    const ok = await login(username, password, remember, t("login_error_msg"));
+    if (!ok) setShake(true);
+  };
+
+  const handleCapsLock = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    setCapsLock(e.getModifierState("CapsLock"));
   };
 
   return (
-    <div className="form-card">
+    <div
+      className={shake ? "form-card is-shaking" : "form-card"}
+      onAnimationEnd={(e) => {
+        /* The fields' own entrance animations bubble up to here too. */
+        if (e.target === e.currentTarget) setShake(false);
+      }}
+    >
       <div className="form-eyebrow">{t("welcome_back")}</div>
       <div className="form-title">{t("submit_btn")}</div>
       <div className="form-divider"></div>
@@ -54,7 +70,10 @@ export function LoginForm() {
                 autoComplete="username" 
                 pattern="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}|[a-zA-Z0-9_]{3,}"
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                onChange={(e) => {
+                  setUsername(e.target.value);
+                  if (error) setError(null);
+                }}
                 placeholder={t("user_hint")}
               />
             </div>
@@ -74,7 +93,13 @@ export function LoginForm() {
                 required 
                 autoComplete="current-password" 
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (error) setError(null);
+                }}
+                onKeyDown={handleCapsLock}
+                onKeyUp={handleCapsLock}
+                onBlur={() => setCapsLock(false)}
                 placeholder="••••••••"
               />
               <button 
@@ -90,6 +115,11 @@ export function LoginForm() {
                 )}
               </button>
             </div>
+            {capsLock && (
+              <div className="field-hint" role="alert">
+                مفتاح Caps Lock مفعّل
+              </div>
+            )}
           </div>
         </div>
 
@@ -101,8 +131,13 @@ export function LoginForm() {
           </label>
         </div>
 
-        <button type="submit" className="btn-submit" disabled={isLoading}>
-          {isLoading ? "..." : t("submit_btn")}
+        <button type="submit" className="btn-submit" disabled={isLoading} aria-busy={isLoading}>
+          {isLoading ? (
+            <>
+              <span className="btn-spinner" aria-hidden="true"></span>
+              جاري الدخول…
+            </>
+          ) : t("submit_btn")}
         </button>
 
         <div className="or-divider">
