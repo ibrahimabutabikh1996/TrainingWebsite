@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { CourseTemplate, DayExercise, Exercise, TraineeOption } from "@/types/admin";
 import { useCourseBuilder, normalizeDays } from "./useCourseBuilder";
@@ -20,6 +20,7 @@ import "../diet/plan/plan.css";
 import "./day-muscle-picker.css";
 import "./builder.css";
 import { normalizeArabic, arabicIncludes } from "@/lib/arabicSearch";
+import { InstallAppButton } from "@/components/pwa/InstallAppButton";
 
 /* Reps are stored as an array but older rows may hold a bare string/number. */
 function repList(reps: DayExercise["reps"]): string[] {
@@ -90,6 +91,43 @@ export default function AdminBuilderClient({
   const [startedFrom, setStartedFrom] = useState<string | null>(null);
 
   const nameRef = useRef<HTMLInputElement>(null);
+
+  /* Escape closes the dialog on top — the exercise picker first, since it is
+     the one opened over the page most often. AdminModal has no key handling of
+     its own. A key a searchable menu already used to close its list (it
+     prevents the default) is left alone, and so is the course list while a
+     course is loading into the page. */
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" || e.defaultPrevented) return;
+      if (pickerDayId) { setPickerDayId(null); setPickerSupersetId(null); setPickerReplace(null); return; }
+      if (dayToDelete) { setDayToDelete(null); return; }
+      if (exerciseToCopy) { setExerciseToCopy(null); return; }
+      if (showTemplates && templateLoading === null) { setShowTemplates(false); setTemplateQuery(""); }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [pickerDayId, dayToDelete, exerciseToCopy, showTemplates, templateLoading]);
+
+  /* The programme lives only in this page until "حفظ الكورس"; closing the tab
+     or reloading lost it without a word. The browser now asks first. Compared
+     with what the page opened with, so opening a course and leaving it as it
+     was does not ask. Moving between panel pages is client-side and does not
+     fire this event. */
+  const [openedWith] = useState(() => JSON.stringify([courseName, courseDesc, selectedTrainee, days]));
+  const isDirty = useMemo(
+    () => JSON.stringify([courseName, courseDesc, selectedTrainee, days]) !== openedWith,
+    [courseName, courseDesc, selectedTrainee, days, openedWith]
+  );
+  useEffect(() => {
+    if (!isDirty) return;
+    const onUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", onUnload);
+    return () => window.removeEventListener("beforeunload", onUnload);
+  }, [isDirty]);
 
   const currentDay = days.find((d) => d.id === activeDayId) || days[0] || null;
   const currentDayIndex = currentDay ? days.findIndex((d) => d.id === currentDay.id) : -1;
@@ -300,6 +338,8 @@ export default function AdminBuilderClient({
         </div>
 
         <div className="dplan-header-actions">
+          <InstallAppButton />
+
           <label className="dplan-trainee" style={{ minWidth: "min(300px, 100vw - 96px)" }}>
             <span>المشترك</span>
             <CustomSelect
@@ -499,7 +539,7 @@ export default function AdminBuilderClient({
                               <button className="diet-icon-btn" onClick={() => setExerciseToCopy({ dayId: currentDay.id, exId: ex.id, name: "السوبر سيت" })} title="نسخ السوبر سيت إلى يوم آخر" aria-label="نسخ السوبر سيت">
                                 <Icon name="content_copy" />
                               </button>
-                              <button className="diet-icon-btn danger" onClick={() => removeExercise(currentDay.id, ex.id)} title="إزالة السوبر سيت من هذا اليوم" aria-label="إزالة السوبر سيت">
+                              <button className="diet-icon-btn danger" onClick={() => { removeExercise(currentDay.id, ex.id); toast.success("أُزيل السوبر سيت"); }} title="إزالة السوبر سيت من هذا اليوم" aria-label="إزالة السوبر سيت">
                                 <Icon name="close" />
                               </button>
                             </div>
@@ -531,7 +571,7 @@ export default function AdminBuilderClient({
                                     <button className="diet-icon-btn" onClick={() => { setPickerReplace({ id: item.id, name: item.name_ar || "التمرين" }); setPickerDayId(currentDay.id); }} title="تغيير التمرين" aria-label="تغيير التمرين">
                                       <Icon name="edit" />
                                     </button>
-                                    <button className="diet-icon-btn danger" onClick={() => removeSupersetItem(currentDay.id, ex.id, item.id)} title="إزالة التمرين من السوبر سيت" aria-label="إزالة التمرين">
+                                    <button className="diet-icon-btn danger" onClick={() => { removeSupersetItem(currentDay.id, ex.id, item.id); toast.success(`أُزيل ${item.name_ar || "التمرين"}`); }} title="إزالة التمرين من السوبر سيت" aria-label="إزالة التمرين">
                                       <Icon name="close" />
                                     </button>
                                   </div>
@@ -647,7 +687,7 @@ export default function AdminBuilderClient({
                             <button className="diet-icon-btn" onClick={() => setExerciseToCopy({ dayId: currentDay.id, exId: ex.id, name: ex.name_ar || "التمرين" })} title="نسخ التمرين إلى يوم آخر" aria-label="نسخ التمرين">
                               <Icon name="content_copy" />
                             </button>
-                            <button className="diet-icon-btn danger" onClick={() => removeExercise(currentDay.id, ex.id)} title="إزالة التمرين من هذا اليوم">
+                            <button className="diet-icon-btn danger" onClick={() => { removeExercise(currentDay.id, ex.id); toast.success(`أُزيل ${ex.name_ar || "التمرين"}`); }} title="إزالة التمرين من هذا اليوم">
                               <Icon name="close" />
                             </button>
                           </div>
@@ -705,7 +745,7 @@ export default function AdminBuilderClient({
                             </button>
                             <button
                               className="diet-icon-btn danger"
-                              onClick={() => removeExercise(currentDay.id, ex.id)}
+                              onClick={() => { removeExercise(currentDay.id, ex.id); toast.success(`أُزيل ${ex.name_ar}`); }}
                               title="إزالة التمرين من هذا اليوم"
                               aria-label="إزالة التمرين"
                             >

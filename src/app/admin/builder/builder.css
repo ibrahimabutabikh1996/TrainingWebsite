@@ -601,3 +601,111 @@
     font-size: 16px;
   }
 }
+
+/* ─── Feedback on every action ────────────────────────────────────────────
+   Hover existed; pressing and keyboard focus did not. Scoped to this page so
+   the diet builder, which shares the .dplan-* and .diet-* buttons, is left as
+   it is. Last in the file so the press state wins over the hover rules above. */
+.bldr-stepper button:active:not(:disabled),
+.bldr-mini-btn:active,
+.bldr-tpl-list button:active:not(:disabled),
+.bldr-page .dplan-tab:active,
+.bldr-page .diet-icon-btn:active:not(:disabled),
+.bldr-page .dplan-add-item:active,
+.bldr-page .dplan-delete-plan:active,
+.bldr-page .dplan-picker-list > li > button:active {
+  transform: translateY(1px);
+}
+
+.bldr-stepper button:focus-visible,
+.bldr-mini-btn:focus-visible,
+.bldr-tpl-list button:focus-visible,
+.bldr-page .dplan-tab:focus-visible,
+.bldr-page .diet-icon-btn:focus-visible,
+.bldr-page .dplan-add-item:focus-visible,
+.bldr-page .dplan-delete-plan:focus-visible,
+.bldr-page .dplan-picker-list > li > button:focus-visible,
+.bldr-page .diet-add-btn:focus-visible,
+.bldr-page .diet-btn-secondary:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* A touch screen keeps :hover after the tap, so "ابدأ من كورس موجود" stayed
+   lifted. */
+@media (hover: none) {
+  .bldr-page .diet-btn-secondary:hover { transform: none; }
+}
+
+/* The four boxes of an exercise outside the plan carry no font size, so they
+   fell to the browser's 13px and Safari zoomed on every tap into them. The
+   name box sets its own size inline and is not affected. */
+@media (pointer: coarse), (max-width: 640px) {
+  .bldr-page .dplan-meal input {
+    font-size: 16px;
+  }
+}
+
+/* ─── Install the app — see @/components/pwa/InstallAppButton ─────────────
+   The same rules as the course library's copy in courses.css, scoped to this
+   page's header. Icon only, first in the row, on the title side. */
+.bldr-page .dplan-header-actions .install-app {
+  position: relative;
+}
+.bldr-page .dplan-header-actions .btn-install-app {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--tap-min);
+  height: var(--tap-min);
+  padding: 0;
+  background: var(--bg3);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease), transform var(--dur-fast) var(--ease);
+}
+.bldr-page .dplan-header-actions .btn-install-app:hover {
+  color: var(--primary-on-tint);
+  border-color: var(--border-primary);
+}
+.bldr-page .dplan-header-actions .btn-install-app:active {
+  transform: translateY(1px);
+}
+.bldr-page .dplan-header-actions .btn-install-app:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+.bldr-page .dplan-header-actions .btn-install-app-text {
+  display: none;
+}
+.bldr-page .dplan-header-actions .install-app-help {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  /* Opens over the title: the button sits at the group's title side. */
+  inset-inline-end: 0;
+  z-index: 10;
+  width: min(280px, calc(100vw - var(--space-8)));
+  padding: var(--space-4);
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--elev-3);
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--text-secondary);
+}
+.bldr-page .dplan-header-actions .install-app-help p {
+  margin: 0;
+}
+.bldr-page .dplan-header-actions .install-app-help svg {
+  display: inline-block;
+  vertical-align: -3px;
+  color: var(--primary-on-tint);
+}
+
+/* On a phone the header stacks and the button is at the row's edge. */
+@media (max-width: 640px) {
+  .bldr-page .dplan-header-actions .install-app-help { inset-inline-end: auto; inset-inline-start: 0; }
+}
