@@ -1,9 +1,10 @@
 "use client";
 
 import type { JsonRecord } from "@/types";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Profile } from "@/types/admin";
-import { Toaster } from "react-hot-toast";
+import { Toaster, toast } from "react-hot-toast";
 import { PLAN_COLOUR_SLOT } from "@/lib/formLabels";
 import { planNameFrom, planOptions, type PlanNames } from "@/lib/planNames";
 import { planTagStyle } from "@/lib/planCards";
@@ -12,6 +13,7 @@ import { CustomSelect } from "@/components/CustomSelect";
 import { formatTimestamp } from "@/lib/trainingDates";
 import "./crm.css";
 import { normalizeArabic, arabicIncludes } from "@/lib/arabicSearch";
+import { InstallAppButton } from "@/components/pwa/InstallAppButton";
 
 /* The intake blob, parsed. Older rows stored it as a string, newer ones as JSON.
    Lives outside the component: it reads nothing but its argument, and an effect
@@ -81,9 +83,32 @@ export default function AdminCRMClient({
     setProfiles(initialProfiles || []);
   }
 
+  const router = useRouter();
+
+  /* The bell closes on Escape, as every other dialog in the panel does. */
+  useEffect(() => {
+    if (!showNotifications) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setShowNotifications(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [showNotifications]);
+
   const handleSelectProfile = (profile: Profile) => {
+    const url = `/admin/profile/${profile.id}`;
+    /* Installed as an app, a new tab leaves it: on an iPhone it opens Safari,
+       whose cookies are not the app's, so the coach landed on the sign-in
+       screen instead of the trainee. The app opens the profile in place. */
+    const standalone =
+      window.matchMedia("(display-mode: standalone)").matches ||
+      (navigator as Navigator & { standalone?: boolean }).standalone === true;
+    if (standalone) {
+      router.push(url);
+      return;
+    }
     // Open in a new tab immediately
-    window.open(`/admin/profile/${profile.id}`, '_blank');
+    window.open(url, '_blank');
   };
 
   /* The bell's "تم القراءة" button, and the only thing that marks an entry
@@ -91,6 +116,8 @@ export default function AdminCRMClient({
      removed, so it moves to the "read" filter and stays there. */
   const handleMarkRead = async (notice: Notice) => {
     const readAt = new Date().toISOString();
+    /* The row as it was, to put back if the server does not take the change. */
+    const before = profiles.find(p => p.id === notice.profileId);
     setProfiles(prev => prev.map(p => {
       if (p.id !== notice.profileId) return p;
       const pData = getProfileData(p);
@@ -101,13 +128,16 @@ export default function AdminCRMClient({
     }));
 
     try {
-      await fetch("/api/mark-read", {
+      const res = await fetch("/api/mark-read", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: notice.profileId, notificationId: notice.id })
       });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
     } catch (err) {
       console.error("Failed to mark notification as read", err);
+      if (before) setProfiles(prev => prev.map(p => (p.id === notice.profileId ? before : p)));
+      toast.error("تعذّر تعليم الإشعار كمقروء، حاول مرة أخرى");
     }
   };
 
@@ -136,7 +166,10 @@ export default function AdminCRMClient({
   };
 
   const handleExportToExcel = () => {
-    if (profiles.length === 0) return;
+    if (profiles.length === 0) {
+      toast.error("لا يوجد مشتركون للتصدير");
+      return;
+    }
 
     // Build CSV content
     const headers = ["اسم المستخدم", "الاسم الكامل", "رقم الهاتف", "تاريخ الانضمام", "نوع الخطة", "عدد اشهر الاشتراك"];
@@ -172,6 +205,7 @@ export default function AdminCRMClient({
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+    toast.success(`تم تصدير بيانات ${profiles.length} مشترك`);
   };
 
   const filteredProfiles = profiles
@@ -274,9 +308,13 @@ export default function AdminCRMClient({
               <h1 className="crm-hero-title">ادارة المشتركين</h1>
             </div>
             <div className="crm-hero-stats-group">
+              <InstallAppButton />
               <button 
                 onClick={() => setShowNotifications(true)}
-                style={{ position: "relative", background: "var(--bg3)", padding: "12px", borderRadius: "var(--radius-lg)", border: "1px solid var(--border)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                className="crm-bell-btn"
+                aria-label={unreadCount > 0 ? `الإشعارات (${unreadCount} غير مقروءة)` : "الإشعارات"}
+                aria-haspopup="dialog"
+                title="الإشعارات"
               >
                 <Icon name="notifications_active" style={{ fontSize: "24px", color: "var(--warning-text)" }} />
                 {unreadCount > 0 && (
@@ -293,14 +331,17 @@ export default function AdminCRMClient({
           </div>
 
           {showNotifications && (
-            <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "var(--overlay-scrim)", backdropFilter: "blur(4px)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
-              <div style={{ background: "var(--bg2)", borderRadius: "var(--radius-xl)", width: "100%", maxWidth: "600px", maxHeight: "80vh", display: "flex", flexDirection: "column", boxShadow: "var(--elev-3)", border: "1px solid var(--border)" }}>
+            <div
+              onClick={(e) => { if (e.target === e.currentTarget) setShowNotifications(false); }}
+              style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "var(--overlay-scrim)", backdropFilter: "blur(4px)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}
+            >
+              <div role="dialog" aria-modal="true" aria-labelledby="crm-notices-title" style={{ background: "var(--bg2)", borderRadius: "var(--radius-xl)", width: "100%", maxWidth: "600px", maxHeight: "80vh", display: "flex", flexDirection: "column", boxShadow: "var(--elev-3)", border: "1px solid var(--border)" }}>
                 <div style={{ padding: "20px", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <h3 style={{ margin: 0, color: "var(--text)", display: "flex", alignItems: "center", gap: "8px" }}>
+                  <h3 id="crm-notices-title" style={{ margin: 0, color: "var(--text)", display: "flex", alignItems: "center", gap: "8px" }}>
                     <Icon name="notifications_active" style={{ color: "var(--warning-text)" }} />
                     الإشعارات
                   </h3>
-                  <button onClick={() => setShowNotifications(false)} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", padding: "4px", display: "flex", alignItems: "center" }}>
+                  <button type="button" onClick={() => setShowNotifications(false)} className="crm-notices-close" aria-label="إغلاق الإشعارات" title="إغلاق">
                     <Icon name="close" />
                   </button>
                 </div>
@@ -319,7 +360,7 @@ export default function AdminCRMClient({
                         type="button"
                         onClick={() => setNoticeFilter(f.value)}
                         aria-pressed={noticeFilter === f.value}
-                        style={{ flex: 1, padding: "8px 12px", border: "none", borderRadius: "var(--radius-md)", cursor: "pointer", fontWeight: 700, fontSize: "0.9rem", background: noticeFilter === f.value ? "var(--primary)" : "transparent", color: noticeFilter === f.value ? "var(--text-inverse)" : "var(--text-secondary)" }}
+                        className="crm-notice-filter"
                       >
                         {f.label}
                       </button>
@@ -369,7 +410,7 @@ export default function AdminCRMClient({
                             onClick={() => handleMarkRead(n)}
                             title="تم القراءة"
                             aria-label={`تعليم إشعار ${n.name} كمقروء`}
-                            style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0, background: "var(--bg3)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)", padding: "6px 10px", cursor: "pointer", color: "var(--success-text)", fontSize: "0.85rem", fontWeight: 700 }}
+                            className="crm-mark-read-btn"
                           >
                             <Icon name="check_circle" style={{ fontSize: 18 }} />
                             تم القراءة
@@ -392,7 +433,19 @@ export default function AdminCRMClient({
                 className="crm-search-input"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Escape") setSearch(""); }}
               />
+              {search && (
+                <button
+                  type="button"
+                  className="crm-search-clear"
+                  onClick={() => setSearch("")}
+                  aria-label="مسح البحث"
+                  title="مسح البحث"
+                >
+                  <Icon name="close" />
+                </button>
+              )}
             </div>
             <div className="crm-toolbar-filters">
               <CustomSelect 

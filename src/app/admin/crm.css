@@ -1184,3 +1184,175 @@ details[open].crm-modal-section > summary .accordion-icon {
   background: var(--bg3);
   border-color: var(--border-primary);
 }
+
+/* The bell in the header. A standalone icon control, so the outlined variant:
+   it tints at its edge on hover and sinks a pixel on press. */
+.crm-bell-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-3);
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: border-color var(--dur) var(--ease), background-color var(--dur) var(--ease), transform var(--dur-fast) var(--ease);
+}
+.crm-bell-btn:hover {
+  border-color: var(--border-primary);
+  background: var(--bg4);
+}
+.crm-bell-btn:active {
+  transform: translateY(1px);
+}
+.crm-bell-btn:focus-visible {
+  box-shadow: var(--focus-ring);
+}
+
+/* The bell dialog's close button — a ghost icon button. */
+.crm-notices-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color var(--dur) var(--ease), background-color var(--dur) var(--ease);
+}
+.crm-notices-close:hover {
+  color: var(--primary-on-tint);
+  background: var(--primary-dim);
+}
+
+/* The read / unread segments. Only the chosen one is filled. */
+.crm-notice-filter {
+  flex: 1;
+  padding: var(--space-2) var(--space-3);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  cursor: pointer;
+  transition: color var(--dur) var(--ease), background-color var(--dur) var(--ease);
+}
+.crm-notice-filter:hover:not([aria-pressed="true"]) {
+  color: var(--text);
+  background: var(--bg3);
+}
+.crm-notice-filter[aria-pressed="true"] {
+  background: var(--primary);
+  color: var(--text-inverse);
+}
+
+/* "تم القراءة" on an unread entry. */
+.crm-mark-read-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex-shrink: 0;
+  padding: 6px 10px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--success-text);
+  font-family: inherit;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  cursor: pointer;
+  transition: border-color var(--dur) var(--ease), background-color var(--dur) var(--ease), transform var(--dur-fast) var(--ease);
+}
+.crm-mark-read-btn:hover {
+  border-color: color-mix(in srgb, var(--success) 45%, var(--border));
+  background: var(--success-bg);
+}
+.crm-mark-read-btn:active {
+  transform: translateY(1px);
+}
+
+/* Clears the search box; drawn only while it holds text. */
+.crm-search-clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-circle);
+  color: var(--admin-outline);
+  cursor: pointer;
+  transition: color var(--dur) var(--ease), background-color var(--dur) var(--ease);
+}
+.crm-search-clear:hover {
+  color: var(--text);
+  background: var(--bg3);
+}
+.crm-search-clear .app-icon,
+.crm-search-clear svg {
+  font-size: 18px;
+}
+
+/* "Install the app" beside the bell — see @/components/pwa/InstallAppButton.
+   The same rules as the sign-in page's copy in login.css, which the panel does
+   not load. Icon only: the header already holds the bell and the count. */
+.crm-hero-stats-group .install-app {
+  position: relative;
+}
+.crm-hero-stats-group .btn-install-app {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--tap-min);
+  height: var(--tap-min);
+  padding: 0;
+  background: var(--bg3);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease), transform var(--dur-fast) var(--ease);
+}
+.crm-hero-stats-group .btn-install-app:hover {
+  color: var(--primary-on-tint);
+  border-color: var(--border-primary);
+}
+.crm-hero-stats-group .btn-install-app:active {
+  transform: translateY(1px);
+}
+.crm-hero-stats-group .btn-install-app-text {
+  display: none;
+}
+.crm-hero-stats-group .install-app-help {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  inset-inline-end: 0;
+  z-index: 10;
+  width: min(280px, calc(100vw - var(--space-8)));
+  padding: var(--space-4);
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--elev-3);
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--text-secondary);
+}
+.crm-hero-stats-group .install-app-help p {
+  margin: 0;
+}
+.crm-hero-stats-group .install-app-help svg {
+  display: inline-block;
+  vertical-align: -3px;
+  color: var(--primary-on-tint);
+}

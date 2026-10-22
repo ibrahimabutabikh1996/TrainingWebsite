@@ -301,6 +301,10 @@
   z-index: 2;
   overflow-y: auto;
   padding: var(--space-10);
+  /* Installed on an iPhone, the page is drawn under the status bar
+     (`black-translucent` + `viewport-fit=cover` in the root layout), so the
+     page title sat beneath the clock. The inset is zero everywhere else. */
+  padding-top: calc(var(--space-10) + env(safe-area-inset-top));
   /* Clears the bar, including whatever the bar itself had to give up to the
      home indicator — otherwise the last card on every admin page ends under it. */
   padding-bottom: calc(var(--space-10) + 72px + env(safe-area-inset-bottom));
@@ -378,7 +382,7 @@
        separate: with the page scrolled to its end the two "add exercise"
        buttons sat 40px off the glass, which at arm's length is one crowded
        block rather than a page and a bar. */
-    padding-top: 24px;
+    padding-top: calc(24px + env(safe-area-inset-top));
     padding-left: calc(12px + env(safe-area-inset-left));
     padding-right: calc(12px + env(safe-area-inset-right));
     padding-bottom: calc(72px + 64px + env(safe-area-inset-bottom));
