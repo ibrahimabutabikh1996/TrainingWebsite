@@ -1,14 +1,68 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { UploadProgressWindow } from "@/components/upload/UploadProgressWindow";
+import { ServiceWorkerRegister } from "@/components/pwa/ServiceWorkerRegister";
+import { SITE_URL } from "@/lib/siteUrl";
+
+const SITE_NAME = "Ibrahim Abutabikh";
+const SITE_DESCRIPTION = "خطط تدريب وأنظمة غذائية مخصصة مع متابعة كاملة";
+/* 2048×1058 — close enough to the 1.91:1 the share cards crop to. */
+const SHARE_IMAGE = "/images/logo/vLogo.png";
 
 export const metadata: Metadata = {
-  title: "Ibrahim Abutabikh",
-  description: "خطط تدريب وأنظمة غذائية مخصصة مع متابعة كاملة",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: SITE_NAME,
+    template: `%s | ${SITE_NAME}`,
+  },
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  keywords: [
+    "إبراهيم أبو طبيخ",
+    "مدرب شخصي",
+    "تدريب أونلاين",
+    "برنامج تدريبي",
+    "نظام غذائي",
+    "دايت",
+    "لياقة بدنية",
+    "personal trainer",
+    "online coaching",
+  ],
+  openGraph: {
+    type: "website",
+    locale: "ar_AR",
+    siteName: SITE_NAME,
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
+    images: [{ url: SHARE_IMAGE, width: 2048, height: 1058, alt: SITE_NAME }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
+    images: [SHARE_IMAGE],
+  },
+  appleWebApp: {
+    capable: true,
+    title: SITE_NAME,
+    statusBarStyle: "black-translucent",
+  },
   icons: {
     icon: "/icon.png",
     apple: "/apple-icon.png",
   },
+};
+
+/* What Google reads to understand who the site is for. Built from constants
+   only, but escaped all the same, as Next's JSON-LD guide asks. */
+const JSON_LD = {
+  "@context": "https://schema.org",
+  "@type": "ProfessionalService",
+  name: SITE_NAME,
+  description: SITE_DESCRIPTION,
+  url: SITE_URL,
+  logo: `${SITE_URL}/icon.png`,
+  image: `${SITE_URL}${SHARE_IMAGE}`,
 };
 
 /**
@@ -33,6 +87,8 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  /* `--bg`, as in `manifest.ts` — the colour of the phone's status bar. */
+  themeColor: "#0A121A",
 };
 
 export default function RootLayout({
@@ -62,6 +118,13 @@ export default function RootLayout({
             mounted once here rather than per screen. It renders nothing until a
             file is actually on its way. */}
         <UploadProgressWindow />
+        <ServiceWorkerRegister />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(JSON_LD).replace(/</g, "\\u003c"),
+          }}
+        />
       </body>
     </html>
   );
