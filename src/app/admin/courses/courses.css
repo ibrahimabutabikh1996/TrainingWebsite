@@ -668,3 +668,117 @@
     font-size: 16px;
   }
 }
+
+/* ─── Feedback on every action ────────────────────────────────────────────
+   Hover existed; pressing and keyboard focus did not. Last in the file so the
+   press and disabled states win over the hover rules above at equal
+   specificity. */
+.co-card:active {
+  border-color: var(--primary);
+  transform: translateY(0);
+}
+
+.co-icon-btn:active:not(:disabled),
+.co-segment button:active,
+.co-search-clear:active {
+  transform: translateY(1px);
+}
+
+.co-video-btn:active {
+  transform: scale(0.96);
+}
+
+.co-icon-btn:focus-visible,
+.co-segment button:focus-visible,
+.co-search-clear:focus-visible,
+.co-add-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* Copying disables the card's copy button while it runs; it looked the same. */
+.co-icon-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: transparent;
+  border-color: transparent;
+  color: var(--text-secondary);
+}
+
+/* A touch screen keeps :hover after the tap, so the lifted card stayed lifted. */
+@media (hover: none) {
+  .co-card:hover { transform: none; }
+  .co-add-btn:hover { transform: none; }
+}
+
+/* ─── Install the app — see @/components/pwa/InstallAppButton ─────────────
+   The same rules as the subscriber list's copy in crm.css, which is scoped to
+   that page's header. Icon only, beside "إنشاء كورس جديد". */
+.co-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.co-header-actions .install-app {
+  position: relative;
+}
+.co-header-actions .btn-install-app {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--tap-min);
+  height: var(--tap-min);
+  padding: 0;
+  background: var(--bg3);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease), transform var(--dur-fast) var(--ease);
+}
+.co-header-actions .btn-install-app:hover {
+  color: var(--primary-on-tint);
+  border-color: var(--border-primary);
+}
+.co-header-actions .btn-install-app:active {
+  transform: translateY(1px);
+}
+.co-header-actions .btn-install-app:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+.co-header-actions .btn-install-app-text {
+  display: none;
+}
+.co-header-actions .install-app-help {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  /* Opens over the title: the button sits at the group's title side. */
+  inset-inline-end: 0;
+  z-index: 10;
+  width: min(280px, calc(100vw - var(--space-8)));
+  padding: var(--space-4);
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--elev-3);
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--text-secondary);
+}
+.co-header-actions .install-app-help p {
+  margin: 0;
+}
+.co-header-actions .install-app-help svg {
+  display: inline-block;
+  vertical-align: -3px;
+  color: var(--primary-on-tint);
+}
+
+/* On a phone the header stacks and the add button spans the row; beside the
+   install button it takes what is left. */
+@media (max-width: 640px) {
+  .co-header-actions .co-add-btn { flex: 1; }
+  /* The row spans the screen here and the button is at its edge. */
+  .co-header-actions .install-app-help { inset-inline-end: auto; inset-inline-start: 0; }
+}

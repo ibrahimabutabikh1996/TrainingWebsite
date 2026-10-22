@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { preconnect } from "react-dom";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -26,6 +26,7 @@ import VideoPlayer from "@/components/VideoPlayer";
 import "../crm.css";
 import "./courses.css";
 import { normalizeArabic, arabicIncludes } from "@/lib/arabicSearch";
+import { InstallAppButton } from "@/components/pwa/InstallAppButton";
 
 const SORTS: [string, string][] = [
   ["newest", "الأحدث"],
@@ -68,6 +69,24 @@ export default function AdminCoursesClient({
      course so closing the player returns to the course rather than dismissing
      both. */
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
+
+  /* Escape closes the dialog on top — the player first, since it opens over
+     the course. AdminModal has no key handling of its own. A key the trainee
+     picker already used to close its list (it prevents the default) is left
+     alone, and so are the two dialogs while their action is running, as their
+     cancel buttons are. */
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" || e.defaultPrevented) return;
+      if (videoUrl) { setVideoUrl(null); return; }
+      if (isActionLoading) return;
+      if (showDeleteConfirm) { setShowDeleteConfirm(null); return; }
+      if (showAssignModal) { setShowAssignModal(null); setSelectedTraineeId(""); return; }
+      if (selectedCourseId) setSelectedCourseId(null);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [videoUrl, isActionLoading, showDeleteConfirm, showAssignModal, selectedCourseId]);
 
   /* What the video column shows for one row.
      The programme's own copy first, then the library by origin id, then by
@@ -220,12 +239,15 @@ export default function AdminCoursesClient({
               </div>
             </div>
 
+            <div className="co-header-actions">
+            <InstallAppButton />
             {canEdit && (
             <Link href="/admin/builder" className="co-add-btn">
               <Icon name="add" style={{ fontSize: 20 }} />
               <span>إنشاء كورس جديد</span>
             </Link>
             )}
+            </div>
           </header>
 
           <div className="co-toolbar">
@@ -237,6 +259,7 @@ export default function AdminCoursesClient({
                   placeholder="ابحث بالاسم أو الهدف أو اسم المشترك..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Escape") setSearchTerm(""); }}
                 />
                 {searchTerm && (
                   <button className="co-search-clear" onClick={() => setSearchTerm("")} aria-label="مسح البحث">
@@ -249,7 +272,7 @@ export default function AdminCoursesClient({
                   without having to open it. */}
               <div className="co-segment" role="group" aria-label="الترتيب">
                 {SORTS.map(([v, label]) => (
-                  <button key={v} onClick={() => setActiveFilter(v)} aria-pressed={activeFilter === v}>
+                  <button key={v} type="button" onClick={() => setActiveFilter(v)} aria-pressed={activeFilter === v}>
                     {label}
                   </button>
                 ))}
@@ -432,6 +455,18 @@ export default function AdminCoursesClient({
                   href={`/export-workout?courseId=${selectedCourse.id}`}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={(e) => {
+                    /* Installed as an app, a new tab leaves it: on an iPhone it
+                       opens Safari, whose cookies are not the app's, so the
+                       export page asked the coach to sign in. The app opens it
+                       in place; that page has its own back button. */
+                    const standalone =
+                      window.matchMedia("(display-mode: standalone)").matches ||
+                      (navigator as Navigator & { standalone?: boolean }).standalone === true;
+                    if (!standalone) return;
+                    e.preventDefault();
+                    router.push(`/export-workout?courseId=${selectedCourse.id}`);
+                  }}
                   className="crm-btn-secondary"
                   style={{ padding: "10px 18px", fontSize: "0.9rem", display: "flex", alignItems: "center", gap: "6px", textDecoration: "none", cursor: "pointer" }}
                 >
