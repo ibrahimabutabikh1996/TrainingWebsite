@@ -556,6 +556,27 @@ export default function AdminCRMClient({
                            data.plan_type === 'training' ? 'نظام تدريبي فقط' : data.plan_type}
                         </span>
                       )}
+                      {/* Which of the trainee's plans are written yet. Only the
+                          ones their subscription includes: a diet-only trainee
+                          has no training plan to be missing. */}
+                      {([
+                        { kind: "training", label: "النظام التدريبي", at: profile.course_assigned_at },
+                        { kind: "diet", label: "النظام الغذائي", at: profile.diet_updated_at },
+                      ] as const)
+                        .filter((t) => data.plan_type !== (t.kind === "diet" ? "training" : "diet"))
+                        .map((t) => {
+                          const tone = t.at ? "success" : "warning";
+                          return (
+                            <span
+                              key={t.kind}
+                              className="crm-tag"
+                              style={{ background: `color-mix(in srgb, var(--${tone}) 18%, var(--bg3))`, color: `var(--${tone}-text)`, border: `1px solid color-mix(in srgb, var(--${tone}) 40%, var(--border))` }}
+                              title={t.at ? `تم بتاريخ ${formatTimestamp(t.at)}` : "لم يُنجز بعد"}
+                            >
+                              {t.at ? `${t.label} ✓ تم` : `${t.label}: لم يُنجز`}
+                            </span>
+                          );
+                        })}
                       <span className="crm-card-date" title="تاريخ بداية الاشتراك">
                         <Icon name="calendar_today" style={{ fontSize: 14 }} />
                         {formatTimestamp(data.activation_date || profile.created_at)}

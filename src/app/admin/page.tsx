@@ -79,6 +79,8 @@ export default async function AdminDashboardPage() {
     created_at: Date;
     data: unknown;
     is_suspended: boolean;
+    diet_updated_at: Date | null;
+    course_assigned_at: Date | null;
   }> = [];
 
   try {
@@ -109,6 +111,16 @@ export default async function AdminDashboardPage() {
         COALESCE(a.username, p.username) AS username,
         p.created_at,
         p.is_suspended,
+        /* Whether the trainee's two plans are written yet, for the list's
+           "done / not done" tags. NULL means not written. The course falls back
+           to its own creation date: older rows can point at a course with no
+           matching client_courses row (see builder/actions.ts). */
+        (SELECT max(d.updated_at) FROM public.diet_plans d WHERE d.profile_id = p.id) AS diet_updated_at,
+        CASE WHEN p.current_course_id IS NULL THEN NULL ELSE COALESCE(
+          (SELECT max(cc.assigned_at) FROM public.client_courses cc
+            WHERE cc.client_id = p.id AND cc.course_id = p.current_course_id),
+          (SELECT c.created_at FROM public.courses c WHERE c.id = p.current_course_id)
+        ) END AS course_assigned_at,
         CASE
           WHEN jsonb_typeof(p.data) = 'object' THEN COALESCE(
             (
@@ -146,6 +158,8 @@ export default async function AdminDashboardPage() {
     data: listFieldsOnly(p.data),
     // Authoritative flag, from the column rather than the JSON blob.
     is_suspended: p.is_suspended,
+    diet_updated_at: p.diet_updated_at ? p.diet_updated_at.toISOString() : null,
+    course_assigned_at: p.course_assigned_at ? p.course_assigned_at.toISOString() : null,
   }));
 
   /* The packages as the coach named them, so the subscriber list, its filter
