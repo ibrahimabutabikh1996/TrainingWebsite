@@ -70,6 +70,18 @@ export default function AdminCRMClient({
   const [sortBy, setSortBy] = useState("newest");
   const [showNotifications, setShowNotifications] = useState(false);
   const [noticeFilter, setNoticeFilter] = useState<"unread" | "read" | "all">("unread");
+  const [pageSize, setPageSize] = useState("20");
+  const [page, setPage] = useState(1);
+
+  /* Back to the first page whenever what the table shows changes — page 3 of
+     a search that now has one page of results is an empty table. Taken over
+     during render, the same pattern as `seenInitial` below. */
+  const listKey = `${search}\u0000${filterPlan}\u0000${sortBy}\u0000${pageSize}`;
+  const [seenListKey, setSeenListKey] = useState(listKey);
+  if (listKey !== seenListKey) {
+    setSeenListKey(listKey);
+    setPage(1);
+  }
 
   const [profiles, setProfiles] = useState<Profile[]>(initialProfiles || []);
 
@@ -242,6 +254,13 @@ export default function AdminCRMClient({
       const dateB = new Date(b.created_at).getTime();
       return sortBy === "newest" ? dateB - dateA : dateA - dateB;
     });
+  /* Clamped as well as reset: a subscriber deleted from the last page leaves
+     `page` pointing one past the end. */
+  const perPage = Number(pageSize);
+  const pageCount = Math.max(1, Math.ceil(filteredProfiles.length / perPage));
+  const currentPage = Math.min(page, pageCount);
+  const pageStart = (currentPage - 1) * perPage;
+  const pagedProfiles = filteredProfiles.slice(pageStart, pageStart + perPage);
   /* The bell: every registration and renewal request, newest first. A trainee
      from before `notifications` existed has no list, so an unread `is_new` on
      them stands in as one entry — /api/mark-read turns it into a real one. */
@@ -301,7 +320,7 @@ export default function AdminCRMClient({
         
         {/* Main List Area */}
         <div className="crm-main-area">
-          <div style={{ width: '100%', maxWidth: '1200px', margin: '0 auto' }}>
+          <div style={{ width: '100%', maxWidth: '1600px', margin: '0 auto' }}>
           
           <div className="crm-hero-header">
             <div className="crm-hero-title-group">
@@ -478,119 +497,165 @@ export default function AdminCRMClient({
             </div>
           </div>
 
-          <div className="crm-list-cards">
-            {filteredProfiles.length === 0 ? (
-              <div className="crm-empty-state">
-                <Icon name="person_off" />
-                <p>لا يوجد متدربين مطابقين للبحث</p>
-              </div>
-            ) : (
-              filteredProfiles.map((profile, i) => {
-                const data = getProfileData(profile);
-                const displayName = data.fullname || profile.username;
+          {filteredProfiles.length === 0 ? (
+            <div className="crm-empty-state">
+              <Icon name="person_off" />
+              <p>لا يوجد متدربين مطابقين للبحث</p>
+            </div>
+          ) : (
+            <>
+            {/* The wrapper is the scroll container: on a phone the columns
+                keep a readable width and scroll inside it, the page does not. */}
+            <div className="crm-table-wrap">
+              <table className="crm-table">
+                <thead>
+                  <tr>
+                    <th scope="col" className="crm-table-rank">#</th>
+                    <th scope="col">المتدرب</th>
+                    <th scope="col">الخطة</th>
+                    <th scope="col">نوع الاشتراك</th>
+                    <th scope="col">النظام التدريبي</th>
+                    <th scope="col">النظام الغذائي</th>
+                    <th scope="col">تاريخ البدء</th>
+                    <th scope="col"><span className="crm-sr-only">فتح</span></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pagedProfiles.map((profile, i) => {
+                    const data = getProfileData(profile);
+                    const displayName = data.fullname || profile.username;
 
-                /* A div with an onClick is invisible to a keyboard: the whole
-                   subscriber list could only be opened with a mouse. Given a
-                   role, a tab stop and the Enter/Space handling a button would
-                   have had for free. */
-                return (
-                  <div
-                    key={profile.id}
-                    className="crm-list-card"
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => handleSelectProfile(profile)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        handleSelectProfile(profile);
+                    /* Which of the trainee's plans are written yet. Only the
+                       ones their subscription includes: a diet-only trainee
+                       has no training plan to be missing. */
+                    const planStatus = (kind: "training" | "diet", at: string | null | undefined) => {
+                      if (data.plan_type === (kind === "diet" ? "training" : "diet")) {
+                        return <span className="crm-table-none">—</span>;
                       }
-                    }}
-                    aria-label={`فتح ملف ${displayName}`}
-                    style={{ animationDelay: `${i * 0.03}s` }}
-                  >
-                    <div className="crm-card-avatar" style={{ position: 'relative' }}>
-                      <Icon name="user_male" style={{ fontSize: 28 }} />
-                    </div>
-                    
-                    <div className="crm-card-info">
-                      <h4 className="crm-card-name" style={{ margin: 0 }}>{displayName}</h4>
-                    </div>
-
-                    <div className="crm-card-meta">
-                      {/* Independent of the bell: marking the request read
-                          there does not grant the month, which is still
-                          ungranted until the coach approves or rejects it.
-                          This is the state that has to stay visible from the
-                          list until it is acted on. */}
-                      {data.renewal_pending === true && (
+                      return (
                         <span
-                          className="crm-tag"
-                          style={{ background: "color-mix(in srgb, var(--warning) 20%, var(--bg3))", color: "var(--warning-text)", border: "1px solid color-mix(in srgb, var(--warning) 45%, var(--border))", fontWeight: 800 }}
-                          title="أرسل طلب تجديد وينتظر موافقتك"
+                          className={`crm-table-status ${at ? "is-done" : "is-pending"}`}
+                          title={at ? `تم بتاريخ ${formatTimestamp(at)}` : "لم يُنجز بعد"}
                         >
-                          تجديد بانتظار المراجعة
+                          {at ? "✓ تم" : "لم يُنجز"}
                         </span>
-                      )}
-                      {/* The third copy of the plan-to-colour chain, which had
-                          no arm for the offers. Shared now, so the tag is
-                          coloured from the same table the timeline reads. */}
-                      <span
-                        className={`crm-tag ${
-                          PLAN_COLOUR_SLOT[String(data.plan)]
-                            ? `plan-${PLAN_COLOUR_SLOT[String(data.plan)]}`
-                            : data.plan ? 'primary-tag' : ''
-                        }`}
-                        /* A plan past the third has no class in crm.css to
-                           match, so it carries its generated colour with it.
-                           Null for the first three, which keep the stylesheet's
-                           own rules. */
-                        style={planTagStyle(String(data.plan)) ?? undefined}
-                      >
-                        {planNameFrom(planNames, data.plan, "غير محدد")}
-                      </span>
-                      {data.plan_type && (
-                        <span className="crm-tag" style={{ background: "var(--bg3)", color: "var(--text-secondary)", border: "1px solid var(--border)" }}>
-                          {data.plan_type === 'both' ? 'نظام تدريبي + غذائي' : 
-                           data.plan_type === 'diet' ? 'نظام غذائي فقط' : 
-                           data.plan_type === 'training' ? 'نظام تدريبي فقط' : data.plan_type}
-                        </span>
-                      )}
-                      {/* Which of the trainee's plans are written yet. Only the
-                          ones their subscription includes: a diet-only trainee
-                          has no training plan to be missing. */}
-                      {([
-                        { kind: "training", label: "النظام التدريبي", at: profile.course_assigned_at },
-                        { kind: "diet", label: "النظام الغذائي", at: profile.diet_updated_at },
-                      ] as const)
-                        .filter((t) => data.plan_type !== (t.kind === "diet" ? "training" : "diet"))
-                        .map((t) => {
-                          const tone = t.at ? "success" : "warning";
-                          return (
-                            <span
-                              key={t.kind}
-                              className="crm-tag"
-                              style={{ background: `color-mix(in srgb, var(--${tone}) 18%, var(--bg3))`, color: `var(--${tone}-text)`, border: `1px solid color-mix(in srgb, var(--${tone}) 40%, var(--border))` }}
-                              title={t.at ? `تم بتاريخ ${formatTimestamp(t.at)}` : "لم يُنجز بعد"}
-                            >
-                              {t.at ? `${t.label} ✓ تم` : `${t.label}: لم يُنجز`}
-                            </span>
-                          );
-                        })}
-                      <span className="crm-card-date" title="تاريخ بداية الاشتراك">
-                        <Icon name="calendar_today" style={{ fontSize: 14 }} />
-                        {formatTimestamp(data.activation_date || profile.created_at)}
-                      </span>
-                    </div>
+                      );
+                    };
 
-                    <div className="crm-card-actions">
-                      <Icon name="chevron_left" className="crm-chevron" />
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
+                    /* The whole row opens the profile for a mouse. The name is
+                       a real button so the keyboard has a tab stop: its click
+                       bubbles to the row's handler, so it needs none of its
+                       own. */
+                    return (
+                      <tr key={profile.id} onClick={() => handleSelectProfile(profile)}>
+                        <td className="crm-table-rank">{pageStart + i + 1}</td>
+                        <td>
+                          <div className="crm-table-person">
+                            <span className="crm-table-avatar">
+                              <Icon name="user_male" style={{ fontSize: 18 }} />
+                            </span>
+                            <span className="crm-table-person-text">
+                              <button type="button" className="crm-table-name" aria-label={`فتح ملف ${displayName}`}>
+                                {displayName}
+                              </button>
+                              {data.fullname && profile.username && (
+                                <span className="crm-table-username" dir="ltr">{profile.username}</span>
+                              )}
+                            </span>
+                            {/* Independent of the bell: marking the request read
+                                there does not grant the month, which is still
+                                ungranted until the coach approves or rejects it.
+                                This is the state that has to stay visible from the
+                                list until it is acted on. */}
+                            {data.renewal_pending === true && (
+                              <span
+                                className="crm-table-status is-pending"
+                                title="أرسل طلب تجديد وينتظر موافقتك"
+                              >
+                                تجديد بانتظار المراجعة
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td>
+                          {/* The third copy of the plan-to-colour chain, which had
+                              no arm for the offers. Shared now, so the tag is
+                              coloured from the same table the timeline reads. */}
+                          <span
+                            className={`crm-tag ${
+                              PLAN_COLOUR_SLOT[String(data.plan)]
+                                ? `plan-${PLAN_COLOUR_SLOT[String(data.plan)]}`
+                                : data.plan ? 'primary-tag' : ''
+                            }`}
+                            /* A plan past the third has no class in crm.css to
+                               match, so it carries its generated colour with it.
+                               Null for the first three, which keep the stylesheet's
+                               own rules. */
+                            style={planTagStyle(String(data.plan)) ?? undefined}
+                          >
+                            {planNameFrom(planNames, data.plan, "غير محدد")}
+                          </span>
+                        </td>
+                        <td className="crm-table-muted">
+                          {data.plan_type === 'both' ? 'تدريبي + غذائي' :
+                           data.plan_type === 'diet' ? 'غذائي فقط' :
+                           data.plan_type === 'training' ? 'تدريبي فقط' : (data.plan_type || "—")}
+                        </td>
+                        <td>{planStatus("training", profile.course_assigned_at)}</td>
+                        <td>{planStatus("diet", profile.diet_updated_at)}</td>
+                        <td className="crm-table-muted crm-table-date">
+                          {formatTimestamp(data.activation_date || profile.created_at)}
+                        </td>
+                        <td className="crm-table-chevron">
+                          <Icon name="chevron_left" />
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="crm-pager">
+              <div className="crm-pager-size">
+                <CustomSelect
+                  value={pageSize}
+                  onChange={setPageSize}
+                  options={[
+                    { value: "10", label: "10" },
+                    { value: "20", label: "20" },
+                    { value: "50", label: "50" },
+                    { value: "100", label: "100" },
+                  ]}
+                />
+                <span>صف</span>
+              </div>
+              <span className="crm-pager-range">
+                {pageStart + 1}-{pageStart + pagedProfiles.length} من {filteredProfiles.length}
+              </span>
+              <button
+                type="button"
+                className="crm-pager-btn"
+                onClick={() => setPage(currentPage - 1)}
+                disabled={currentPage <= 1}
+                aria-label="الصفحة السابقة"
+                title="الصفحة السابقة"
+              >
+                <Icon name="chevron_right" />
+              </button>
+              <button
+                type="button"
+                className="crm-pager-btn"
+                onClick={() => setPage(currentPage + 1)}
+                disabled={currentPage >= pageCount}
+                aria-label="الصفحة التالية"
+                title="الصفحة التالية"
+              >
+                <Icon name="chevron_left" />
+              </button>
+            </div>
+            </>
+          )}
           </div>
         </div>
       </div>
