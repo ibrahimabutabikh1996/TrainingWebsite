@@ -31,6 +31,21 @@ export default function GlobalError({
 }) {
   useEffect(() => {
     console.error("[boundary] root layout error:", error);
+    /* Emailed to the owner — but only when there is no digest. A digest means
+       the server threw it, and `instrumentation.ts` has already sent that one. */
+    if (!error.digest) {
+      fetch("/api/report-error", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: error.name,
+          message: error.message,
+          stack: error.stack,
+          path: window.location.pathname,
+        }),
+        keepalive: true,
+      }).catch(() => {});
+    }
   }, [error]);
 
   return (
