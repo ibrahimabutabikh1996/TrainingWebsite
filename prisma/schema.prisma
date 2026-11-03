@@ -889,6 +889,8 @@ model upload_items {
   created_at      DateTime        @default(now()) @db.Timestamptz(6)
   confirmed_at    DateTime?       @db.Timestamptz(6)
   attached_at     DateTime?       @db.Timestamptz(6)
+  /// Why the file was refused at confirmation — see prisma/manual/2026-11-03-upload-reject-reason.sql.
+  reject_reason   String?
   upload_sessions upload_sessions @relation(fields: [session_id], references: [id], onDelete: Cascade)
 
   @@index([session_id], map: "idx_upload_items_session")

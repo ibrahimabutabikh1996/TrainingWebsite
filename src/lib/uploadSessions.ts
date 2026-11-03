@@ -1,5 +1,7 @@
 import "server-only";
+import { after } from "next/server";
 import { prisma } from "@/lib/db";
+import { sendErrorAlert } from "@/lib/errorAlert";
 import { supabaseAdmin, UPLOADS_BUCKET } from "@/lib/supabaseAdmin";
 import { detectFileType, INTAKE_RULE, type DetectedType } from "@/lib/uploads";
 import { probeImage } from "@/lib/imageProbe";
@@ -262,11 +264,23 @@ async function rejectItem(itemId: string, path: string, reason: string): Promise
        behind is a cost, not a correctness problem. */
     console.error(`Failed to delete a rejected upload (${path}):`, error);
   }
-  await prisma.upload_items.update({
+  /* The reason is kept on the row as well as logged: the log line lasts hours,
+     and a run of refused receipts was once found only after it had gone. */
+  const rejected = await prisma.upload_items.update({
     where: { id: itemId },
-    data: { status: "rejected" },
+    data: { status: "rejected", reject_reason: reason },
+    select: { field: true },
   });
   console.warn(`Rejected upload ${itemId}: ${reason}`);
+  /* After the response, so the visitor is not kept waiting on Gmail. */
+  after(() =>
+    sendErrorAlert({
+      name: "UploadRejected",
+      message: `${rejected.field} — ${reason}`,
+      source: "server",
+      path: "/api/uploads/confirm",
+    })
+  );
 }
 
 /**

@@ -303,6 +303,18 @@ function FormContent({ planNames }: { planNames: PlanNames }) {
       setShowSuccess(true);
     } catch (err) {
       console.error("Submission error:", err);
+      /* Emailed to the owner — the reason only, never the answers. A refused
+         submission is an expected response, so nothing else reports it. */
+      fetch("/api/report-error", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: "SubmitFailed",
+          message: err instanceof Error ? err.message : String(err),
+          path: window.location.pathname,
+        }),
+        keepalive: true,
+      }).catch(() => {});
       toast.error(err instanceof Error ? err.message : t("form_error_generic"));
       setIsSubmitting(false);
     }

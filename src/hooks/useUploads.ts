@@ -93,6 +93,8 @@ export function useUploads({ scope, profileId }: UseUploadsOptions) {
          root layout. The person filling the form watches their photographs
          travel instead of watching a form that has stopped responding. */
       const task = beginUpload(file.name, file.size);
+      /* Which step failed, for the owner's error alert below. */
+      let stage = "check";
 
       try {
         /* Refused here, before anything at all leaves the browser.
@@ -119,6 +121,7 @@ export function useUploads({ scope, profileId }: UseUploadsOptions) {
           throw new Error(`حجم الملف يتجاوز ${Math.round(INTAKE_MAX_BYTES / (1024 * 1024))} ميغابايت`);
         }
 
+        stage = "slot";
         const uploadSessionId = await ensureSession();
 
         /* The server names the path and issues a token bound to it. */
@@ -136,6 +139,7 @@ export function useUploads({ scope, profileId }: UseUploadsOptions) {
         /* Straight to storage, and measured on the way — see
            `@/lib/signedUpload`. The token is bound to the path the server chose
            above; this call cannot write anywhere else. */
+        stage = "storage";
         await uploadToSignedUrlWithProgress({
           bucket: "uploads",
           path: slot.path,
@@ -144,12 +148,16 @@ export function useUploads({ scope, profileId }: UseUploadsOptions) {
           onProgress: (percent) => task.uploading(percent),
         });
 
+        stage = "confirm";
         const confirmRes = await fetch("/api/uploads/confirm", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ uploadSessionId, itemId: slot.itemId }),
         });
         if (!confirmRes.ok) {
+          /* 400 and 413 are the server refusing the file itself, and it has
+             already emailed that one with the reason — see `rejectItem`. */
+          if (confirmRes.status === 400 || confirmRes.status === 413) stage = "rejected";
           const body = await confirmRes.json().catch(() => ({}));
           throw new Error(body.error || "الملف مرفوض");
         }
@@ -161,6 +169,21 @@ export function useUploads({ scope, profileId }: UseUploadsOptions) {
         const message = error instanceof Error ? error.message : "تعذّر الرفع";
         patch({ state: "error", error: message });
         task.fail(message);
+        /* Emailed to the owner. The server never hears of an upload that died
+           in the browser, which is how nine photos once stalled unnoticed. The
+           file's type and size go with it, never its name. */
+        if (stage !== "rejected") {
+          fetch("/api/report-error", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              name: "UploadFailed",
+              message: `${field} — ${stage}: ${message} (${file.type || "?"}, ${Math.round(file.size / 1024)} KB)`,
+              path: window.location.pathname,
+            }),
+            keepalive: true,
+          }).catch(() => {});
+        }
         return false;
       }
     },

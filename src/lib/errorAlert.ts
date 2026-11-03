@@ -53,6 +53,9 @@ const ARABIC_ERROR_NAMES: Record<string, string> = {
   PrismaClientInitializationError: "تعذّر الاتصال بقاعدة البيانات",
   PrismaClientValidationError: "بيانات غير صالحة أُرسلت إلى قاعدة البيانات",
   PrismaClientRustPanicError: "توقف محرك قاعدة البيانات",
+  UploadRejected: "رُفض ملف مرفوع من الاستمارة",
+  UploadFailed: "فشل رفع ملف من الاستمارة",
+  SubmitFailed: "فشل إرسال الاستمارة",
 };
 
 export interface ErrorReport {
