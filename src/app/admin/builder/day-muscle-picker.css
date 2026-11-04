@@ -240,17 +240,17 @@
   padding: 0 16px;
   border: none;
   border-radius: var(--radius-sm);
-  background: var(--primary);
+  background: linear-gradient(135deg, var(--primary) 0%, color-mix(in srgb, var(--primary) 75%, var(--primary-light)) 100%);
   color: var(--text-inverse);
   font-family: inherit;
   font-size: var(--text-sm);
   font-weight: 700;
   cursor: pointer;
-  transition: background 0.2s, opacity 0.2s;
+  transition: filter 0.2s, opacity 0.2s;
 }
 
 .dmp-custom-submit:hover:not(:disabled) {
-  background: var(--primary-hover);
+  filter: brightness(1.05);
 }
 
 .dmp-custom-submit:disabled {

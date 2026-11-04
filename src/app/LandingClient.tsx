@@ -2,6 +2,7 @@
 import type { JsonRecord, Testimonial } from "@/types";
 import "./landing.css";
 import Link from "next/link";
+import { ShoppingBag } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { getLandingContent } from "./admin/cms/actions";
 import { useAuth } from "@/hooks/useAuth";
@@ -472,6 +473,51 @@ export default function LandingClient({
     );
     reveals.forEach((r) => obs.observe(r));
 
+    /* The coach's figures count up the first time they come into view.
+     *
+     * The real value is already in the markup — written by the server, then by
+     * the content pass from whatever the coach saved — and this only animates
+     * toward it, so search engines, a reader with motion reduced and a browser
+     * without script all see the true figure. The target is read from the node
+     * at the moment it is seen, not from a constant, so a number the coach
+     * changes in the panel is the number counted to. A value with no digits in
+     * it ("ISSA") is not counted; `is-counted` gives every figure its entrance
+     * either way.
+     *
+     * If anything else writes the node mid-count — the content manager's live
+     * preview — the count stops and leaves what was written. */
+    const COUNT_MS = 1600;
+    const stats = document.querySelector<HTMLElement>(".coach-stats");
+    const countFrames: number[] = [];
+    const statsObs = new IntersectionObserver(
+      (entries) => {
+        if (!stats || !entries.some((e) => e.isIntersecting)) return;
+        statsObs.disconnect();
+        stats.classList.add("is-counted");
+        if (reduceMotion) return;
+        stats.querySelectorAll<HTMLElement>("li strong").forEach((el) => {
+          const final = el.textContent ?? "";
+          const match = final.match(/^(\D*)(\d[\d,]*)(\D*)$/);
+          if (!match) return;
+          const [, before, digits, after] = match;
+          const target = Number(digits.replace(/,/g, ""));
+          const start = performance.now();
+          let written = final;
+          const step = (now: number) => {
+            if (el.textContent !== written) return;
+            const t = Math.min(1, (now - start) / COUNT_MS);
+            const eased = 1 - Math.pow(1 - t, 3);
+            written = t < 1 ? `${before}${Math.round(target * eased)}${after}` : final;
+            el.textContent = written;
+            if (t < 1) countFrames.push(requestAnimationFrame(step));
+          };
+          countFrames.push(requestAnimationFrame(step));
+        });
+      },
+      { threshold: 0.4 },
+    );
+    if (stats) statsObs.observe(stats);
+
     // Smooth scroll — delegated so it survives re-renders and CMS DOM swaps
     const handleAnchorClick = (e: MouseEvent) => {
       const anchor = (e.target as HTMLElement | null)?.closest?.(
@@ -497,6 +543,8 @@ export default function LandingClient({
       window.removeEventListener("scroll", scrollSpy);
       document.removeEventListener("click", handleAnchorClick);
       obs.disconnect();
+      statsObs.disconnect();
+      countFrames.forEach(cancelAnimationFrame);
     };
   }, []);
 
@@ -1220,6 +1268,13 @@ export default function LandingClient({
           </li>
         </ul>
         <div className="nav-actions">
+          {/* The supplements store. Always in the bar — not in the drawer — on
+              every width, so it is the one thing the header never hides. */}
+          <Link href="/store" className="nav-store-btn">
+            <ShoppingBag aria-hidden="true" className="nav-store-btn-icon" />
+            <span className="nav-store-btn-full">متجر المكملات الغذائية</span>
+            <span className="nav-store-btn-short">المتجر</span>
+          </Link>
           {isLoggedIn ? (
             <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
               <Link

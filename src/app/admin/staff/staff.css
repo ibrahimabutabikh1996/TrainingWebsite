@@ -41,21 +41,20 @@
   gap: var(--space-2);
   padding: var(--space-3) var(--space-5);
   border-radius: var(--radius-md);
-  border: 1px solid var(--primary);
-  background: var(--primary);
+  border: 1px solid transparent;
+  background: linear-gradient(135deg, var(--primary) 0%, color-mix(in srgb, var(--primary) 75%, var(--primary-light)) 100%);
   color: var(--text-inverse);
   font-family: inherit;
   font-size: var(--text-base);
   font-weight: var(--weight-semibold);
   cursor: pointer;
   white-space: nowrap;
-  transition: background 0.25s, border-color 0.25s;
+  transition: filter var(--dur) var(--ease), transform var(--dur) var(--ease);
 }
 
 .staff-add-btn:hover {
-  background: var(--primary-hover);
-  border-color: var(--primary-hover);
-}
+  filter: brightness(1.05);
+  }
 
 /* ─── List ─── */
 

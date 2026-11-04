@@ -914,3 +914,131 @@ model nutrition_sources {
   @@index([category], map: "idx_nutrition_sources_category")
   @@schema("public")
 }
+
+/// The supplements store's catalogue. Written by the coach from /admin/store/products,
+/// read by /store. See prisma/manual/2026-11-04-store.sql and src/lib/store/.
+/// Prices are whole Iraqi dinars.
+model store_products {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug             String   @unique
+  name             String
+  tagline          String   @default("")
+  category         String   @default("protein")
+  brand            String   @default("")
+  description      String   @default("")
+  price            Int      @default(0)
+  compare_at_price Int?
+  image_url        String?
+  accent           String   @default("#60A5FA")
+  highlights       Json     @default("[]")
+  features         Json     @default("[]")
+  usage            Json     @default("[]")
+  nutrition        Json     @default("[]")
+  ingredients      String   @default("")
+  flavors          String[] @default([])
+  sizes            Json     @default("[]")
+  /// Null is "not tracked"; zero is sold out.
+  stock            Int?
+  is_active        Boolean  @default(true)
+  is_featured      Boolean  @default(false)
+  sort_order       Int      @default(0)
+  /// The gallery, main picture first. `image_url` mirrors images[0]. See 2026-11-04-store-v2.sql.
+  images              String[] @default([])
+  /// At or under this, the product is flagged low on the inventory screen.
+  low_stock_threshold Int      @default(5)
+  created_at       DateTime @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  stock_movements  store_stock_movements[]
+
+  @@index([is_active, sort_order], map: "idx_store_products_active_sort")
+  @@schema("public")
+}
+
+/// An order a customer placed from the store's cart. The order itself is sent to
+/// the coach over WhatsApp; this row is the panel's record of it.
+model store_orders {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  /// The code in the WhatsApp message, e.g. ST-7K2Q9P.
+  reference      String   @unique
+  customer_name  String
+  customer_phone String
+  city           String
+  address        String
+  notes          String?
+  items          Json     @default("[]")
+  subtotal       Int      @default(0)
+  delivery_fee   Int      @default(0)
+  total          Int      @default(0)
+  /// new | confirmed | delivered | cancelled
+  status         String   @default("new")
+  /// Whether this order's quantities have been taken off stock (on confirm).
+  stock_applied  Boolean  @default(false)
+  customer_id    String?  @db.Uuid
+  /// Where the customer dropped the pin at checkout.
+  location_lat   Float?
+  location_lng   Float?
+  /// Points this order is worth, fixed when it is placed.
+  points_earned  Int      @default(0)
+  /// Whether those points are on the customer's balance (on delivery).
+  points_awarded Boolean  @default(false)
+  created_at     DateTime @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  customer       store_customers? @relation(fields: [customer_id], references: [id], onDelete: SetNull)
+
+  @@index([customer_id, created_at(sort: Desc)], map: "idx_store_orders_customer")
+
+  @@index([created_at(sort: Desc)], map: "idx_store_orders_created")
+  @@index([status], map: "idx_store_orders_status")
+  @@schema("public")
+}
+
+/// A store customer, one per phone number. Seen only in the store panel.
+model store_customers {
+  id         String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  phone      String             @unique
+  name       String
+  city       String             @default("")
+  address    String             @default("")
+  /// The points balance. Every change is in store_points_log.
+  points     Int                @default(0)
+  notes      String?
+  created_at DateTime           @default(now()) @db.Timestamptz(6)
+  updated_at DateTime           @default(now()) @updatedAt @db.Timestamptz(6)
+  orders     store_orders[]
+  points_log store_points_log[]
+
+  @@schema("public")
+}
+
+/// Every change to a customer's points: order | order_reversed | manual.
+model store_points_log {
+  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  customer_id     String          @db.Uuid
+  change          Int
+  balance_after   Int
+  reason          String
+  order_reference String?
+  note            String?
+  created_at      DateTime        @default(now()) @db.Timestamptz(6)
+  customer        store_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+
+  @@index([customer_id, created_at(sort: Desc)], map: "idx_store_points_log_customer")
+  @@schema("public")
+}
+
+/// Every change to a product's stock: restock | count | order | order_reversed | tracking.
+model store_stock_movements {
+  id              String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  product_id      String         @db.Uuid
+  change          Int
+  stock_after     Int?
+  reason          String
+  order_reference String?
+  note            String?
+  created_at      DateTime       @default(now()) @db.Timestamptz(6)
+  product         store_products @relation(fields: [product_id], references: [id], onDelete: Cascade)
+
+  @@index([product_id, created_at(sort: Desc)], map: "idx_store_stock_movements_product")
+  @@index([created_at(sort: Desc)], map: "idx_store_stock_movements_created")
+  @@schema("public")
+}

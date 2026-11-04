@@ -107,7 +107,7 @@ body::before {
 
 /* ─── RIGHT PANEL (form side) ─── */
 .panel-form {
-  background: var(--bg2);
+  background: rgba(var(--text-rgb), 0.02);
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
@@ -146,14 +146,17 @@ body::before {
   position: relative;
   z-index: 1;
   margin-block: auto;
-  background: var(--bg2);
-  border: 1px solid var(--border);
+  background: var(--glass);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--shadow-soft);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   padding: 40px;
   transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
 }
 .form-card:hover {
-  border-color: var(--border-strong);
+  border-color: var(--glass-border-strong);
 }
 /* A failed sign-in: one short shake, so the eye goes back to the card.
    The global reduced-motion rule collapses it to nothing. */
@@ -263,7 +266,7 @@ body::before {
 .field input {
   width: 100%;
   background: var(--bg3);
-  border: 1px solid var(--border);
+  border: 1px solid var(--glass-border-strong);
   color: var(--text);
   padding: 13px;
   padding-inline-start: 42px;
@@ -401,7 +404,7 @@ body::before {
 /* Submit (Primary Button) */
 .btn-submit {
   width: 100%;
-  background: var(--primary);
+  background: linear-gradient(135deg, var(--primary) 0%, color-mix(in srgb, var(--primary) 75%, var(--primary-light)) 100%);
   color: var(--text-inverse);
   border: none;
   padding: 15px 32px;
@@ -423,7 +426,7 @@ body::before {
   animation: fadeUp 0.6s 0.55s ease backwards;
 }
 .btn-submit:hover {
-  background: var(--primary-hover);
+  filter: brightness(1.05);
 }
 .btn-submit:active { transform: translateY(1px); }
 .btn-submit:disabled {
@@ -467,8 +470,8 @@ body::before {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: var(--bg3);
-  border: 1px solid var(--border);
+  background: var(--glass-2);
+  border: 1px solid var(--glass-border);
   color: var(--muted2);
   padding: 12px 16px;
   border-radius: var(--radius-md);
@@ -479,7 +482,7 @@ body::before {
   transition: background 0.25s, color 0.25s, border-color 0.25s;
 }
 .btn-social:hover {
-  background: var(--bg4);
+  background: rgba(var(--text-rgb), 0.1);
   border-color: var(--border-primary);
   color: var(--text);
 }
@@ -595,9 +598,9 @@ body::before {
   padding-right: calc(40px + env(safe-area-inset-right));
   z-index: 100;
   background: var(--nav-bg-glass);
-  backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--glass-border);
 }
 
 .nav-actions {
@@ -625,12 +628,9 @@ body::before {
   height: var(--tap-min);
 }
 .btn-nav-register:hover {
-  background: var(--primary);
-  border-color: var(--primary);
+  background: linear-gradient(135deg, var(--primary) 0%, color-mix(in srgb, var(--primary) 75%, var(--primary-light)) 100%);
+  border-color: transparent;
   color: var(--text-inverse);
-}
-.btn-nav-register:active {
-  transform: translateY(1px);
 }
 
 /* --- Install App (Top Bar) — see @/components/pwa/InstallAppButton --- */
@@ -712,8 +712,8 @@ body::before {
   animation: fadeUp 0.6s 0.65s ease backwards;
 }
 .btn-register-card:hover {
-  background: var(--primary);
-  border-color: var(--primary);
+  background: linear-gradient(135deg, var(--primary) 0%, color-mix(in srgb, var(--primary) 75%, var(--primary-light)) 100%);
+  border-color: transparent;
   color: var(--text-inverse);
 }
 .btn-register-card:active {

@@ -36,8 +36,8 @@
 /* Same surface as .dashboard-card / .admin-card. */
 .crm-glass-panel {
   background: var(--admin-card-bg);
-  backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
   border: 1px solid var(--admin-card-border);
   border-radius: var(--admin-radius-lg);
   box-shadow: var(--admin-card-shadow);
@@ -70,8 +70,8 @@
   width: 480px;
   flex-shrink: 0;
   background: var(--admin-card-bg);
-  backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
   border: 1px solid var(--admin-card-border);
   border-radius: var(--admin-radius-lg);
   display: flex;
@@ -342,8 +342,8 @@
   display: flex;
   align-items: center;
   padding: 16px 24px;
-  background: var(--admin-bg-2);
-  border: 1px solid var(--border);
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
   border-radius: var(--admin-radius);
   cursor: pointer;
   transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), opacity var(--dur) var(--ease), transform var(--dur) var(--ease);
@@ -359,9 +359,8 @@
 }
 
 .crm-list-card:hover {
-  background: var(--admin-bg-3);
+  background: var(--glass-2);
   border-color: var(--border-primary);
-  transform: translateY(-2px);
   box-shadow: var(--admin-card-shadow-hover);
 }
 
@@ -1052,9 +1051,6 @@
   transform: translateY(-1px);
   box-shadow: var(--elev-2);
 }
-.crm-btn-primary:active {
-  transform: translateY(1px);
-}
 
 .crm-btn-icon {
   display: inline-flex;
@@ -1297,7 +1293,7 @@ details[open].crm-modal-section > summary .accordion-icon {
 /* Buttons */
 .crm-btn-primary {
   padding: var(--space-3) var(--space-5);
-  background: var(--primary);
+  background: linear-gradient(135deg, var(--primary) 0%, color-mix(in srgb, var(--primary) 75%, var(--primary-light)) 100%);
   color: var(--text-inverse);
   border: none;
   border-radius: var(--radius-md);
@@ -1308,11 +1304,14 @@ details[open].crm-modal-section > summary .accordion-icon {
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), opacity var(--dur) var(--ease), transform var(--dur) var(--ease);
+  transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), opacity var(--dur) var(--ease), transform var(--dur) var(--ease), filter var(--dur) var(--ease);
 }
 
 .crm-btn-primary:hover {
-  background: var(--primary-hover);
+  background: linear-gradient(135deg, var(--primary) 0%, color-mix(in srgb, var(--primary) 75%, var(--primary-light)) 100%);
+  filter: brightness(1.05);
+  transform: none;
+  box-shadow: none;
 }
 
 .crm-btn-secondary {

@@ -3,6 +3,7 @@ import "./globals.css";
 import { UploadProgressWindow } from "@/components/upload/UploadProgressWindow";
 import { ServiceWorkerRegister } from "@/components/pwa/ServiceWorkerRegister";
 import { SITE_URL } from "@/lib/siteUrl";
+import GlassPointer from "@/components/GlassPointer";
 
 const SITE_NAME = "Ibrahim Abutabikh";
 const SITE_DESCRIPTION = "خطط تدريب وأنظمة غذائية مخصصة مع متابعة كاملة";
@@ -113,6 +114,9 @@ export default function RootLayout({
   return (
     <html lang="ar" dir="rtl" data-scroll-behavior="smooth">
       <body>
+        {/* The ambient light the glass frosts over, and the cursor's light on
+            the cards. Renders three decorative layers; see the component. */}
+        <GlassPointer />
         {children}
         {/* Every upload in the system reports into this one window, so it is
             mounted once here rather than per screen. It renders nothing until a

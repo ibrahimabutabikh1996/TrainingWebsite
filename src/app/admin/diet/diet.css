@@ -101,18 +101,15 @@
 /* Primary — filled. A flat fill, matching every other primary button in the
    admin area; the gradient here was the only one of its kind. */
 .diet-add-btn {
-  border: 1px solid var(--primary);
-  background: var(--primary);
+  border: 1px solid transparent;
+  background: linear-gradient(135deg, var(--primary) 0%, color-mix(in srgb, var(--primary) 75%, var(--primary-light)) 100%);
   color: var(--text-inverse);
 }
 
 .diet-add-btn:hover {
-  background: var(--primary-hover);
-  border-color: var(--primary-hover);
-}
-
-.diet-add-btn:active {
-  transform: translateY(0);
+  background: linear-gradient(135deg, var(--primary) 0%, color-mix(in srgb, var(--primary) 75%, var(--primary-light)) 100%);
+  filter: brightness(1.05);
+  border-color: transparent;
 }
 
 /* Secondary — tinted outline. Carries the accent on its border, icon and text
@@ -181,8 +178,8 @@
   border-radius: var(--admin-radius-lg);
   border: 1px solid var(--admin-card-border);
   background: var(--admin-card-bg);
-  backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
   box-shadow: var(--admin-card-shadow);
 }
 
@@ -464,8 +461,8 @@
   gap: 12px;
   padding: 64px 24px;
   border-radius: var(--admin-radius-lg);
-  border: 1px dashed var(--border-strong);
-  background: var(--bg2);
+  border: 1px dashed var(--glass-border-strong);
+  background: var(--glass);
   text-align: center;
 }
 

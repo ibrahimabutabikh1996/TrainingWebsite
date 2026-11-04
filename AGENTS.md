@@ -76,8 +76,34 @@ Ascending lightness — keeps elevated surfaces distinct from the page.
 ### Elevation
 
 * `--elev-1`: `0 1px 2px rgba(2, 6, 23, 0.40)`
-* `--elev-2`: `0 2px 8px rgba(2, 6, 23, 0.36)`
-* `--elev-3`: `0 12px 32px rgba(2, 6, 23, 0.48)`
+* `--elev-2` (= `--shadow-soft`): `--glass-highlight`, `0 10px 40px -12px rgba(2, 6, 23, 0.55)`
+* `--elev-3`: `--glass-highlight`, `0 24px 64px -16px rgba(2, 6, 23, 0.65)`
+* `--glass-highlight`: `inset 0 1px 0 rgba(248, 250, 252, 0.08)` — the light on a pane's top edge
+
+### Glass surfaces
+
+The whole product is glassmorphism. Cards, panels, bars and fields are glass: the page text colour (`--text-rgb`) at a low alpha over the ambient light, with `backdrop-filter: var(--glass-blur)` (`blur(20px) saturate(160%)`, lighter under 640px).
+
+* `--glass`: 5.5% — card and panel fill
+* `--glass-2`: 9% — hover, secondary fills, empty tracks
+* `--glass-border`: 10% — the card edge
+* `--glass-border-strong`: 18% — inputs, selected or hovered edges
+* `--input-bg`: 6% — fields are glass too
+* `--glass-solid` + `--glass-solid-blur`: `--bg2` at 78% under a 28px frost — dialogs, dropdowns, the upload window and the promo popup, where text sits over busy content
+* `--primary-soft`: `--primary` at 14% — icon tiles, the selected nav item, tinted eyebrows
+* `--page-glow`: two soft pools of brand blue in the top corners, painted on `body` (and on `.admin-layout-wrapper::before`) over `--bg`
+
+### The interaction layer
+
+The end of `globals.css` holds everything that makes the glass respond, and `src/components/GlassPointer.tsx` (mounted once in the root layout) drives the pointer half of it:
+
+* **Ambient light** — `.ambient`, three slow-drifting radial pools of `--primary`, `--primary-light` and `--primary-active` fixed behind the page. Glass needs colour behind it to read as glass; a full-page wrapper must stay transparent or it hides them.
+* **Spotlight** — on the cards in GlassPointer's `GLOW` list (mirrored in the CSS) a light follows the cursor, via `--mx`/`--my` and `data-glow`. Only cards whose background is a plain fill: it is a `background-image`.
+* **Cards never move.** No lift, tilt or travel on hover or on arrival; a card answers at its edge, its shadow and the spotlight only. On the landing page cards fade in without moving.
+* **Button motion** — every button in the shared list rises 2px on hover, its icon leans 3px the reading way, a press sinks it to `scale: 0.96` and springs back (`--ease-spring`), and a press sends a ripple from the exact point (`::before`, driven by GlassPointer's `RIPPLE` list via `--bx`/`--by` and `is-rippling`; it works on touch). These use the independent `translate`/`scale` properties so they compose with a button's own `transform`. A button in the list must not use its own `::before`.
+* **Shine** — a band of light crosses each primary button once on hover (`::after`, so a button in that list must not use its own `::after`).
+
+The spotlight is mouse only; everything is off under reduced motion. Add a new card to both `GLOW` lists, and a new button to both button lists, to give it the effect.
 
 ---
 
@@ -180,9 +206,10 @@ The bigger the surface, the softer the corner.
 | ----------------- | ------- | ------------------------------------------ |
 | `--radius-xs`     | `6px`   | tags, chips, badges, inline markers        |
 | `--radius-sm`     | `8px`   | icon buttons, small tiles                  |
-| `--radius-md`     | `10px`  | inputs, buttons, tabs, nav items           |
-| `--radius-lg`     | `14px`  | cards, panels, sections, tables            |
-| `--radius-xl`     | `18px`  | modals, drawers, hero surfaces             |
+| `--radius-md`     | `12px`  | inputs, buttons, tabs, nav items           |
+| `--radius-lg`     | `16px`  | cards, panels, sections, tables            |
+| `--radius-xl`     | `24px`  | modals, drawers, hero surfaces             |
+| `--radius-2xl`    | `32px`  | large showcase panels, the coach's photos  |
 | `--radius-pill`   | `999px` | pill badges — a shape, not a scale step    |
 | `--radius-circle` | `50%`   | avatars, round icon buttons, dots          |
 
@@ -201,7 +228,7 @@ Flat by default. A shadow means "this surface floats above that one" — never d
 
 * Durations: `--dur-fast` 120ms · `--dur` 180ms · `--dur-slow` 280ms
 * `--ease: cubic-bezier(0.2, 0, 0, 1)` — state changes that should feel instant
-* `--ease-out: cubic-bezier(0.16, 1, 0.3, 1)` — anything that travels (entrances, drawers, progress bars)
+* `--ease-out: cubic-bezier(0.22, 1, 0.36, 1)` — anything that travels (entrances, drawers, progress bars)
 
 `@media (prefers-reduced-motion: reduce)` in `globals.css` collapses all animation and transition durations globally. Anything that hides content until an animation runs must define a reduced-motion fallback (see `.reveal` in `landing.css`).
 
@@ -231,7 +258,7 @@ Headings larger than `--text-3xl` (landing hero, section titles, big statistics)
 
 ## Focus
 
-`--focus-ring: 0 0 0 3px rgba(var(--primary-rgb), 0.28)` — one definition, used by every interactive element.
+`--focus-ring: 0 0 0 3px rgba(var(--primary-rgb), 0.40)` — one definition, used by every interactive element.
 
 `globals.css` also sets a zero-specificity `:focus-visible` outline on all interactive elements, so a component that defines nothing still gets a visible ring.
 
@@ -299,7 +326,7 @@ Default `--text-secondary` → hover `--text` → active `--primary`, with an un
 
 ### Primary buttons
 
-Fill `--primary`, text `--text-inverse`, radius `--radius-md`, weight `--weight-semibold`. Hover swaps to `--primary-hover`. **No shadow** — the fill already carries the emphasis. `:active` may sink 1px.
+A dark glass pill (`--radius-pill`) with a lit edge — the "Lit-edge buttons" block in `globals.css`. Three background layers on one element: a cursor light (padding-box, at `--mx`/`--my`), the dark fill (padding-box), and a conic gradient edge (border-box, through a transparent 1.5px border) running `--primary` → `--primary-light` → `--primary-active` and fading out, plus a soft inset glow of the same colours. Text is `--text`. On a plan card `--primary` is the plan's colour, so the edge runs from the plan into the blues. Hover raises `--btn-spot` (the cursor light) and turns `--btn-angle`; both are registered with `@property` so they transition. The rule sits at `html:root:root` so it outranks each button's own fill without `!important`; an inline `background` (the red delete in the confirm dialog) still wins. A new primary button goes into that list and GlassPointer's `LIT` list.
 
 ### Secondary / ghost buttons
 
@@ -311,7 +338,7 @@ Transparent or `--primary-dim` background, `--border-primary` border, `--primary
 
 ### Cards and panels
 
-`--bg2` or `--nav-bg-glass`, 1px `--border`, `--radius-lg`, `--elev-1`, padding `--space-6`. A **container** reacts at its edge only (`--border-strong` + `--elev-2`) — it must not lift, or hovering a wide dashboard makes the page twitch. A **clickable** card may add `translateY(-2px)`.
+`--glass` with `--glass-blur`, 1px `--glass-border`, `--radius-lg`, `--shadow-soft`, padding `--space-6`. A **container** reacts at its edge only (`--glass-border-strong` + `--elev-3`) — it must not lift, or hovering a wide dashboard makes the page twitch. A **clickable** card may add `translateY(-2px)`.
 
 ### Inputs
 

@@ -20,8 +20,8 @@
   gap: 6px;
   padding: 5px;
   border-radius: var(--radius-lg);
-  border: 1px solid var(--border);
-  background: var(--bg2);
+  border: 1px solid var(--glass-border);
+  background: var(--glass);
   width: fit-content;
   margin-bottom: 4px;
 }
@@ -76,8 +76,10 @@
 .dpv-min-card {
   padding: 16px 18px;
   border-radius: var(--radius-xl);
-  background: var(--bg2);
-  border: 1px solid var(--border);
+  background: var(--glass);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -129,8 +131,8 @@
 
 .dpv-meal {
   border-radius: var(--radius-xl);
-  border: 1px solid var(--border);
-  background: var(--bg2);
+  border: 1px solid var(--glass-border);
+  background: var(--glass);
   overflow: hidden;
   transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), opacity var(--dur) var(--ease), transform var(--dur) var(--ease);
   position: relative;
@@ -201,7 +203,7 @@
   padding: 6px 14px;
   border-radius: var(--radius-pill);
   background: var(--bg3);
-  border: 1px solid var(--border);
+  border: 1px solid var(--glass-border);
   font-size: var(--text-sm);
   font-weight: 600;
   color: var(--text-secondary);

@@ -64,26 +64,19 @@
   gap: var(--space-2);
   padding: var(--space-3) var(--space-5);
   border-radius: var(--radius-md);
-  border: 1px solid var(--primary);
-  background: var(--primary);
+  border: 1px solid transparent;
+  background: linear-gradient(135deg, var(--primary) 0%, color-mix(in srgb, var(--primary) 75%, var(--primary-light)) 100%);
   color: var(--text-inverse);
   font-family: inherit;
   font-size: var(--text-base);
   font-weight: var(--weight-semibold);
   cursor: pointer;
   white-space: nowrap;
-  transition: background 0.25s, border-color 0.25s, transform 0.18s, box-shadow 0.25s;
+  transition: filter var(--dur) var(--ease), border-color var(--dur) var(--ease), transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
 }
 
 .ex-add-btn:hover {
-  background: var(--primary-hover);
-  border-color: var(--primary-hover);
-  transform: translateY(-2px);
-}
-
-.ex-add-btn:active {
-  transform: translateY(0);
-  background: var(--primary-active);
+  filter: brightness(1.05);
 }
 
 /* ─── Toolbar ─── */
@@ -97,8 +90,8 @@
   border-radius: var(--admin-radius-lg);
   border: 1px solid var(--admin-card-border);
   background: var(--admin-card-bg);
-  backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
   box-shadow: var(--admin-card-shadow);
 }
 
@@ -240,7 +233,9 @@
   border-radius: var(--admin-radius-lg);
   border: 1px solid var(--admin-card-border);
   /* Grid items stay opaque — see the note on .co-card. */
-  background: var(--bg2);
+  background: var(--glass);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
   box-shadow: var(--admin-card-shadow);
   transition: border-color 0.25s, transform 0.2s, box-shadow 0.25s;
   /* Grid items default to `min-width: auto`, i.e. a min-content floor.
@@ -251,7 +246,6 @@
 
 .ex-card:hover {
   border-color: var(--border-primary);
-  transform: translateY(-2px);
   box-shadow: var(--admin-card-shadow-hover);
 }
 
@@ -433,8 +427,8 @@
   gap: 12px;
   padding: 64px 24px;
   border-radius: var(--admin-radius-lg);
-  border: 1px dashed var(--border-strong);
-  background: var(--bg2);
+  border: 1px dashed var(--glass-border-strong);
+  background: var(--glass);
   text-align: center;
 }
 
@@ -719,8 +713,8 @@
   align-items: center;
   justify-content: center;
   background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.2);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), inset 0 1px 1px rgba(255, 255, 255, 0.15);
   color: var(--text);

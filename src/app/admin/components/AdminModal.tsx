@@ -47,7 +47,7 @@ export default function AdminModal({ isOpen, onClose, title, icon = "info", chil
             everything shorter it overflowed a centred flex box at both ends —
             clipped by the top of the browser, over the nav bar at the bottom.
             A percentage resolves against the overlay, so it cannot outgrow it. */}
-        <div className="crm-glass-panel" style={{ width: "100%", maxWidth, maxHeight: "100%", display: "flex", flexDirection: "column", overflow: "hidden", backgroundColor: "var(--bg2)", borderRadius: "var(--radius-xl)", boxShadow: "var(--elev-3)", border: "1px solid var(--border)" }}>
+        <div className="crm-glass-panel" style={{ width: "100%", maxWidth, maxHeight: "100%", display: "flex", flexDirection: "column", overflow: "hidden", background: "var(--glass-solid)", backdropFilter: "var(--glass-solid-blur)", WebkitBackdropFilter: "var(--glass-solid-blur)", borderRadius: "var(--radius-xl)", boxShadow: "var(--elev-3)", border: "1px solid var(--glass-border-strong)" }}>
 
           {/* Header */}
           <div className="admin-modal-head" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--border)", flexShrink: 0 }}>

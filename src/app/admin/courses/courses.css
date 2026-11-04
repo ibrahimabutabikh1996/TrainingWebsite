@@ -69,8 +69,8 @@
   gap: var(--space-2);
   padding: var(--space-3) var(--space-5);
   border-radius: var(--radius-md);
-  border: 1px solid var(--primary);
-  background: var(--primary);
+  border: 1px solid transparent;
+  background: linear-gradient(135deg, var(--primary) 0%, color-mix(in srgb, var(--primary) 75%, var(--primary-light)) 100%);
   color: var(--text-inverse);
   font-family: inherit;
   font-size: var(--text-base);
@@ -78,16 +78,13 @@
   cursor: pointer;
   white-space: nowrap;
   text-decoration: none;
-  transition: background 0.25s, border-color 0.25s, transform 0.18s, box-shadow 0.25s;
+  transition: filter var(--dur) var(--ease), border-color var(--dur) var(--ease), transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
 }
 
 .co-add-btn:hover {
-  background: var(--primary-hover);
-  border-color: var(--primary-hover);
-  transform: translateY(-2px);
+  filter: brightness(1.05);
 }
 
-.co-add-btn:active { transform: translateY(0); background: var(--primary-active); }
 
 /* ─── Toolbar ─── */
 
@@ -100,8 +97,8 @@
   border-radius: var(--admin-radius-lg);
   border: 1px solid var(--admin-card-border);
   background: var(--admin-card-bg);
-  backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
   box-shadow: var(--admin-card-shadow);
 }
 
@@ -231,7 +228,9 @@
   border: 1px solid var(--admin-card-border);
   /* Grid items stay opaque: dozens of blurred layers is a real cost, and the
      dashboard treats its repeated items (.diet-meal) the same way. */
-  background: var(--bg2);
+  background: var(--glass);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
   box-shadow: var(--admin-card-shadow);
   cursor: pointer;
   transition: border-color 0.25s, transform 0.2s, box-shadow 0.25s;
@@ -243,7 +242,6 @@
 
 .co-card:hover {
   border-color: var(--border-primary);
-  transform: translateY(-2px);
   box-shadow: var(--admin-card-shadow-hover);
 }
 
@@ -399,8 +397,8 @@
   gap: 12px;
   padding: 64px 24px;
   border-radius: var(--admin-radius-lg);
-  border: 1px dashed var(--border-strong);
-  background: var(--bg2);
+  border: 1px dashed var(--glass-border-strong);
+  background: var(--glass);
   text-align: center;
 }
 
@@ -460,11 +458,11 @@
    word a line or pushes past the dialog. This lets it keep a readable width
    and scroll within its own box — the page behind it never moves. */
 .co-minimal-table-wrapper {
-  border: 1px solid var(--border);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   overflow-x: auto;
   overflow-y: hidden;
-  background: var(--bg2);
+  background: var(--glass);
   box-shadow: var(--elev-1);
 }
 

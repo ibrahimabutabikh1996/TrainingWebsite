@@ -2,11 +2,13 @@
   position: relative;
   width: 100%;
   border-radius: var(--radius-lg);
-  border: 1px solid var(--border);
+  border: 1px solid var(--glass-border);
   padding: 16px;
   /* Support RTL naturally, Icon is absolutely positioned */
   padding-inline-start: 48px;
-  background: var(--bg2);
+  background: var(--glass);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
   color: var(--text);
   font-family: inherit;
   transition: all var(--dur) var(--ease);

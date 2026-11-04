@@ -227,8 +227,38 @@ html {
     /* Elevation — a near-black page needs a deep, diffuse shadow to read at all.
        See the scale's contract in the "Design tokens" block further down. */
     --elev-1: 0 1px 2px rgba(2, 6, 23, 0.40);
-    --elev-2: 0 2px 8px rgba(2, 6, 23, 0.36);
-    --elev-3: 0 12px 32px rgba(2, 6, 23, 0.48);
+    /* The thin light along a glass pane's top edge — what makes it read as a
+       sheet with thickness rather than a tinted rectangle. Part of both raised
+       shadows so every glass surface carries it. */
+    --glass-highlight: inset 0 1px 0 rgba(248, 250, 252, 0.08);
+    --elev-2: var(--glass-highlight), 0 10px 40px -12px rgba(2, 6, 23, 0.55);
+    --elev-3: var(--glass-highlight), 0 24px 64px -16px rgba(2, 6, 23, 0.65);
+    /* The one soft card shadow — wide, low and untinted. */
+    --shadow-soft: var(--elev-2);
+
+    /* Glass surfaces — the page text colour at a whisper of opacity, so a card
+       lets the page glow through it without introducing a new hue. Paired with
+       `backdrop-filter: var(--glass-blur)`. Solid surfaces (dropdowns, dialogs
+       over busy content) keep --bg2. */
+    --text-rgb: 248, 250, 252;
+    --primary-light-rgb: 147, 197, 253;
+    --glass: rgba(var(--text-rgb), 0.055);
+    --glass-2: rgba(var(--text-rgb), 0.09);
+    --glass-border: rgba(var(--text-rgb), 0.10);
+    --glass-border-strong: rgba(var(--text-rgb), 0.18);
+    --glass-blur: blur(20px) saturate(160%);
+    /* Frosted panes that float over busy content — dialogs, dropdowns, the
+       upload window. Mostly opaque so their text never fights what is behind. */
+    --glass-solid: rgba(21, 33, 46, 0.78);
+    --glass-solid-blur: blur(28px) saturate(160%);
+    /* Soft brand tint behind icons and selected rows. */
+    --primary-soft: rgba(var(--primary-rgb), 0.14);
+
+    /* The page background: two soft pools of the brand blue in the top
+       corners over the base colour. */
+    --page-glow:
+        radial-gradient(60% 45% at 100% 0%, rgba(var(--primary-rgb), 0.14) 0%, transparent 70%),
+        radial-gradient(50% 40% at 0% 0%, rgba(var(--primary-light-rgb), 0.07) 0%, transparent 70%);
 
     /* Mapped to generic variables for legacy components */
     --primary-glow: var(--primary-dim);
@@ -238,7 +268,7 @@ html {
     --card-border: var(--border);
     --card-shadow: var(--elev-2);
     --text-main: var(--text);
-    --input-bg: var(--bg3);
+    --input-bg: rgba(var(--text-rgb), 0.06);
     --input-border: var(--border);
     --input-focus: var(--primary);
     --error-bg: rgba(248, 113, 113, 0.12);
@@ -276,9 +306,10 @@ html {
        so they stay literal. */
     --radius-xs: 6px;    /* tags, chips, badges, inline markers */
     --radius-sm: 8px;    /* icon buttons, small tiles, table cells */
-    --radius-md: 10px;   /* inputs, buttons, tabs, nav items */
-    --radius-lg: 14px;   /* cards, panels, sections */
-    --radius-xl: 18px;   /* modals, drawers, hero surfaces */
+    --radius-md: 12px;   /* inputs, buttons, tabs, nav items */
+    --radius-lg: 16px;   /* cards, panels, sections */
+    --radius-xl: 24px;   /* modals, drawers, hero surfaces */
+    --radius-2xl: 32px;  /* large showcase panels */
     --radius-pill: 999px;
     --radius-circle: 50%;
 
@@ -298,7 +329,7 @@ html {
     --dur: 180ms;
     --dur-slow: 280ms;
     --ease: cubic-bezier(0.2, 0, 0, 1);
-    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 
     /* --- Type scale ---
        rem-based so it honours the user's browser text size. */
@@ -323,7 +354,7 @@ html {
     --weight-bold: 700;
 
     /* --- Focus ring — one definition, used by every interactive element. --- */
-    --focus-ring: 0 0 0 3px rgba(var(--primary-rgb), 0.28);
+    --focus-ring: 0 0 0 3px rgba(var(--primary-rgb), 0.40);
 
     /* --- Touch target floor ---
        The smallest a control may be on a screen driven by a thumb. Controls
@@ -361,6 +392,15 @@ html {
     --safe-bottom: env(safe-area-inset-bottom, 0px);
     --safe-left: env(safe-area-inset-left, 0px);
     --safe-right: env(safe-area-inset-right, 0px);
+}
+
+/* Lighter frosting on phones: every blurred pane is a separate pass over
+   what is behind it, and a small GPU pays for each one on every scroll. */
+@media (max-width: 640px) {
+    :root {
+        --glass-blur: blur(12px) saturate(140%);
+        --glass-solid-blur: blur(16px) saturate(140%);
+    }
 }
 
 /* --- Icons (see src/components/Icon.tsx) ---
@@ -428,10 +468,10 @@ html {
        tokens on the right-hand side is redeclared anywhere in the admin scope,
        so they substitute to the same values here as they did there, and the
        admin pages measure identically at 1280 and 1440. */
-    --admin-card-bg: var(--nav-bg-glass);
-    --admin-card-border: var(--border);
-    --admin-card-shadow: var(--elev-1);
-    --admin-card-shadow-hover: var(--elev-2);
+    --admin-card-bg: var(--glass);
+    --admin-card-border: var(--glass-border);
+    --admin-card-shadow: var(--shadow-soft);
+    --admin-card-shadow-hover: var(--elev-3);
 
     --admin-primary: var(--primary);
     --admin-on-surface: var(--text);
@@ -542,6 +582,11 @@ input, textarea, select, button, optgroup, option {
 
 body {
     font-family: var(--font-primary);
+    line-height: 1.6;
+    background-color: var(--bg);
+    background-image: var(--page-glow);
+    background-attachment: fixed;
+    background-repeat: no-repeat;
 }
 
 /* The browser's own stylesheet italicises these, and with Cairo that is a real
@@ -583,10 +628,10 @@ html:lang(ar) body, html:lang(ar) {
     bottom: 0;
     left: 0;
     width: 100%;
-    background: var(--card-bg);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    border-top: 1px solid var(--card-border);
+    background: var(--nav-bg-glass);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    backdrop-filter: blur(24px) saturate(1.4);
+    border-top: 1px solid var(--glass-border);
     display: none; /* Will be shown on dashboard */
     justify-content: space-around;
     align-items: center;
@@ -626,7 +671,7 @@ body[lang="ar"] .nav-item {
 
 .nav-item:hover {
     color: var(--primary-on-tint);
-    background: var(--bg3);
+    background: var(--glass-2);
 }
 
 .nav-item.active {
@@ -994,12 +1039,12 @@ body[lang="ar"] .nav-item {
     width: 100%;
     padding: 12px 16px;
     background-color: var(--input-bg);
-    border: 1px solid var(--input-border);
-    border-radius: var(--radius-sm);
+    border: 1px solid var(--glass-border-strong);
+    border-radius: var(--radius-md);
     color: var(--text-main);
     font-family: inherit;
     font-size: var(--text-md);
-    transition: border-color 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
+    transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), background-color var(--dur) var(--ease);
     appearance: none;
     -webkit-appearance: none;
 }
@@ -1117,7 +1162,7 @@ input[type="number"] {
   width: 100%;
   padding: 9px 12px;
   border-radius: var(--admin-radius);
-  border: 1px solid var(--border-strong);
+  border: 1px solid var(--glass-border-strong);
   background: var(--input-bg);
   color: var(--text);
   font-family: inherit;
@@ -1484,4 +1529,399 @@ textarea.ui-control {
   .cms-preview-text {
     font-size: var(--text-2xs);
   }
+}
+
+/* ==========================================================================
+   Glass & interaction layer
+
+   Everything that makes the glass feel alive, in one place: the drifting
+   light behind the panes, the spotlight that follows the cursor across a
+   card, and the motion on the buttons — lift, press, ripple and shine. Cards
+   themselves never move.
+
+   The pointer effects are driven by `src/components/GlassPointer.tsx`, which
+   writes `--mx`/`--my` (the cursor inside the card) and `data-glow` onto the
+   card under a mouse, and `--bx`/`--by` with `is-rippling` onto a pressed
+   button. Nothing here depends on it:
+   without the script, or on a touch screen, every card renders exactly as its
+   own stylesheet says.
+   ========================================================================== */
+
+/* --- Ambient light ---
+   Three soft pools of the brand blues, drifting slowly behind everything.
+   Rendered by GlassPointer as the first thing in <body>, fixed and below the
+   page (`z-index: -1` paints above the root background, below all content).
+   Radial gradients rather than `filter: blur()`, and only `transform`
+   animates, so the compositor moves them without repainting. The global
+   reduced-motion rule above collapses the animation, leaving them still. */
+:root {
+    --primary-active-rgb: 37, 99, 235;
+}
+
+.ambient {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.ambient span {
+    position: absolute;
+    width: 70vmax;
+    height: 70vmax;
+    border-radius: var(--radius-circle);
+    background: radial-gradient(circle, rgba(var(--primary-rgb), 0.16) 0%, transparent 62%);
+    will-change: transform;
+    animation: ambient-drift 32s ease-in-out infinite alternate;
+}
+
+.ambient span:nth-child(1) {
+    top: -30vmax;
+    inset-inline-end: -20vmax;
+}
+
+.ambient span:nth-child(2) {
+    top: 25vh;
+    inset-inline-start: -30vmax;
+    background: radial-gradient(circle, rgba(var(--primary-light-rgb), 0.10) 0%, transparent 62%);
+    animation-duration: 38s;
+    animation-delay: -10s;
+}
+
+.ambient span:nth-child(3) {
+    bottom: -35vmax;
+    inset-inline-end: 10vw;
+    background: radial-gradient(circle, rgba(var(--primary-active-rgb), 0.18) 0%, transparent 62%);
+    animation-duration: 44s;
+    animation-delay: -20s;
+}
+
+@keyframes ambient-drift {
+    0%   { transform: translate3d(0, 0, 0) scale(1); }
+    50%  { transform: translate3d(6vw, 5vh, 0) scale(1.08); }
+    100% { transform: translate3d(-5vw, 9vh, 0) scale(0.94); }
+}
+
+/* --- Cursor spotlight ---
+   A soft light under the cursor. `background-image` only, so each card's own
+   `background` colour (its glass fill) stays underneath it. The cards listed
+   are the ones whose background is a plain fill; one that already paints an
+   image of its own is left out rather than having it replaced. Inside a plan
+   card --primary is the plan's colour, so the light follows the plan. */
+:is(
+    .dashboard-card, .home-stat-card, .processing-card, .admin-card,
+    .membership-card, .testimonial-card, .form-card, .pw-card,
+    .co-card, .ex-card, .crm-list-card, .cms-pricing-card
+)[data-glow] {
+    background-image: radial-gradient(
+        360px circle at var(--mx, 50%) var(--my, 50%),
+        rgba(var(--primary-rgb), 0.12) 0%,
+        transparent 60%
+    );
+}
+
+/* --- Shine ---
+   A band of light that crosses a primary button once as the cursor arrives.
+   The transition lives only on :hover, so leaving snaps it back unseen rather
+   than sweeping it home again. `:where()` keeps the box setup at zero
+   specificity so a button that positions itself keeps its own value. The band
+   sits at z-index -1 inside the button's own stacking context: above its fill,
+   below its label. Right to left, the way the label reads. */
+:where(
+    .btn-primary, .btn-submit, .pw-submit, .processing-btn, .dash-primary-btn,
+    .hero-btn.primary-btn, .crm-btn-primary, .cms-btn-primary, .co-add-btn,
+    .ex-add-btn, .staff-add-btn, .diet-add-btn, .promo-popup-cta, .upw-close,
+    .form-btn--primary, .boundary-btn:not(.boundary-btn--ghost)
+) {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+}
+
+:is(
+    .btn-primary, .btn-submit, .pw-submit, .processing-btn, .dash-primary-btn,
+    .hero-btn.primary-btn, .crm-btn-primary, .cms-btn-primary, .co-add-btn,
+    .ex-add-btn, .staff-add-btn, .diet-add-btn, .promo-popup-cta, .upw-close,
+    .form-btn--primary, .boundary-btn:not(.boundary-btn--ghost)
+)::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: linear-gradient(105deg, transparent 30%, rgba(255, 255, 255, 0.28) 50%, transparent 70%);
+    transform: translateX(110%);
+}
+
+@media (hover: hover) {
+    :is(
+        .btn-primary, .btn-submit, .pw-submit, .processing-btn, .dash-primary-btn,
+        .hero-btn.primary-btn, .crm-btn-primary, .cms-btn-primary, .co-add-btn,
+        .ex-add-btn, .staff-add-btn, .diet-add-btn, .promo-popup-cta, .upw-close,
+        .form-btn--primary, .boundary-btn:not(.boundary-btn--ghost)
+    ):hover:not(:disabled)::after {
+        transform: translateX(-110%);
+        transition: transform 0.75s var(--ease-out);
+    }
+}
+
+/* --- Button motion ---
+   The motion lives on the buttons; cards stay still. Every button in the list
+   rises 2px under the cursor, its icon leans 3px the way the label reads, and a
+   press sinks it to 96% and lets it spring back. A tap also sends a ripple out
+   from the exact point pressed — GlassPointer writes `--bx`/`--by` and
+   `is-rippling`; it works on a phone too.
+
+   `translate` and `scale` are their own properties, not `transform`, so this
+   composes with whatever transform a button already has — the sign-in
+   button's entrance, for one — rather than replacing it. The transition is
+   restated here at `html:root` strength because each button's own rule names
+   its own list, and a property missing from that list would jump instead of
+   move. The spring is a curve that overshoots and settles. */
+:root {
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+html:root :is(
+    .btn-primary, .btn-secondary, .btn-card, .nav-cta, .btn-submit, .btn-social,
+    .btn-nav-register, .btn-register-card, .pw-submit, .processing-btn,
+    .dash-primary-btn, .hero-btn, .crm-btn-primary, .crm-btn-secondary,
+    .cms-btn-primary, .cms-btn-secondary, .co-add-btn, .ex-add-btn,
+    .staff-add-btn, .diet-add-btn, .diet-btn-secondary, .promo-popup-cta,
+    .upw-close, .form-btn, .boundary-btn
+) {
+    transition:
+        background-color var(--dur) var(--ease),
+        border-color var(--dur) var(--ease),
+        color var(--dur) var(--ease),
+        box-shadow var(--dur) var(--ease),
+        opacity var(--dur) var(--ease),
+        filter var(--dur) var(--ease),
+        transform var(--dur) var(--ease),
+        translate var(--dur-slow) var(--ease-out),
+        scale 0.35s var(--ease-spring);
+}
+
+@media (hover: hover) {
+    html:root :is(
+        .btn-primary, .btn-secondary, .btn-card, .nav-cta, .btn-submit, .btn-social,
+    .btn-nav-register, .btn-register-card, .pw-submit, .processing-btn,
+    .dash-primary-btn, .hero-btn, .crm-btn-primary, .crm-btn-secondary,
+    .cms-btn-primary, .cms-btn-secondary, .co-add-btn, .ex-add-btn,
+    .staff-add-btn, .diet-add-btn, .diet-btn-secondary, .promo-popup-cta,
+    .upw-close, .form-btn, .boundary-btn
+    ):hover:not(:disabled) {
+        translate: 0 -2px;
+    }
+
+    :is(
+        .btn-primary, .btn-secondary, .btn-card, .nav-cta, .btn-submit, .btn-social,
+    .btn-nav-register, .btn-register-card, .pw-submit, .processing-btn,
+    .dash-primary-btn, .hero-btn, .crm-btn-primary, .crm-btn-secondary,
+    .cms-btn-primary, .cms-btn-secondary, .co-add-btn, .ex-add-btn,
+    .staff-add-btn, .diet-add-btn, .diet-btn-secondary, .promo-popup-cta,
+    .upw-close, .form-btn, .boundary-btn
+    ):hover:not(:disabled) :is(.app-icon, svg) {
+        translate: -3px 0;
+    }
+}
+
+:is(
+    .btn-primary, .btn-secondary, .btn-card, .nav-cta, .btn-submit, .btn-social,
+    .btn-nav-register, .btn-register-card, .pw-submit, .processing-btn,
+    .dash-primary-btn, .hero-btn, .crm-btn-primary, .crm-btn-secondary,
+    .cms-btn-primary, .cms-btn-secondary, .co-add-btn, .ex-add-btn,
+    .staff-add-btn, .diet-add-btn, .diet-btn-secondary, .promo-popup-cta,
+    .upw-close, .form-btn, .boundary-btn
+) :is(.app-icon, svg) {
+    transition: translate var(--dur-slow) var(--ease-spring);
+}
+
+html:root :is(
+    .btn-primary, .btn-secondary, .btn-card, .nav-cta, .btn-submit, .btn-social,
+    .btn-nav-register, .btn-register-card, .pw-submit, .processing-btn,
+    .dash-primary-btn, .hero-btn, .crm-btn-primary, .crm-btn-secondary,
+    .cms-btn-primary, .cms-btn-secondary, .co-add-btn, .ex-add-btn,
+    .staff-add-btn, .diet-add-btn, .diet-btn-secondary, .promo-popup-cta,
+    .upw-close, .form-btn, .boundary-btn
+):active:not(:disabled) {
+    translate: 0 0;
+    scale: 0.96;
+    transition-duration: var(--dur-fast);
+}
+
+/* The ripple's box: the same zero-specificity setup the shine uses, so a
+   button that positions itself keeps its own value. */
+:where(
+    .btn-primary, .btn-secondary, .btn-card, .nav-cta, .btn-submit, .btn-social,
+    .btn-nav-register, .btn-register-card, .pw-submit, .processing-btn,
+    .dash-primary-btn, .hero-btn, .crm-btn-primary, .crm-btn-secondary,
+    .cms-btn-primary, .cms-btn-secondary, .co-add-btn, .ex-add-btn,
+    .staff-add-btn, .diet-add-btn, .diet-btn-secondary, .promo-popup-cta,
+    .upw-close, .form-btn, .boundary-btn
+) {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+}
+
+:is(
+    .btn-primary, .btn-secondary, .btn-card, .nav-cta, .btn-submit, .btn-social,
+    .btn-nav-register, .btn-register-card, .pw-submit, .processing-btn,
+    .dash-primary-btn, .hero-btn, .crm-btn-primary, .crm-btn-secondary,
+    .cms-btn-primary, .cms-btn-secondary, .co-add-btn, .ex-add-btn,
+    .staff-add-btn, .diet-add-btn, .diet-btn-secondary, .promo-popup-cta,
+    .upw-close, .form-btn, .boundary-btn
+)::before {
+    content: "";
+    position: absolute;
+    top: var(--by, 50%);
+    left: var(--bx, 50%);
+    z-index: -1;
+    width: 12px;
+    height: 12px;
+    margin: -6px 0 0 -6px;
+    border-radius: var(--radius-circle);
+    background: rgba(255, 255, 255, 0.35);
+    opacity: 0;
+    pointer-events: none;
+}
+
+:is(
+    .btn-primary, .btn-secondary, .btn-card, .nav-cta, .btn-submit, .btn-social,
+    .btn-nav-register, .btn-register-card, .pw-submit, .processing-btn,
+    .dash-primary-btn, .hero-btn, .crm-btn-primary, .crm-btn-secondary,
+    .cms-btn-primary, .cms-btn-secondary, .co-add-btn, .ex-add-btn,
+    .staff-add-btn, .diet-add-btn, .diet-btn-secondary, .promo-popup-cta,
+    .upw-close, .form-btn, .boundary-btn
+).is-rippling::before {
+    animation: btn-ripple 0.6s var(--ease-out);
+}
+
+@keyframes btn-ripple {
+    from {
+        opacity: 1;
+        transform: scale(0);
+    }
+    to {
+        opacity: 0;
+        transform: scale(40);
+    }
+}
+
+/* --- Fields ---
+   A field being typed in lights its own edge; the icon beside it, where it
+   has one, comes up to the brand colour with it. */
+:where(.form-input, .ui-control, .custom-select-trigger):focus-visible {
+    border-color: var(--primary);
+    box-shadow: var(--focus-ring);
+}
+
+:where(.field, .pw-input-wrap):focus-within :where(.field-icon, .app-icon) {
+    color: var(--primary-on-tint);
+}
+
+/* --- Lit-edge buttons ---
+   Every primary action is a dark glass pill with a thin edge of light that
+   runs through the brand blues and fades out along one side, and a soft glow
+   of the same colours inside the edge. Under the cursor the edge turns slowly
+   round the button and a light follows the pointer across it; a tap lights it
+   for a moment where there is no cursor. The turn is a transition on the
+   registered angle, not an animation, so it never displaces an entrance
+   animation a button already runs (the sign-in button's fade-up).
+
+   Built from three background layers, painted into different boxes so one
+   element carries all of it with no extra markup:
+     1. the cursor light     — padding-box, at --mx/--my from GlassPointer
+     2. the dark fill        — padding-box, covering everything inside the edge
+     3. the coloured edge    — border-box, seen only through the transparent
+                               1.5px border, a conic gradient at --btn-angle
+   On a plan card `--primary` is the plan's colour while `--primary-light` and
+   `--primary-active` stay blue, so the edge runs from the plan into the blues.
+
+   `html:root:root` is a specificity floor, not a style fight: the buttons in
+   this list each paint their own fill, ink and edge, some on two-class
+   selectors (`.hero-btn.primary-btn:hover`), and this has to sit above all of
+   them without reaching for `!important`. An inline `background` — the
+   confirm dialog's red delete — still wins, which is wanted.
+
+   The two animatable properties are registered so they can move: an
+   unregistered custom property only ever snaps. */
+@property --btn-angle {
+    syntax: "<angle>";
+    inherits: false;
+    initial-value: 200deg;
+}
+
+@property --btn-spot {
+    syntax: "<number>";
+    inherits: false;
+    initial-value: 0;
+}
+
+html:root:root :is(
+    .btn-primary, .btn-card, .btn-submit, .pw-submit, .processing-btn,
+    .dash-primary-btn, .hero-btn.primary-btn, .crm-btn-primary, .cms-btn-primary,
+    .co-add-btn, .ex-add-btn, .staff-add-btn, .diet-add-btn, .promo-popup-cta,
+    .upw-close, .form-btn--primary, .boundary-btn:not(.boundary-btn--ghost)
+) {
+    --btn-fill: rgba(10, 18, 26, 0.86);
+    color: var(--text);
+    border: 1.5px solid transparent;
+    border-radius: var(--radius-pill);
+    background:
+        radial-gradient(180px circle at var(--mx, 50%) var(--my, 50%), rgba(var(--primary-rgb), calc(var(--btn-spot) * 0.45)) 0%, transparent 70%) padding-box,
+        linear-gradient(var(--btn-fill), var(--btn-fill)) padding-box,
+        conic-gradient(
+            from var(--btn-angle),
+            var(--primary) 0deg,
+            var(--primary-light) 70deg,
+            var(--primary-active) 140deg,
+            transparent 210deg,
+            transparent 300deg,
+            var(--primary) 360deg
+        ) border-box;
+    box-shadow:
+        inset 14px 0 26px -18px var(--primary),
+        inset -14px 0 26px -18px var(--primary-active),
+        inset 0 -10px 22px -16px var(--primary-light);
+    filter: none;
+    transition:
+        color var(--dur) var(--ease),
+        box-shadow var(--dur-slow) var(--ease),
+        opacity var(--dur) var(--ease),
+        transform var(--dur) var(--ease),
+        translate var(--dur-slow) var(--ease-out),
+        scale 0.35s var(--ease-spring),
+        --btn-spot var(--dur-slow) var(--ease-out),
+        --btn-angle 1.8s var(--ease-out);
+}
+
+@media (hover: hover) {
+    html:root:root :is(
+        .btn-primary, .btn-card, .btn-submit, .pw-submit, .processing-btn,
+        .dash-primary-btn, .hero-btn.primary-btn, .crm-btn-primary, .cms-btn-primary,
+        .co-add-btn, .ex-add-btn, .staff-add-btn, .diet-add-btn, .promo-popup-cta,
+        .upw-close, .form-btn--primary, .boundary-btn:not(.boundary-btn--ghost)
+    ):hover:not(:disabled) {
+        --btn-spot: 1;
+        color: var(--text);
+        filter: none;
+        box-shadow:
+            inset 16px 0 30px -16px var(--primary),
+            inset -16px 0 30px -16px var(--primary-active),
+            inset 0 -12px 26px -14px var(--primary-light);
+        --btn-angle: 560deg;
+    }
+}
+
+/* A finger has no hover, so the press lights it instead. */
+html:root:root :is(
+    .btn-primary, .btn-card, .btn-submit, .pw-submit, .processing-btn,
+    .dash-primary-btn, .hero-btn.primary-btn, .crm-btn-primary, .cms-btn-primary,
+    .co-add-btn, .ex-add-btn, .staff-add-btn, .diet-add-btn, .promo-popup-cta,
+    .upw-close, .form-btn--primary, .boundary-btn:not(.boundary-btn--ghost)
+):active:not(:disabled) {
+    --btn-spot: 1;
 }

@@ -6,7 +6,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { useLiveRefresh } from "@/hooks/useLiveRefresh";
 import { isAdminUsername, useCurrentUsername } from "@/lib/clientSession";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 
 import { TraineeProfileDetails } from "@/components/dashboard/TraineeProfileDetails";
 import { WorkoutPlan } from "@/components/dashboard/WorkoutPlan";
@@ -24,7 +24,44 @@ type TabId = "settings" | "weight" | "workout" | "home" | "diet" | "history" | "
 interface TabConfig {
   id: TabId;
   label: string;
+  /** The label under the icon in the phone tab bar, where five full titles
+      will not fit side by side. */
+  short: string;
   icon: IconName;
+}
+
+/* Whether the desktop sidebar is folded down to its icons. Kept in this
+   browser's storage so it stays folded across reloads; read through
+   `useSyncExternalStore` so the server renders it open and hydration switches
+   it without an extra render. Storage can be unavailable (a private window,
+   blocked site data), so the choice also lives in memory for the session. */
+const COLLAPSE_KEY = "dash-nav-collapsed";
+const COLLAPSE_EVENT = "dash-nav-collapse";
+let collapsedInMemory = false;
+
+function readCollapsed(): boolean {
+  try {
+    const stored = localStorage.getItem(COLLAPSE_KEY);
+    if (stored !== null) return stored === "1";
+  } catch {}
+  return collapsedInMemory;
+}
+
+function writeCollapsed(value: boolean) {
+  collapsedInMemory = value;
+  try {
+    localStorage.setItem(COLLAPSE_KEY, value ? "1" : "0");
+  } catch {}
+  window.dispatchEvent(new Event(COLLAPSE_EVENT));
+}
+
+function subscribeCollapsed(onChange: () => void) {
+  window.addEventListener(COLLAPSE_EVENT, onChange);
+  window.addEventListener("storage", onChange);
+  return () => {
+    window.removeEventListener(COLLAPSE_EVENT, onChange);
+    window.removeEventListener("storage", onChange);
+  };
 }
 
 export default function DashboardPage() {
@@ -51,6 +88,16 @@ export default function DashboardPage() {
   // Default active tab override (when null, defaults to profile if under review or home otherwise)
   const [activeTabOverride, setActiveTabOverride] = useState<TabId | null>(null);
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
+
+  const isNavCollapsed = useSyncExternalStore(subscribeCollapsed, readCollapsed, () => false);
+  /* The width animates only once the toggle has been pressed — not when a
+     stored choice is applied on load, where it would read as the page
+     jumping. */
+  const [animateNav, setAnimateNav] = useState(false);
+  const toggleNavCollapsed = () => {
+    setAnimateNav(true);
+    writeCollapsed(!isNavCollapsed);
+  };
 
   /* The coach landing on the trainee dashboard is sent to their own panel.
      Cosmetic routing only — /admin is guarded by the proxy and by every page
@@ -113,13 +160,14 @@ export default function DashboardPage() {
     if (tab === "home") setCalendarReloadKey((k) => k + 1);
   };
 
-  /* Define the 4 tabs in exact order from Right to Left (in RTL mode) */
+  /* The tabs in order — top to bottom in the sidebar, right to left in the
+     phone tab bar. */
   const tabs: TabConfig[] = [
-    { id: "home", label: "الرئيسية", icon: "home" },
-    { id: "profile", label: "الملف الشخصي", icon: "person" },
-    { id: "workout", label: "البرنامج التدريبي", icon: "fitness_center" },
-    { id: "diet", label: "النظام الغذائي", icon: "restaurant" },
-    { id: "weight", label: "سجل الأوزان", icon: "monitor_weight" },
+    { id: "home", label: "الرئيسية", short: "الرئيسية", icon: "home" },
+    { id: "profile", label: "الملف الشخصي", short: "ملفي", icon: "person" },
+    { id: "workout", label: "البرنامج التدريبي", short: "التمارين", icon: "fitness_center" },
+    { id: "diet", label: "النظام الغذائي", short: "الغذاء", icon: "restaurant" },
+    { id: "weight", label: "سجل الأوزان", short: "الأوزان", icon: "monitor_weight" },
   ];
 
   const renderProcessingCard = (tabTitle: string) => (
@@ -188,59 +236,109 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="dashboard-page">
-      {/* Tap anywhere to dismiss the overflow menu.
-          This has to live outside <nav>, not inside it beside the menu where it
-          used to. The bar carries `transform: translateX(-50%)` and a
-          `backdrop-filter`, and either of those makes it the containing block
+    <div
+      className={`dashboard-page dashboard-page--shell ${isNavCollapsed ? "is-nav-collapsed" : ""} ${animateNav ? "is-nav-animated" : ""}`}
+    >
+      {/* Tap anywhere to dismiss the settings menu.
+          This has to live outside the bar, not inside it beside the menu. The
+          bar carries a `backdrop-filter`, which makes it the containing block
           for a `position: fixed` descendant — so `inset: 0` resolved to the bar
           rather than to the viewport, and the full-screen catcher was really a
-          318x66 patch lying on top of the bar's own buttons. Tapping the page
-          did not close the menu, and tapping a sibling tab hit the catcher
-          instead of the tab, which spent the tap closing the menu and went
-          nowhere. Verified by hand before and after. */}
+          patch lying on top of the bar's own buttons. */}
       {isMoreMenuOpen && (
         <div className="dash-menu-scrim" onClick={() => setIsMoreMenuOpen(false)} />
       )}
 
-      {/* Bottom Navbar */}
-      <nav className="dash-bottom-nav">
-
-        {/* The brand, and the way back to the public site — first in source, so
-            in RTL it sits at the right end of the pill, where the panel's own
-            logo sits. The square mark rather than the horizontal lockup: this
-            bar is a centred pill sized to its contents, and a 200px wordmark
-            inside it would pull the icon row off centre on every screen.
-            `.dash-brand-header` and `.dash-collapsed-logo-tile` were already in
-            dashboard.css, phone size and all, with nothing rendering them. */}
+      {/* Phone top bar — the brand and the settings menu. Above 768px it is
+          not drawn: the sidebar carries both. */}
+      <header className="dash-topbar">
         <Link
           href="/"
           title="العودة للصفحة الرئيسية"
-          className="dash-brand-header dash-collapsed-logo-tile"
+          className="dash-topbar-brand"
           aria-label="العودة للصفحة الرئيسية"
         >
           <img
-            className="dash-logo-mobile"
             src={optimizedSrc("/images/logo/vLogo.png", 128)}
             srcSet={optimizedSrcSet("/images/logo/vLogo.png", [96, 128])}
             sizes="60px"
             alt="Ibrahim Abutabikh"
             decoding="async"
-            style={{ width: "100%", height: "auto", maxHeight: "26px", objectFit: "contain" }}
-          />
-          <img
-            className="dash-logo-desktop"
-            src={optimizedSrc("/images/logo/hLogo.png", 384)}
-            srcSet={optimizedSrcSet("/images/logo/hLogo.png", [384, 640])}
-            sizes="190px"
-            alt="Ibrahim Abutabikh"
-            decoding="async"
-            style={{ width: "100%", height: "auto", maxHeight: "30px", objectFit: "contain" }}
           />
         </Link>
 
-        {/* Center Nav Links */}
-        <div className="dash-nav-container">
+        <div className="dash-topbar-actions">
+          <button
+            type="button"
+            onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
+            title="الإعدادات"
+            aria-label="الإعدادات"
+            aria-expanded={isMoreMenuOpen}
+            className={`dash-icon-btn ${isMoreMenuOpen ? "active" : ""}`}
+          >
+            <Icon name="settings" />
+          </button>
+          {isMoreMenuOpen && (
+            <div className="dash-more-menu">
+              <Link href="/account/password" className="dash-more-item">
+                <Icon name="lock" /> تغيير كلمة السر
+              </Link>
+              <button onClick={logout} className="dash-more-item danger">
+                <Icon name="logout" /> تسجيل الخروج
+              </button>
+            </div>
+          )}
+        </div>
+      </header>
+
+      {/* One nav, two shapes: a glass sidebar on the inline-start edge above
+          768px, and a PWA tab bar pinned to the bottom of a phone. The same
+          buttons in both — only which label shows, and where the row sits,
+          changes with the width. */}
+      <nav className="dash-nav" aria-label="أقسام لوحة المشترك">
+        <div className="dash-nav-head">
+          <Link
+            href="/"
+            title="العودة للصفحة الرئيسية"
+            className="dash-nav-brand"
+            aria-label="العودة للصفحة الرئيسية"
+          >
+            {/* The square mark, for the folded sidebar. */}
+            <img
+              className="dash-nav-brand-mark"
+              src={optimizedSrc("/images/logo/vLogo.png", 128)}
+              srcSet={optimizedSrcSet("/images/logo/vLogo.png", [96, 128])}
+              sizes="40px"
+              alt=""
+              loading="lazy"
+              decoding="async"
+            />
+            <img
+              className="dash-nav-brand-full"
+              src={optimizedSrc("/images/logo/hLogo.png", 384)}
+              srcSet={optimizedSrcSet("/images/logo/hLogo.png", [384, 640])}
+              sizes="190px"
+              alt="Ibrahim Abutabikh"
+              decoding="async"
+            />
+          </Link>
+
+          <button
+            type="button"
+            onClick={toggleNavCollapsed}
+            className="dash-nav-toggle"
+            title={isNavCollapsed ? "توسيع القائمة" : "تصغير القائمة"}
+            aria-label={isNavCollapsed ? "توسيع القائمة" : "تصغير القائمة"}
+            aria-expanded={!isNavCollapsed}
+          >
+            {/* The sidebar is on the right, so folding it moves its edge right. */}
+            <Icon name={isNavCollapsed ? "chevron_left" : "chevron_right"} />
+          </button>
+        </div>
+
+        <span className="dash-nav-eyebrow">القائمة</span>
+
+        <div className="dash-nav-list">
           {tabs.map((tab) => {
             let isTabWaiting = false;
             if (tab.id === "workout") isTabWaiting = isWorkoutUnderReview;
@@ -252,77 +350,37 @@ export default function DashboardPage() {
             return (
               <button
                 key={tab.id}
+                type="button"
                 onClick={() => {
                   setActiveTab(tab.id);
                   setIsMoreMenuOpen(false);
                 }}
                 title={tab.label}
+                aria-current={isActive ? "page" : undefined}
                 className={`dash-nav-link ${isActive ? "active" : ""}`}
               >
-                <Icon name={tab.icon} />
-                {isTabWaiting && (
-                  <span
-                    style={{
-                      position: "absolute",
-                      top: "10px",
-                      right: "10px",
-                      width: "8px",
-                      height: "8px",
-                      background: "var(--warning)",
-                      borderRadius: "50%",
-                      boxShadow: "0 0 0 2px var(--bg2)",
-                    }}
-                  />
-                )}
+                <span className="dash-nav-icon">
+                  <Icon name={tab.icon} />
+                  {isTabWaiting && <span className="dash-nav-dot" aria-hidden="true" />}
+                </span>
+                <span className="dash-nav-label">{tab.label}</span>
+                <span className="dash-nav-short">{tab.short}</span>
               </button>
             );
           })}
         </div>
 
-        {/* The settings control, last in source, so in RTL it sits at the left
-            end of the bar opposite the brand — the same two anchors the coach
-            panel's bar has. */}
-        <div className="dash-bottom-actions" style={{ position: "relative" }}>
-          <button
-            onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
-            title="المزيد"
-            className={`dash-nav-link ${isMoreMenuOpen ? "active" : ""}`}
-          >
-            <Icon name="settings" />
+        {/* Shown outright on the sidebar — there is room, and two commands do
+            not need a menu to hide in. On a phone they live in the top bar. */}
+        <div className="dash-nav-footer">
+          <Link href="/account/password" title="تغيير كلمة السر" className="dash-nav-link">
+            <span className="dash-nav-icon"><Icon name="lock" /></span>
+            <span className="dash-nav-label">تغيير كلمة السر</span>
+          </Link>
+          <button type="button" onClick={logout} title="تسجيل الخروج" className="dash-nav-link danger">
+            <span className="dash-nav-icon"><Icon name="logout" /></span>
+            <span className="dash-nav-label">تسجيل الخروج</span>
           </button>
-          {isMoreMenuOpen && (
-            <div
-              className="dash-more-menu"
-              /* The panel is `.custom-select-dropdown`, to the value:
-                 same border, radius, shadow, 4px of padding and 2px
-                 between rows. Every list that drops out of a control
-                 in this product is drawn the same way. */
-              style={{
-                position: "absolute",
-                bottom: "100%",
-                left: 0,
-                marginBottom: "12px",
-                background: "var(--bg2)",
-                border: "1px solid var(--border-strong)",
-                borderRadius: "var(--radius-md)",
-                padding: "4px",
-                boxShadow: "var(--elev-2)",
-                display: "flex",
-                flexDirection: "column",
-                gap: "2px",
-                minWidth: "180px",
-                zIndex: 100,
-                animation: "fadeUp 0.2s ease-out forwards"
-              }}
-            >
-              <Link href="/account/password" className="dash-more-item">
-                <Icon name="lock" /> تغيير كلمة السر
-              </Link>
-              <button onClick={logout} className="dash-more-item danger">
-                <Icon name="logout" /> تسجيل الخروج
-              </button>
-            </div>
-          )}
         </div>
       </nav>
 

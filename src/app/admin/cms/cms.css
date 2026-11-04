@@ -232,8 +232,8 @@
 /* Page-level panel: same glass surface as .admin-card / .dashboard-card. */
 .cms-section-card {
   background: var(--admin-card-bg);
-  backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
   border: 1px solid var(--admin-card-border);
   border-radius: var(--admin-radius-lg);
   box-shadow: var(--admin-card-shadow);
@@ -449,8 +449,10 @@
    three points away from it. The fields were invisible. Three surfaces, three
    steps: section card, plan card, field. */
 .cms-pricing-card {
-  background: var(--bg2);
-  border: 1px solid var(--border-strong);
+  background: var(--glass);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
   border-radius: var(--admin-radius-lg);
   padding: 14px;
   min-width: 0;
@@ -662,8 +664,8 @@
   border: 1px solid var(--border);
   border-radius: var(--admin-radius);
   background: color-mix(in srgb, var(--bg2) 92%, transparent);
-  backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
   box-shadow: var(--elev-2);
   display: flex;
   align-items: center;
@@ -774,19 +776,19 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), opacity var(--dur) var(--ease), transform var(--dur) var(--ease);
+  transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), opacity var(--dur) var(--ease), transform var(--dur) var(--ease), filter var(--dur) var(--ease);
   font-family: inherit;
 }
 
 .cms-btn-primary {
-  background: var(--primary);
+  background: linear-gradient(135deg, var(--primary) 0%, color-mix(in srgb, var(--primary) 75%, var(--primary-light)) 100%);
   color: var(--text-inverse);
   border: none;
 }
 
 .cms-btn-primary:hover:not(:disabled) {
-  background: var(--primary-hover);
-}
+  filter: brightness(1.05);
+  }
 
 .cms-btn-primary:disabled {
   opacity: 0.6;
@@ -820,10 +822,12 @@
 }
 
 .cms-modal-card {
-  background: var(--bg2);
+  background: var(--glass-solid);
+  -webkit-backdrop-filter: var(--glass-solid-blur);
+  backdrop-filter: var(--glass-solid-blur);
   padding: var(--space-6);
   border-radius: var(--radius-xl);
-  border: 1px solid var(--border);
+  border: 1px solid var(--glass-border-strong);
   box-shadow: var(--elev-3);
   width: 90%;
   max-width: 420px;

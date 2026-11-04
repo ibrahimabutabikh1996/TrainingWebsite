@@ -30,16 +30,11 @@
 }
 
 /* The trailing padding is what stops the last card ending underneath the
-   floating bar, so it is spelled as the sum it always was rather than as a
-   total: the bar's height, the gap below the bar, one more gap above it, and
-   the home indicator under all of it.
+   phone's bottom tab bar, so it is spelled as a sum: the bar's height, the gap
+   below the bar, one more gap above it, and the home indicator under all of it.
 
-   On a desktop this comes to 68 + 16 + 20 + 0 — the same 104px that was written
-   here as a literal, verified unchanged by `desktop-invariance.mjs`. What it
-   adds is the last term and the link to the first two: the phone rule used to
-   carry its own 96px, which was a second guess at the same quantity and did not
-   know about the home indicator at all, so on any iPhone with one the final
-   card ended up behind the glass. */
+   On a desktop the nav is a sidebar, `--dash-nav-h` is zero, and this comes to
+   the 20px gap alone. */
 .dashboard-main {
   position: relative;
   z-index: 10;
@@ -58,7 +53,8 @@
        keeps the page clear of the rounded corners in landscape. */
     padding-left: max(16px, var(--safe-left));
     padding-right: max(16px, var(--safe-right));
-    margin-top: 24px;
+    /* Clears the fixed top bar, and the notch above it. */
+    margin-top: calc(var(--dash-top-h) + var(--safe-top) + var(--space-5));
   }
 
   /* The card, title and gap rules that used to sit here have moved to the
@@ -91,20 +87,20 @@
 
 /* ─── GLASS CARDS ─── */
 .dashboard-card {
-  background: var(--nav-bg-glass);
-  backdrop-filter: blur(16px);
+  background: var(--glass);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--border);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   padding: var(--space-6);
-  box-shadow: var(--elev-1);
+  box-shadow: var(--shadow-soft);
   transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
 }
 
 /* Matches .admin-card: a panel reacts at its edge, it doesn't lift. */
 .dashboard-card:hover {
-  border-color: var(--border-strong);
-  box-shadow: var(--elev-2);
+  border-color: var(--glass-border-strong);
+  box-shadow: var(--elev-3);
 }
 
 .dashboard-card-title {
@@ -113,7 +109,7 @@
   font-weight: var(--weight-semibold);
   letter-spacing: 0;
   color: var(--text);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--glass-border);
   padding-bottom: var(--space-3);
   margin-bottom: var(--space-5);
   display: flex;
@@ -323,9 +319,9 @@
   height: 68px;
   z-index: 200;
   background: var(--nav-bg-glass);
-  backdrop-filter: blur(20px) saturate(1.4);
   -webkit-backdrop-filter: blur(20px) saturate(1.4);
-  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(20px) saturate(1.4);
+  border-bottom: 1px solid var(--glass-border);
   transition: background 0.4s;
 }
 
@@ -366,9 +362,11 @@
   max-width: 650px;
   width: 100%;
   margin: var(--space-5) auto;
-  border: 1px solid var(--border);
-  background: var(--bg2);
-  box-shadow: var(--elev-1);
+  border: 1px solid var(--glass-border);
+  background: var(--glass);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--shadow-soft);
   border-radius: var(--radius-lg);
 }
 
@@ -425,7 +423,7 @@
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  background: var(--primary);
+  background: linear-gradient(135deg, var(--primary) 0%, color-mix(in srgb, var(--primary) 75%, var(--primary-light)) 100%);
   color: var(--text-inverse);
   border: none;
   padding: var(--space-3) var(--space-8);
@@ -434,14 +432,11 @@
   font-size: var(--text-base);
   font-weight: var(--weight-semibold);
   cursor: pointer;
+  transition: filter var(--dur) var(--ease), transform var(--dur) var(--ease);
 }
 
 .processing-btn:hover {
-  background: var(--primary-hover);
-}
-
-.processing-btn:active {
-  transform: translateY(1px);
+  filter: brightness(1.05);
 }
 
 /* The heading that names a tab — "hello captain, <name>", "weekly weight log".
@@ -501,233 +496,452 @@
   }
 }
 
-/* ─── TRAINEE DASHBOARD BOTTOM NAVIGATION ───
-   A floating pill, so it has to keep clear of three things at once: the home
-   indicator below it, the screen edges beside it, and the last card of whatever
-   tab is open — which it would otherwise cover, because a fixed box takes no
-   part in layout and nothing under it knows it is there.
+/* ─── TRAINEE DASHBOARD NAVIGATION ───
+   One `<nav>` drawn two ways. Above 768px it is a floating glass sidebar on the
+   inline-start edge (the right, in RTL) with full titles and the account
+   commands at its foot. At 768px and below it becomes a PWA tab bar pinned to
+   the bottom of the screen — icon over a short label — and the brand and the
+   settings menu move to a slim top bar, `.dash-topbar`.
 
-   Its height and its distance from the bottom are tokens because
-   `.dashboard-main` has to reserve exactly that much room at the end of the
-   page. Two literals kept in step by hand is how the last card ends up half
-   behind the bar the first time either number is touched. */
+   `--dash-nav-h` is the room `.dashboard-main` reserves at the end of the page
+   for the bottom bar. There is no bottom bar on a desktop, so it is zero there;
+   the phone block below sets it to the bar's height. */
 .dashboard-page {
-  --dash-nav-h: 72px;
-  /* The bar is no longer a floating pill, so there is nothing between it and
-     the bottom of the screen. The token stays because `.dashboard-main` still
-     adds it to the room it reserves at the end of the page. */
+  --dash-nav-h: 0px;
   --dash-nav-gap: 0px;
+  --dash-side-w: 264px;
+  --dash-side-inset: var(--space-4);
+  --dash-top-h: 56px;
 }
 
-.dash-bottom-nav {
+/* The page makes room for the sidebar. A modifier rather than the base class,
+   because the loading and error screens are `.dashboard-page` too and draw no
+   nav — their centred logo would sit off centre by the width of a sidebar
+   that is not there. */
+.dashboard-page--shell {
+  padding-inline-start: calc(var(--dash-side-w) + var(--dash-side-inset));
+}
+
+.dash-nav {
   position: fixed;
-  /* Full width, edge to edge, like the coach panel's bar. The strip the phone
-     reserves for its home indicator is added to the height and paid back as
-     bottom padding, so the buttons sit exactly where they did while the glass
-     still runs to the physical edge. */
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: calc(var(--dash-nav-h) + var(--safe-bottom));
+  inset-block: var(--dash-side-inset);
+  inset-inline-start: var(--dash-side-inset);
+  width: var(--dash-side-w);
   display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  padding-top: 0;
-  padding-bottom: var(--safe-bottom);
-  padding-left: calc(16px + var(--safe-left));
-  padding-right: calc(16px + var(--safe-right));
-  background: color-mix(in srgb, var(--bg2) 85%, transparent);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border-top: 1px solid var(--border);
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  background: var(--glass);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--elev-2);
+  overflow-y: auto;
   z-index: 100;
-  /* The bar holds two children now — the brand and the tab row — and the phone
-     rule below has always set a gap for them. This is its desktop counterpart. */
-  gap: 12px;
 }
 
-.dash-brand-header {
+.dash-nav-head {
   display: flex;
   align-items: center;
+  gap: var(--space-1);
+  flex: none;
+  margin-bottom: var(--space-2);
 }
 
-.dash-collapsed-logo-tile {
-  /* Wider than tall, because the mark is: mainLogo.png is 2048x824, and the
-     square this rule used to describe drew it 36px across and 14px high — a
-     smear at the end of the bar. The tile keeps the tabs' height and takes the
-     width the emblem needs to reach its 26px cap. */
-  width: auto;
-  max-width: 190px;
-  height: 52px;
-  padding: 0 8px;
-  /* The tab row beside it is `width: 100%`, which would otherwise take this
-     tile's width off it on the narrowest screens. */
-  flex: none;
-  border-radius: var(--radius-md);
-  /* Not the primary tint the active tab wears: this is a link back to the
-     public site, and dressing it like the selected tab reads as a fifth tab
-     that is somehow always on. Neutral until hovered. */
-  background: transparent;
-  border: 1px solid var(--border);
+.dash-nav-brand {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: border-color var(--dur) var(--ease);
+  flex: 1;
+  min-width: 0;
+  min-height: 56px;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  transition: background-color var(--dur) var(--ease);
 }
 
-.dash-collapsed-logo-tile:hover {
-  border-color: var(--primary);
+.dash-nav-brand:hover {
+  background: var(--glass-2);
 }
 
-/* Two marks, one tile: the wide lockup where there is room for it, the stacked
-   one on a phone, where 190px of wordmark would be taken out of the seven
-   targets beside it. */
-.dash-logo-mobile {
+.dash-nav-brand-mark {
   display: none;
 }
 
-.dash-logo-desktop {
+.dash-nav-brand-full {
   display: block;
+  width: 100%;
+  max-width: 190px;
+  height: auto;
+  max-height: 32px;
+  object-fit: contain;
 }
 
-.dash-nav-container {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 12px;
+.dash-nav-eyebrow {
+  padding: 0 var(--space-3);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  color: var(--text-muted);
 }
 
-.dash-nav-link,
-.dash-logout-btn {
-  width: 52px;
-  height: 52px;
+.dash-nav-list {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--radius-md);
-  transition: background-color var(--dur) var(--ease), color var(--dur) var(--ease), border-color var(--dur) var(--ease);
-  border: 1px solid transparent;
-  color: var(--text-secondary);
-  text-decoration: none;
-  background-color: transparent;
-  cursor: pointer;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.dash-nav-link {
   position: relative;
-  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: var(--tap-min);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: var(--text-base);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-tight);
+  text-align: start;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color var(--dur) var(--ease),
+    color var(--dur) var(--ease),
+    border-color var(--dur) var(--ease);
 }
 
-.dash-nav-link:hover:not(.active),
-.dash-logout-btn:hover {
+.dash-nav-link:hover:not(.active) {
   color: var(--text);
-  background: color-mix(in srgb, var(--text) 6%, transparent);
+  background: var(--glass-2);
 }
 
 .dash-nav-link.active {
-  background: var(--primary-dim);
-  color: var(--primary-on-tint);
+  background: var(--primary-soft);
   border-color: var(--border-primary);
+  color: var(--primary-on-tint);
+  font-weight: var(--weight-semibold);
 }
 
+/* The edge marker, on the side of the item nearest the screen edge. */
 .dash-nav-link.active::before {
   content: '';
   position: absolute;
-  top: -1px;
-  left: 50%;
-  transform: translateX(-50%);
-  height: 3px;
-  width: 20px;
+  inset-inline-start: -1px;
+  top: 50%;
+  translate: 0 -50%;
+  width: 3px;
+  height: 20px;
   background: var(--primary);
   border-radius: var(--radius-pill);
 }
 
-.dash-nav-link .app-icon,
-.dash-logout-btn .app-icon {
-  transition: color var(--dur) var(--ease);
-  font-size: 24px;
+.dash-nav-icon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  font-size: 20px;
+  transition: background-color var(--dur) var(--ease);
 }
 
-.dash-nav-link:hover .app-icon,
-.dash-nav-link.active .app-icon {
+/* A section still being prepared by the coach. */
+.dash-nav-dot {
+  position: absolute;
+  top: -2px;
+  inset-inline-end: -4px;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-circle);
+  background: var(--warning);
+  box-shadow: 0 0 0 2px var(--bg2);
+}
+
+.dash-nav-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dash-nav-short {
+  display: none;
+}
+
+.dash-nav-footer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-top: auto;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--glass-border);
+}
+
+.dash-nav-link.danger:hover {
+  color: var(--error-text);
+  background: var(--error-bg);
+}
+
+/* The fold button — a ghost icon button beside the logo. */
+.dash-nav-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 18px;
+  cursor: pointer;
+  transition:
+    background-color var(--dur) var(--ease),
+    color var(--dur) var(--ease),
+    border-color var(--dur) var(--ease);
+}
+
+.dash-nav-toggle:hover {
+  background: var(--primary-soft);
+  border-color: var(--border-primary);
   color: var(--primary-on-tint);
 }
 
-.dash-bottom-actions {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 8px;
+/* The phone top bar is not drawn above 768px. */
+.dash-topbar {
+  display: none;
 }
 
-.dash-logout-btn.danger-btn:hover {
-  color: var(--error-text);
-  background-color: color-mix(in srgb, var(--error) 12%, transparent);
-  border-color: color-mix(in srgb, var(--error) 30%, transparent);
+/* A smaller laptop keeps the sidebar but gives a little of it back. */
+@media (max-width: 1024px) {
+  .dashboard-page {
+    --dash-side-w: 232px;
+    --dash-side-inset: var(--space-3);
+  }
+}
+
+/* A short window (a phone on its side is 667–932px wide, so it lands here
+   rather than in the phone block) keeps the sidebar but drops what is only
+   decoration; the list scrolls inside the glass if it still does not fit. */
+@media (max-height: 500px) {
+  .dash-nav-eyebrow {
+    display: none;
+  }
+  .dash-nav-brand {
+    min-height: var(--tap-min);
+  }
+  .dash-nav-head {
+    margin-bottom: 0;
+  }
+}
+
+/* ── Folded to its icons ──
+   Desktop only: the phone tab bar has no folded state. Two classes, so the
+   width beats the 1024px override above. Labels go at once and the width
+   follows; every item carries a `title`, which is what names it while folded.
+   The page's own padding moves with the sidebar, so the content widens into
+   the room it gives up. */
+@media (min-width: 769px) {
+  .dashboard-page.is-nav-collapsed {
+    --dash-side-w: 76px;
+  }
+
+  .dashboard-page.is-nav-animated .dash-nav {
+    transition: width var(--dur-slow) var(--ease-out), padding var(--dur-slow) var(--ease-out);
+  }
+
+  .dashboard-page.is-nav-animated {
+    transition: padding var(--dur-slow) var(--ease-out);
+  }
+
+  .is-nav-collapsed .dash-nav {
+    padding-inline: var(--space-3);
+  }
+
+  .is-nav-collapsed .dash-nav-head {
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .is-nav-collapsed .dash-nav-brand {
+    width: 100%;
+    min-height: var(--tap-min);
+    padding: var(--space-1) 0;
+  }
+
+  .is-nav-collapsed .dash-nav-brand-full,
+  .is-nav-collapsed .dash-nav-eyebrow,
+  .is-nav-collapsed .dash-nav-label {
+    display: none;
+  }
+
+  .is-nav-collapsed .dash-nav-brand-mark {
+    display: block;
+    width: 44px;
+    height: auto;
+    max-height: 36px;
+    object-fit: contain;
+  }
+
+  .is-nav-collapsed .dash-nav-link {
+    justify-content: center;
+    padding-inline: 0;
+  }
 }
 
 @media (max-width: 768px) {
-  .dash-bottom-nav {
-    padding-left: calc(8px + var(--safe-left));
-    padding-right: calc(8px + var(--safe-right));
-    gap: 4px;
+  .dashboard-page {
+    --dash-nav-h: 64px;
   }
-  /* Seven fixed boxes — the mark, five destinations and the settings button —
-     came to 368px inside a 360px bar, and a `position: fixed` row that
-     overflows takes no scrollbar with it: whatever sits past the edge is
-     simply gone. Only the destinations give ground. They are one row of the
-     same thing, so they shrink together and stay legible as a set, while the
-     two single controls at the ends keep the full target.
-     A basis rather than a width, so the links divide what is left instead of
-     insisting on 44px apiece; `min-width: 0` on both the row and its links
-     lifts the automatic minimum that would otherwise refuse the squeeze. */
-  .dash-brand-header,
-  .dash-bottom-actions {
-    flex: 0 0 auto;
+
+  .dashboard-page--shell {
+    padding-inline-start: 0;
   }
-  .dash-nav-container {
-    gap: 2px;
-    min-width: 0;
+
+  /* ── Top bar ── */
+  .dash-topbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    height: calc(var(--dash-top-h) + var(--safe-top));
+    padding-top: var(--safe-top);
+    padding-left: calc(var(--space-3) + var(--safe-left));
+    padding-right: calc(var(--space-3) + var(--safe-right));
+    background: var(--nav-bg-glass);
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+    border-bottom: 1px solid var(--glass-border);
   }
-  .dash-nav-container .dash-nav-link {
-    flex: 0 1 var(--tap-min);
-    min-width: 0;
+
+  .dash-topbar-brand {
+    display: flex;
+    align-items: center;
+    min-height: var(--tap-min);
+    padding: 0 var(--space-1);
   }
-  .dash-bottom-actions {
-    gap: 2px;
-  }
-  /* `clamp(36px, 11vw, 44px)` reached the floor rather than the ceiling on
-     every phone it was written for — 36px at 320px wide, 43px at 390px, never
-     44 below a 400px screen. The clamp was guarding against a row that could
-     not fit, and with four buttons there is no such row: four 44px targets and
-     their gaps come to 182px inside a bar that is never narrower than 288px.
-     So the floor is simply the floor. */
-  .dash-nav-link, .dash-logout-btn {
-    width: var(--tap-min);
-    height: var(--tap-min);
-  }
-  .dash-collapsed-logo-tile {
-    width: 72px;
-    height: var(--tap-min);
-    padding: 0 6px;
-  }
-  .dash-logo-mobile {
+
+  .dash-topbar-brand img {
     display: block;
+    width: auto;
+    height: 30px;
+    object-fit: contain;
   }
-  .dash-logo-desktop {
+
+  .dash-topbar-actions {
+    position: relative;
+  }
+
+  /* ── Bottom tab bar ── */
+  .dash-nav {
+    inset: auto 0 0 0;
+    width: auto;
+    height: calc(var(--dash-nav-h) + var(--safe-bottom));
+    flex-direction: row;
+    gap: 0;
+    padding: 0 calc(var(--space-1) + var(--safe-right)) var(--safe-bottom) calc(var(--space-1) + var(--safe-left));
+    background: var(--nav-bg-glass);
+    border: none;
+    border-top: 1px solid var(--glass-border);
+    border-radius: 0;
+    box-shadow: none;
+    overflow: visible;
+  }
+
+  .dash-nav-head,
+  .dash-nav-eyebrow,
+  .dash-nav-footer,
+  .dash-nav-label {
     display: none;
   }
-  .dash-nav-link .app-icon, .dash-logout-btn .app-icon {
+
+  .dash-nav-list {
+    flex-direction: row;
+    width: 100%;
+    height: 100%;
+    gap: 0;
+  }
+
+  .dash-nav-link {
+    flex: 1 1 0;
+    min-width: 0;
+    height: 100%;
+    flex-direction: column;
+    justify-content: center;
+    gap: var(--space-1);
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    color: var(--text-muted);
+    font-size: var(--text-2xs);
+    font-weight: var(--weight-semibold);
+    text-align: center;
+  }
+
+  .dash-nav-link:hover:not(.active),
+  .dash-nav-link.active {
+    background: transparent;
+  }
+
+  .dash-nav-link.active {
+    color: var(--primary-on-tint);
+  }
+
+  .dash-nav-link.active::before {
+    display: none;
+  }
+
+  /* The selected tab's icon sits in a tinted pill — the indicator a phone's
+     own tab bars use, so the bar reads as the app's, not the website's. */
+  .dash-nav-icon {
+    width: 56px;
+    height: 30px;
+    border-radius: var(--radius-pill);
     font-size: 22px;
+  }
+
+  .dash-nav-link.active .dash-nav-icon {
+    background: var(--primary-soft);
+  }
+
+  .dash-nav-dot {
+    top: 3px;
+    inset-inline-end: 14px;
+  }
+
+  .dash-nav-short {
+    display: block;
+    max-width: 100%;
+    padding: 0 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }
 
-/* A phone on its side has about 390px of height to spend, and the bar was
-   taking 84px of it — a fifth of the screen, for four buttons that are 44px
-   tall. The glass gets shorter and sits closer to the edge; the targets inside
-   it do not shrink, because the hand holding the phone has not changed. */
-@media (max-height: 500px) and (orientation: landscape) {
+/* A phone on its side: the bars get shorter, the targets inside do not. Only
+   reachable below 768px wide, which a landscape phone rarely is — the larger
+   ones get the sidebar instead. */
+@media (max-width: 768px) and (max-height: 500px) and (orientation: landscape) {
   .dashboard-page {
-    --dash-nav-h: 56px;
-    --dash-nav-gap: 0px;
+    --dash-nav-h: 52px;
+    --dash-top-h: 48px;
+  }
+  .dash-nav-icon {
+    height: 26px;
   }
 }
 /* ─── HOME (DEFAULT TAB) OVERVIEW & STATISTICS CARDS ─── */
@@ -750,10 +964,15 @@
    drop shadow — three treatments competing on the first thing you see. A flat
    tinted surface with one accent edge sets the page up more calmly. */
 .home-hero-banner {
-  background: var(--bg2);
-  border: 1px solid var(--border);
+  background:
+  radial-gradient(80% 120% at 100% 0%, var(--primary-soft) 0%, transparent 60%),
+  var(--glass);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--shadow-soft);
+  border: 1px solid var(--glass-border);
   border-inline-start: 4px solid var(--primary);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   padding: var(--space-6) var(--space-8);
   display: flex;
   align-items: center;
@@ -799,15 +1018,17 @@
 }
 
 .home-stat-card {
-  background: var(--bg2);
-  border: 1px solid var(--border);
+  background: var(--glass);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   padding: var(--space-6);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   gap: var(--space-5);
-  box-shadow: var(--elev-1);
+  box-shadow: var(--shadow-soft);
   transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
   position: relative;
   overflow: hidden;
@@ -843,8 +1064,8 @@
 }
 
 .home-stat-card:hover {
-  border-color: var(--border-strong);
-  box-shadow: var(--elev-2);
+  border-color: var(--glass-border-strong);
+  box-shadow: var(--elev-3);
 }
 
 .home-card-header {
@@ -907,7 +1128,7 @@
   background: var(--bg3);
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-md);
-  border: 1px solid var(--border);
+  border: 1px solid var(--glass-border);
 }
 
 .home-sub-item .label {
@@ -954,7 +1175,7 @@
 
 .home-progress-bar-fill {
   height: 100%;
-  background: var(--primary);
+  background: linear-gradient(90deg, var(--primary), var(--primary-light));
   border-radius: var(--radius-pill);
   transition: width 0.8s var(--ease-out);
 }
@@ -968,7 +1189,7 @@
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  background: var(--primary);
+  background: linear-gradient(135deg, var(--primary) 0%, color-mix(in srgb, var(--primary) 75%, var(--primary-light)) 100%);
   color: var(--text-inverse);
   border: 1px solid transparent;
   padding: var(--space-3) var(--space-6);
@@ -978,19 +1199,16 @@
   font-weight: var(--weight-semibold);
   cursor: pointer;
   text-decoration: none;
+  transition: filter var(--dur) var(--ease), transform var(--dur) var(--ease);
 }
 
 .dash-primary-btn:hover,
 .hero-btn.primary-btn:hover {
-  background: var(--primary-hover);
+  filter: brightness(1.05);
   color: var(--text-inverse);
-  border-color: var(--primary-hover);
 }
 
 .dash-primary-btn:active,
-.hero-btn.primary-btn:active {
-  transform: translateY(1px);
-}
 
 /* ─── CUSTOM ARABIC DATE PICKER ─── */
 .custom-date-trigger:hover:not(:disabled) {
@@ -1081,6 +1299,55 @@
   z-index: 90;
 }
 
+/* The settings menu, hanging under the button in the phone top bar. Drawn as
+   every list that drops out of a control in this product is: solid glass,
+   4px of padding, 2px between rows. */
+.dash-more-menu {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  inset-inline-end: 0;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-1);
+  background: var(--glass-solid);
+  -webkit-backdrop-filter: var(--glass-solid-blur);
+  backdrop-filter: var(--glass-solid-blur);
+  border: 1px solid var(--glass-border-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--elev-3);
+  z-index: 101;
+  animation: fadeIn var(--dur-slow) var(--ease-out);
+}
+
+/* The button that opens it — outlined, because it stands alone in the bar. */
+.dash-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--tap-min);
+  height: var(--tap-min);
+  padding: 0;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  background: var(--glass);
+  color: var(--text-secondary);
+  font-size: 20px;
+  cursor: pointer;
+  transition:
+    background-color var(--dur) var(--ease),
+    color var(--dur) var(--ease),
+    border-color var(--dur) var(--ease);
+}
+
+.dash-icon-btn:hover,
+.dash-icon-btn.active {
+  background: var(--primary-soft);
+  border-color: var(--border-primary);
+  color: var(--primary-on-tint);
+}
+
 .dash-more-item {
   display: flex;
   align-items: center;
@@ -1095,8 +1362,8 @@
   border-radius: var(--radius-sm);
   text-decoration: none;
   cursor: pointer;
-  transition: all var(--dur) var(--ease);
-  text-align: right;
+  transition: background-color var(--dur) var(--ease), color var(--dur) var(--ease);
+  text-align: start;
   width: 100%;
 }
 

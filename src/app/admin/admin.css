@@ -45,7 +45,7 @@
   overflow: hidden;
   color: var(--admin-on-surface);
   font-family: var(--font-primary);
-  background-color: var(--bg);
+  background-color: transparent;
 }
 
 /* Backdrop, identical to .dashboard-page: primary-tinted glow from the top… */
@@ -53,7 +53,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--primary) 8%, transparent) 0%, transparent 60%);
+  background: var(--page-glow);
   pointer-events: none;
   z-index: 0;
 }
@@ -70,93 +70,293 @@
 }
 
 /* ==========================================================================
-   Ultra-Premium SaaS Bottom Navbar (Apple Pro Studio Architecture)
-   ========================================================================== */
+   Navigation — a sidebar on a desktop, a PWA tab bar on a phone
+   ==========================================================================
 
-/* Bottom Navbar Glass Panel.
+   One `<nav>` drawn two ways. Above 768px it is a floating glass sidebar, the
+   first child of this flex row — so in RTL it sits on the right — with full
+   titles and the account commands at its foot. At 768px and below it leaves
+   the row and is pinned to the bottom of the screen as a tab bar: four
+   sections, icon over a short label, and "more" for the rest. */
+.admin-layout-wrapper {
+  --admin-side-w: 264px;
+  --admin-side-inset: var(--space-4);
+}
 
-   The bar carries a fixed cast — a logo, six destinations and a settings
-   button — in whatever width the phone has. Three of those eight boxes had a
-   hard `width`, which on a 320px screen added up to 368px inside a 304px bar:
-   the settings button and the menu hanging off it sat 56px past the edge,
-   where `position: fixed` meant no scrollbar ever appeared to say so. It was
-   simply gone, and with it the only way to sign out or change a password.
-   The row now fits by construction — the ends keep their size, the middle
-   takes what is left and divides it. */
-.admin-bottom-nav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
-  /* The bar owns the strip of screen the phone reserves for its home indicator
-     — and, held in landscape, the cutout on whichever side it lands. It grows
-     by that much and pads itself by the same, so the buttons sit exactly where
-     they did while the glass still runs to the physical edge.
-
-     Not inside a breakpoint, and it does not need one: `env()` resolves to 0px
-     on every screen with no inset to report, which is every desktop and most
-     phones. Only the declared value changes — the computed one stays `72px`
-     and `0 24px` unless there is genuinely something in the way.
-
-     Physical sides rather than logical: an inset describes where the hardware
-     is, which does not turn around when the text does. */
-  height: calc(72px + env(safe-area-inset-bottom));
-  padding-top: 0;
-  padding-bottom: env(safe-area-inset-bottom);
-  padding-left: calc(24px + env(safe-area-inset-left));
-  padding-right: calc(24px + env(safe-area-inset-right));
-  background: var(--nav-bg-glass);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border-top: 1px solid var(--admin-card-border);
+.admin-shell-nav {
+  position: relative;
   z-index: 100;
+  flex: none;
+  width: var(--admin-side-w);
+  margin: var(--admin-side-inset);
+  margin-inline-end: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  background: var(--glass);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--elev-2);
+  overflow-y: auto;
 }
 
-/* Brand Header Area (Logo on the right) */
-.admin-brand-header {
+.admin-shell-head {
   display: flex;
   align-items: center;
+  gap: var(--space-1);
+  flex: none;
+  margin-bottom: var(--space-2);
 }
 
-/* Logo Tile Halo Effect */
-.admin-collapsed-logo-tile {
-  width: 52px;
-  height: 52px;
-  border-radius: var(--radius-md);
-  background: var(--primary-dim);
-  border: 1px solid var(--border-primary);
+.admin-shell-brand {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: border-color var(--dur) var(--ease);
+  flex: 1;
+  min-width: 0;
+  min-height: 56px;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  transition: background-color var(--dur) var(--ease);
 }
 
-.admin-collapsed-logo-tile:hover {
-  border-color: var(--primary);
+.admin-shell-brand:hover {
+  background: var(--glass-2);
 }
 
-/* ==========================================================================
-   Navigation Links & Containers
-   ========================================================================== */
-/* `min-width: 0` is what makes the shrinking possible at all: a flex item's
-   automatic minimum is its min-content width, and for a row of boxes with a
-   declared `width` that floor is the sum of those widths. Without this the
-   container refuses to go below 284px however little room the bar has. */
+.admin-shell-brand-mark {
+  display: none;
+}
+
+.admin-shell-brand-full {
+  display: block;
+  width: 100%;
+  max-width: 190px;
+  height: auto;
+  max-height: 32px;
+  object-fit: contain;
+}
+
+.admin-shell-eyebrow {
+  padding: 0 var(--space-3);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  color: var(--text-muted);
+}
+
 .admin-nav-container {
   display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  flex: 0 1 auto;
-  min-width: 0;
-  gap: 12px;
+  flex-direction: column;
+  gap: var(--space-1);
 }
 
+/* A section of the sidebar: its heading (the eyebrow) over its links. */
+.admin-nav-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.admin-nav-group + .admin-nav-group {
+  margin-top: var(--space-3);
+}
+
+.admin-nav-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: var(--tap-min);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: var(--text-base);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-tight);
+  text-align: start;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color var(--dur) var(--ease),
+    color var(--dur) var(--ease),
+    border-color var(--dur) var(--ease);
+}
+
+.admin-nav-link:hover:not(.active) {
+  color: var(--text);
+  background: var(--glass-2);
+}
+
+.admin-nav-link.active {
+  background: var(--primary-soft);
+  border-color: var(--border-primary);
+  color: var(--primary-on-tint);
+  font-weight: var(--weight-semibold);
+}
+
+/* The edge marker, on the side of the item nearest the screen edge. */
+.admin-nav-link.active::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: -1px;
+  top: 50%;
+  translate: 0 -50%;
+  width: 3px;
+  height: 20px;
+  background: var(--primary);
+  border-radius: var(--radius-pill);
+}
+
+.admin-nav-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  font-size: 20px;
+  transition: background-color var(--dur) var(--ease);
+}
+
+.admin-nav-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Phone-only pieces: the short label, the "more" tab, and its sheet. */
+.admin-nav-short,
+.admin-nav-more,
+.admin-more-scrim,
+.admin-more-sheet {
+  display: none;
+}
+
+.admin-shell-footer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-top: auto;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--glass-border);
+}
+
+.admin-nav-link.danger:hover {
+  color: var(--error-text);
+  background: var(--error-bg);
+}
+
+/* The fold button — a ghost icon button beside the logo. */
+.admin-shell-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 18px;
+  cursor: pointer;
+  transition:
+    background-color var(--dur) var(--ease),
+    color var(--dur) var(--ease),
+    border-color var(--dur) var(--ease);
+}
+
+.admin-shell-toggle:hover {
+  background: var(--primary-soft);
+  border-color: var(--border-primary);
+  color: var(--primary-on-tint);
+}
+
+@media (max-width: 1024px) {
+  .admin-layout-wrapper {
+    --admin-side-w: 232px;
+    --admin-side-inset: var(--space-3);
+  }
+}
+
+/* A short window — a phone on its side is 667–932px wide and lands here — keeps
+   the sidebar but drops what is only decoration; the list scrolls inside the
+   glass if it still does not fit. */
+@media (max-height: 500px) {
+  .admin-shell-eyebrow {
+    display: none;
+  }
+  .admin-shell-brand {
+    min-height: var(--tap-min);
+  }
+  .admin-shell-head {
+    margin-bottom: 0;
+  }
+}
+
+/* ── Folded to its icons ──
+   Desktop only: the phone tab bar has no folded state. Two classes on the
+   wrapper, so the width beats the 1024px override above. Labels go at once
+   and the width follows; `nowrap` on the labels keeps them from breaking onto
+   a second line while the glass is still narrow on the way back out. Every
+   item carries a `title`, which is what names it while folded. */
+@media (min-width: 769px) {
+  .admin-layout-wrapper.is-nav-collapsed {
+    --admin-side-w: 76px;
+  }
+
+  .admin-layout-wrapper.is-nav-animated .admin-shell-nav {
+    transition: width var(--dur-slow) var(--ease-out), padding var(--dur-slow) var(--ease-out);
+  }
+
+  .is-nav-collapsed .admin-shell-nav {
+    padding-inline: var(--space-3);
+  }
+
+  .is-nav-collapsed .admin-shell-head {
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .is-nav-collapsed .admin-shell-brand {
+    width: 100%;
+    min-height: var(--tap-min);
+    padding: var(--space-1) 0;
+  }
+
+  .is-nav-collapsed .admin-shell-brand-full,
+  .is-nav-collapsed .admin-shell-eyebrow,
+  .is-nav-collapsed .admin-nav-label {
+    display: none;
+  }
+
+  .is-nav-collapsed .admin-shell-brand-mark {
+    display: block;
+    width: 44px;
+    height: auto;
+    max-height: 36px;
+    object-fit: contain;
+  }
+
+  .is-nav-collapsed .admin-nav-link {
+    justify-content: center;
+    padding-inline: 0;
+  }
+
+  /* With the headings gone, a hairline keeps the sections apart. */
+  .is-nav-collapsed .admin-nav-group + .admin-nav-group {
+    margin-top: var(--space-2);
+    padding-top: var(--space-2);
+    border-top: 1px solid var(--glass-border);
+  }
+}
 /* Icon weight, panel-wide.
  *
  * Every icon is a Lucide outline drawn on a 24-unit grid with `stroke-width: 2`
@@ -221,93 +421,20 @@
 .diet-btn-secondary .app-icon {
   stroke-width: 3.5;
 }
-
-/* Navigation item */
-.admin-nav-link,
-.admin-logout-btn {
-  width: 52px;
-  height: 52px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--radius-md);
-  transition:
-    background-color var(--dur) var(--ease),
-    color var(--dur) var(--ease),
-    border-color var(--dur) var(--ease);
-  border: 1px solid transparent;
-  color: var(--text-secondary);
-  text-decoration: none;
-  background-color: transparent;
-  cursor: pointer;
-  position: relative;
-}
-
-.admin-nav-link:hover:not(.active),
-.admin-logout-btn:hover {
-  color: var(--text);
-  background: color-mix(in srgb, var(--text) 6%, transparent);
-}
-
-.admin-nav-link.active {
-  background: var(--primary-dim);
-  color: var(--primary-on-tint);
-  border-color: var(--border-primary);
-}
-
-/* Active marker (Top edge for bottom navbar) */
-.admin-nav-link.active::before {
-  content: '';
-  position: absolute;
-  top: -1px;
-  left: 50%;
-  transform: translateX(-50%);
-  height: 3px;
-  width: 20px;
-  background: var(--primary);
-  border-radius: var(--radius-pill);
-}
-
-.admin-nav-link .app-icon,
-.admin-logout-btn .app-icon {
-  transition: color var(--dur) var(--ease);
-  font-size: 24px;
-}
-
-.admin-nav-link:hover .app-icon,
-.admin-nav-link.active .app-icon {
-  color: var(--primary-on-tint);
-}
-
-/* ==========================================================================
-   Footer Actions & System Buttons (Left side)
-   ========================================================================== */
-.admin-bottom-actions {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 8px;
-}
-
-.admin-logout-btn.danger-btn:hover {
-  color: var(--error-text);
-  background-color: color-mix(in srgb, var(--error) 12%, transparent);
-  border-color: color-mix(in srgb, var(--error) 30%, transparent);
-}
-
 .admin-main-content {
   flex-grow: 1;
   position: relative;
   z-index: 2;
   overflow-y: auto;
+  /* A flex item's automatic minimum is its min-content width; without this a
+     wide table would push the page out past the sidebar instead of scrolling
+     inside it. */
+  min-width: 0;
   padding: var(--space-10);
   /* Installed on an iPhone, the page is drawn under the status bar
      (`black-translucent` + `viewport-fit=cover` in the root layout), so the
      page title sat beneath the clock. The inset is zero everywhere else. */
   padding-top: calc(var(--space-10) + env(safe-area-inset-top));
-  /* Clears the bar, including whatever the bar itself had to give up to the
-     home indicator — otherwise the last card on every admin page ends under it. */
-  padding-bottom: calc(var(--space-10) + 72px + env(safe-area-inset-bottom));
 }
 
 /* Keeps admin pages on a readable measure the way .dashboard-main does, while
@@ -339,34 +466,132 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
-.admin-logo-mobile {
-  display: none;
-}
-.admin-logo-desktop {
-  display: flex;
-  align-items: center;
-}
-.admin-hlogo-link {
-  display: block;
-  transition: opacity var(--dur) var(--ease);
-}
-.admin-hlogo-link:hover {
-  opacity: 0.8;
-}
-
-/* The wide lockup is 32px tall and it is the way back to the site from the
-   panel — a short target for a thumb, and the bar has 72px to give. Gated on
-   touch: the box it sits in is measured by this link, so on a desktop the
-   taller box would move the brand block, and there is nothing to fix there. */
-@media (hover: none), (max-width: 1024px) {
-  .admin-hlogo-link {
-    display: flex;
-    align-items: center;
-    min-height: var(--tap-min);
-  }
-}
-
 @media (max-width: 768px) {
+  /* ── Bottom tab bar ── */
+  .admin-shell-nav {
+    position: fixed;
+    inset: auto 0 0 0;
+    width: auto;
+    margin: 0;
+    height: calc(64px + env(safe-area-inset-bottom));
+    flex-direction: row;
+    gap: 0;
+    padding: 0 calc(var(--space-1) + env(safe-area-inset-right)) env(safe-area-inset-bottom) calc(var(--space-1) + env(safe-area-inset-left));
+    background: var(--nav-bg-glass);
+    border: none;
+    border-top: 1px solid var(--glass-border);
+    border-radius: 0;
+    box-shadow: none;
+    overflow: visible;
+  }
+
+  .admin-shell-head,
+  .admin-shell-eyebrow,
+  .admin-shell-footer,
+  .admin-nav-label,
+  .admin-nav-link.is-overflow {
+    display: none;
+  }
+
+  .admin-nav-container {
+    flex-direction: row;
+    width: 100%;
+    height: 100%;
+    gap: 0;
+  }
+
+  /* The group boxes step aside so their links are the bar's own tabs. */
+  .admin-nav-group {
+    display: contents;
+  }
+
+  .admin-nav-link {
+    flex: 1 1 0;
+    min-width: 0;
+    height: 100%;
+    flex-direction: column;
+    justify-content: center;
+    gap: var(--space-1);
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    color: var(--text-muted);
+    font-size: var(--text-2xs);
+    font-weight: var(--weight-semibold);
+    text-align: center;
+  }
+
+  .admin-nav-more {
+    display: flex;
+  }
+
+  .admin-nav-link:hover:not(.active),
+  .admin-nav-link.active {
+    background: transparent;
+  }
+
+  .admin-nav-link.active {
+    color: var(--primary-on-tint);
+  }
+
+  .admin-nav-link.active::before {
+    display: none;
+  }
+
+  /* The selected tab's icon sits in a tinted pill — the indicator a phone's
+     own tab bars use, so the bar reads as the app's, not the website's. */
+  .admin-nav-icon {
+    width: 56px;
+    height: 30px;
+    border-radius: var(--radius-pill);
+    font-size: 22px;
+  }
+
+  .admin-nav-link.active .admin-nav-icon {
+    background: var(--primary-soft);
+  }
+
+  .admin-nav-short {
+    display: block;
+    max-width: 100%;
+    padding: 0 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* ── The "more" sheet ── */
+  .admin-more-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 99;
+    background: var(--overlay-scrim);
+    -webkit-backdrop-filter: blur(3px);
+    backdrop-filter: blur(3px);
+  }
+
+  .admin-more-sheet {
+    position: fixed;
+    left: calc(var(--space-3) + env(safe-area-inset-left));
+    right: calc(var(--space-3) + env(safe-area-inset-right));
+    bottom: calc(64px + env(safe-area-inset-bottom) + var(--space-2));
+    z-index: 101;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    max-height: calc(100dvh - 64px - env(safe-area-inset-bottom) - env(safe-area-inset-top) - var(--space-8));
+    overflow-y: auto;
+    padding: var(--space-1);
+    background: var(--glass-solid);
+    -webkit-backdrop-filter: var(--glass-solid-blur);
+    backdrop-filter: var(--glass-solid-blur);
+    border: 1px solid var(--glass-border-strong);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--elev-3);
+    animation: dropdownFade var(--dur-slow) var(--ease-out);
+  }
+
   .admin-main-content {
     /* Maintain the top/side padding, but ensure the bottom padding clears the
        navbar — which is 64px here, plus the inset the bar itself absorbs.
@@ -446,83 +671,6 @@
     pointer-events: none;
     z-index: 50;
   }
-
-  .admin-logo-desktop {
-    display: none;
-  }
-
-  .admin-logo-mobile {
-    display: flex;
-  }
-
-
-  .admin-bottom-nav {
-    height: calc(64px + env(safe-area-inset-bottom));
-    padding-left: calc(8px + env(safe-area-inset-left));
-    padding-right: calc(8px + env(safe-area-inset-right));
-  }
-
-  .admin-nav-container {
-    gap: 4px;
-  }
-
-  .admin-nav-link,
-  .admin-logout-btn {
-    width: 44px;
-    height: 44px;
-  }
-
-  /* The seven destinations are the only part of the bar that may give ground —
-     the logo and the settings button are one box each and already at their
-     floor, so they are pinned and the middle absorbs the squeeze. A basis
-     rather than a width, so the links divide what is left instead of insisting
-     on 44px apiece and pushing the row off the screen.
-     All three declarations live in here rather than on the base rules: above
-     this breakpoint nothing is ever squeezed, and `flex-shrink: 0` on the ends
-     changes how the desktop bar sizes its logo. */
-  .admin-brand-header,
-  .admin-bottom-actions {
-    flex: 0 0 auto;
-  }
-
-  .admin-nav-link {
-    flex: 0 1 44px;
-    min-width: 0;
-  }
-
-  .admin-nav-link .app-icon,
-  .admin-logout-btn .app-icon {
-    font-size: 20px;
-  }
-
-  .admin-collapsed-logo-tile {
-    width: var(--tap-min);
-    height: var(--tap-min);
-  }
-
-  .admin-collapsed-logo-tile img {
-    width: 28px !important;
-    height: 28px !important;
-  }
-}
-
-/* Phones narrow enough that nine boxes and their gaps no longer clear 44px
-   each. Only the seven destinations give ground — they are one row of the same
-   thing, so they shrink together and stay legible as a set, while the two
-   single controls at the ends keep the full target. At 320px that leaves the
-   icons about 28px across and 44px tall, and about 40px at the top of this
-   range, which is the floor the width imposes; the full 44 square returns from
-   452px up, once the wider gutters above this breakpoint apply. */
-@media (max-width: 400px) {
-  .admin-bottom-nav {
-    padding-left: calc(6px + env(safe-area-inset-left));
-    padding-right: calc(6px + env(safe-area-inset-right));
-    gap: var(--space-1);
-  }
-
-  .admin-nav-container {
-    gap: 2px;
-  }
 }
 
 /*
@@ -531,8 +679,8 @@
  */
 .admin-card {
   background: var(--admin-card-bg);
-  backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
   border: 1px solid var(--admin-card-border);
   border-radius: var(--admin-radius-lg);
   padding: var(--space-6);
@@ -544,7 +692,7 @@
    clickable card does. Only the border responds, so hovering a wide dashboard
    no longer makes the whole page twitch. */
 .admin-card:hover {
-  border-color: var(--border-strong);
+  border-color: var(--glass-border-strong);
   box-shadow: var(--admin-card-shadow-hover);
 }
 
@@ -554,7 +702,7 @@
   font-weight: var(--weight-semibold);
   letter-spacing: 0;
   color: var(--text);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--glass-border);
   padding-bottom: var(--space-3);
   margin-bottom: var(--space-5);
   display: flex;
@@ -587,38 +735,11 @@
 }
 
 /* ==========================================================================
-   Settings Dropdown Menu
-   ========================================================================== */
-/* The panel is `.custom-select-dropdown` — same ground, same border, same
-   radius, same shadow, same 4px of padding and 2px between rows. One drawing
-   of "a list that dropped out of a control", wherever it drops from.
-   Opaque, and the blur is gone with the translucency: the select this now
-   matches has never been see-through, and a menu of two commands reading
-   through the table behind it was the loudest thing about the old one.
-   The entrance animation stays — that is behaviour, not the look of the
-   panel, and nothing was asked about it. */
-.admin-settings-dropdown {
-  position: absolute;
-  bottom: 100%; /* Position above the navbar */
-  left: 0;      /* Align with the left edge of the settings button */
-  margin-bottom: 12px;
-  background-color: var(--bg2);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-md);
-  box-shadow: var(--elev-2);
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 200px;
-  /* The bar it hangs off is 6px from the edge of a 320px screen, and this menu
-     is wider than the button that opens it. Capped against the viewport so a
-     longer command can never carry the panel past the edge. */
-  max-width: calc(100vw - 12px);
-  padding: 4px;
-  z-index: 101;
-  animation: dropdownFade 0.2s ease-out forwards;
-}
-
+   The phone's "more" sheet — its items
+   ==========================================================================
+   The sheet itself is drawn in the phone block above. Its rows match
+   `.custom-select-option`, so every list that drops out of a control in this
+   product is drawn the same way. */
 @keyframes dropdownFade {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
@@ -642,14 +763,24 @@
   border: none;
   cursor: pointer;
   width: 100%;
-  text-align: right;
-  transition: all 0.2s ease;
+  text-align: start;
+  transition: background-color var(--dur) var(--ease), color var(--dur) var(--ease);
   font-family: var(--font-primary);
 }
 
 .admin-dropdown-item:hover {
   color: var(--text);
   background-color: var(--bg3);
+}
+
+.admin-dropdown-item.active {
+  color: var(--primary-on-tint);
+  background-color: var(--primary-soft);
+}
+
+.admin-dropdown-item .app-icon {
+  font-size: 20px;
+  flex: none;
 }
 
 .admin-dropdown-item.danger {
@@ -667,21 +798,46 @@
   margin: 4px 0;
 }
 
-/* ─── Phones held sideways ────────────────────────────────────────────────
-   A phone in landscape is around 390px tall. The bar is 64px of that and the
-   shell reserves 88px more in padding, so a third of the screen was furniture
-   before any content was drawn. Keyed on height, and gated on orientation so a
-   short desktop window is not caught by it.
+/* The phone sheet's sections, headed like the sidebar's. */
+.admin-more-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
 
-   The six destinations, the logo and the settings button all stay — this is a
-   bar that gets shorter, not a bar that loses buttons. Their boxes stay at
-   44px wide, which is where the finger lands; only the vertical is spent
-   differently, and there is more width here than in portrait to spend it in. */
-/* Sideways on a phone the bar is 52px, not 64px, so the scrim has to come down
-   with it or it would float 12px clear and let content pass sharp underneath.
-   Both conditions on purpose: the landscape block below is not width-limited,
-   and a short desktop window must not grow a scrim it never had. */
+.admin-more-group + .admin-more-group {
+  margin-top: var(--space-1);
+}
+
+.admin-more-heading {
+  padding: var(--space-2) var(--space-3) var(--space-1);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  color: var(--text-muted);
+}
+
+/* ─── Phones held sideways ────────────────────────────────────────────────
+   Only reachable below 768px wide, which a landscape phone rarely is — the
+   larger ones get the sidebar instead. The bar gets shorter, the targets in
+   it do not, and the scrim and the sheet come down with it. */
 @media (max-width: 768px) and (max-height: 500px) and (orientation: landscape) {
+  .admin-shell-nav {
+    height: calc(52px + env(safe-area-inset-bottom));
+  }
+
+  .admin-nav-icon {
+    height: 26px;
+  }
+
+  .admin-more-sheet {
+    bottom: calc(52px + env(safe-area-inset-bottom) + var(--space-2));
+  }
+
+  .admin-main-content {
+    padding-top: 14px;
+    padding-bottom: calc(14px + 52px + env(safe-area-inset-bottom));
+  }
+
   .admin-main-content::after {
     height: calc(52px + env(safe-area-inset-bottom) + 72px);
     background: linear-gradient(
@@ -690,21 +846,5 @@
       var(--bg) calc(52px + env(safe-area-inset-bottom)),
       color-mix(in srgb, var(--bg) 0%, transparent) 100%
     );
-  }
-}
-
-@media (max-height: 500px) and (orientation: landscape) {
-  .admin-bottom-nav {
-    height: calc(52px + env(safe-area-inset-bottom));
-  }
-
-  .admin-nav-link,
-  .admin-logout-btn {
-    height: 44px;
-  }
-
-  .admin-main-content {
-    padding-top: 14px;
-    padding-bottom: calc(14px + 52px + env(safe-area-inset-bottom));
   }
 }

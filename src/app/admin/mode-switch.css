@@ -1,0 +1,67 @@
+/* The gym ⇄ store switch at the top of the panel's sidebar — see
+   src/app/admin/layout.tsx. Its own file so admin.css stays untouched. */
+
+.admin-mode-switch {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0 var(--space-3) var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-primary);
+  background:
+    linear-gradient(135deg, rgba(var(--primary-rgb), 0.22), rgba(var(--primary-rgb), 0.06));
+  color: var(--text);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  text-decoration: none;
+  overflow: hidden;
+  transition: border-color var(--dur) var(--ease), background var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+.admin-mode-switch:hover {
+  border-color: var(--primary);
+  box-shadow: inset 0 0 24px -8px var(--primary);
+}
+.admin-mode-switch.is-store {
+  border-color: color-mix(in srgb, var(--success) 40%, transparent);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--success) 20%, transparent), color-mix(in srgb, var(--success) 5%, transparent));
+}
+.admin-mode-switch.is-store:hover {
+  border-color: var(--success);
+  box-shadow: inset 0 0 24px -8px var(--success);
+}
+.admin-mode-switch-icon {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  background: var(--primary);
+  color: var(--text-inverse);
+}
+.admin-mode-switch.is-store .admin-mode-switch-icon { background: var(--success); }
+.admin-mode-switch-icon svg { width: 18px; height: 18px; }
+.admin-mode-switch-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+@media (min-width: 769px) {
+  .is-nav-collapsed .admin-mode-switch {
+    justify-content: center;
+    padding: var(--space-2);
+    margin-inline: var(--space-2);
+  }
+  .is-nav-collapsed .admin-mode-switch-label { display: none; }
+}
+
+/* On a phone the sidebar is a tab bar; the switch is in the "more" sheet. */
+@media (max-width: 768px) {
+  .admin-mode-switch { display: none; }
+}
+
+.admin-dropdown-item--switch {
+  color: var(--primary-on-tint);
+  font-weight: var(--weight-bold);
+  background: var(--primary-soft);
+}
+.admin-dropdown-item--switch svg { width: 20px; height: 20px; flex: none; }

@@ -21,7 +21,7 @@
   padding: var(--space-6);
   /* Painted explicitly. `global-error.tsx` replaces the root layout, so nothing
      else has set a background by the time this renders. */
-  background: var(--bg);
+  background: var(--page-glow), var(--bg);
   color: var(--text);
   font-family: var(--font-primary);
 }
@@ -94,20 +94,19 @@
   gap: var(--space-2);
   padding: var(--space-3) var(--space-6);
   border-radius: var(--radius-md);
-  border: 1px solid var(--primary);
-  background: var(--primary);
+  border: 1px solid transparent;
+  background: linear-gradient(135deg, var(--primary) 0%, color-mix(in srgb, var(--primary) 75%, var(--primary-light)) 100%);
   color: var(--text-inverse);
   font-family: inherit;
   font-size: var(--text-base);
   font-weight: var(--weight-semibold);
   text-decoration: none;
   cursor: pointer;
-  transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+  transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), filter var(--dur) var(--ease), transform var(--dur) var(--ease);
 }
 
 .boundary-btn:hover {
-  background: var(--primary-hover);
-  border-color: var(--primary-hover);
+  filter: brightness(1.05);
 }
 
 /* The quieter of the two, so the pair reads as one primary action and one way
@@ -121,4 +120,5 @@
 .boundary-btn--ghost:hover {
   background: color-mix(in srgb, var(--primary) 16%, transparent);
   border-color: var(--primary);
+  filter: none;
 }
