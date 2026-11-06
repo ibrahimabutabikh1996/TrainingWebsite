@@ -187,7 +187,7 @@ export default function WeightLog({ profile, readonly, embedded, onSaveSuccess }
             <p style={{ color: "var(--text-muted)", fontSize: "0.95rem", margin: 0 }}>ابدأ بتسجيل وزنك الأول في النموذج أعلاه لتتبع تقدمك.</p>
           </div>
         ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "var(--space-6)", alignItems: "stretch" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(320px, 100%), 1fr))", gap: "var(--space-6)", alignItems: "stretch" }}>
             
             {/* Chart Area */}
             <div className="home-stat-card" style={{ flex: "2 1 0" }}>
@@ -224,7 +224,7 @@ export default function WeightLog({ profile, readonly, embedded, onSaveSuccess }
                 <h4 style={{ margin: 0, color: "var(--text)", fontSize: "1.1rem" }}>سجل القراءات</h4>
               </div>
               <div style={{ overflowY: "auto", flex: 1 }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "right" }}>
+                <table className="crm-wl-table" style={{ width: "100%", borderCollapse: "collapse", textAlign: "right" }}>
                   <thead style={{ position: "sticky", top: 0, background: "var(--bg2)", zIndex: 1 }}>
                     <tr>
                       <th style={{ padding: "var(--space-3) var(--space-6)", color: "var(--text-secondary)", fontSize: "0.85rem", fontWeight: 600, borderBottom: "1px solid var(--border)" }}>التاريخ</th>
@@ -242,17 +242,17 @@ export default function WeightLog({ profile, readonly, embedded, onSaveSuccess }
                           background: log.isOriginal ? "color-mix(in srgb, var(--primary) 3%, transparent)" : "transparent",
                           transition: "background var(--dur) var(--ease)"
                         }}>
-                          <td style={{ padding: "var(--space-4) var(--space-6)", fontSize: "0.95rem" }}>
+                          <td data-label="التاريخ" style={{ padding: "var(--space-4) var(--space-6)", fontSize: "0.95rem" }}>
                             {log.isOriginal ? (
                               <span style={{ color: "var(--primary-on-tint)", fontWeight: 600 }}>الوزن الأصلي</span>
                             ) : (
                               <span style={{ color: "var(--text)" }}>{formatTimestamp(log.date)}</span>
                             )}
                           </td>
-                          <td style={{ padding: "var(--space-4) var(--space-4)", fontSize: "1rem", fontWeight: 600, color: "var(--text)" }}>
+                          <td data-label="الوزن" style={{ padding: "var(--space-4) var(--space-4)", fontSize: "1rem", fontWeight: 600, color: "var(--text)" }}>
                             {log.weight}
                           </td>
-                          <td style={{ padding: "var(--space-4) var(--space-6)" }}>
+                          <td data-label="التغير" style={{ padding: "var(--space-4) var(--space-6)" }}>
                             {diff !== 0 ? (
                               <span style={{ 
                                 display: "inline-flex", alignItems: "center", gap: "4px",

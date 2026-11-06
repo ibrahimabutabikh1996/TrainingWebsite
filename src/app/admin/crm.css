@@ -854,6 +854,45 @@
   }
 }
 
+/* ─── A month's weigh-ins (WeightLog, on the profile) ──────────────────────
+   On a phone the three columns do not fit the month's tab, so each reading
+   becomes a block of "label: value" lines, the label from the cell's
+   data-label. The cells keep their inline paddings, which set no display, so
+   only the layout changes here. This sheet loads on the admin pages only: the
+   trainee's own weight log keeps its table. */
+@media (max-width: 640px) {
+  .crm-wl-table,
+  .crm-wl-table tbody,
+  .crm-wl-table tr,
+  .crm-wl-table td {
+    display: block;
+  }
+
+  .crm-wl-table thead {
+    display: none;
+  }
+
+  .crm-wl-table td[data-label] {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+  }
+
+  .crm-wl-table td[data-label]::before {
+    content: attr(data-label);
+    color: var(--text-secondary);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+  }
+
+  /* The weight cell's inline padding is 8px narrower at each side than the
+     other two; the margin lines its label and value up with theirs. */
+  .crm-wl-table td[data-label="الوزن"] {
+    margin-inline: var(--space-2);
+  }
+}
+
 .crm-sr-only {
   position: absolute;
   width: 1px;
