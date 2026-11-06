@@ -64,6 +64,9 @@ const MAX_ANSWER_LENGTH = 2_000;
 const LONG_ANSWER_KEYS = new Set([
   "injuries", "allergies", "fav_foods", "supplements_list",
   "diet_history", "last_diet_fail", "eating_reason", "workout_type_other_desc",
+  /* Both are large text boxes on the form, like every key above. Held to the
+     short limit, a detailed goal was refused with nothing to say why. */
+  "sub_goal", "meat",
 ]);
 
 /** Everything else is a name, a choice or a short phrase. */
