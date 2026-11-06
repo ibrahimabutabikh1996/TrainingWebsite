@@ -63,7 +63,7 @@ export const UPLOAD_SLOT_LIMIT: RateLimitOptions = { max: 60, windowMinutes: 15 
    is the most expensive thing an anonymous caller can ask for. Five in a window
    leaves room for a genuine retry after a validation error — or for a household
    registering together — without leaving the table open to being filled. */
-export const SUBMIT_FORM_LIMIT: RateLimitOptions = { max: 5, windowMinutes: 15 };
+export const SUBMIT_FORM_LIMIT: RateLimitOptions = { max: 5, windowMinutes: 5 };
 
 /* ------------------------------------------------------------------ *
  * The second dimension
@@ -100,10 +100,10 @@ export const SUBMIT_FORM_LIMIT: RateLimitOptions = { max: 5, windowMinutes: 15 }
  */
 
 /** Per profile, for a renewal. Generous: a genuine retry after a validation error. */
-export const SUBMIT_FORM_RENEWAL_LIMIT: RateLimitOptions = { max: 5, windowMinutes: 15 };
+export const SUBMIT_FORM_RENEWAL_LIMIT: RateLimitOptions = { max: 5, windowMinutes: 5 };
 
 /** Per upload session, for a registration. A session is single-use anyway. */
-export const SUBMIT_FORM_SESSION_LIMIT: RateLimitOptions = { max: 5, windowMinutes: 15 };
+export const SUBMIT_FORM_SESSION_LIMIT: RateLimitOptions = { max: 5, windowMinutes: 5 };
 
 /** Per upload session. `issueSlot` already caps items per session; this caps the asking. */
 export const UPLOAD_SLOT_SESSION_LIMIT: RateLimitOptions = { max: 60, windowMinutes: 15 };
@@ -284,6 +284,49 @@ export async function consumeAttempt(
       );
     }
     return consumeLocally(key, max, windowMinutes);
+  }
+}
+
+export interface AttemptsLeft {
+  remaining: number;
+  max: number;
+  /** Seconds until the window resets. Only meaningful when `remaining` is 0. */
+  retryAfterSeconds: number;
+}
+
+/**
+ * Reads where `key` stands without counting an attempt against it — so the form
+ * can say how many tries are left before the visitor spends one.
+ *
+ * Shared counter only. If it cannot be read, this says the full allowance is
+ * left: the number is a courtesy, and the 429 that `consumeAttempt` produces
+ * still carries the real wait in its Retry-After.
+ */
+export async function peekAttempts(
+  key: string,
+  options: RateLimitOptions = {}
+): Promise<AttemptsLeft> {
+  const max = options.max ?? MAX_ATTEMPTS;
+  const windowMinutes = options.windowMinutes ?? WINDOW_MINUTES;
+
+  try {
+    const rows = await prisma.$queryRaw<Array<{ attempts: number; expires_in: number }>>`
+      SELECT
+        attempts,
+        CEIL(EXTRACT(EPOCH FROM (
+          window_start + (${windowMinutes} * INTERVAL '1 minute') - now()
+        )))::int AS expires_in
+      FROM public.login_attempts
+      WHERE key = ${key}`;
+
+    const row = rows[0];
+    if (!row || row.expires_in <= 0) return { remaining: max, max, retryAfterSeconds: 0 };
+
+    const remaining = Math.max(0, max - row.attempts);
+    return { remaining, max, retryAfterSeconds: remaining === 0 ? row.expires_in : 0 };
+  } catch (error) {
+    console.error(`${DEGRADED_MARKER} could not read the counter for a peek:`, error);
+    return { remaining: max, max, retryAfterSeconds: 0 };
   }
 }
 

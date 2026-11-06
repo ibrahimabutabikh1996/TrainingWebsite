@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState, Suspense } from "react";
+import { useCallback, useEffect, useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import toast, { Toaster } from "react-hot-toast";
@@ -111,6 +111,24 @@ function Stepper({
       </ol>
     </div>
   );
+}
+
+interface AttemptsLeft {
+  remaining: number;
+  max: number;
+  retryAfterSeconds: number;
+}
+
+/* The server's count of submissions left for this address. Null when it cannot
+   be read — a courtesy: without it the button still works and the server still
+   decides. */
+async function readAttempts(): Promise<AttemptsLeft | null> {
+  try {
+    const res = await fetch("/api/submit-form/attempts", { cache: "no-store" });
+    return res.ok ? await res.json() : null;
+  } catch {
+    return null;
+  }
 }
 
 const initialData: SubscriptionFormData = {
@@ -233,6 +251,52 @@ function FormContent({ planNames }: { planNames: PlanNames }) {
     setCurrentStep(Math.min(TOTAL_STEPS, Math.max(1, step)));
   };
 
+  /* Submissions left before the server's limit closes, shown above the submit
+     button. A visitor once spent every try on a refused form, reloaded, and was
+     turned away twice more without knowing why or for how long. The count is the
+     server's (`/api/submit-form/attempts`), so a reload cannot reset it, and the
+     wait after a 429 is taken from that response's Retry-After. */
+  const [attempts, setAttempts] = useState<{ remaining: number; max: number } | null>(null);
+  const [lockedUntil, setLockedUntil] = useState(0);
+  const [now, setNow] = useState(() => Date.now());
+
+  const applyAttempts = useCallback((left: AttemptsLeft | null) => {
+    if (!left) return;
+    setAttempts({ remaining: left.remaining, max: left.max });
+    if (left.retryAfterSeconds > 0) {
+      setNow(Date.now());
+      setLockedUntil(Date.now() + left.retryAfterSeconds * 1000);
+    }
+  }, []);
+
+  const refreshAttempts = useCallback(
+    () => readAttempts().then(applyAttempts),
+    [applyAttempts]
+  );
+
+  useEffect(() => {
+    if (paymentDone && currentStep === TOTAL_STEPS) readAttempts().then(applyAttempts);
+  }, [paymentDone, currentStep, applyAttempts]);
+
+  /* The countdown. When it runs out the button comes back and the count is read
+     again — a fresh window, so normally the full allowance. */
+  useEffect(() => {
+    if (lockedUntil === 0) return;
+    const timer = window.setInterval(() => {
+      if (Date.now() >= lockedUntil) {
+        window.clearInterval(timer);
+        setLockedUntil(0);
+        void refreshAttempts();
+      } else {
+        setNow(Date.now());
+      }
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [lockedUntil, refreshAttempts]);
+
+  const secondsLocked = Math.max(0, Math.ceil((lockedUntil - now) / 1000));
+  const isLocked = lockedUntil > 0 && secondsLocked > 0;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -298,6 +362,12 @@ function FormContent({ planNames }: { planNames: PlanNames }) {
         }
         console.error(`Server rejected submission [${res.status} ${res.statusText}] JSON:`, errorData);
         if (Array.isArray(errorData.details)) refusedDetails = errorData.details.join(", ");
+        /* The limit closed: lock the button for exactly as long as the server says. */
+        const retryAfter = Number(res.headers.get("Retry-After"));
+        if (res.status === 429 && retryAfter > 0) {
+          setNow(Date.now());
+          setLockedUntil(Date.now() + retryAfter * 1000);
+        }
         throw new Error(errorData.error || t("form_error_send"));
       }
 
@@ -323,6 +393,7 @@ function FormContent({ planNames }: { planNames: PlanNames }) {
       }).catch(() => {});
       toast.error(err instanceof Error ? err.message : t("form_error_generic"));
       setIsSubmitting(false);
+      void refreshAttempts();
     }
   };
 
@@ -420,6 +491,18 @@ function FormContent({ planNames }: { planNames: PlanNames }) {
               {currentStep === 4 && <StepFourHealthAttachments {...stepProps} />}
             </div>
 
+            {currentStep === TOTAL_STEPS && attempts && (
+              <p
+                className="form-attempts"
+                data-level={isLocked ? "locked" : attempts.remaining <= 1 ? "low" : undefined}
+                aria-live="polite"
+              >
+                {isLocked
+                  ? `تم بلوغ الحد الأقصى للمحاولات — يمكنك الإرسال مجدداً بعد ${Math.floor(secondsLocked / 60)}:${String(secondsLocked % 60).padStart(2, "0")}`
+                  : `المحاولات المتبقية: ${attempts.remaining} من ${attempts.max}`}
+              </p>
+            )}
+
             <div className="form-actions">
               {currentStep > 1 && (
                 <button
@@ -431,7 +514,11 @@ function FormContent({ planNames }: { planNames: PlanNames }) {
                   {t("btn_prev")}
                 </button>
               )}
-              <button type="submit" className="form-btn form-btn--primary" disabled={isSubmitting}>
+              <button
+                type="submit"
+                className="form-btn form-btn--primary"
+                disabled={isSubmitting || (currentStep === TOTAL_STEPS && isLocked)}
+              >
                 {isSubmitting && <span className="btn-spinner" aria-hidden="true" />}
                 {isSubmitting
                   ? t("form_submitting")
