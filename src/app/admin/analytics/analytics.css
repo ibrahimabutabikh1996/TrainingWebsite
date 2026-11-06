@@ -84,16 +84,14 @@
 .an-tone-error   { --tone: var(--error); }
 .an-tone-muted   { --tone: var(--text-muted); }
 
+/* The tile itself is `.ui-icon-tile`; only the muted tone is set here, since
+   the system has no muted tone class. */
 .an-stat-icon {
-  display: grid;
-  place-items: center;
-  flex: none;
-  width: 44px;
-  height: 44px;
-  border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--tone) 14%, transparent);
-  color: var(--tone);
   font-size: 22px;
+}
+
+.an-tone-muted .an-stat-icon {
+  color: var(--text-muted);
 }
 
 .an-stat-body {
@@ -174,9 +172,9 @@
 }
 
 /* ─── Charts ───
-   The series is drawn in `currentColor`, so the brand colour is set here once
-   and recharts never holds a literal. Its axis and grid are restyled from CSS,
-   which wins over the attributes it writes. */
+   The series, grid and ticks are drawn from tokens (`var(--primary)` …) in
+   the JSX, so recharts never holds a literal. The axis and grid are also
+   restyled here, which wins over the attributes it writes. */
 
 .an-chart {
   color: var(--primary);
@@ -203,9 +201,10 @@
   flex-direction: column;
   gap: 2px;
   padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   border: 1px solid var(--glass-border-strong);
   background: var(--glass-solid);
+  color: var(--text);
   -webkit-backdrop-filter: var(--glass-solid-blur);
   backdrop-filter: var(--glass-solid-blur);
   box-shadow: var(--elev-2);

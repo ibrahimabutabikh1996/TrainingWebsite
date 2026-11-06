@@ -154,7 +154,7 @@ export function LocationPicker({ value, onChange, city, invalid }: LocationPicke
         )}
       </div>
       <div className="st-map-actions">
-        <button type="button" className="st-map-locate" onClick={useMyLocation} disabled={locating}>
+        <button type="button" className="ui-btn ui-btn--secondary ui-btn--sm st-map-locate" onClick={useMyLocation} disabled={locating}>
           {locating ? <LoaderCircle aria-hidden="true" className="st-spin" /> : <Crosshair aria-hidden="true" />}
           {locating ? "جارِ تحديد موقعك…" : "استخدم موقعي الحالي"}
         </button>

@@ -136,7 +136,7 @@ export default function InventoryClient({
             onClick={() => setFilter(s.level)}
             className={`admin-card sa-stat sa-stat--${s.tone}${filter === s.level ? " is-selected" : ""}`}
           >
-            <span className="sa-stat-icon"><s.icon aria-hidden="true" /></span>
+            <span className="ui-icon-tile ui-icon-tile--lit sa-stat-icon"><s.icon aria-hidden="true" /></span>
             <span className="sa-stat-label">{s.label}</span>
             <strong className="sa-stat-value">{s.value}</strong>
           </button>

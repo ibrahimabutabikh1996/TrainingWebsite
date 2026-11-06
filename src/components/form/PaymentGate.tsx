@@ -130,13 +130,13 @@ export function PaymentGate({
               href={waLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="form-btn gate-wa"
+              className="form-btn gate-wa ui-btn ui-btn--primary ui-btn--success"
             >
               <IconWhatsApp />
               {t("form_gate_wa_btn")}
             </a>
           ) : (
-            <button type="button" className="form-btn gate-wa" disabled>
+            <button type="button" className="form-btn gate-wa ui-btn ui-btn--primary ui-btn--success" disabled>
               <IconWhatsApp />
               {t("form_gate_wa_btn")}
             </button>

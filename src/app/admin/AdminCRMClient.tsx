@@ -4,7 +4,8 @@ import type { JsonRecord } from "@/types";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Profile } from "@/types/admin";
-import { Toaster, toast } from "react-hot-toast";
+import { toast } from "react-hot-toast";
+import AppToaster from "@/components/ui/AppToaster";
 import { PLAN_COLOUR_SLOT } from "@/lib/formLabels";
 import { planNameFrom, planOptions, type PlanNames } from "@/lib/planNames";
 import { planTagStyle } from "@/lib/planCards";
@@ -328,23 +329,7 @@ export default function AdminCRMClient({
 
   return (
     <div className="crm-dashboard">
-      <Toaster 
-        position="top-center" 
-        toastOptions={{ 
-          style: { 
-            /* Was `#141414` — a literal that belongs to no theme, on the one
-               surface the courses screen already styles from tokens. */
-            background: 'var(--bg2)',
-            color: 'var(--text)',
-            border: '1px solid var(--primary)',
-            padding: '16px 24px',
-            borderRadius: "var(--radius-xs)",
-            direction: 'rtl',
-            fontSize: '0.95rem',
-            fontWeight: '600'
-          } 
-        }} 
-      />
+      <AppToaster />
       
       <div className="crm-split-layout">
         
@@ -360,14 +345,15 @@ export default function AdminCRMClient({
               <InstallAppButton />
               <button 
                 onClick={() => setShowNotifications(true)}
-                className="crm-bell-btn"
+                className="ui-btn ui-btn--icon ui-btn--lg"
+                style={{ position: "relative" }}
                 aria-label={unreadCount > 0 ? `الإشعارات (${unreadCount} غير مقروءة)` : "الإشعارات"}
                 aria-haspopup="dialog"
                 title="الإشعارات"
               >
                 <Icon name="notifications_active" style={{ fontSize: "24px", color: "var(--warning-text)" }} />
                 {unreadCount > 0 && (
-                  <span style={{ position: "absolute", top: "-6px", insetInlineEnd: "-6px", background: "var(--error)", color: "var(--text-inverse)", fontSize: "0.75rem", fontWeight: "bold", width: "22px", height: "22px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <span className="ui-count tone-danger" style={{ position: "absolute", top: "-6px", insetInlineEnd: "-6px" }}>
                     {unreadCount}
                   </span>
                 )}
@@ -381,16 +367,17 @@ export default function AdminCRMClient({
 
           {showNotifications && (
             <div
+              className="ui-scrim"
               onClick={(e) => { if (e.target === e.currentTarget) setShowNotifications(false); }}
-              style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "var(--overlay-scrim)", backdropFilter: "blur(4px)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}
+              style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}
             >
-              <div role="dialog" aria-modal="true" aria-labelledby="crm-notices-title" style={{ background: "var(--bg2)", borderRadius: "var(--radius-xl)", width: "100%", maxWidth: "600px", maxHeight: "80vh", display: "flex", flexDirection: "column", boxShadow: "var(--elev-3)", border: "1px solid var(--border)" }}>
-                <div style={{ padding: "20px", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div className="ui-window" role="dialog" aria-modal="true" aria-labelledby="crm-notices-title" style={{ width: "100%", maxWidth: "600px", maxHeight: "80vh", display: "flex", flexDirection: "column" }}>
+                <div className="ui-window-head" style={{ justifyContent: "space-between" }}>
                   <h3 id="crm-notices-title" style={{ margin: 0, color: "var(--text)", display: "flex", alignItems: "center", gap: "8px" }}>
                     <Icon name="notifications_active" style={{ color: "var(--warning-text)" }} />
                     الإشعارات
                   </h3>
-                  <button type="button" onClick={() => setShowNotifications(false)} className="crm-notices-close" aria-label="إغلاق الإشعارات" title="إغلاق">
+                  <button type="button" onClick={() => setShowNotifications(false)} className="ui-btn ui-btn--icon ui-btn--sm" aria-label="إغلاق الإشعارات" title="إغلاق">
                     <Icon name="close" />
                   </button>
                 </div>
@@ -398,7 +385,7 @@ export default function AdminCRMClient({
                 {/* Read / unread filter. A segmented control: only the chosen
                     segment is filled, so the three read as one control. */}
                 <div style={{ padding: "16px 20px 0" }}>
-                  <div role="group" aria-label="تصفية الإشعارات" style={{ display: "flex", gap: "var(--space-1)", padding: "var(--space-1)", background: "var(--bg)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)" }}>
+                  <div role="group" aria-label="تصفية الإشعارات" className="ui-segment" style={{ display: "flex" }}>
                     {([
                       { value: "unread", label: `غير مقروءة (${unreadCount})` },
                       { value: "read", label: "مقروءة" },
@@ -409,7 +396,8 @@ export default function AdminCRMClient({
                         type="button"
                         onClick={() => setNoticeFilter(f.value)}
                         aria-pressed={noticeFilter === f.value}
-                        className="crm-notice-filter"
+                        className={`ui-tab ${noticeFilter === f.value ? "is-active" : ""}`}
+                        style={{ flex: 1 }}
                       >
                         {f.label}
                       </button>
@@ -458,7 +446,8 @@ export default function AdminCRMClient({
                             <a
                               href="/admin/challenges?tab=pending"
                               title="مراجعة التحدي"
-                              style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0, background: "var(--bg3)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)", padding: "6px 10px", color: "var(--primary-on-tint)", fontSize: "0.85rem", fontWeight: 700, textDecoration: "none" }}
+                              className="ui-btn ui-btn--secondary ui-btn--sm"
+                              style={{ flexShrink: 0 }}
                             >
                               <Icon name="emoji_events" style={{ fontSize: 18 }} />
                               مراجعة
@@ -475,7 +464,8 @@ export default function AdminCRMClient({
                             onClick={() => handleMarkRead(n)}
                             title="تم القراءة"
                             aria-label={`تعليم إشعار ${n.name} كمقروء`}
-                            className="crm-mark-read-btn"
+                            className="ui-btn ui-btn--secondary ui-btn--sm ui-btn--success"
+                            style={{ flexShrink: 0 }}
                           >
                             <Icon name="check_circle" style={{ fontSize: 18 }} />
                             تم القراءة

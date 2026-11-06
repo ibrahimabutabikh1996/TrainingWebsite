@@ -43,7 +43,7 @@ export default async function StoreOverviewPage() {
       <div className="sa-stats">
         {stats.map((s) => (
           <Link key={s.label} href={s.href} className={`admin-card sa-stat sa-stat--${s.tone}`}>
-            <span className="sa-stat-icon"><s.icon aria-hidden="true" /></span>
+            <span className="ui-icon-tile ui-icon-tile--lit sa-stat-icon"><s.icon aria-hidden="true" /></span>
             <span className="sa-stat-label">{s.label}</span>
             <strong className="sa-stat-value">{s.value}</strong>
           </Link>

@@ -708,4 +708,36 @@
 /* On a phone the header stacks and the button is at the row's edge. */
 @media (max-width: 640px) {
   .bldr-page .dplan-header-actions .install-app-help { inset-inline-end: auto; inset-inline-start: 0; }
+/* --- Lit Glass: builder one-offs -------------------------------------------
+   Taken out of inline styles in AdminBuilderClient so they read from tokens. */
+
+/* "تمرين خارج الخطة" — the add button that is not from the library: an
+   outline of the brand colour instead of the filled dashed tile. */
+.dplan-add-item.bldr-add-item--outside {
+  background: transparent;
+  color: var(--primary-light);
+  border: 1px dashed var(--border-primary);
+}
+
+/* The four free-text columns of a custom exercise. The inputs are
+   `.ui-field-control`, so they take the lit edge when typed in; this only
+   brings them down to the row's size. */
+.bldr-custom-cols {
+  display: flex;
+  gap: var(--space-4);
+  margin: var(--space-4) 0;
+  padding: var(--space-3) var(--space-6);
+  border-radius: var(--radius-xs);
+  background: var(--bg3);
+}
+
+.ui-field-control.bldr-custom-col {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xs);
+  background: var(--bg2);
+  font-size: var(--text-sm);
 }

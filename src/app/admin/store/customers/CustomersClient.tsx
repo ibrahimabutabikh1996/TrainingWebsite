@@ -68,17 +68,17 @@ export default function CustomersClient({ initialCustomers, tablesMissing }: { i
         <>
           <div className="sa-stats sa-stats--3">
             <div className="admin-card sa-stat sa-stat--primary">
-              <span className="sa-stat-icon"><Users aria-hidden="true" /></span>
+              <span className="ui-icon-tile ui-icon-tile--lit sa-stat-icon"><Users aria-hidden="true" /></span>
               <span className="sa-stat-label">عدد الزبائن</span>
               <strong className="sa-stat-value">{totals.count}</strong>
             </div>
             <div className="admin-card sa-stat sa-stat--success">
-              <span className="sa-stat-icon"><ReceiptText aria-hidden="true" /></span>
+              <span className="ui-icon-tile ui-icon-tile--lit sa-stat-icon"><ReceiptText aria-hidden="true" /></span>
               <span className="sa-stat-label">زبائن طلبوا أكثر من مرة</span>
               <strong className="sa-stat-value">{totals.repeat}</strong>
             </div>
             <div className="admin-card sa-stat sa-stat--warning">
-              <span className="sa-stat-icon"><Star aria-hidden="true" /></span>
+              <span className="ui-icon-tile ui-icon-tile--lit sa-stat-icon"><Star aria-hidden="true" /></span>
               <span className="sa-stat-label">مجموع النقاط</span>
               <strong className="sa-stat-value">{totals.points}</strong>
             </div>

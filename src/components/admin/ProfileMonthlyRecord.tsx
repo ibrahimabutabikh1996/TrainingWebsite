@@ -42,8 +42,7 @@ function DeleteControl({
           type="button"
           onClick={onConfirm}
           disabled={pending}
-          className="crm-btn-primary"
-          style={{ padding: "6px 12px", fontSize: "0.8rem", background: "var(--error)", border: "none", color: "var(--text-inverse)" }}
+          className="ui-btn ui-btn--primary ui-btn--danger ui-btn--sm"
         >
           {pending ? "جارٍ الحذف..." : "تأكيد الحذف نهائياً"}
         </button>
@@ -51,8 +50,7 @@ function DeleteControl({
           type="button"
           onClick={() => setArmed(null)}
           disabled={pending}
-          className="crm-btn-primary"
-          style={{ padding: "6px 12px", fontSize: "0.8rem", background: "var(--bg4)", border: "1px solid var(--border)", color: "var(--text)" }}
+          className="ui-btn ui-btn--secondary ui-btn--sm"
         >
           تراجع
         </button>
@@ -66,16 +64,7 @@ function DeleteControl({
       disabled={pending}
       title={title}
       aria-label={title}
-      style={{
-        display: "inline-grid",
-        placeItems: "center",
-        padding: 6,
-        borderRadius: 8,
-        background: "var(--bg4)",
-        border: "1px solid var(--border)",
-        color: "var(--text-muted)",
-        cursor: pending ? "not-allowed" : "pointer",
-      }}
+      className="ui-btn ui-btn--icon ui-btn--sm ui-btn--danger"
     >
       <Icon name="delete_forever" style={{ fontSize: 18 }} />
     </button>
@@ -233,15 +222,7 @@ export function MonthSection({
                 files.map((url, idx) => (
                   <div
                     key={url}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      padding: "6px 8px 6px 6px",
-                      borderRadius: 12,
-                      background: "var(--bg3)",
-                      border: "1px solid var(--border)",
-                    }}
+                    className="pmr-file-chip"
                   >
                     <a
                       /* Never the stored string. It is a path inside a private
@@ -255,8 +236,7 @@ export function MonthSection({
                       href={attachmentSrc(url) ?? undefined}
                       target="_blank"
                       rel="noreferrer"
-                      className="crm-btn-primary"
-                      style={{ padding: "8px 14px", fontSize: "0.95rem", textDecoration: "none", background: "transparent", color: "var(--text)", border: "none" }}
+                      className="ui-btn ui-btn--ghost ui-btn--sm"
                     >
                       <Icon name={icon} style={{ fontSize: "20px" }} />
                       {label} {files.length > 1 ? idx + 1 : ""}
@@ -319,7 +299,7 @@ export function MonthSection({
                 <div key={url} className="crm-gallery-item" style={{ width: "100%", position: "relative" }}>
                   {src && (
                     <a href={src} target="_blank" rel="noreferrer">
-                      <img src={src} alt={`صورة ${idx + 1}`} loading="lazy" style={{ width: "100%", height: "280px", objectFit: "cover", borderRadius: "12px", border: "1px solid var(--border)" }} />
+                      <img src={src} alt={`صورة ${idx + 1}`} loading="lazy" style={{ width: "100%", height: "280px", objectFit: "cover", borderRadius: "var(--radius-md)", border: "1px solid var(--border)" }} />
                     </a>
                   )}
                   {/* Sits over the photo it deletes, so there is no chance of the
@@ -333,7 +313,7 @@ export function MonthSection({
                       display: "flex",
                       gap: 6,
                       padding: 4,
-                      borderRadius: 10,
+                      borderRadius: "var(--radius-sm)",
                       background: "color-mix(in srgb, var(--bg2) 85%, transparent)",
                       backdropFilter: "blur(4px)",
                     }}

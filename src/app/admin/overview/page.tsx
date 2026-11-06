@@ -25,6 +25,16 @@ export const dynamic = "force-dynamic";
 const IDLE_DAYS = 14;
 const LIST_MAX = 5;
 
+/* A card's tone, as the system's tone class on its icon tile. Primary needs
+   none; muted has none, and its tile is left unlit. */
+const TILE_TONE: Record<string, string> = {
+  primary: "",
+  success: "tone-success",
+  warning: "tone-warning",
+  danger: "tone-danger",
+  muted: "",
+};
+
 function readBlob(value: unknown): JsonRecord {
   if (typeof value === "string") {
     try {
@@ -233,7 +243,7 @@ export default async function AdminOverviewPage() {
       <div className="ov-stats">
         {stats.map((s) => (
           <Link key={s.label} href={s.href} className={`admin-card ov-stat ov-tone--${s.tone}`}>
-            <span className="ov-stat-icon"><s.icon aria-hidden="true" /></span>
+            <span className={`ov-stat-icon ui-icon-tile ${s.tone === "muted" ? "" : "ui-icon-tile--lit"} ${TILE_TONE[s.tone]}`}><s.icon aria-hidden="true" /></span>
             <strong className="ov-stat-value">{s.value}</strong>
             <span className="ov-stat-label">{s.label}</span>
           </Link>
@@ -247,7 +257,7 @@ export default async function AdminOverviewPage() {
             {attention.map((group) => (
               <article key={group.title} className={`admin-card ov-list ov-tone--${group.tone}`}>
                 <header>
-                  <span className="ov-list-icon"><group.icon aria-hidden="true" /></span>
+                  <span className={`ov-list-icon ui-icon-tile ui-icon-tile--sm ${TILE_TONE[group.tone]}`}><group.icon aria-hidden="true" /></span>
                   <h3>{group.title}</h3>
                   <span className="ov-count">{group.people.length}</span>
                 </header>

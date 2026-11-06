@@ -1,0 +1,310 @@
+/* ==========================================================================
+   Lit Glass — fields, drop-down lists, pickers and scrollbars
+
+   Every place a person types or chooses is the same object: a dark glass
+   well with a faint hairline. The hairline brightens under the cursor, and
+   the field being typed in carries the lit edge (primitives.css).
+
+   This reaches every text-like control on the site — classed or not — so a
+   new form needs no styling of its own. Inputs that sit bare inside a box
+   which is itself the field (a search bar with its icon, the phone field
+   with its country code, the tag box, the weight-entry pill, the search
+   inside a drop-down) are left bare, and the box gets the field look.
+   ========================================================================== */
+
+/* The browser's own parts of a control — the native date and time pickers,
+   a select's list, the spin buttons, autofill — are drawn dark too. The
+   site is dark-only, so this is said once. */
+:root {
+    color-scheme: dark;
+    --field-fill: rgba(10, 18, 26, 0.55);
+    --field-fill-hover: rgba(10, 18, 26, 0.7);
+    --field-line: rgba(var(--text-rgb), 0.12);
+    --field-line-hover: color-mix(in srgb, var(--primary) 40%, rgba(var(--text-rgb), 0.12));
+}
+
+/* --- At rest ------------------------------------------------------------- */
+html:root:root:root:root:root :where(
+    input:not([type]),
+    input[type="text"], input[type="email"], input[type="password"],
+    input[type="number"], input[type="search"], input[type="tel"],
+    input[type="url"], input[type="date"], input[type="time"],
+    input[type="datetime-local"], input[type="month"], input[type="week"],
+    textarea, select,
+    .custom-select-trigger, .dp-trigger,
+    /* boxes that are the field around a bare input */
+    .crm-search-box, .diet-search, .bldr-tpl-search, .cms-phone, .sa-tags,
+    .wl-weight-input-wrap
+):not(:where(
+    .crm-search-input, .diet-search input, .cms-phone input,
+    .bldr-tpl-search input, .sa-tags input, .custom-select-search input,
+    .wl-weight-input-wrap input, .crm-search-box input,
+    .leaflet-container *, [data-bare]
+)) {
+    border: var(--lit-w) solid var(--field-line);
+    border-radius: var(--radius-md);
+    background-color: var(--field-fill);
+    color: var(--text);
+    transition:
+        border-color var(--dur) var(--ease),
+        background-color var(--dur) var(--ease),
+        box-shadow var(--dur-slow) var(--ease),
+        --btn-angle var(--lit-turn) var(--ease-out);
+}
+
+/* The bare inputs: no box of their own, so nothing doubles up. */
+html:root:root:root:root:root :where(
+    .crm-search-input, .diet-search input, .cms-phone input,
+    .bldr-tpl-search input, .sa-tags input, .custom-select-search input,
+    .wl-weight-input-wrap input, .crm-search-box input
+) {
+    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
+}
+
+@media (hover: hover) {
+    html:root:root:root:root:root :where(
+        input:not([type]),
+        input[type="text"], input[type="email"], input[type="password"],
+        input[type="number"], input[type="search"], input[type="tel"],
+        input[type="url"], input[type="date"], input[type="time"],
+        input[type="datetime-local"], input[type="month"], input[type="week"],
+        textarea, select,
+        .custom-select-trigger, .dp-trigger,
+        .crm-search-box, .diet-search, .bldr-tpl-search, .cms-phone, .sa-tags,
+        .wl-weight-input-wrap
+    ):not(:where(
+        .crm-search-input, .diet-search input, .cms-phone input,
+        .bldr-tpl-search input, .sa-tags input, .custom-select-search input,
+        .wl-weight-input-wrap input, .crm-search-box input,
+        .leaflet-container *, [data-bare]
+    )):hover:not(:focus, :focus-within, :disabled, .open) {
+        border-color: var(--field-line-hover);
+        background-color: var(--field-fill-hover);
+    }
+}
+
+html:root:root:root:root:root :where(input, textarea)::placeholder {
+    color: var(--text-muted);
+    opacity: 1;
+}
+
+/* --- Typing: the lit edge -------------------------------------------------
+   Text fields carry the edge in their background, like a lit button. A
+   select keeps its own background (that is where its arrow is drawn), so it
+   lights with its border and a glow instead. */
+html:root:root:root:root:root :where(
+    input:not([type]),
+    input[type="text"], input[type="email"], input[type="password"],
+    input[type="number"], input[type="search"], input[type="tel"],
+    input[type="url"], input[type="date"], input[type="time"],
+    input[type="datetime-local"], input[type="month"], input[type="week"],
+    textarea,
+    .custom-select-trigger.open, .custom-select-trigger:focus-visible
+):not(:where(
+    .crm-search-input, .diet-search input, .cms-phone input,
+    .bldr-tpl-search input, .sa-tags input, .custom-select-search input,
+    .wl-weight-input-wrap input, .crm-search-box input,
+    .leaflet-container *, [data-bare]
+)):is(:focus, .open),
+html:root:root:root:root:root :where(.cms-phone, .sa-tags, .wl-weight-input-wrap):focus-within {
+    outline: none;
+    --btn-angle: 380deg;
+    border-color: transparent;
+    background:
+        linear-gradient(var(--lit-fill), var(--lit-fill)) padding-box,
+        conic-gradient(
+            from var(--btn-angle),
+            var(--primary) 0deg,
+            var(--primary-light) 70deg,
+            var(--primary-active) 140deg,
+            var(--lit-rest) 210deg,
+            var(--lit-rest) 300deg,
+            var(--primary) 360deg
+        ) border-box;
+    box-shadow:
+        inset 0 -8px 18px -14px var(--primary-light),
+        0 0 0 4px color-mix(in srgb, var(--primary) 12%, transparent);
+}
+
+html:root:root:root:root:root :where(select):focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow:
+        inset 0 -8px 18px -14px var(--primary-light),
+        0 0 0 4px color-mix(in srgb, var(--primary) 12%, transparent);
+}
+
+/* --- Invalid: the edge turns red, whatever the state ---------------------- */
+html:root:root:root:root:root :where(
+    input, textarea, select, .custom-select-trigger, .dp-trigger
+):where([aria-invalid="true"], .is-invalid *, .is-invalid) {
+    --primary: var(--danger);
+    --primary-light: var(--danger-light);
+    --primary-active: var(--danger-active);
+    border-color: color-mix(in srgb, var(--danger) 70%, transparent);
+}
+
+/* --- Disabled ------------------------------------------------------------ */
+html:root:root:root:root:root :where(input, textarea, select, .custom-select-trigger, .dp-trigger):disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    background-color: color-mix(in srgb, var(--bg) 70%, transparent);
+}
+
+/* --- Autofill keeps the dark glass instead of the browser's yellow -------- */
+html:root:root:root:root:root :where(input):-webkit-autofill {
+    -webkit-text-fill-color: var(--text);
+    caret-color: var(--text);
+    box-shadow: 0 0 0 100px var(--bg2) inset;
+}
+
+/* Native select options (where a page still uses <select>). */
+html:root:root:root:root:root :where(select) option {
+    background-color: var(--bg2);
+    color: var(--text);
+}
+
+/* --------------------------------------------------------------------------
+   Drop-down lists — src/components/CustomSelect.tsx
+   The list itself is a small lit window (surfaces.css). Inside it the row
+   under the cursor or keyboard is glass, and the chosen row is lit: tinted,
+   with an edge of light on the reading side.
+   -------------------------------------------------------------------------- */
+/* Opaque, not frosted: a list opens over a form, and the labels and
+   placeholders under a translucent list read straight through it — the blur
+   alone does not reliably take on a fixed, portalled element. */
+html:root:root:root:root:root :where(.custom-select-dropdown, .dp-cal) {
+    border-radius: var(--radius-lg);
+    background: color-mix(in srgb, var(--bg2) 94%, var(--primary));
+}
+
+html:root:root:root:root:root .custom-select-option {
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+}
+
+html:root:root:root:root:root .custom-select-option.is-active:not(.selected) {
+    background-color: var(--glass-2);
+    border-color: transparent;
+    color: var(--text);
+}
+
+html:root:root:root:root:root .custom-select-option.selected {
+    border-color: transparent;
+    background:
+        linear-gradient(to left, rgba(var(--primary-rgb), 0.22), rgba(var(--primary-rgb), 0.06));
+    box-shadow:
+        inset -3px 0 0 var(--primary),
+        inset 0 0 18px -10px var(--primary);
+    color: var(--text);
+}
+
+html:root:root:root:root:root .custom-select-option.selected :where(svg, .app-icon) {
+    color: var(--primary-light);
+}
+
+/* The search inside the list: a field like any other. */
+html:root:root:root:root:root .custom-select-search {
+    border: var(--lit-w) solid var(--field-line);
+    border-radius: var(--radius-md);
+    background-color: var(--field-fill);
+}
+
+html:root:root:root:root:root .custom-select-search:focus-within {
+    border-color: color-mix(in srgb, var(--primary) 65%, transparent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 12%, transparent);
+}
+
+/* The arrow turns and lights while the list is open. */
+html:root:root:root:root:root .custom-select-trigger.open .custom-select-icon {
+    color: var(--primary-light);
+}
+
+/* --------------------------------------------------------------------------
+   Date picker — src/components/DatePicker.tsx
+   Today is ringed; the chosen day is a small lit control.
+   -------------------------------------------------------------------------- */
+html:root:root:root:root:root :where(.dp-day-cell, .dp-month).is-selected {
+    border: var(--lit-w) solid transparent;
+    background:
+        linear-gradient(var(--lit-fill), var(--lit-fill)) padding-box,
+        conic-gradient(from 200deg, var(--primary) 0deg, var(--primary-light) 70deg, var(--primary-active) 140deg, var(--lit-rest) 210deg, var(--lit-rest) 300deg, var(--primary) 360deg) border-box;
+    box-shadow:
+        inset 10px 0 18px -14px var(--primary),
+        inset 0 -8px 16px -12px var(--primary-light);
+    color: var(--text);
+}
+
+html:root:root:root:root:root :where(.dp-day-cell, .dp-month).is-today:not(.is-selected) {
+    border-color: color-mix(in srgb, var(--primary) 60%, transparent);
+    color: var(--primary-light);
+}
+
+/* --------------------------------------------------------------------------
+   Scrollbars
+   A thin channel that stays out of the way: at rest the thumb is a faint
+   glass line; it takes the brand blue when the area it scrolls is under the
+   cursor, and full light when it is grabbed or pointed at. The channel stops
+   short of the ends, so on a rounded panel (the panel sidebar, a list, a
+   drawer) the thumb never runs into the curve of the corner. Strips that
+   hide their scrollbar still hide it (they set width 0 / none).
+   -------------------------------------------------------------------------- */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+    background: transparent;
+}
+
+::-webkit-scrollbar-track {
+    margin: 12px;
+}
+
+::-webkit-scrollbar-thumb {
+    border: 2px solid transparent;
+    border-radius: var(--radius-pill);
+    background: rgba(var(--text-rgb), 0.14) padding-box;
+}
+
+/* The area being pointed at: its thumb takes the brand blue, dimmed. */
+:hover::-webkit-scrollbar-thumb {
+    background:
+        linear-gradient(to bottom, rgba(var(--primary-light-rgb), 0.45), rgba(var(--primary-rgb), 0.45) 50%, rgba(var(--primary-active-rgb), 0.45)) padding-box;
+}
+
+:hover::-webkit-scrollbar-thumb:horizontal {
+    background:
+        linear-gradient(to left, rgba(var(--primary-light-rgb), 0.45), rgba(var(--primary-rgb), 0.45) 50%, rgba(var(--primary-active-rgb), 0.45)) padding-box;
+}
+
+/* The thumb itself pointed at or held: full light. */
+::-webkit-scrollbar-thumb:hover,
+::-webkit-scrollbar-thumb:active {
+    border-width: 1.5px;
+    background:
+        linear-gradient(to bottom, var(--primary-light), var(--primary) 50%, var(--primary-active)) padding-box;
+}
+
+/* Rounded panels: the channel starts and ends inside the corner radius. */
+.admin-shell-nav::-webkit-scrollbar-track {
+    margin-top: var(--radius-xl);
+    margin-bottom: var(--radius-xl);
+}
+
+:where(.custom-select-dropdown, .dp-cal, .crm-side-drawer, .st-drawer, .admin-more-sheet, .cms-modal-card, .promo-popup-card)::-webkit-scrollbar-track {
+    margin-top: var(--radius-lg);
+    margin-bottom: var(--radius-lg);
+}
+
+/* Firefox draws only a colour pair; the brand blue, half strength. */
+@supports not selector(::-webkit-scrollbar) {
+    * {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(var(--text-rgb), 0.18) transparent;
+    }
+}

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { preconnect } from "react-dom";
-import { Toaster } from "react-hot-toast";
+import AppToaster from "@/components/ui/AppToaster";
 import { Exercise } from "@/types/admin";
 import MuscleTabs from "../components/MuscleTabs";
 import ExerciseFormModal from "./ExerciseFormModal";
@@ -66,19 +66,7 @@ export default function AdminExercisesClient({
 
   return (
     <div className="ex-page">
-      <Toaster
-        position="top-center"
-        toastOptions={{
-          style: {
-            background: "var(--bg2)",
-            color: "var(--text)",
-            border: "1px solid var(--border)",
-            direction: "rtl",
-            fontFamily: "inherit",
-            fontWeight: 600,
-          },
-        }}
-      />
+      <AppToaster />
 
       <header className="ex-header">
         <div className="ex-header-text">

@@ -6,7 +6,7 @@ import { CustomDatePicker } from "@/components/dashboard/CustomDatePicker";
 import { Icon } from "@/components/Icon";
 import toast from "react-hot-toast";
 import { formatTimestamp, formatTimestampShort } from "@/lib/trainingDates";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { ComposedChart, Area, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 /** One point on the progress chart: the logged weights, plus the intake weight
     the trainee started at, which is drawn first and flagged so it can be told
@@ -182,7 +182,7 @@ export default function WeightLog({ profile, readonly, embedded, onSaveSuccess }
         
         {weightLogs.length === 0 ? (
           <div className="home-stat-card home-stat-card--empty">
-            <Icon name="monitor_weight" style={{ fontSize: "56px", color: "var(--text-muted)", marginBottom: "var(--space-4)", opacity: 0.5 }} />
+            <span className="ui-icon-tile ui-icon-tile--lg ui-icon-tile--lit" style={{ alignSelf: "center", marginBottom: "var(--space-4)" }}><Icon name="monitor_weight" /></span>
             <p style={{ color: "var(--text-secondary)", fontSize: "1.15rem", margin: "0 0 8px 0", fontWeight: 600 }}>لم تقم بتسجيل أي أوزان حتى الآن.</p>
             <p style={{ color: "var(--text-muted)", fontSize: "0.95rem", margin: 0 }}>ابدأ بتسجيل وزنك الأول في النموذج أعلاه لتتبع تقدمك.</p>
           </div>
@@ -202,18 +202,25 @@ export default function WeightLog({ profile, readonly, embedded, onSaveSuccess }
                     is a number whether the panel is showing or not, and the
                     width still follows the container once it is. */}
                 <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-strong)" vertical={false} />
-                    <XAxis dataKey="displayDate" stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} tickMargin={10} />
-                    <YAxis domain={[Math.max(0, minWeight - 5), maxWeight + 5]} stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} width={35} tickMargin={8} />
+                  <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="wl-weight-area" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" style={{ stopColor: "var(--primary)", stopOpacity: 0.35 }} />
+                        <stop offset="100%" style={{ stopColor: "var(--primary)", stopOpacity: 0 }} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--glass-border)" vertical={false} />
+                    <XAxis dataKey="displayDate" stroke="var(--text-muted)" tick={{ fill: "var(--text-muted)" }} fontSize={12} tickLine={false} axisLine={false} tickMargin={10} />
+                    <YAxis domain={[Math.max(0, minWeight - 5), maxWeight + 5]} stroke="var(--text-muted)" tick={{ fill: "var(--text-muted)" }} fontSize={12} tickLine={false} axisLine={false} width={35} tickMargin={8} />
                     <Tooltip 
-                      contentStyle={{ background: "var(--bg)", border: "1px solid var(--border-strong)", borderRadius: "var(--radius-md)", color: "var(--text)", direction: "rtl", textAlign: "right", boxShadow: "var(--elev-2)" }}
+                      contentStyle={{ background: "var(--glass-solid)", WebkitBackdropFilter: "var(--glass-solid-blur)", backdropFilter: "var(--glass-solid-blur)", border: "1px solid var(--glass-border-strong)", borderRadius: "var(--radius-md)", color: "var(--text)", direction: "rtl", textAlign: "right", boxShadow: "var(--elev-2)" }}
                       itemStyle={{ color: "var(--primary-on-tint)", fontWeight: 600 }}
                       formatter={(value) => [`${value ?? "—"} كجم`, "الوزن"]}
                       labelStyle={{ color: "var(--text-secondary)", marginBottom: "6px", fontSize: "0.9rem" }}
                     />
-                    <Line type="monotone" dataKey="weight" stroke="var(--primary-on-tint)" strokeWidth={3} dot={{ r: 5, fill: "var(--bg)", stroke: "var(--primary-on-tint)", strokeWidth: 2 }} activeDot={{ r: 7, fill: "var(--primary-active)" }} />
-                  </LineChart>
+                    <Area type="monotone" dataKey="weight" stroke="none" fill="url(#wl-weight-area)" tooltipType="none" activeDot={false} isAnimationActive={false} />
+                    <Line type="monotone" dataKey="weight" stroke="var(--primary)" strokeWidth={3} dot={{ r: 5, fill: "var(--bg)", stroke: "var(--primary)", strokeWidth: 2 }} activeDot={{ r: 7, fill: "var(--primary-active)" }} />
+                  </ComposedChart>
                 </ResponsiveContainer>
               </div>
             </div>
@@ -224,12 +231,12 @@ export default function WeightLog({ profile, readonly, embedded, onSaveSuccess }
                 <h4 style={{ margin: 0, color: "var(--text)", fontSize: "1.1rem" }}>سجل القراءات</h4>
               </div>
               <div style={{ overflowY: "auto", flex: 1 }}>
-                <table className="crm-wl-table" style={{ width: "100%", borderCollapse: "collapse", textAlign: "right" }}>
+                <table className="ui-table ui-table--stack">
                   <thead style={{ position: "sticky", top: 0, background: "var(--bg2)", zIndex: 1 }}>
                     <tr>
-                      <th style={{ padding: "var(--space-3) var(--space-6)", color: "var(--text-secondary)", fontSize: "0.85rem", fontWeight: 600, borderBottom: "1px solid var(--border)" }}>التاريخ</th>
-                      <th style={{ padding: "var(--space-3) var(--space-4)", color: "var(--text-secondary)", fontSize: "0.85rem", fontWeight: 600, borderBottom: "1px solid var(--border)" }}>الوزن</th>
-                      <th style={{ padding: "var(--space-3) var(--space-6)", color: "var(--text-secondary)", fontSize: "0.85rem", fontWeight: 600, borderBottom: "1px solid var(--border)" }}>مقدار التغير بالوزن</th>
+                      <th>التاريخ</th>
+                      <th>الوزن</th>
+                      <th>مقدار التغير بالوزن</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -237,30 +244,20 @@ export default function WeightLog({ profile, readonly, embedded, onSaveSuccess }
                       const prevLog = arr[index - 1];
                       const diff = prevLog ? log.weight - prevLog.weight : 0;
                       return (
-                        <tr key={log.date + (log.isOriginal ? '-orig' : '')} style={{ 
-                          borderBottom: "1px solid var(--border)", 
-                          background: log.isOriginal ? "color-mix(in srgb, var(--primary) 3%, transparent)" : "transparent",
-                          transition: "background var(--dur) var(--ease)"
-                        }}>
-                          <td data-label="التاريخ" style={{ padding: "var(--space-4) var(--space-6)", fontSize: "0.95rem" }}>
+                        <tr key={log.date + (log.isOriginal ? '-orig' : '')} style={{ background: log.isOriginal ? "color-mix(in srgb, var(--primary) 3%, transparent)" : undefined }}>
+                          <td data-label="التاريخ" style={{ fontSize: "0.95rem" }}>
                             {log.isOriginal ? (
                               <span style={{ color: "var(--primary-on-tint)", fontWeight: 600 }}>الوزن الأصلي</span>
                             ) : (
                               <span style={{ color: "var(--text)" }}>{formatTimestamp(log.date)}</span>
                             )}
                           </td>
-                          <td data-label="الوزن" style={{ padding: "var(--space-4) var(--space-4)", fontSize: "1rem", fontWeight: 600, color: "var(--text)" }}>
+                          <td data-label="الوزن" style={{ fontSize: "1rem", fontWeight: 600, color: "var(--text)" }}>
                             {log.weight}
                           </td>
-                          <td data-label="التغير" style={{ padding: "var(--space-4) var(--space-6)" }}>
+                          <td data-label="مقدار التغير بالوزن">
                             {diff !== 0 ? (
-                              <span style={{ 
-                                display: "inline-flex", alignItems: "center", gap: "4px",
-                                fontSize: "0.85rem", fontWeight: 700, padding: "2px 8px",
-                                borderRadius: "var(--radius-pill)",
-                                background: diff > 0 ? "var(--success-bg)" : "var(--error-bg)",
-                                color: diff > 0 ? "var(--success-text)" : "var(--error-text)"
-                              }}>
+                              <span className={`ui-badge ${diff > 0 ? "tone-success" : "tone-danger"}`}>
                                 <Icon name={diff > 0 ? "trending_up" : "trending_down"} style={{ fontSize: "14px" }} />
                                 {Math.abs(diff).toFixed(1)}
                               </span>

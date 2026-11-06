@@ -1,0 +1,120 @@
+/* ==========================================================================
+   Lit Glass — tokens
+
+   The whole interface is one material: dark glass with a thin edge of light
+   that runs through the brand blues and fades out along one side. What changes
+   from one element to the next is only how much light it carries:
+
+     level 1 — lit      full edge + inner glow; the light turns under the cursor
+     level 2 — edged    the same edge at a fraction of its strength; full on hover
+     level 3 — quiet    plain glass; the edge appears only on hover or focus
+
+   Colour is never restated per component. Every gradient here reads
+   `--primary`, `--primary-light`, `--primary-active` and `--primary-rgb` on the
+   element it paints, so a tone is four custom properties set on that element —
+   the same trick the plan cards on the landing page already use.
+
+   The palette itself still lives in `src/app/globals.css`; this file only adds
+   the tones' light/deep stops and the knobs the lit recipe reads.
+   ========================================================================== */
+
+/* The animatable knobs. Registered so a hover can move them — an unregistered
+   custom property only ever snaps. `--btn-angle` and `--btn-spot` are already
+   registered in globals.css; they are reused so the cursor light written by
+   GlassPointer keeps working unchanged. */
+
+/* Controls (buttons, tabs, fields): read on the element itself. */
+@property --lit-a {
+    syntax: "<number>";
+    inherits: false;
+    initial-value: 1;
+}
+
+@property --lit-glow {
+    syntax: "<number>";
+    inherits: false;
+    initial-value: 1;
+}
+
+/* Surfaces (cards, windows, tables): drawn by a ::before ring, which only
+   sees inherited values — so these inherit. Each surface sets its own, so a
+   card inside a window never shows the window's strength. */
+@property --surf-a {
+    syntax: "<number>";
+    inherits: true;
+    initial-value: 0;
+}
+
+@property --surf-angle {
+    syntax: "<angle>";
+    inherits: true;
+    initial-value: 200deg;
+}
+
+:root {
+    /* Edge */
+    --lit-w: 1.5px;
+    --lit-rest: rgba(var(--text-rgb), 0.10);         /* the hairline where the light has faded */
+    --lit-fill: rgba(10, 18, 26, 0.86);              /* dark glass behind a lit control */
+    --lit-fill-quiet: rgba(10, 18, 26, 0.55);        /* quieter glass for level 3 */
+    --lit-track: rgba(10, 18, 26, 0.55);             /* the recessed track under tabs */
+    --lit-track-shadow: inset 0 1px 3px rgba(2, 6, 23, 0.55);
+    --lit-turn: 1.8s;                                /* how long the edge takes to turn */
+
+    /* Tone stops. `--primary` / `--primary-light` / `--primary-active` are
+       already the blue tone; these are the same three stops for the others. */
+    --danger: var(--error);
+    --danger-rgb: 248, 113, 113;
+    --danger-light: #FCA5A5;
+    --danger-active: #DC2626;
+
+    --success-rgb: 34, 197, 94;
+    --success-light: #86EFAC;
+    --success-active: #16A34A;
+
+    --warning-rgb: 251, 191, 36;
+    --warning-light: #FDE68A;
+    --warning-active: #D97706;
+
+    /* Control sizes */
+    --ctl-h-sm: 36px;
+    --ctl-h-md: 44px;
+    --ctl-h-lg: 52px;
+
+    /* Icon sizes and line weight — one weight for every glyph in the app. */
+    --icon-sm: 16px;
+    --icon-md: 20px;
+    --icon-lg: 24px;
+    --icon-stroke: 1.75;
+
+    /* Rhythm for page interfaces */
+    --page-gap: var(--space-6);
+    --section-gap: var(--space-8);
+}
+
+/* --- Tones ----------------------------------------------------------------
+   Utility classes for new markup. Existing classes are mapped to tones in
+   primitives.css. */
+.tone-danger {
+    --primary: var(--danger);
+    --primary-rgb: var(--danger-rgb);
+    --primary-light: var(--danger-light);
+    --primary-active: var(--danger-active);
+    --primary-on-tint: var(--danger);
+}
+
+.tone-success {
+    --primary: var(--success);
+    --primary-rgb: var(--success-rgb);
+    --primary-light: var(--success-light);
+    --primary-active: var(--success-active);
+    --primary-on-tint: var(--success);
+}
+
+.tone-warning {
+    --primary: var(--warning);
+    --primary-rgb: var(--warning-rgb);
+    --primary-light: var(--warning-light);
+    --primary-active: var(--warning-active);
+    --primary-on-tint: var(--warning);
+}

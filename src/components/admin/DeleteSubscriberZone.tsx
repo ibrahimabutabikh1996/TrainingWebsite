@@ -40,12 +40,9 @@ export default function DeleteSubscriberZone({ profileId }: { profileId: string 
 
   return (
     <div
-      className="crm-modal-section"
+      className="crm-modal-section ui-card"
       style={{
-        background: "var(--bg2)",
         padding: "28px",
-        borderRadius: "var(--radius-xl)",
-        border: "1px solid var(--border)",
         borderInlineStart: "5px solid var(--error)",
         marginTop: "32px",
         display: "flex",
@@ -62,18 +59,8 @@ export default function DeleteSubscriberZone({ profileId }: { profileId: string 
         </div>
         <button
           onClick={() => setIsOpen(!isOpen)}
-          style={{
-            background: "color-mix(in srgb, var(--error) 15%, transparent)",
-            color: "var(--error-text)",
-            border: "1px solid color-mix(in srgb, var(--error) 30%, transparent)",
-            padding: "10px 20px",
-            borderRadius: "var(--radius-md)",
-            fontWeight: 700,
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-          }}
+          className="ui-btn ui-btn--secondary ui-btn--danger"
+          style={{ color: "var(--error-text)" }}
         >
           <Icon name="delete_forever" /> حذف المشترك نهائياً
         </button>
@@ -102,15 +89,8 @@ export default function DeleteSubscriberZone({ profileId }: { profileId: string 
                 value={adminPassword}
                 onChange={(e) => setAdminPassword(e.target.value)}
                 placeholder="كلمة المرور الخاصة بك"
-                style={{
-                  width: "100%",
-                  padding: "12px 16px",
-                  paddingInlineStart: "40px",
-                  borderRadius: "var(--radius-md)",
-                  border: "1px solid var(--border)",
-                  background: "var(--bg2)",
-                  color: "var(--text)",
-                }}
+                className="ui-field-control"
+                style={{ paddingInlineStart: "40px" }}
                 required
               />
               <Icon
@@ -134,23 +114,14 @@ export default function DeleteSubscriberZone({ profileId }: { profileId: string 
                 setAdminPassword("");
               }}
               className="crm-btn-secondary"
-              style={{ padding: "10px 20px", borderRadius: "var(--radius-md)" }}
+              style={{ padding: "10px 20px" }}
               disabled={isLoading}
             >
               إلغاء
             </button>
             <button
               type="submit"
-              style={{
-                background: "var(--error)",
-                color: "var(--text-inverse)",
-                border: "none",
-                padding: "10px 24px",
-                borderRadius: "var(--radius-md)",
-                fontWeight: 700,
-                cursor: isLoading ? "not-allowed" : "pointer",
-                opacity: isLoading ? 0.7 : 1,
-              }}
+              className="ui-btn ui-btn--primary ui-btn--danger"
               disabled={isLoading}
             >
               {isLoading ? "جاري الحذف..." : "تأكيد الحذف نهائياً"}

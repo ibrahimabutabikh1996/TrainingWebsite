@@ -848,3 +848,18 @@
     );
   }
 }
+
+/* --------------------------------------------------------------------------
+   Lit Glass — trainee profile (components/admin)
+   One attachment of a month in ProfileMonthlyRecord: the file link and its
+   delete control, sat together in one quiet glass chip.
+   -------------------------------------------------------------------------- */
+.pmr-file-chip {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+}

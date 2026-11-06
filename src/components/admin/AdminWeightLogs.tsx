@@ -32,11 +32,9 @@ export async function AdminWeightLogs({ profileId }: { profileId: string }) {
           {sortedLogs.map((log, index) => {
             const diff = index < sortedLogs.length - 1 ? log.weight - sortedLogs[index + 1].weight : 0;
             return (
-              <div key={log.date} style={{
+              <div key={log.date} className="ui-card" style={{
                 padding: "var(--space-4)",
-                background: "var(--bg3)",
                 borderRadius: "var(--radius-md)",
-                border: "1px solid var(--border)",
                 display: "flex",
                 flexDirection: "column",
                 gap: "var(--space-2)"

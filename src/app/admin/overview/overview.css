@@ -29,15 +29,11 @@
   color: inherit;
   text-decoration: none;
 }
+/* The tile is `.ui-icon-tile`; this only places and sizes it. */
 .ov-stat-icon {
   grid-row: 1 / 3;
-  display: grid;
-  place-items: center;
   width: 48px;
   height: 48px;
-  border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--ov-tone) 15%, transparent);
-  color: var(--ov-tone);
 }
 .ov-stat-icon svg { width: 24px; height: 24px; }
 .ov-stat-value { font-size: var(--text-2xl); font-weight: var(--weight-bold); line-height: 1.1; }
@@ -53,15 +49,11 @@
 .ov-list > header { display: flex; align-items: center; gap: var(--space-2); }
 .ov-list h3 { flex: 1; margin: 0; font-size: var(--text-base); font-weight: var(--weight-semibold); min-width: 0; }
 .ov-list-icon {
-  display: grid;
-  place-items: center;
   width: 32px;
   height: 32px;
-  flex-shrink: 0;
-  border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--ov-tone) 15%, transparent);
-  color: var(--ov-tone);
 }
+/* Muted has no system tone class: its tiles take the muted ink here. */
+.ov-tone--muted .ui-icon-tile { color: var(--text-muted); }
 .ov-list-icon svg { width: 17px; height: 17px; }
 .ov-count {
   min-width: 26px;

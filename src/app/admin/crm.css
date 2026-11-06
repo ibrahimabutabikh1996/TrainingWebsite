@@ -1816,4 +1816,27 @@ details[open].crm-modal-section > summary .accordion-icon {
   display: inline-block;
   vertical-align: -3px;
   color: var(--primary-on-tint);
+/* Lit Glass: the two list tags that used to carry their colours inline —
+   "renewal awaiting review" and the plan type. Tokens only. */
+.crm-tag.crm-tag--warning {
+  background: color-mix(in srgb, var(--warning) 20%, var(--bg3));
+  border-color: color-mix(in srgb, var(--warning) 45%, var(--border));
+  color: var(--warning-text);
+  font-weight: 800;
+}
+.crm-tag.crm-tag--muted {
+  background: var(--bg3);
+  border-color: var(--border);
+  color: var(--text-secondary);
+}
+
+/* Lit Glass: the AdminModal panel — solid glass, the window radius and the
+   strong hairline. Its shadow and lit top edge come from the window rule in
+   src/styles/lit/surfaces.css, which an inline shadow used to block. */
+.crm-glass-panel.admin-modal-panel {
+  background: var(--glass-solid);
+  -webkit-backdrop-filter: var(--glass-solid-blur);
+  backdrop-filter: var(--glass-solid-blur);
+  border-color: var(--glass-border-strong);
+  border-radius: var(--radius-xl);
 }

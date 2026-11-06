@@ -138,7 +138,8 @@ export default function AdminLayout({
     path === "/admin/challenges" && pendingChallenges > 0 ? (
       <span
         aria-label={`${pendingChallenges} طلب بانتظار المراجعة`}
-        style={{ position: "absolute", top: "-6px", insetInlineEnd: "-8px", minWidth: "18px", height: "18px", padding: "0 5px", borderRadius: "var(--radius-pill)", background: "var(--error)", color: "var(--text-inverse)", fontSize: "11px", fontWeight: 700, lineHeight: "18px", textAlign: "center" }}
+        className="ui-count tone-danger"
+        style={{ position: "absolute", top: "-6px", insetInlineEnd: "-8px" }}
       >
         {pendingChallenges > 99 ? "99+" : pendingChallenges}
       </span>
@@ -362,7 +363,7 @@ export default function AdminLayout({
                       <Icon name={item.icon} />
                       <span>{item.name}</span>
                       {item.path === "/admin/challenges" && pendingChallenges > 0 && (
-                        <span style={{ marginInlineStart: "auto", minWidth: "20px", padding: "0 6px", borderRadius: "var(--radius-pill)", background: "var(--error)", color: "var(--text-inverse)", fontSize: "12px", fontWeight: 700, lineHeight: "20px", textAlign: "center" }}>
+                        <span className="ui-count tone-danger" style={{ marginInlineStart: "auto" }}>
                           {pendingChallenges}
                         </span>
                       )}

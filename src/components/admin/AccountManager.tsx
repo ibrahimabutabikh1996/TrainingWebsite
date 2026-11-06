@@ -199,11 +199,7 @@ export default function AccountManager({
     const isExpired = isSubscriptionExpired(effectiveEndsAt);
     const remaining = daysRemaining(effectiveEndsAt);
 
-    const statusBg = isSuspended
-      ? "color-mix(in srgb, var(--warning) 15%, transparent)"
-      : isExpired
-      ? "color-mix(in srgb, var(--error) 15%, transparent)"
-      : "color-mix(in srgb, var(--success) 15%, transparent)";
+    const statusTone = isSuspended ? "tone-warning" : isExpired ? "tone-danger" : "tone-success";
       
     const statusColor = isSuspended ? "var(--warning)" : isExpired ? "var(--error)" : "var(--success)";
     const statusText = isSuspended
@@ -221,14 +217,10 @@ export default function AccountManager({
 
     return (
       <div
-        className="crm-modal-section"
+        className="crm-modal-section ui-card"
         style={{
-          background: "var(--bg2)",
           padding: "28px",
-          borderRadius: "var(--radius-xl)",
-          border: "1px solid var(--border)",
           borderInlineStart: `5px solid ${statusColor}`,
-          boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
           display: "flex",
           flexDirection: "column",
           gap: "24px",
@@ -247,21 +239,7 @@ export default function AccountManager({
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
-            <div
-              style={{
-                width: "52px",
-                height: "52px",
-                borderRadius: "var(--radius-lg)",
-                background: statusBg,
-                color: statusColor,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "28px",
-                flexShrink: 0,
-                boxShadow: `0 4px 16px ${statusBg}`,
-              }}
-            >
+            <div className={`ui-icon-tile ui-icon-tile--lg ui-icon-tile--lit ${statusTone}`}>
               <Icon name={statusIcon} />
             </div>
             <div>
@@ -269,20 +247,7 @@ export default function AccountManager({
                 <h3 style={{ margin: 0, fontSize: "1.3rem", fontWeight: 800, color: "var(--text)" }}>
                   إدارة حساب الدخول والصلاحية
                 </h3>
-                <span
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "6px",
-                    fontSize: "0.85rem",
-                    fontWeight: 700,
-                    color: statusColor,
-                    background: statusBg,
-                    padding: "4px 14px",
-                    borderRadius: "var(--radius-pill)",
-                    border: `1px solid color-mix(in srgb, ${statusColor} 30%, transparent)`,
-                  }}
-                >
+                <span className={`ui-badge ${statusTone}`}>
                   <Icon name={isSuspended ? "block" : isExpired ? "error_outline" : "check_circle"} style={{ fontSize: "15px" }} />
                   {statusText}
                 </span>
@@ -294,17 +259,7 @@ export default function AccountManager({
             {canManageAccount && (
             <button
               onClick={() => setIsChangingPassword(!isChangingPassword)}
-              className="crm-btn-secondary"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "8px",
-                padding: "10px 18px",
-                fontSize: "0.92rem",
-                fontWeight: 600,
-                borderRadius: "var(--radius-md)",
-                background: isChangingPassword ? "var(--bg3)" : "transparent",
-              }}
+              className={`ui-btn ${isChangingPassword ? "ui-btn--primary" : "ui-btn--secondary"}`}
             >
               <Icon name="lock" style={{ fontSize: "18px", color: "var(--primary)" }} />
               <span>تغيير كلمة المرور</span>
@@ -313,17 +268,7 @@ export default function AccountManager({
             {canManageAccount && (
             <button
               onClick={() => setIsChangingUsername(!isChangingUsername)}
-              className="crm-btn-secondary"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "8px",
-                padding: "10px 18px",
-                fontSize: "0.92rem",
-                fontWeight: 600,
-                borderRadius: "var(--radius-md)",
-                background: isChangingUsername ? "var(--bg3)" : "transparent",
-              }}
+              className={`ui-btn ${isChangingUsername ? "ui-btn--primary" : "ui-btn--secondary"}`}
             >
               <Icon name="badge" style={{ fontSize: "18px", color: "var(--primary)" }} />
               <span>تغيير اسم المستخدم</span>
@@ -333,18 +278,8 @@ export default function AccountManager({
             <button
               onClick={handleToggleSuspend}
               disabled={isSuspendLoading}
-              className="crm-btn-secondary"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "8px",
-                padding: "10px 18px",
-                fontSize: "0.92rem",
-                fontWeight: 600,
-                borderRadius: "var(--radius-md)",
-                color: isSuspended ? "var(--success-text)" : "var(--error-text)",
-                borderColor: isSuspended ? "rgba(16, 185, 129, 0.4)" : "rgba(239, 68, 68, 0.4)",
-              }}
+              className={`ui-btn ui-btn--secondary ${isSuspended ? "ui-btn--success" : "ui-btn--danger"}`}
+              style={{ color: isSuspended ? "var(--success-text)" : "var(--error-text)" }}
             >
               <Icon name={isSuspended ? "check_circle" : "block"} style={{ fontSize: "18px" }} />
               <span>{isSuspendLoading ? "جاري التمكين..." : isSuspended ? "تفعيل الحساب" : "تعطيل الحساب"}</span>
@@ -378,16 +313,8 @@ export default function AccountManager({
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="أدخل كلمة مرور قوية (8 أحرف على الأقل)"
-                  style={{
-                    width: "100%",
-                    padding: "12px 16px",
-                    paddingInlineEnd: "40px",
-                    borderRadius: "var(--radius-md)",
-                    border: "1px solid var(--border)",
-                    background: "var(--bg2)",
-                    color: "var(--text)",
-                    fontSize: "0.95rem",
-                  }}
+                  className="ui-field-control"
+                  style={{ paddingInlineEnd: "40px", fontSize: "0.95rem" }}
                   required
                   minLength={8}
                 />
@@ -412,7 +339,7 @@ export default function AccountManager({
                   setNewPassword("");
                 }}
                 className="crm-btn-secondary"
-                style={{ padding: "12px 20px", borderRadius: "var(--radius-md)", height: "fit-content" }}
+                style={{ padding: "12px 20px", height: "fit-content" }}
               >
                 إلغاء
               </button>
@@ -420,7 +347,7 @@ export default function AccountManager({
                 type="submit"
                 disabled={isPasswordLoading}
                 className="crm-btn-primary"
-                style={{ padding: "12px 28px", borderRadius: "var(--radius-md)", fontWeight: 700, height: "fit-content" }}
+                style={{ padding: "12px 28px", fontWeight: 700, height: "fit-content" }}
               >
                 {isPasswordLoading ? "جاري الحفظ..." : "حفظ كلمة المرور"}
               </button>
@@ -457,16 +384,8 @@ export default function AccountManager({
                      another. */
                   onChange={(e) => setNextUsername(e.target.value.trim().toLowerCase())}
                   placeholder="حروف إنجليزية أو أرقام أو . _ - (3 إلى 32 خانة)"
-                  style={{
-                    width: "100%",
-                    padding: "12px 16px",
-                    paddingInlineEnd: "40px",
-                    borderRadius: "var(--radius-md)",
-                    border: "1px solid var(--border)",
-                    background: "var(--bg2)",
-                    color: "var(--text)",
-                    fontSize: "0.95rem",
-                  }}
+                  className="ui-field-control"
+                  style={{ paddingInlineEnd: "40px", fontSize: "0.95rem" }}
                   required
                   minLength={3}
                   maxLength={32}
@@ -492,7 +411,7 @@ export default function AccountManager({
                   setNextUsername("");
                 }}
                 className="crm-btn-secondary"
-                style={{ padding: "12px 20px", borderRadius: "var(--radius-md)", height: "fit-content" }}
+                style={{ padding: "12px 20px", height: "fit-content" }}
               >
                 إلغاء
               </button>
@@ -500,7 +419,7 @@ export default function AccountManager({
                 type="submit"
                 disabled={isUsernameLoading}
                 className="crm-btn-primary"
-                style={{ padding: "12px 28px", borderRadius: "var(--radius-md)", fontWeight: 700, height: "fit-content" }}
+                style={{ padding: "12px 28px", fontWeight: 700, height: "fit-content" }}
               >
                 {isUsernameLoading ? "جاري الحفظ..." : "حفظ اسم المستخدم"}
               </button>
@@ -520,11 +439,9 @@ export default function AccountManager({
           
           {/* Card 1: Username & Access Details */}
           <div
+            className="ui-card"
             style={{
-              background: "var(--bg3)",
               padding: "22px",
-              borderRadius: "var(--radius-xl)",
-              border: "1px solid var(--border)",
               display: "flex",
               flexDirection: "column",
               justifyContent: "space-between",
@@ -532,7 +449,7 @@ export default function AccountManager({
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-              <div style={{ width: 42, height: 42, borderRadius: "var(--radius-lg)", background: "color-mix(in srgb, var(--primary) 15%, transparent)", color: "var(--primary)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "22px", flexShrink: 0 }}>
+              <div className="ui-icon-tile">
                 <Icon name="person" />
               </div>
               <div>
@@ -561,11 +478,9 @@ export default function AccountManager({
 
           {/* Card 2: Validity & Time Horizon */}
           <div
+            className="ui-card"
             style={{
-              background: "var(--bg3)",
               padding: "22px",
-              borderRadius: "var(--radius-xl)",
-              border: "1px solid var(--border)",
               display: "flex",
               flexDirection: "column",
               justifyContent: "space-between",
@@ -573,7 +488,7 @@ export default function AccountManager({
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-              <div style={{ width: 42, height: 42, borderRadius: "var(--radius-lg)", background: isExpired ? "color-mix(in srgb, var(--error) 15%, transparent)" : "color-mix(in srgb, var(--success) 15%, transparent)", color: isExpired ? "var(--error-text)" : "var(--success-text)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "22px", flexShrink: 0 }}>
+              <div className={`ui-icon-tile ${isExpired ? "tone-danger" : "tone-success"}`}>
                 <Icon name="schedule" />
               </div>
               <div>
@@ -623,7 +538,7 @@ export default function AccountManager({
             <h5 style={{ margin: 0, color: "var(--text)", fontSize: "1.1rem", fontWeight: 800 }}>
               سجل التفعيلات وتواريخ الاشتراك
             </h5>
-            <span style={{ fontSize: "0.85rem", background: "var(--bg3)", padding: "2px 12px", borderRadius: "var(--radius-pill)", color: "var(--text-muted)" }}>
+            <span className="ui-badge">
               {1 + renewals.length} تفعيل
             </span>
           </div>
@@ -637,11 +552,9 @@ export default function AccountManager({
           >
             {/* Activation Month Card */}
             <div
+              className="ui-card"
               style={{
-                background: "var(--bg3)",
                 padding: "16px 20px",
-                borderRadius: "var(--radius-lg)",
-                border: "1px solid var(--border)",
                 display: "flex",
                 flexDirection: "column",
                 gap: "8px",
@@ -666,11 +579,9 @@ export default function AccountManager({
             {renewals.map((r, idx) => (
               <div
                 key={idx}
+                className="ui-card"
                 style={{
-                  background: "var(--bg3)",
                   padding: "16px 20px",
-                  borderRadius: "var(--radius-lg)",
-                  border: "1px solid var(--border)",
                   display: "flex",
                   flexDirection: "column",
                   gap: "8px",
@@ -711,7 +622,7 @@ export default function AccountManager({
           <button
             onClick={() => setIsCreating(true)}
             className="crm-btn-primary"
-            style={{ padding: '8px 20px', borderRadius: "var(--radius-sm)" }}
+            style={{ padding: '8px 20px' }}
           >
             إنشاء حساب
           </button>
@@ -728,7 +639,7 @@ export default function AccountManager({
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="مثال: ahmed123"
-                style={{ width: '100%', padding: '10px 14px', borderRadius: "var(--radius-sm)", border: '1px solid var(--border)', background: 'var(--bg2)', color: 'var(--text)' }}
+                className="ui-field-control"
                 required
               />
             </div>
@@ -739,7 +650,7 @@ export default function AccountManager({
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="أدخل كلمة مرور قوية (8 أحرف على الأقل)"
-                style={{ width: '100%', padding: '10px 14px', borderRadius: "var(--radius-sm)", border: '1px solid var(--border)', background: 'var(--bg2)', color: 'var(--text)' }}
+                className="ui-field-control"
                 required
                 minLength={8}
               />
@@ -749,7 +660,7 @@ export default function AccountManager({
             <button 
               type="button"
               onClick={() => setIsCreating(false)}
-              style={{ padding: '10px 20px', borderRadius: "var(--radius-sm)", background: 'transparent', border: '1px solid var(--border)', color: 'var(--text)', cursor: 'pointer' }}
+              className="ui-btn ui-btn--secondary"
               disabled={isLoading}
             >
               إلغاء
@@ -757,7 +668,7 @@ export default function AccountManager({
             <button 
               type="submit"
               className="crm-btn-primary"
-              style={{ padding: '10px 24px', borderRadius: "var(--radius-sm)" }}
+              style={{ padding: '10px 24px' }}
               disabled={isLoading}
             >
               {isLoading ? "جاري الإنشاء..." : "حفظ الحساب"}

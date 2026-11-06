@@ -1,0 +1,204 @@
+/* ==========================================================================
+   Lit Glass — feedback: spinners, progress, skeletons, empty states,
+   alerts, toasts
+
+   The same light, at work: a spinner is the button's edge turning on its
+   own; a progress bar is a lit fill; a skeleton is the light passing over
+   glass that is still loading.
+   ========================================================================== */
+
+/* --- Spinners --------------------------------------------------------------
+   Each spinner keeps its own size and its own rotation keyframes; only its
+   paint changes. A conic arc fading into the track, masked to a ring. */
+html:root:root:root:root:root :where(
+    .ui-spinner, .admin-spinner, .cms-spinner, .vp-spinner, .spinner-dash
+) {
+    --ring: 3px;
+    border-color: transparent;
+    border-radius: var(--radius-circle);
+    background:
+        conic-gradient(from 0deg, transparent 0deg, var(--primary-active) 90deg, var(--primary) 220deg, var(--primary-light) 340deg, transparent 360deg) border-box,
+        radial-gradient(farthest-side, transparent calc(100% - var(--ring)), rgba(var(--text-rgb), 0.08) calc(100% - var(--ring) + 0.5px)) border-box;
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - var(--ring)), #000 calc(100% - var(--ring) + 0.5px));
+    mask: radial-gradient(farthest-side, transparent calc(100% - var(--ring)), #000 calc(100% - var(--ring) + 0.5px));
+    filter: drop-shadow(0 0 6px color-mix(in srgb, var(--primary) 55%, transparent));
+}
+
+/* The small spinners that sit inside a button take the button's ink. */
+html:root:root:root:root:root :where(.ex-spinner, .pw-spinner, .btn-spinner, .ui-spinner--inline) {
+    --ring: 2px;
+    border-color: transparent;
+    border-radius: var(--radius-circle);
+    background: conic-gradient(from 0deg, transparent 0deg, currentColor 300deg, transparent 360deg) border-box;
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - var(--ring)), #000 calc(100% - var(--ring) + 0.5px));
+    mask: radial-gradient(farthest-side, transparent calc(100% - var(--ring)), #000 calc(100% - var(--ring) + 0.5px));
+}
+
+.ui-spinner {
+    display: inline-block;
+    width: 32px;
+    height: 32px;
+    border: 0 solid transparent;
+    animation: lit-spin 0.9s linear infinite;
+}
+
+.ui-spinner--inline { display: inline-block; width: 16px; height: 16px; animation: lit-spin 0.7s linear infinite; }
+
+@keyframes lit-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* --- Progress --------------------------------------------------------------
+   The track is recessed glass; the fill is lit, brightest at its leading
+   edge, which in Arabic is the left. */
+html:root:root:root:root:root :where(
+    .ui-progress, .home-progress-bar-track, .upw-track, .upw-overall-track,
+    .an-bar-track, .stepper-track, .st-free-ship-track
+) {
+    background: var(--lit-track);
+    box-shadow: var(--lit-track-shadow);
+    border-radius: var(--radius-pill);
+}
+
+html:root:root:root:root:root :where(
+    .ui-progress-fill, .home-progress-bar-fill, .upw-fill, .upw-overall-fill,
+    .an-bar-fill, .stepper-fill
+) {
+    background: linear-gradient(to left, var(--primary-active), var(--primary) 60%, var(--primary-light));
+    box-shadow: 0 0 12px -2px color-mix(in srgb, var(--primary) 70%, transparent);
+    border-radius: var(--radius-pill);
+}
+
+.ui-progress { position: relative; height: 8px; overflow: hidden; }
+.ui-progress-fill { position: absolute; inset-block: 0; inset-inline-start: 0; transition: width var(--dur-slow) var(--ease-out); }
+
+/* --- Skeleton --------------------------------------------------------------
+   Glass that is still loading, with the light passing over it right to left. */
+.ui-skeleton {
+    display: block;
+    border-radius: var(--radius-md);
+    background:
+        linear-gradient(to left, transparent 0%, rgba(var(--primary-light-rgb), 0.10) 45%, rgba(var(--text-rgb), 0.10) 50%, rgba(var(--primary-light-rgb), 0.10) 55%, transparent 100%) 0 0 / 220% 100% no-repeat,
+        var(--glass);
+    animation: lit-skeleton 1.6s var(--ease) infinite;
+}
+
+.ui-skeleton--text { height: 0.9em; margin-block: 0.35em; border-radius: var(--radius-xs); }
+.ui-skeleton--title { height: 1.4em; width: 45%; }
+.ui-skeleton--circle { border-radius: var(--radius-circle); }
+
+@keyframes lit-skeleton {
+    from { background-position: 120% 0, 0 0; }
+    to { background-position: -120% 0, 0 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ui-skeleton { animation: none; }
+}
+
+/* --- Empty states ----------------------------------------------------------
+   An invitation, not a blank: the first icon in the block becomes a lit
+   icon tile. */
+html:root:root:root:root:root :where(
+    .ui-empty, .an-empty, .chl-empty, .cms-empty, .co-empty, .crm-empty-state,
+    .diet-empty, .ex-empty, .ov-empty, .sa-empty, .st-empty, .st-drawer-empty,
+    .staff-empty, .wl-empty, .tih-empty
+) {
+    color: var(--text-secondary);
+    text-align: center;
+}
+
+html:root:root:root:root:root :where(
+    .ui-empty, .an-empty, .chl-empty, .cms-empty, .co-empty, .crm-empty-state,
+    .diet-empty, .ex-empty, .ov-empty, .sa-empty, .st-empty, .st-drawer-empty,
+    .staff-empty, .wl-empty, .tih-empty
+) > :where(svg.app-icon, svg.lucide):first-child {
+    box-sizing: content-box;
+    width: var(--icon-lg);
+    height: var(--icon-lg);
+    padding: 14px;
+    margin-inline: auto;
+    margin-bottom: var(--space-3);
+    border: var(--lit-w) solid transparent;
+    border-radius: var(--radius-lg);
+    background:
+        linear-gradient(var(--lit-fill), var(--lit-fill)) padding-box,
+        conic-gradient(from 200deg, var(--primary) 0deg, var(--primary-light) 70deg, var(--primary-active) 140deg, var(--lit-rest) 210deg, var(--lit-rest) 300deg, var(--primary) 360deg) border-box;
+    box-shadow:
+        inset 10px 0 18px -14px var(--primary),
+        inset 0 -8px 16px -12px var(--primary-light);
+    color: var(--primary-light);
+    opacity: 1;
+}
+
+.ui-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-12) var(--space-6);
+}
+
+.ui-empty-title { margin: 0; color: var(--text); font-size: var(--text-lg); font-weight: var(--weight-bold); }
+.ui-empty-text { margin: 0 0 var(--space-3); max-width: 42ch; font-size: var(--text-sm); }
+
+/* --- Alerts ----------------------------------------------------------------
+   The four tones, each a glass panel edged on the reading side. */
+html:root:root:root:root:root :where(.shadcn-alert, .ui-alert) {
+    border-radius: var(--radius-lg);
+    box-shadow: inset -3px 0 0 color-mix(in srgb, var(--primary) 85%, transparent);
+}
+
+html:root:root:root:root:root :where(.shadcn-alert-destructive, .ui-alert--danger) {
+    --primary: var(--danger);
+}
+
+html:root:root:root:root:root :where(.shadcn-alert-success, .ui-alert--success) {
+    --primary: var(--success);
+}
+
+html:root:root:root:root:root :where(.shadcn-alert-warning, .ui-alert--warning) {
+    --primary: var(--warning);
+}
+
+.ui-alert {
+    display: flex;
+    gap: var(--space-3);
+    align-items: flex-start;
+    padding: var(--space-4);
+    border: 1px solid color-mix(in srgb, var(--primary) 30%, transparent);
+    background: color-mix(in srgb, var(--primary) 8%, var(--glass));
+    color: var(--text);
+    font-size: var(--text-sm);
+}
+
+.ui-alert > :is(svg, .app-icon) { flex: none; width: var(--icon-md); height: var(--icon-md); color: var(--primary); }
+
+/* --- Toasts ----------------------------------------------------------------
+   react-hot-toast, through src/components/ui/AppToaster.tsx. A small lit
+   window. */
+.lit-toast {
+    position: relative;
+    padding: 14px 20px !important;
+    border: var(--lit-w) solid transparent !important;
+    border-radius: var(--radius-pill) !important;
+    background:
+        linear-gradient(var(--glass-solid), var(--glass-solid)) padding-box,
+        conic-gradient(from 200deg, var(--primary) 0deg, var(--primary-light) 70deg, var(--primary-active) 140deg, var(--lit-rest) 210deg, var(--lit-rest) 300deg, var(--primary) 360deg) border-box !important;
+    -webkit-backdrop-filter: var(--glass-solid-blur);
+    backdrop-filter: var(--glass-solid-blur);
+    box-shadow:
+        inset 12px 0 22px -16px var(--primary),
+        inset 0 -8px 18px -14px var(--primary-light),
+        var(--elev-3) !important;
+    color: var(--text) !important;
+    font-family: var(--font-primary);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    line-height: 1.6;
+    max-width: 460px !important;
+    direction: rtl;
+}
+
+.lit-toast--success { --primary: var(--success); --primary-light: var(--success-light); --primary-active: var(--success-active); }
+.lit-toast--error { --primary: var(--danger); --primary-light: var(--danger-light); --primary-active: var(--danger-active); }

@@ -29,7 +29,9 @@ import { useEffect } from "react";
 const GLOW =
   ".dashboard-card, .home-stat-card, .processing-card, .admin-card, " +
   ".membership-card, .testimonial-card, .form-card, .pw-card, " +
-  ".co-card, .ex-card, .crm-list-card, .cms-pricing-card";
+  ".co-card, .ex-card, .crm-list-card, .cms-pricing-card, " +
+  /* Lit Glass cards — the spotlight for these is in src/styles/lit/surfaces.css */
+  ".ui-card, .an-card, .chl-card, .staff-card, .diet-card, .st-card";
 
 /** Primary buttons whose light follows the cursor — kept in step with the
  *  lit-edge button list in globals.css. They read the same --mx/--my. */
@@ -37,7 +39,20 @@ const LIT =
   ".btn-primary, .btn-card, .btn-submit, .pw-submit, .processing-btn, " +
   ".dash-primary-btn, .hero-btn.primary-btn, .crm-btn-primary, .cms-btn-primary, " +
   ".co-add-btn, .ex-add-btn, .staff-add-btn, .diet-add-btn, .promo-popup-cta, " +
-  ".upw-close, .form-btn--primary, .boundary-btn:not(.boundary-btn--ghost)";
+  ".upw-close, .form-btn--primary, .boundary-btn:not(.boundary-btn--ghost), " +
+  /* Lit Glass — every level of button reads the cursor; see src/styles/lit/primitives.css */
+  ".ui-btn, .nav-cta, .btn-nav-register, .btn-register-card, .ex-modal-btn, " +
+  ".diet-modal-btn, .cms-modal-btn-confirm, .cms-modal-btn-cancel, .st-add-btn, " +
+  ".st-stage-shop, .wl-finish-btn, .chl-approve-btn, .chl-review-btn, .chl-reject-btn, " +
+  ".chl-danger-btn, .crm-btn-whatsapp, .btn-secondary, .crm-btn-secondary, " +
+  ".cms-btn-secondary, .diet-btn-secondary, .sa-btn--ghost, .st-btn--ghost, .btn-social, " +
+  ".nav-store-btn, .hero-btn, .crm-export-btn, .crm-action-btn, .form-btn, .boundary-btn, " +
+  ".delete-btn, .timeline-danger-btn, .co-icon-btn, .dash-icon-btn, .diet-icon-btn, " +
+  ".ex-icon-btn, .sa-icon-btn, .st-icon-btn, .staff-icon-btn, .crm-btn-icon, .cms-row-btn, " +
+  ".st-cart-btn, " +
+  /* the "add" buttons — src/styles/lit/status.css */
+  ".ui-btn--add, .dplan-tab--add, .dplan-add-item, .dplan-add-meal, .dmp-add, " +
+  ".sa-add-row, .sa-gallery-add, .bldr-pick-add, .ui-media-btn.is-upload";
 
 /** Buttons that ripple — kept in step with the button list in globals.css. */
 const RIPPLE =

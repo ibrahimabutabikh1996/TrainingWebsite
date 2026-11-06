@@ -33,7 +33,6 @@ export default function AdminModal({ isOpen, onClose, title, icon = "info", chil
     <Overlay>
       <div className="admin-modal-scrim" style={{
         zIndex,
-        backgroundColor: "var(--overlay-scrim)", backdropFilter: "blur(4px)",
         display: "flex", alignItems: "center", justifyContent: "center"
       }}>
         {/* `maxHeight: 100%` rather than a viewport unit, and the distinction is
@@ -47,15 +46,15 @@ export default function AdminModal({ isOpen, onClose, title, icon = "info", chil
             everything shorter it overflowed a centred flex box at both ends —
             clipped by the top of the browser, over the nav bar at the bottom.
             A percentage resolves against the overlay, so it cannot outgrow it. */}
-        <div className="crm-glass-panel" style={{ width: "100%", maxWidth, maxHeight: "100%", display: "flex", flexDirection: "column", overflow: "hidden", background: "var(--glass-solid)", backdropFilter: "var(--glass-solid-blur)", WebkitBackdropFilter: "var(--glass-solid-blur)", borderRadius: "var(--radius-xl)", boxShadow: "var(--elev-3)", border: "1px solid var(--glass-border-strong)" }}>
+        <div className="crm-glass-panel admin-modal-panel" style={{ width: "100%", maxWidth, maxHeight: "100%", display: "flex", flexDirection: "column", overflow: "hidden" }}>
 
           {/* Header */}
-          <div className="admin-modal-head" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--border)", flexShrink: 0 }}>
+          <div className="admin-modal-head" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
             <h3 style={{ fontSize: "var(--text-lg)", fontWeight: "var(--weight-semibold)", margin: 0, display: "flex", alignItems: "center", gap: "var(--space-2)", color: "var(--text)", minWidth: 0 }}>
               <Icon name={icon} style={{ color: "var(--primary)" }} />
               {title}
             </h3>
-            <button onClick={onClose} aria-label="إغلاق" className="admin-modal-close" style={{ background: "transparent", border: "none", color: "var(--text-muted)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "var(--radius-sm)" }}>
+            <button onClick={onClose} aria-label="إغلاق" className="admin-modal-close" style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
               <Icon name="close" />
             </button>
           </div>

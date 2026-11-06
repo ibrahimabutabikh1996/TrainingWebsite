@@ -81,9 +81,6 @@ export function SubscriptionHistoryTimeline({
         className="dashboard-card"
         style={{
           padding: "36px",
-          borderRadius: "var(--radius-xl)",
-          background: "var(--bg3)",
-          border: "1px dashed var(--border)",
           textAlign: "center",
           direction: "rtl",
           fontFamily: "'Cairo', sans-serif",
@@ -132,21 +129,9 @@ export function SubscriptionHistoryTimeline({
                 }
               }
             }}
-            style={{
-              padding: "10px 24px",
-              borderRadius: "var(--radius-lg)",
-              background: "var(--primary)",
-              color: "var(--text-inverse)",
-              border: "none",
-              fontWeight: 800,
-              fontSize: "1rem",
-              cursor: "pointer",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "8px",
-            }}
+            className="ui-btn ui-btn--primary"
           >
-            <Icon name="restore" style={{ fontSize: "22px" }} />
+            <Icon name="restore" />
             <span>استعادة السجل التاريخي (الإبقاء دون حذف)</span>
           </button>
         )}
@@ -172,15 +157,9 @@ export function SubscriptionHistoryTimeline({
 
   return (
     <section
-      className="dashboard-card"
+      className="dashboard-card ui-card--featured"
       style={{
         padding: "32px",
-        borderRadius: "var(--radius-xl)",
-        background:
-          "linear-gradient(145deg, var(--bg2), color-mix(in srgb, var(--primary) 5%, var(--bg2)))",
-        border:
-          "1px solid color-mix(in srgb, var(--primary) 30%, var(--border))",
-        boxShadow: "var(--elev-2)",
         direction: "rtl",
         fontFamily: "'Cairo', sans-serif",
         marginTop: "32px",
@@ -208,22 +187,8 @@ export function SubscriptionHistoryTimeline({
             flex: "1 1 300px",
           }}
         >
-          <div
-            style={{
-              width: "60px",
-              height: "60px",
-              borderRadius: "var(--radius-xl)",
-              background: "color-mix(in srgb, var(--primary) 18%, var(--bg3))",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "var(--primary-on-tint)",
-              boxShadow:
-                "0 6px 20px color-mix(in srgb, var(--primary) 25%, transparent)",
-              flexShrink: 0,
-            }}
-          >
-            <Icon name="view_timeline" style={{ fontSize: "34px" }} />
+          <div className="ui-icon-tile ui-icon-tile--lg ui-icon-tile--lit">
+            <Icon name="view_timeline" />
           </div>
           <div>
             <h2
@@ -255,16 +220,12 @@ export function SubscriptionHistoryTimeline({
           }}
         >
           <div
+            className="ui-card ui-card--featured"
             style={{
               padding: "10px 18px",
-              borderRadius: "var(--radius-lg)",
-              background: "var(--bg3)",
-              border:
-                "1px solid color-mix(in srgb, var(--primary) 40%, transparent)",
               display: "flex",
               alignItems: "center",
               gap: "10px",
-              boxShadow: "var(--elev-1)",
             }}
           >
             <Icon
@@ -294,11 +255,9 @@ export function SubscriptionHistoryTimeline({
           </div>
 
           <div
+            className="ui-card"
             style={{
               padding: "10px 18px",
-              borderRadius: "var(--radius-lg)",
-              background: "var(--bg3)",
-              border: "1px solid var(--border)",
               display: "flex",
               alignItems: "center",
               gap: "10px",
@@ -335,11 +294,9 @@ export function SubscriptionHistoryTimeline({
 
       {isAdminView && canEdit && (
         <div
+          className="ui-card"
           style={{
             padding: "20px 24px",
-            borderRadius: "var(--radius-xl)",
-            background: "var(--bg3)",
-            border: "1px solid var(--border)",
             marginBottom: "28px",
             display: "flex",
             alignItems: "center",
@@ -387,24 +344,9 @@ export function SubscriptionHistoryTimeline({
                   }
                 }
               }}
-              style={{
-                padding: "8px 18px",
-                borderRadius: "var(--radius-lg)",
-                background: "color-mix(in srgb, var(--error) 20%, transparent)",
-                color: "var(--error-text)",
-                border:
-                  "1px solid color-mix(in srgb, var(--error) 50%, transparent)",
-                fontWeight: 700,
-                fontSize: "0.9rem",
-                cursor: "pointer",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "8px",
-                transition:
-                  "background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease), box-shadow var(--dur) var(--ease)",
-              }}
+              className="ui-btn ui-btn--secondary ui-btn--danger ui-btn--sm"
             >
-              <Icon name="delete_forever" style={{ fontSize: "20px" }} />
+              <Icon name="delete_forever" />
               <span>حذف السجل بالكامل</span>
             </button>
 
@@ -429,23 +371,9 @@ export function SubscriptionHistoryTimeline({
                     }
                   }
                 }}
-                style={{
-                  padding: "8px 18px",
-                  borderRadius: "var(--radius-lg)",
-                  background: "var(--primary)",
-                  color: "var(--text-inverse)",
-                  border: "none",
-                  fontWeight: 800,
-                  fontSize: "0.9rem",
-                  cursor: "pointer",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  transition:
-                    "background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease), box-shadow var(--dur) var(--ease)",
-                }}
+                className="ui-btn ui-btn--primary ui-btn--sm"
               >
-                <Icon name="restore" style={{ fontSize: "20px" }} />
+                <Icon name="restore" />
                 <span>استعادة السجل المحذوف (الإبقاء دون حذف)</span>
               </button>
             )}
@@ -497,17 +425,9 @@ export function SubscriptionHistoryTimeline({
           return (
             <div
               key={item.monthNumber}
+              className={`ui-card${isCurrentMonth ? " ui-card--featured" : ""}`}
               style={{
-                borderRadius: "var(--radius-xl)",
-                background: "var(--bg2)",
-                border: isCurrentMonth
-                  ? "2px solid var(--primary)"
-                  : "1px solid var(--border)",
-                boxShadow: isCurrentMonth
-                  ? "0 0 25px color-mix(in srgb, var(--primary) 15%, transparent)"
-                  : "var(--elev-2)",
-                transition:
-                  "background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease), box-shadow var(--dur) var(--ease)",
+                padding: 0,
                 overflow: "hidden",
               }}
             >
@@ -544,24 +464,11 @@ export function SubscriptionHistoryTimeline({
                   style={{ display: "flex", alignItems: "center", gap: "12px" }}
                 >
                   <span
+                    className={`ui-avatar${isCurrentMonth ? " is-active" : ""}`}
                     style={{
                       width: "38px",
                       height: "38px",
-                      borderRadius: "var(--radius-circle)",
-                      background: isCurrentMonth
-                        ? "var(--primary)"
-                        : "var(--bg4)",
-                      color: isCurrentMonth
-                        ? "var(--text-inverse)"
-                        : "var(--text)",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontWeight: 800,
                       fontSize: "1.05rem",
-                      border: isCurrentMonth
-                        ? "none"
-                        : "1px solid var(--border)",
                     }}
                   >
                     {item.monthNumber}
@@ -600,7 +507,7 @@ export function SubscriptionHistoryTimeline({
                   {isAdminView && canEdit && (
                     <button
                       type="button"
-                      className="timeline-danger-btn"
+                      className="ui-btn ui-btn--sm timeline-danger-btn"
                       onClick={async (e) => {
                         e.stopPropagation();
                         if (
@@ -621,68 +528,19 @@ export function SubscriptionHistoryTimeline({
                           }
                         }
                       }}
-                      style={{
-                        padding: "6px 14px",
-                        borderRadius: "var(--radius-pill)",
-                        background:
-                          "color-mix(in srgb, var(--error) 15%, transparent)",
-                        color: "var(--error-text)",
-                        border:
-                          "1px solid color-mix(in srgb, var(--error) 40%, transparent)",
-                        fontSize: "0.82rem",
-                        fontWeight: 700,
-                        cursor: "pointer",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "6px",
-                        transition:
-                          "background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease), box-shadow var(--dur) var(--ease)",
-                      }}
                       title="حذف بيانات هذا الشهر من السجل التاريخي"
                     >
-                      <Icon name="delete" style={{ fontSize: "16px" }} />
+                      <Icon name="delete" />
                       <span>حذف هذا الشهر من السجل</span>
                     </button>
                   )}
                   {isCurrentMonth ? (
-                    <span
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "6px",
-                        background:
-                          "color-mix(in srgb, var(--primary) 20%, transparent)",
-                        color: "var(--primary-on-tint)",
-                        border:
-                          "1px solid color-mix(in srgb, var(--primary) 50%, transparent)",
-                        padding: "6px 14px",
-                        borderRadius: "var(--radius-pill)",
-                        fontSize: "0.85rem",
-                        fontWeight: 700,
-                        boxShadow:
-                          "0 0 10px color-mix(in srgb, var(--primary) 25%, transparent)",
-                      }}
-                    >
+                    <span className="ui-badge">
                       <Icon name="emoji_events" style={{ fontSize: "16px" }} />
                       الشهر الحالي (نشط)
                     </span>
                   ) : (
-                    <span
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "6px",
-                        background:
-                          "color-mix(in srgb, var(--success) 15%, transparent)",
-                        color: "var(--success-text)",
-                        border:
-                          "1px solid color-mix(in srgb, var(--success) 40%, transparent)",
-                        padding: "6px 14px",
-                        borderRadius: "var(--radius-pill)",
-                        fontSize: "0.85rem",
-                        fontWeight: 700,
-                      }}
-                    >
+                    <span className="ui-badge tone-success">
                       <Icon name="check_circle" style={{ fontSize: "16px" }} />
                       دورة مكتملة ومؤرشفة
                     </span>
@@ -737,17 +595,13 @@ export function SubscriptionHistoryTimeline({
                   >
                     {/* Workout Plan Box */}
                     <div
-                      className="timeline-card"
+                      className="timeline-card ui-card"
                       style={{
                         padding: "22px",
-                        borderRadius: "var(--radius-xl)",
-                        background: "var(--bg3)",
-                        border: "1px solid var(--border)",
                         display: "flex",
                         flexDirection: "column",
                         justifyContent: "space-between",
                         gap: "18px",
-                        boxShadow: "var(--elev-1)",
                         "--t-color-idle": "var(--primary)",
                       } as React.CSSProperties}
                     >
@@ -786,19 +640,7 @@ export function SubscriptionHistoryTimeline({
                               النظام التدريبي
                             </span>
                           </div>
-                          <span
-                            style={{
-                              fontSize: "0.8rem",
-                              padding: "4px 12px",
-                              borderRadius: "var(--radius-md)",
-                              background:
-                                "color-mix(in srgb, var(--primary) 15%, var(--bg2))",
-                              color: "var(--primary-on-tint)",
-                              fontWeight: 700,
-                              border:
-                                "1px solid color-mix(in srgb, var(--primary) 30%, transparent)",
-                            }}
-                          >
+                          <span className="ui-badge">
                             {item.workout?.daysCount
                               ? `${item.workout.daysCount} أيام بالدورة`
                               : "جدول تمارين مجدول"}
@@ -844,10 +686,6 @@ export function SubscriptionHistoryTimeline({
                               flex: 1,
                               height: "46px",
                               padding: "0 16px",
-                              borderRadius: "var(--radius-lg)",
-                              background: "color-mix(in srgb, var(--primary) 12%, var(--bg2))",
-                              color: "var(--primary-on-tint)",
-                              border: "1px solid color-mix(in srgb, var(--primary) 40%, transparent)",
                               fontWeight: 800,
                               fontSize: "0.94rem",
                               textDecoration: "none",
@@ -856,8 +694,6 @@ export function SubscriptionHistoryTimeline({
                               justifyContent: "center",
                               gap: "8px",
                               whiteSpace: "nowrap",
-                              transition:
-                                "background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), transform var(--dur-fast) var(--ease)",
                               "--t-color-idle": "var(--primary)",
                             } as React.CSSProperties}
                             title="فتح صفحة تحميل النظام التدريبي"
@@ -894,17 +730,13 @@ export function SubscriptionHistoryTimeline({
 
                     {/* Diet Plan Box */}
                     <div
-                      className="timeline-card"
+                      className="timeline-card ui-card tone-success"
                       style={{
                         padding: "22px",
-                        borderRadius: "var(--radius-xl)",
-                        background: "var(--bg3)",
-                        border: "1px solid var(--border)",
                         display: "flex",
                         flexDirection: "column",
                         justifyContent: "space-between",
                         gap: "18px",
-                        boxShadow: "var(--elev-1)",
                         "--t-color-idle": "var(--success-text)",
                       } as React.CSSProperties}
                     >
@@ -943,19 +775,7 @@ export function SubscriptionHistoryTimeline({
                               النظام الغذائي
                             </span>
                           </div>
-                          <span
-                            style={{
-                              fontSize: "0.8rem",
-                              padding: "4px 12px",
-                              borderRadius: "var(--radius-md)",
-                              background:
-                                "color-mix(in srgb, var(--success) 15%, var(--bg2))",
-                              color: "var(--success-text)",
-                              fontWeight: 700,
-                              border:
-                                "1px solid color-mix(in srgb, var(--success) 35%, transparent)",
-                            }}
-                          >
+                          <span className="ui-badge">
                             {/* Was a calorie figure with this as its fallback,
                                 and the figure never arrived: neither builder of
                                 this timeline — the panel's nor the export's —
@@ -989,10 +809,6 @@ export function SubscriptionHistoryTimeline({
                             flex: 1,
                             height: "46px",
                             padding: "0 16px",
-                            borderRadius: "var(--radius-lg)",
-                            background: "color-mix(in srgb, var(--success) 12%, var(--bg2))",
-                            color: "var(--success-text)",
-                            border: "1px solid color-mix(in srgb, var(--success) 40%, transparent)",
                             fontWeight: 800,
                             fontSize: "0.94rem",
                             textDecoration: "none",
@@ -1001,8 +817,6 @@ export function SubscriptionHistoryTimeline({
                             justifyContent: "center",
                             gap: "8px",
                             whiteSpace: "nowrap",
-                            transition:
-                              "background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), transform var(--dur-fast) var(--ease)",
                             "--t-color-idle": "var(--success-text)",
                           } as React.CSSProperties}
                           title="فتح صفحة تحميل النظام الغذائي"
@@ -1020,19 +834,13 @@ export function SubscriptionHistoryTimeline({
                         which was enough. It now holds that month's own record,
                         so every month has one. */}
                       <div
-                        className="timeline-card"
+                        className={`timeline-card ui-card tone-danger${isInfoOpen ? " ui-card--featured" : ""}`}
                         style={{
                           padding: "22px",
-                          borderRadius: "var(--radius-xl)",
-                          background: "var(--bg3)",
-                          border: isInfoOpen
-                            ? `1px solid var(--error-text)`
-                            : "1px solid var(--border)",
                         display: "flex",
                         flexDirection: "column",
                         justifyContent: "space-between",
                         gap: "18px",
-                        boxShadow: "var(--elev-1)",
                         "--t-color-idle": "var(--error-text)",
                       } as React.CSSProperties}
                     >
@@ -1068,17 +876,7 @@ export function SubscriptionHistoryTimeline({
                               معلومات المشترك
                             </span>
                           </div>
-                          <span
-                            style={{
-                              fontSize: "0.8rem",
-                              padding: "4px 12px",
-                              borderRadius: "var(--radius-md)",
-                              background: "color-mix(in srgb, var(--error) 15%, var(--bg2))",
-                              color: "var(--error-text)",
-                              fontWeight: 700,
-                              border: "1px solid color-mix(in srgb, var(--error) 35%, transparent)",
-                            }}
-                          >
+                          <span className="ui-badge">
                             ملف متكامل
                           </span>
                         </div>
@@ -1106,10 +904,6 @@ export function SubscriptionHistoryTimeline({
                             flex: 1,
                             height: "46px",
                             padding: "0 16px",
-                            borderRadius: "var(--radius-lg)",
-                            background: "color-mix(in srgb, var(--error) 12%, var(--bg2))",
-                            color: "var(--error-text)",
-                            border: "1px solid color-mix(in srgb, var(--error) 40%, transparent)",
                             fontWeight: 800,
                             fontSize: "0.94rem",
                             cursor: "pointer",
@@ -1118,8 +912,6 @@ export function SubscriptionHistoryTimeline({
                             justifyContent: "center",
                             gap: "8px",
                             whiteSpace: "nowrap",
-                            transition:
-                              "background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), transform var(--dur-fast) var(--ease)",
                             "--t-color-idle": "var(--error-text)",
                           } as React.CSSProperties}
                           title={isInfoOpen ? "إخفاء المعلومات" : "عرض المعلومات"}
@@ -1144,7 +936,7 @@ export function SubscriptionHistoryTimeline({
                   {isInfoOpen && (
                     <div
                       style={{
-                        background: "var(--bg1)",
+                        background: "var(--bg2)",
                         borderTop: "1px solid var(--border)",
                         padding: "24px",
                         display: "flex",

@@ -1,5 +1,14 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+/* Lit Glass — the design system on top of the tokens in globals.css. See
+   src/styles/lit/tokens.css for how the levels work. */
+import "@/styles/lit/tokens.css";
+import "@/styles/lit/primitives.css";
+import "@/styles/lit/fields.css";
+import "@/styles/lit/surfaces.css";
+import "@/styles/lit/navigation.css";
+import "@/styles/lit/feedback.css";
+import "@/styles/lit/status.css";
 import { UploadProgressWindow } from "@/components/upload/UploadProgressWindow";
 import { ServiceWorkerRegister } from "@/components/pwa/ServiceWorkerRegister";
 import { SITE_URL } from "@/lib/siteUrl";

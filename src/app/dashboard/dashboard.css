@@ -117,6 +117,33 @@
   justify-content: space-between;
 }
 
+/* Profile tab (TraineeProfileDetails). A meal-time slot inside a card: plain
+   glass, no ring of its own. A body photo: a glass frame that answers at its
+   edge — cards never move. */
+.tpd-meal-slot {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+}
+
+.tpd-photo {
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  background: var(--glass);
+  box-shadow: var(--elev-2);
+  transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+
+.tpd-photo:hover {
+  border-color: var(--primary);
+  box-shadow: var(--elev-3);
+}
+
+.tpd-photo-caption {
+  background: linear-gradient(to top, color-mix(in srgb, var(--bg) 88%, transparent) 0%, transparent 100%);
+  color: var(--text);
+}
+
 /* ─── HEADER ─── */
 .dashboard-header {
   display: flex;

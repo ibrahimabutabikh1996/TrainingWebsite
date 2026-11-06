@@ -1,0 +1,46 @@
+/* Layout for the design-system reference page only — src/app/admin/design.
+   Every component on it is styled by src/styles/lit/; this file just lays the
+   examples out. */
+
+.dsg-page {
+  display: flex;
+  flex-direction: column;
+  max-width: 1100px;
+  margin-inline: auto;
+  padding: var(--space-6) var(--space-4) var(--space-16);
+}
+
+.dsg-grid { display: grid; gap: var(--space-4); }
+.dsg-grid--2 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); }
+.dsg-grid--3 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); }
+
+.dsg-stack { display: flex; flex-direction: column; gap: var(--space-5); }
+.dsg-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
+
+.dsg-level { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-3); }
+.dsg-level p { margin: 0; color: var(--text-secondary); font-size: var(--text-sm); line-height: var(--leading-relaxed); flex: 1; }
+
+.dsg-kpi { display: flex; align-items: center; gap: var(--space-4); }
+.dsg-kpi-value { font-size: var(--text-3xl); font-weight: var(--weight-bold); line-height: 1.1; }
+.dsg-kpi-label { color: var(--text-secondary); font-size: var(--text-sm); }
+.dsg-kpi-trend { display: inline-flex; align-items: center; gap: 4px; margin-top: var(--space-1); color: var(--success); font-size: var(--text-xs); font-weight: var(--weight-semibold); }
+
+.dsg-window-stage {
+  display: grid;
+  place-items: center;
+  padding: var(--space-10) var(--space-4);
+  border-radius: var(--radius-xl);
+  background: var(--overlay-scrim);
+}
+
+.dsg-window { width: min(100%, 440px); }
+.dsg-window-close { margin-inline-start: auto; }
+.dsg-window .ui-window-body { color: var(--text-secondary); font-size: var(--text-sm); line-height: var(--leading-relaxed); padding-top: var(--space-2); }
+
+.dsg-alerts { margin-top: var(--space-4); gap: var(--space-3); }
+
+.dsg-swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--space-4); }
+.dsg-swatch { display: flex; flex-direction: column; gap: 4px; font-size: var(--text-sm); }
+.dsg-swatch-chip { height: 44px; border-radius: var(--radius-md); border: 1px solid var(--glass-border); }
+.dsg-swatch-name { font-weight: var(--weight-semibold); }
+.dsg-swatch code { color: var(--text-muted); font-size: var(--text-xs); direction: ltr; text-align: end; }

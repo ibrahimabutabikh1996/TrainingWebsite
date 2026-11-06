@@ -53,6 +53,14 @@
   font-weight: 700;
 }
 
+/* The strip above the meals that holds the plan tabs and the download link.
+   Was an inline style. */
+.dpv-toolbar {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+}
+
 /* ─── Minimalist KPI Summary Header ─── */
 .dpv-kpi-bar {
   display: grid;

@@ -40,13 +40,14 @@ export function DietPlan({ profile }: { profile: UserProfile }) {
         <p className="dpv-none">{t("diet_none") || "لم يتم تحديد جدول غذائي لك حالياً من قِبل الكابتن."}</p>
       ) : (
         <div className="dpv-wrapper">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", flexWrap: "wrap", gap: "14px", background: "var(--bg2)", padding: "16px", borderRadius: "var(--radius-xl)", border: "1px solid var(--border)" }}>
+          <div className="dpv-toolbar" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", flexWrap: "wrap", gap: "14px", padding: "16px" }}>
             <div style={{ flex: "1 1 auto" }}>
               {plans.length > 1 ? (
-                <div className="dpv-tabs" role="tablist" style={{ margin: 0 }}>
+                <div className="dpv-tabs ui-segment" role="tablist" style={{ margin: 0 }}>
                   {plans.map((p, i) => (
                     <button
                       key={p.id}
+                      className="ui-tab"
                       role="tab"
                       aria-selected={i === activeIndex}
                       onClick={() => setActiveIndex(i)}
@@ -153,7 +154,7 @@ export function DietPlan({ profile }: { profile: UserProfile }) {
                                             <span style={{ fontWeight: 700 }}>العدد: {item.qty}</span>
                                           )}
                                           {totalWeight > 0 && (
-                                            <span style={{ color: "var(--primary-on-tint)", background: "var(--primary-dim)", border: "1px solid var(--border-primary)", padding: "2px 8px", borderRadius: "var(--radius-xs)", fontSize: "0.78rem", fontWeight: 800 }}>
+                                            <span className="ui-badge">
                                               {prefix}: {totalWeight}{unitSuffix}
                                             </span>
                                           )}

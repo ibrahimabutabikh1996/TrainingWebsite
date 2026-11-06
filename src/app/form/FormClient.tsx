@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
+import AppToaster from "@/components/ui/AppToaster";
 
 import { StepOneBasicInfo } from "@/components/form/StepOneBasicInfo";
 import { StepTwoWorkoutDetails } from "@/components/form/StepTwoWorkoutDetails";
@@ -558,19 +559,7 @@ export default function FormClient({ planNames }: { planNames: PlanNames }) {
           <FormContent planNames={planNames} />
         </Suspense>
       </main>
-      <Toaster
-        position="top-center"
-        toastOptions={{
-          style: {
-            background: "var(--bg2)",
-            color: "var(--text)",
-            border: "1px solid var(--border)",
-            fontFamily: "inherit",
-            maxWidth: "460px",
-            lineHeight: 1.7,
-          },
-        }}
-      />
+      <AppToaster />
     </div>
   );
 }

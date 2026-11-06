@@ -894,7 +894,7 @@ export default function LandingClient({
             const titleEl = document.createElement("div");
             titleEl.className = "cms-unavailable-title";
             titleEl.innerHTML = `
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #dc3545;">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--danger);">
                 <circle cx="12" cy="12" r="10"></circle>
                 <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
               </svg>
@@ -1700,7 +1700,7 @@ export default function LandingClient({
                     style={{
                       "--primary": accent.fill,
                       "--primary-rgb": accent.rgb,
-                      "--primary-on-tint": "#8fc1ff",
+                      "--primary-on-tint": "var(--primary-light)",
                       "--border-primary": `rgba(${accent.rgb}, 0.35)`,
                       "--primary-dim": `rgba(${accent.rgb}, 0.12)`,
                       "--plan-text": accent.text,

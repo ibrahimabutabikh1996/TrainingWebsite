@@ -7,7 +7,8 @@ import { useCourseBuilder, normalizeDays } from "./useCourseBuilder";
 import { isCustomExercise, isSupersetExercise } from "@/types/admin";
 import DayMusclePicker from "./DayMusclePicker";
 import AdminModal from "../components/AdminModal";
-import { Toaster, toast } from "react-hot-toast";
+import { toast } from "react-hot-toast";
+import AppToaster from "@/components/ui/AppToaster";
 import { loadCourseTemplateAction, saveCourseAction } from "./actions";
 import { arabicCount, DAY, EXERCISE } from "@/lib/arabicCount";
 import { Icon } from "@/components/Icon";
@@ -307,19 +308,7 @@ export default function AdminBuilderClient({
           disappearing. Nothing is fetched until it is opened. */}
       <TraineeIntakeHelp view="workout" traineeId={selectedTrainee} />
 
-      <Toaster
-        position="top-center"
-        toastOptions={{
-          style: {
-            background: "var(--bg2)",
-            color: "var(--text)",
-            border: "1px solid var(--border)",
-            direction: "rtl",
-            fontFamily: "inherit",
-            fontWeight: 600,
-          },
-        }}
-      />
+      <AppToaster />
 
       <header className="diet-header">
         <div className="diet-header-text">
@@ -692,11 +681,11 @@ export default function AdminBuilderClient({
                             </button>
                           </div>
                         </header>
-                        <div style={{ margin: "16px 0", borderRadius: "4px", background: "var(--bg3)", padding: "12px 24px", display: "flex", gap: "16px" }}>
-                          <input type="text" placeholder="..." value={ex.custom_col_1 || ""} onChange={(e) => updateCustomCol(currentDay.id, ex.id, 1, e.target.value)} style={{ flex: 1, padding: "8px 12px", borderRadius: "4px", border: "1px solid var(--border-strong)", background: "var(--bg2)", color: "var(--text)" }} />
-                          <input type="text" placeholder="..." value={ex.custom_col_2 || ""} onChange={(e) => updateCustomCol(currentDay.id, ex.id, 2, e.target.value)} style={{ flex: 1, padding: "8px 12px", borderRadius: "4px", border: "1px solid var(--border-strong)", background: "var(--bg2)", color: "var(--text)" }} />
-                          <input type="text" placeholder="..." value={ex.custom_col_3 || ""} onChange={(e) => updateCustomCol(currentDay.id, ex.id, 3, e.target.value)} style={{ flex: 1, padding: "8px 12px", borderRadius: "4px", border: "1px solid var(--border-strong)", background: "var(--bg2)", color: "var(--text)" }} />
-                          <input type="text" placeholder="..." value={ex.custom_col_4 || ""} onChange={(e) => updateCustomCol(currentDay.id, ex.id, 4, e.target.value)} style={{ flex: 1, padding: "8px 12px", borderRadius: "4px", border: "1px solid var(--border-strong)", background: "var(--bg2)", color: "var(--text)" }} />
+                        <div className="bldr-custom-cols">
+                          <input type="text" placeholder="..." value={ex.custom_col_1 || ""} onChange={(e) => updateCustomCol(currentDay.id, ex.id, 1, e.target.value)} className="ui-field-control bldr-custom-col" />
+                          <input type="text" placeholder="..." value={ex.custom_col_2 || ""} onChange={(e) => updateCustomCol(currentDay.id, ex.id, 2, e.target.value)} className="ui-field-control bldr-custom-col" />
+                          <input type="text" placeholder="..." value={ex.custom_col_3 || ""} onChange={(e) => updateCustomCol(currentDay.id, ex.id, 3, e.target.value)} className="ui-field-control bldr-custom-col" />
+                          <input type="text" placeholder="..." value={ex.custom_col_4 || ""} onChange={(e) => updateCustomCol(currentDay.id, ex.id, 4, e.target.value)} className="ui-field-control bldr-custom-col" />
                         </div>
                       </section>
                     ) : (
@@ -888,7 +877,7 @@ export default function AdminBuilderClient({
                     <Icon name="add" style={{ fontSize: 18 }} />
                     <span>إضافة تمرين</span>
                   </button>
-                  <button className="dplan-add-item" onClick={() => addCustomExerciseToDay(currentDay.id)} style={{ background: "transparent", color: "var(--primary-light)", border: "1px dashed var(--border-primary)" }}>
+                  <button className="dplan-add-item bldr-add-item--outside" onClick={() => addCustomExerciseToDay(currentDay.id)}>
                     <Icon name="add" style={{ fontSize: 18 }} />
                     <span>تمرين خارج الخطة</span>
                   </button>
@@ -914,7 +903,7 @@ export default function AdminBuilderClient({
             <button
               type="button"
               className="crm-btn-secondary"
-              style={{ padding: "10px 20px", borderRadius: "var(--radius-md)" }}
+              style={{ padding: "10px 20px" }}
               onClick={() => setDayToDelete(null)}
             >
               إلغاء
@@ -922,15 +911,7 @@ export default function AdminBuilderClient({
             <button
               type="button"
               onClick={confirmDeleteDay}
-              style={{
-                background: "var(--error)",
-                color: "var(--text-inverse)",
-                border: "none",
-                padding: "10px 24px",
-                borderRadius: "var(--radius-md)",
-                fontWeight: 700,
-                cursor: "pointer",
-              }}
+              className="ui-btn ui-btn--primary ui-btn--danger"
             >
               تأكيد الحذف
             </button>

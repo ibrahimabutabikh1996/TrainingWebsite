@@ -17,7 +17,8 @@ import {
 import AdminModal from "../components/AdminModal";
 import { deleteCourseAction, assignCourseAction, duplicateCourseAction } from "../builder/actions";
 import { arabicCount, DAY, EXERCISE, TRAINEE } from "@/lib/arabicCount";
-import { toast, Toaster } from "react-hot-toast";
+import { toast } from "react-hot-toast";
+import AppToaster from "@/components/ui/AppToaster";
 import { Icon } from "@/components/Icon";
 import { CustomSelect } from "@/components/CustomSelect";
 import { formatTimestamp } from "@/lib/trainingDates";
@@ -206,21 +207,7 @@ export default function AdminCoursesClient({
 
   return (
     <div className="crm-dashboard">
-      <Toaster 
-        position="top-center" 
-        toastOptions={{ 
-          style: { 
-            background: 'var(--admin-bg-2)', 
-            color: 'var(--admin-on-surface)', 
-            border: '1px solid var(--admin-primary)', 
-            padding: '16px 24px', 
-            borderRadius: '4px',
-            direction: 'rtl',
-            fontSize: '0.95rem',
-            fontWeight: '600'
-          } 
-        }} 
-      />
+      <AppToaster />
 
       <div className="crm-split-layout">
         
@@ -547,8 +534,8 @@ export default function AdminCoursesClient({
                   asDays(selectedCourse.days_data).map((day, dIndex) => (
                     <div 
                       key={day.id || dIndex} 
-                      className="crm-modal-section"
-                      style={{ background: "var(--admin-bg-3)", padding: "18px 20px", borderRadius: "8px", border: "1px solid color-mix(in srgb, var(--admin-on-surface) 5%, transparent)" }}
+                      className="crm-modal-section co-day-panel"
+                      style={{ padding: "18px 20px" }}
                     >
                       <h4 className="crm-modal-section-title" style={{ display: "flex", alignItems: "center", gap: "8px", margin: "0 0 14px 0", fontSize: "1.05rem", color: "var(--admin-on-surface)", fontWeight: 700 }}>
                         <Icon name="calendar_today" style={{ color: "var(--primary)" }} />
@@ -559,7 +546,7 @@ export default function AdminCoursesClient({
                       {(day.muscles?.length ?? 0) > 0 && (
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 6, margin: "-4px 0 14px" }}>
                           {day.muscles!.map((m) => (
-                            <span key={m} className="crm-tag primary-tag" style={{ padding: "2px 12px", fontSize: "0.75rem", borderRadius: "20px" }}>
+                            <span key={m} className="crm-tag primary-tag" style={{ padding: "2px 12px", fontSize: "0.75rem" }}>
                               {m}
                             </span>
                           ))}
@@ -873,7 +860,7 @@ export default function AdminCoursesClient({
             {/* Name the affected trainees — the old copy warned about unassigning
                 "المتدربين" without saying whether any actually existed. */}
             {assignedTo(showDeleteConfirm).length > 0 && (
-              <p style={{ margin: "0 0 16px 0", padding: "12px", borderRadius: 4, background: "color-mix(in srgb, var(--error) 10%, transparent)", border: "1px solid color-mix(in srgb, var(--error) 30%, transparent)", color: "var(--admin-on-surface)", fontSize: "0.88rem", lineHeight: 1.7 }}>
+              <p className="ui-alert ui-alert--danger" style={{ display: "block", margin: "0 0 16px 0", lineHeight: 1.7 }}>
                 هذا الكورس معيَّن حالياً إلى {arabicCount(assignedTo(showDeleteConfirm).length, TRAINEE)}:{" "}
                 <strong>{assignedTo(showDeleteConfirm).join("، ")}</strong>
                 <br />
@@ -895,8 +882,8 @@ export default function AdminCoursesClient({
               <button 
                 onClick={handleDeleteCourse}
                 disabled={isActionLoading}
-                className="crm-btn-primary"
-                style={{ flex: 1, background: "var(--error)", color: "var(--text-inverse)" }}
+                className="crm-btn-primary ui-btn--danger"
+                style={{ flex: 1 }}
               >
                 {isActionLoading ? "جاري الحذف..." : "نعم، احذف"}
               </button>

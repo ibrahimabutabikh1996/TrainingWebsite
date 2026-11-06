@@ -2,7 +2,7 @@ import { prisma } from "@/lib/db";
 import { ownWorkScope, requireAdminPage, sessionCan, sessionMaySeeTrainee } from "@/lib/authGuard";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Toaster } from "react-hot-toast";
+import AppToaster from "@/components/ui/AppToaster";
 import AccountManager from "@/components/admin/AccountManager";
 import PendingRenewalCard from "@/components/admin/PendingRenewalCard";
 import DeleteSubscriberZone from "@/components/admin/DeleteSubscriberZone";
@@ -111,16 +111,7 @@ export default async function ProfileDetailsPage({ params }: { params: Promise<{
 
       {/* This page had none, so every message AccountManager raised — including
           "account created" — was dropped silently. */}
-      <Toaster
-        position="top-center"
-        toastOptions={{
-          style: {
-            background: "var(--bg3)",
-            color: "var(--text)",
-            border: "1px solid var(--border)",
-          },
-        }}
-      />
+      <AppToaster />
       <div className="crm-main-area">
         
         {/* Header */}
@@ -167,7 +158,7 @@ export default async function ProfileDetailsPage({ params }: { params: Promise<{
                 href={`/export-workout?profileId=${profile.id}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="crm-btn-primary"
+                className="crm-btn-secondary"
                 style={{ padding: '10px 20px', fontSize: '0.95rem', textDecoration: 'none' }}
               >
                 <Icon name="file_download" style={{ fontSize: '20px' }} />

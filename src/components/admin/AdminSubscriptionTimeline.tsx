@@ -275,7 +275,7 @@ export default async function AdminSubscriptionTimeline({ profileId, planNames, 
         padding: "24px",
         borderRadius: "var(--radius-xl)",
         border: "1px solid var(--border)",
-        boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+        boxShadow: "var(--elev-2)",
       }}
       open
     >
@@ -296,7 +296,7 @@ export default async function AdminSubscriptionTimeline({ profileId, planNames, 
           <span style={{ fontSize: "1.3rem", color: "var(--text)", fontWeight: 800 }}>
             السجل التاريخي (سجل الاشتراكات والأنظمة السابقة)
           </span>
-          <span className="crm-tag primary-tag" style={{ fontSize: "0.85rem", padding: "2px 10px", borderRadius: "var(--radius-lg)" }}>
+          <span className="ui-badge">
             {monthCount} أشهر مجدولة
           </span>
         </div>

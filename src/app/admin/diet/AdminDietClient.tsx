@@ -3,7 +3,7 @@
 import Link from "next/link";
 
 import { useState } from "react";
-import { Toaster } from "react-hot-toast";
+import AppToaster from "@/components/ui/AppToaster";
 import toast from "react-hot-toast";
 import type { NutritionSource } from "@/types/admin";
 import { getCategoryBadge } from "@/types/diet";
@@ -104,19 +104,7 @@ export default function AdminDietClient({
 
   return (
     <div className="diet-page">
-      <Toaster
-        position="top-center"
-        toastOptions={{
-          style: {
-            background: "var(--bg2)",
-            color: "var(--text)",
-            border: "1px solid var(--border)",
-            direction: "rtl",
-            fontFamily: "inherit",
-            fontWeight: 600,
-          },
-        }}
-      />
+      <AppToaster />
 
       <header className="diet-header">
         <div className="diet-header-text">

@@ -650,3 +650,41 @@
   flex-shrink: 0;
   font-size: 18px;
 }
+
+/* --- Lit Glass: plan builder one-offs ---------------------------------------
+   Taken out of inline styles in DietPlanBuilder so they read from tokens (two
+   of them carried hex literals). */
+
+/* The free-text amount: a recessed track holding a brand-tinted field. */
+.dplan-amount-wrap {
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-primary);
+  background: var(--lit-track);
+  box-shadow: var(--lit-track-shadow);
+}
+
+.dplan-amount-input {
+  border: 1px solid color-mix(in srgb, var(--primary-light) 45%, transparent);
+  border-radius: var(--radius-sm);
+  background: var(--lit-fill);
+  color: var(--primary-on-tint);
+}
+
+/* "Add a meal" — the dashed tile at the foot of the plan. */
+.dplan-add-meal {
+  border: 2px dashed color-mix(in srgb, var(--primary) 30%, transparent);
+  border-radius: var(--radius-lg);
+  background: transparent;
+  color: var(--primary-on-tint);
+  cursor: pointer;
+}
+
+/* A food in the source picker, washed from the reading side with its
+   category's colour. Written after the picker's own button rules so it keeps
+   the look the inline style gave it. */
+.dplan-picker-list > li > button.dplan-picker-food {
+  background: linear-gradient(to left, color-mix(in srgb, var(--cat-color, var(--primary)) 18%, var(--bg2)) 0%, color-mix(in srgb, var(--cat-color, var(--primary)) 7%, var(--bg2)) 45%, var(--bg2) 100%);
+  border: 1px solid transparent;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+}

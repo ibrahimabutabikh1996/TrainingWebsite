@@ -1,0 +1,167 @@
+/* ==========================================================================
+   Lit Glass — navigation and page interfaces
+
+   The item you are on, in any navigation — the panel sidebar, its phone tab
+   bar, the trainee dashboard rail, the "more" sheet — is a lit control. The
+   others are bare until the cursor reaches them.
+   ========================================================================== */
+
+html:root:root:root:root:root :where(
+    .admin-nav-link.active, .dash-nav-link.active, .admin-dropdown-item.active
+) {
+    border: var(--lit-w) solid transparent;
+    background:
+        linear-gradient(var(--lit-fill), var(--lit-fill)) padding-box,
+        conic-gradient(
+            from 200deg,
+            var(--primary) 0deg,
+            var(--primary-light) 70deg,
+            var(--primary-active) 140deg,
+            var(--lit-rest) 210deg,
+            var(--lit-rest) 300deg,
+            var(--primary) 360deg
+        ) border-box;
+    box-shadow:
+        inset 14px 0 24px -18px var(--primary),
+        inset -14px 0 24px -18px var(--primary-active),
+        inset 0 -8px 18px -14px var(--primary-light);
+    color: var(--text);
+}
+
+html:root:root:root:root:root :where(
+    .admin-nav-link.active, .dash-nav-link.active
+) :where(.admin-nav-icon, .dash-nav-icon, .app-icon) {
+    color: var(--primary-light);
+}
+
+/* The marker on the screen-edge side glows instead of sitting flat. */
+html:root:root:root:root:root .admin-nav-link.active::before {
+    background: linear-gradient(to bottom, var(--primary-light), var(--primary-active));
+    box-shadow: 0 0 10px var(--primary);
+}
+
+@media (hover: hover) {
+    html:root:root:root:root:root :where(.admin-nav-link, .dash-nav-link, .admin-dropdown-item):hover:not(.active) {
+        background-color: var(--glass-2);
+        color: var(--text);
+    }
+}
+
+/* The gym ⇄ store item in the "more" sheet: a level-2 edged item. */
+html:root:root:root:root:root .admin-dropdown-item--switch {
+    border: var(--lit-w) solid transparent;
+    background:
+        linear-gradient(var(--lit-fill), var(--lit-fill)) padding-box,
+        conic-gradient(from 200deg, color-mix(in srgb, var(--primary) 60%, var(--lit-rest)) 0deg, color-mix(in srgb, var(--primary-light) 60%, var(--lit-rest)) 70deg, var(--lit-rest) 180deg, var(--lit-rest) 320deg, color-mix(in srgb, var(--primary) 60%, var(--lit-rest)) 360deg) border-box;
+}
+
+/* --- Landing navbar --------------------------------------------------------
+   The links underline with a short line of light. */
+html:root:root:root:root:root :where(.nav-links) > li > a:not(.nav-cta) {
+    background-image: linear-gradient(to left, transparent, var(--primary-light), transparent);
+    background-size: 0% 1.5px;
+    background-position: center bottom;
+    background-repeat: no-repeat;
+    transition: color var(--dur) var(--ease), background-size var(--dur-slow) var(--ease-out);
+}
+
+@media (hover: hover) {
+    html:root:root:root:root:root :where(.nav-links) > li > a:not(.nav-cta):hover {
+        background-size: 100% 1.5px;
+    }
+}
+
+/* --- Page interfaces -------------------------------------------------------
+   The small label over a heading: the tone's light colour with a lit dot, so
+   every section on every page opens the same way. */
+html:root:root:root:root:root :where(
+    .ui-eyebrow, .section-eyebrow, .hero-eyebrow, .form-eyebrow, .st-eyebrow
+) {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--primary-light);
+}
+
+html:root:root:root:root:root :where(
+    .ui-eyebrow, .section-eyebrow, .hero-eyebrow, .form-eyebrow, .st-eyebrow
+)::before {
+    content: "";
+    flex: none;
+    width: 6px;
+    height: 6px;
+    border-radius: var(--radius-circle);
+    background: var(--primary);
+    box-shadow: 0 0 10px var(--primary), 0 0 2px var(--primary-light);
+}
+
+/* The page header pattern for new markup: eyebrow, title, actions beside it. */
+.ui-page-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--space-4);
+    margin-bottom: var(--page-gap);
+}
+
+.ui-page-head-text { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
+.ui-page-title { margin: 0; font-size: var(--text-2xl); font-weight: var(--weight-bold); line-height: var(--leading-tight); }
+.ui-page-sub { margin: 0; color: var(--text-secondary); font-size: var(--text-sm); }
+.ui-page-actions { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+
+.ui-section { margin-bottom: var(--section-gap); }
+.ui-section-title { margin: 0 0 var(--space-4); font-size: var(--text-lg); font-weight: var(--weight-bold); }
+
+/* A divider that is a line of light, fading out at both ends. */
+.ui-divider {
+    height: 1px;
+    border: 0;
+    margin: var(--space-6) 0;
+    background: linear-gradient(to left, transparent, color-mix(in srgb, var(--primary) 50%, transparent), transparent);
+}
+
+/* --- Avatars ---------------------------------------------------------------
+   One circle everywhere, with a faint ring; `.is-active` lights it. */
+:where(.ui-avatar, .crm-card-avatar, .crm-modal-avatar, .chl-avatar, .ov-avatar, .staff-avatar, .author-avatar) {
+    box-shadow: 0 0 0 1.5px var(--glass-border-strong);
+}
+
+:where(.ui-avatar, .crm-card-avatar, .chl-avatar, .ov-avatar, .staff-avatar).is-active {
+    box-shadow: 0 0 0 2px var(--primary), 0 0 14px color-mix(in srgb, var(--primary) 55%, transparent);
+}
+
+.ui-avatar {
+    display: inline-grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-circle);
+    background: var(--primary-soft);
+    color: var(--primary-light);
+    font-weight: var(--weight-bold);
+    overflow: hidden;
+}
+
+.ui-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+/* On a phone the panel sidebar is a bottom tab bar, and its active item
+   already marks itself with a pill behind the icon. The light goes on that
+   pill rather than on a box around the whole tab. */
+@media (max-width: 768px) {
+    html:root:root:root:root:root .admin-nav-link.active {
+        border-color: transparent;
+        background: transparent;
+        box-shadow: none;
+    }
+
+    html:root:root:root:root:root .admin-nav-link.active .admin-nav-icon {
+        border: var(--lit-w) solid transparent;
+        background:
+            linear-gradient(var(--lit-fill), var(--lit-fill)) padding-box,
+            conic-gradient(from 200deg, var(--primary) 0deg, var(--primary-light) 70deg, var(--primary-active) 140deg, var(--lit-rest) 210deg, var(--lit-rest) 300deg, var(--primary) 360deg) border-box;
+        box-shadow:
+            inset 10px 0 18px -14px var(--primary),
+            inset 0 -8px 16px -12px var(--primary-light);
+    }
+}

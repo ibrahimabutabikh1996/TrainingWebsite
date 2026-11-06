@@ -1,0 +1,290 @@
+/* ==========================================================================
+   Lit Glass — "add" buttons, status pills and inline notices
+
+   Three families that used to be drawn screen by screen:
+
+   • Add buttons — "إضافة يوم", "إضافة تمرين", "إضافة عضلة", "إضافة صورة"…
+     They were dashed outlines. They are now level-2 lit controls: the edge
+     at part strength with the + in the brand's light colour, full light
+     under the cursor. A small square add (a picker's +) is a lit tile.
+
+   • Status pills — "الاسم مطلوب", "مكتمل", "بانتظار المراجعة", "ملغي"…
+     A small lit pill in the tone of what it says: red for missing, rejected
+     or cancelled; amber for waiting; green for done; blue for in progress.
+     Plain counts and labels ("2 يوم", "0 تمرين", a muscle name) are quiet
+     glass pills with the number in full white.
+
+   • Inline notices — a message in a form or a panel ("the template has no
+     days", "the request failed"): an alert with the tone's edge on the
+     reading side, the same as `.ui-alert`.
+
+   Tones work as everywhere else: `--primary` and its stops are reset on the
+   element, so one recipe paints all four colours.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Add buttons
+   -------------------------------------------------------------------------- */
+html:root:root:root:root:root :where(
+    .ui-btn--add,
+    .dplan-tab--add, .dplan-add-item, .dplan-add-meal, .dmp-add, .sa-add-row,
+    .sa-gallery-add, .bldr-pick-add, .ui-media-btn.is-upload, .dplan-delete-plan
+) {
+    --lit-a: 0.45;
+    --lit-glow: 0.25;
+    --lit-fill: rgba(10, 18, 26, 0.7);
+    border: var(--lit-w) solid transparent;
+    background:
+        radial-gradient(180px circle at var(--mx, 50%) var(--my, 50%), rgba(var(--primary-rgb), calc(var(--btn-spot) * 0.42)) 0%, transparent 70%) padding-box,
+        linear-gradient(var(--lit-fill), var(--lit-fill)) padding-box,
+        conic-gradient(
+            from var(--btn-angle),
+            color-mix(in srgb, var(--primary) calc(var(--lit-a) * 100%), var(--lit-rest)) 0deg,
+            color-mix(in srgb, var(--primary-light) calc(var(--lit-a) * 100%), var(--lit-rest)) 70deg,
+            color-mix(in srgb, var(--primary-active) calc(var(--lit-a) * 100%), var(--lit-rest)) 140deg,
+            var(--lit-rest) 210deg,
+            var(--lit-rest) 300deg,
+            color-mix(in srgb, var(--primary) calc(var(--lit-a) * 100%), var(--lit-rest)) 360deg
+        ) border-box;
+    box-shadow:
+        inset 14px 0 26px -18px color-mix(in srgb, var(--primary) calc(var(--lit-glow) * 100%), transparent),
+        inset 0 -10px 22px -16px color-mix(in srgb, var(--primary-light) calc(var(--lit-glow) * 100%), transparent);
+    border-radius: var(--radius-pill);
+    color: var(--text);
+    cursor: pointer;
+    transition:
+        color var(--dur) var(--ease),
+        translate var(--dur-slow) var(--ease-out),
+        scale 0.35s var(--ease-spring),
+        --lit-a var(--dur-slow) var(--ease-out),
+        --lit-glow var(--dur-slow) var(--ease-out),
+        --btn-spot var(--dur-slow) var(--ease-out),
+        --btn-angle var(--lit-turn) var(--ease-out);
+}
+
+/* Tiles keep a tile's corners: the meal tile at the foot of a plan, an empty
+   gallery slot, an upload box, the small + in a picker. */
+html:root:root:root:root:root :where(.dplan-add-meal, .ui-media-btn.is-upload) {
+    border-radius: var(--radius-lg);
+}
+
+html:root:root:root:root:root :where(.sa-gallery-add, .bldr-pick-add) {
+    border-radius: var(--radius-md);
+}
+
+/* The + leads in the brand's light colour. */
+html:root:root:root:root:root :where(
+    .ui-btn--add, .dplan-tab--add, .dplan-add-item, .dplan-add-meal, .dmp-add,
+    .sa-add-row, .sa-gallery-add, .bldr-pick-add, .ui-media-btn.is-upload, .dplan-delete-plan
+) :where(svg, .app-icon) {
+    color: var(--primary-light);
+}
+
+/* "Delete day" sits beside the adds: the same control, in red. */
+html:root:root:root:root:root :where(.dplan-delete-plan) {
+    --primary: var(--danger);
+    --primary-rgb: var(--danger-rgb);
+    --primary-light: var(--danger-light);
+    --primary-active: var(--danger-active);
+    --lit-a: 0.3;
+    color: var(--danger-light);
+}
+
+/* "Outside the plan" is the unusual add — it carries a little more light so
+   it reads apart from the others. */
+html:root:root:root:root:root :where(.bldr-add-item--outside) {
+    --lit-a: 0.75;
+    color: var(--primary-light);
+}
+
+@media (hover: hover) {
+    html:root:root:root:root:root :where(
+        .ui-btn--add, .dplan-tab--add, .dplan-add-item, .dplan-add-meal, .dmp-add,
+        .sa-add-row, .sa-gallery-add, .bldr-pick-add, .ui-media-btn.is-upload, .dplan-delete-plan
+    ):hover:not(:disabled) {
+        --lit-a: 1;
+        --lit-glow: 0.9;
+        --btn-spot: 1;
+        --btn-angle: 560deg;
+        translate: 0 -2px;
+    }
+}
+
+html:root:root:root:root:root :where(
+    .ui-btn--add, .dplan-tab--add, .dplan-add-item, .dplan-add-meal, .dmp-add,
+    .sa-add-row, .sa-gallery-add, .bldr-pick-add, .ui-media-btn.is-upload, .dplan-delete-plan
+):active:not(:disabled) {
+    --lit-a: 1;
+    translate: 0 0;
+    scale: 0.96;
+}
+
+html:root:root:root:root:root :where(
+    .ui-btn--add, .dplan-tab--add, .dplan-add-item, .dplan-add-meal, .dmp-add,
+    .sa-add-row, .sa-gallery-add, .bldr-pick-add, .ui-media-btn.is-upload, .dplan-delete-plan
+):focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--primary-light) 80%, transparent);
+    outline-offset: 3px;
+}
+
+/* --------------------------------------------------------------------------
+   Status pills
+   -------------------------------------------------------------------------- */
+
+/* Quiet: a count or a plain label. */
+html:root:root:root:root:root :where(
+    .ui-pill,
+    .bldr-flag, .co-chip, .ex-chip, .co-rep-chip, .sa-tag, .crm-tag--muted,
+    .sa-tag--muted
+) {
+    border: 1px solid var(--lit-rest);
+    border-radius: var(--radius-pill);
+    background: rgba(10, 18, 26, 0.55);
+    box-shadow: inset 0 1px 0 rgba(var(--text-rgb), 0.05);
+    color: var(--text-secondary);
+}
+
+html:root:root:root:root:root :where(
+    .ui-pill, .bldr-flag, .co-chip, .ex-chip, .co-rep-chip, .sa-tag
+) :where(b, strong) {
+    color: var(--text);
+}
+
+html:root:root:root:root:root :where(
+    .ui-pill, .bldr-flag, .co-chip, .ex-chip, .co-rep-chip, .sa-tag
+) :where(svg, .app-icon) {
+    color: var(--primary-light);
+}
+
+/* Lit: a state. Blue unless a tone below says otherwise. */
+html:root:root:root:root:root :where(
+    .ui-pill--lit,
+    /* blue — in progress, chosen, category */
+    .sa-status--confirmed, .co-chip--primary, .ex-chip--cat, .wl-day-muscle-chip,
+    .sa-tag--chip,
+    /* amber — waiting */
+    .chl-status.is-pending, .crm-tag--warning, .sa-status--new, .sa-tag--star,
+    .co-chip--empty, .ex-chip--cat[data-cat="كارديو"],
+    /* green — done */
+    .bldr-flag.ok, .chl-status.is-approved, .staff-status, .sa-status--delivered,
+    .co-chip--assigned, .ex-chip--cat[data-cat="إطالة"],
+    /* red — missing, rejected, off, cancelled */
+    .bldr-flag.todo, .chl-status.is-rejected, .staff-status.is-off,
+    .sa-status--cancelled, .sa-tag--warn
+) {
+    border: 1px solid transparent;
+    border-radius: var(--radius-pill);
+    background:
+        linear-gradient(rgba(10, 18, 26, 0.82), rgba(10, 18, 26, 0.82)) padding-box,
+        conic-gradient(
+            from 200deg,
+            var(--primary) 0deg,
+            var(--primary-light) 70deg,
+            var(--primary-active) 140deg,
+            color-mix(in srgb, var(--primary) 22%, transparent) 210deg,
+            color-mix(in srgb, var(--primary) 22%, transparent) 300deg,
+            var(--primary) 360deg
+        ) border-box;
+    box-shadow:
+        inset 10px 0 16px -12px var(--primary),
+        inset 0 -6px 12px -10px var(--primary-light);
+    color: var(--primary-light);
+    font-weight: var(--weight-semibold);
+}
+
+html:root:root:root:root:root :where(
+    .ui-pill--lit, .bldr-flag.ok, .bldr-flag.todo, .co-chip--primary,
+    .co-chip--assigned, .co-chip--empty, .ex-chip--cat
+) :where(svg, .app-icon) {
+    color: var(--primary);
+}
+
+/* Tones — set after the recipe so they win. */
+html:root:root:root:root:root :where(
+    .ui-pill--warning,
+    .chl-status.is-pending, .crm-tag--warning, .sa-status--new, .sa-tag--star,
+    .co-chip--empty, .ex-chip--cat[data-cat="كارديو"]
+) {
+    --primary: var(--warning);
+    --primary-rgb: var(--warning-rgb);
+    --primary-light: var(--warning-light);
+    --primary-active: var(--warning-active);
+}
+
+html:root:root:root:root:root :where(
+    .ui-pill--success,
+    .bldr-flag.ok, .chl-status.is-approved, .staff-status, .sa-status--delivered,
+    .co-chip--assigned, .ex-chip--cat[data-cat="إطالة"]
+) {
+    --primary: var(--success);
+    --primary-rgb: var(--success-rgb);
+    --primary-light: var(--success-light);
+    --primary-active: var(--success-active);
+}
+
+html:root:root:root:root:root :where(
+    .ui-pill--danger,
+    .bldr-flag.todo, .chl-status.is-rejected, .staff-status.is-off,
+    .sa-status--cancelled, .sa-tag--warn
+) {
+    --primary: var(--danger);
+    --primary-rgb: var(--danger-rgb);
+    --primary-light: var(--danger-light);
+    --primary-active: var(--danger-active);
+}
+
+/* "Required" draws the eye once: the red pill breathes until it is filled. */
+@media (prefers-reduced-motion: no-preference) {
+    html:root:root:root:root:root :where(.bldr-flag.todo, .ui-pill--pulse) {
+        animation: lit-pill-pulse 2.4s var(--ease) infinite;
+    }
+}
+
+@keyframes lit-pill-pulse {
+    0%, 100% { box-shadow: inset 10px 0 16px -12px var(--primary), inset 0 -6px 12px -10px var(--primary-light), 0 0 0 0 rgba(var(--primary-rgb), 0); }
+    50% { box-shadow: inset 10px 0 16px -12px var(--primary), inset 0 -6px 12px -10px var(--primary-light), 0 0 14px -2px rgba(var(--primary-rgb), 0.55); }
+}
+
+.ui-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 30px;
+    padding: 0 var(--space-3);
+    font-size: var(--text-xs);
+}
+
+/* --------------------------------------------------------------------------
+   Inline notices
+   -------------------------------------------------------------------------- */
+html:root:root:root:root:root :where(
+    .chl-tr-notice, .bldr-tpl-warn, .pw-error
+) {
+    border: 1px solid color-mix(in srgb, var(--primary) 30%, transparent);
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--primary) 9%, rgba(10, 18, 26, 0.6));
+    box-shadow: inset -3px 0 0 color-mix(in srgb, var(--primary) 85%, transparent);
+    color: var(--text);
+}
+
+html:root:root:root:root:root :where(.chl-tr-notice.is-ok) {
+    --primary: var(--success);
+}
+
+html:root:root:root:root:root :where(.chl-tr-notice.is-error, .pw-error) {
+    --primary: var(--danger);
+}
+
+html:root:root:root:root:root :where(.bldr-tpl-warn) {
+    --primary: var(--warning);
+}
+
+/* The one action inside the password error keeps the system's button. */
+html:root:root:root:root:root :where(.pw-error-action) {
+    border: var(--lit-w) solid transparent;
+    border-radius: var(--radius-pill);
+    background:
+        linear-gradient(var(--lit-fill), var(--lit-fill)) padding-box,
+        conic-gradient(from 200deg, var(--danger) 0deg, var(--danger-light) 70deg, var(--danger-active) 140deg, var(--lit-rest) 210deg, var(--lit-rest) 300deg, var(--danger) 360deg) border-box;
+    color: var(--text);
+}

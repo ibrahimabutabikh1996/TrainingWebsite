@@ -1,0 +1,363 @@
+/* ==========================================================================
+   Lit Glass — surfaces: cards, windows, tables
+
+   A surface keeps its own fill — some are glass over a blur, some carry an
+   image — so the light is not painted into its background the way a
+   control's is. It is a ring drawn by `::before`: the same conic edge,
+   masked down to the border band so nothing inside is covered.
+
+     --surf-a      how much of the ring is lit (0 = invisible)
+     --surf-angle  where the light sits; turns under the cursor
+
+   The surface's own 1px border stays as the faint hairline the light runs
+   along; the ring sits just inside it.
+
+   `position: relative` is set through `:where()` at zero specificity, so a
+   surface that already positions itself (a fixed drawer, an absolute sheet)
+   keeps its own value.
+   ========================================================================== */
+
+:where(
+    .ui-card, .ui-window, .ui-table-wrap,
+    /* cards */
+    .dashboard-card, .home-stat-card, .processing-card, .admin-card,
+    .testimonial-card, .form-card, .pw-card, .co-card, .ex-card, .crm-list-card,
+    .cms-pricing-card, .an-card, .chl-card, .cms-card, .crm-card, .diet-card,
+    .home-card, .section-card, .st-card, .staff-card, .timeline-card,
+    .cms-section-card, .crm-glass-panel,
+    /* windows */
+    .cms-modal-card, .crm-side-drawer, .promo-popup-card, .done-sheet,
+    .form-sheet, .st-drawer, .admin-more-sheet, .custom-select-dropdown,
+    .upw-card, .dp-cal,
+    /* tables */
+    .an-table-wrap, .sa-table-wrap, .co-minimal-table-wrapper, .dpv-table-wrap,
+    .wl-table-wrap
+) {
+    position: relative;
+}
+
+html:root:root:root:root:root :where(
+    .ui-card, .ui-window, .ui-table-wrap,
+    .dashboard-card, .home-stat-card, .processing-card, .admin-card,
+    .testimonial-card, .form-card, .pw-card, .co-card, .ex-card, .crm-list-card,
+    .cms-pricing-card, .an-card, .chl-card, .cms-card, .crm-card, .diet-card,
+    .home-card, .section-card, .st-card, .staff-card, .timeline-card,
+    .cms-section-card, .crm-glass-panel,
+    .cms-modal-card, .crm-side-drawer, .promo-popup-card, .done-sheet,
+    .form-sheet, .st-drawer, .admin-more-sheet, .custom-select-dropdown,
+    .upw-card, .dp-cal,
+    .an-table-wrap, .sa-table-wrap, .co-minimal-table-wrapper, .dpv-table-wrap,
+    .wl-table-wrap
+)::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    padding: var(--lit-w);
+    border-radius: inherit;
+    pointer-events: none;
+    background: conic-gradient(
+        from var(--surf-angle),
+        color-mix(in srgb, var(--primary) calc(var(--surf-a) * 100%), transparent) 0deg,
+        color-mix(in srgb, var(--primary-light) calc(var(--surf-a) * 100%), transparent) 60deg,
+        color-mix(in srgb, var(--primary-active) calc(var(--surf-a) * 100%), transparent) 120deg,
+        transparent 190deg,
+        transparent 310deg,
+        color-mix(in srgb, var(--primary) calc(var(--surf-a) * 100%), transparent) 360deg
+    );
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
+
+/* The surface carries the transition; the ring inherits the moving value. */
+html:root:root:root:root:root :where(
+    .ui-card, .ui-window, .ui-table-wrap,
+    .dashboard-card, .home-stat-card, .processing-card, .admin-card,
+    .testimonial-card, .form-card, .pw-card, .co-card, .ex-card, .crm-list-card,
+    .cms-pricing-card, .an-card, .chl-card, .cms-card, .crm-card, .diet-card,
+    .home-card, .section-card, .st-card, .staff-card, .timeline-card,
+    .cms-section-card, .crm-glass-panel,
+    .an-table-wrap, .sa-table-wrap, .co-minimal-table-wrapper, .dpv-table-wrap,
+    .wl-table-wrap
+) {
+    --surf-a: 0;
+    --surf-angle: 200deg;
+}
+
+/* Registered properties have to be named to animate; `transition` on each card
+   already lists its own properties, so these two are added on top rather than
+   replacing that list. */
+html:root:root:root:root:root :where(
+    .ui-card, .ui-window, .ui-table-wrap,
+    .dashboard-card, .home-stat-card, .processing-card, .admin-card,
+    .testimonial-card, .form-card, .pw-card, .co-card, .ex-card, .crm-list-card,
+    .cms-pricing-card, .an-card, .chl-card, .cms-card, .crm-card, .diet-card,
+    .home-card, .section-card, .st-card, .staff-card, .timeline-card,
+    .cms-section-card, .crm-glass-panel,
+    .an-table-wrap, .sa-table-wrap, .co-minimal-table-wrapper, .dpv-table-wrap,
+    .wl-table-wrap
+) {
+    transition:
+        background-color var(--dur) var(--ease),
+        border-color var(--dur) var(--ease),
+        box-shadow var(--dur-slow) var(--ease),
+        opacity var(--dur) var(--ease),
+        transform var(--dur-slow) var(--ease-out),
+        --surf-a var(--dur-slow) var(--ease-out),
+        --surf-angle var(--lit-turn) var(--ease-out);
+}
+
+/* --- Levels ----------------------------------------------------------------
+   Ordinary cards: quiet at rest, the light arrives with the cursor.
+   Featured cards (headline numbers, plans, the trainee's main card): edged
+   at rest.
+   Windows: lit — the top of a window always carries the light.
+   Tables: a faint edge at rest. */
+html:root:root:root:root:root :where(
+    .ui-card--featured,
+    .home-stat-card, .processing-card, .cms-pricing-card, .an-card,
+    .testimonial-card, .form-card, .pw-card
+) {
+    --surf-a: 0.45;
+}
+
+html:root:root:root:root:root :where(
+    .ui-table-wrap, .an-table-wrap, .sa-table-wrap, .co-minimal-table-wrapper,
+    .dpv-table-wrap, .wl-table-wrap
+) {
+    --surf-a: 0.3;
+    --surf-angle: 250deg;
+}
+
+@media (hover: hover) {
+    html:root:root:root:root:root :where(
+        .ui-card, .dashboard-card, .home-stat-card, .processing-card, .admin-card,
+        .testimonial-card, .co-card, .ex-card, .crm-list-card, .cms-pricing-card,
+        .an-card, .chl-card, .cms-card, .crm-card, .diet-card, .home-card,
+        .st-card, .staff-card, .timeline-card, .cms-section-card
+    ):hover {
+        --surf-a: 0.75;
+        --surf-angle: 380deg;
+    }
+}
+
+/* Windows. Light at the top, sitting still — a window is read, not pointed at. */
+html:root:root:root:root:root :where(
+    .ui-window, .crm-glass-panel,
+    .cms-modal-card, .crm-side-drawer, .promo-popup-card, .done-sheet,
+    .form-sheet, .st-drawer, .admin-more-sheet, .custom-select-dropdown,
+    .upw-card, .dp-cal
+) {
+    --surf-a: 0.9;
+    --surf-angle: 250deg;
+    box-shadow:
+        var(--elev-3),
+        0 0 0 1px var(--glass-border),
+        0 -18px 50px -30px color-mix(in srgb, var(--primary) 55%, transparent);
+}
+
+/* Dropdowns and pickers are small windows: the same frame, a little quieter. */
+html:root:root:root:root:root :where(.custom-select-dropdown, .dp-cal) {
+    --surf-a: 0.6;
+}
+
+/* A window's header: a line of light under it instead of a flat rule. */
+html:root:root:root:root:root :where(
+    .ui-window-head, .admin-modal-head, .crm-drawer-header, .form-sheet-head,
+    .upw-head
+) {
+    border-bottom-color: transparent;
+    background-image: linear-gradient(
+        to left,
+        transparent,
+        color-mix(in srgb, var(--primary) 55%, transparent) 30%,
+        color-mix(in srgb, var(--primary-light) 40%, transparent) 60%,
+        transparent
+    );
+    background-size: 100% 1px;
+    background-position: bottom;
+    background-repeat: no-repeat;
+}
+
+/* The scrim behind a window: darker and blurred, so the window is the one lit
+   thing on screen. */
+html:root:root:root:root:root :where(
+    .ui-scrim, .admin-modal-scrim, .cms-modal-overlay, .promo-popup-overlay,
+    .upw-scrim, .nav-overlay
+) {
+    background: rgba(5, 10, 16, 0.66);
+    -webkit-backdrop-filter: blur(6px) saturate(120%);
+    backdrop-filter: blur(6px) saturate(120%);
+}
+
+/* --- New-markup classes --------------------------------------------------- */
+.ui-card {
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--glass-border);
+    background: var(--glass);
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+}
+
+.ui-window {
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--glass-border);
+    background: var(--glass-solid);
+    -webkit-backdrop-filter: var(--glass-solid-blur);
+    backdrop-filter: var(--glass-solid-blur);
+    overflow: hidden;
+}
+
+.ui-window-head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-5) var(--space-6);
+}
+
+.ui-window-title {
+    margin: 0;
+    font-size: var(--text-lg);
+    font-weight: var(--weight-bold);
+}
+
+.ui-window-body { padding: var(--space-6); }
+
+.ui-window-foot {
+    display: flex;
+    gap: var(--space-3);
+    justify-content: flex-end;
+    padding: var(--space-4) var(--space-6) var(--space-6);
+}
+
+/* --------------------------------------------------------------------------
+   Tables
+   A glass box with a faint edge; a quiet header with a line of light under
+   it; rows that light softly under the cursor, with an edge of light on the
+   reading side (the right, in Arabic).
+   -------------------------------------------------------------------------- */
+html:root:root:root:root:root :where(
+    .ui-table, .an-table, .sa-table, .co-minimal-table, .dpv-min-table,
+    .wl-exercise-table, .sa-order-items
+) {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+html:root:root:root:root:root :where(
+    .ui-table, .an-table, .sa-table, .co-minimal-table, .dpv-min-table,
+    .wl-exercise-table, .sa-order-items
+) :where(thead th) {
+    color: var(--text-secondary);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+    letter-spacing: 0.02em;
+    background-color: color-mix(in srgb, var(--bg) 45%, transparent);
+    border-bottom: 0;
+    background-image: linear-gradient(
+        to left,
+        color-mix(in srgb, var(--primary) 45%, transparent),
+        color-mix(in srgb, var(--primary-light) 25%, transparent) 50%,
+        transparent
+    );
+    background-size: 100% 1px;
+    background-position: bottom;
+    background-repeat: no-repeat;
+}
+
+html:root:root:root:root:root :where(
+    .ui-table, .an-table, .sa-table, .co-minimal-table, .dpv-min-table,
+    .wl-exercise-table, .sa-order-items
+) :where(tbody td, tbody th) {
+    border-bottom: 1px solid color-mix(in srgb, var(--text) 6%, transparent);
+    transition: background-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+
+html:root:root:root:root:root :where(
+    .ui-table, .an-table, .sa-table, .co-minimal-table, .dpv-min-table,
+    .wl-exercise-table, .sa-order-items
+) :where(tbody tr:last-child) > :where(td, th) {
+    border-bottom: 0;
+}
+
+@media (hover: hover) {
+    html:root:root:root:root:root :where(
+        .ui-table, .an-table, .sa-table, .co-minimal-table, .dpv-min-table,
+        .wl-exercise-table
+    ) :where(tbody tr:hover) > :where(td, th) {
+        background-color: color-mix(in srgb, var(--primary) 7%, transparent);
+    }
+
+    html:root:root:root:root:root :where(
+        .ui-table, .an-table, .sa-table, .co-minimal-table, .dpv-min-table,
+        .wl-exercise-table
+    ) :where(tbody tr:hover) > :where(td, th):first-child {
+        box-shadow: inset -2px 0 0 var(--primary);
+    }
+}
+
+html:root:root:root:root:root :where(.ui-table) :where(tr[aria-selected="true"], tr.is-selected) > :where(td, th) {
+    background-color: var(--primary-soft);
+}
+
+html:root:root:root:root:root :where(.ui-table) :where(tr[aria-selected="true"], tr.is-selected) > :where(td, th):first-child {
+    box-shadow: inset -3px 0 0 var(--primary);
+}
+
+/* Numbers line up by digit. */
+:where(.ui-table, .an-table, .sa-table, .co-minimal-table, .dpv-min-table, .wl-exercise-table) :where(td, th) {
+    font-variant-numeric: tabular-nums;
+}
+
+.ui-table-wrap {
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--glass-border);
+    background: var(--glass);
+    overflow: auto;
+}
+
+.ui-table { width: 100%; font-size: var(--text-sm); }
+.ui-table :is(th, td) { padding: var(--space-3) var(--space-4); text-align: start; }
+.ui-table td { color: var(--text-secondary); }
+.ui-table td.is-num, .ui-table th.is-num { text-align: end; }
+
+/* On a phone a `.ui-table--stack` table becomes a stack of cards: each row a
+   card, each cell a line with its column name (from `data-label`) beside it. */
+@media (max-width: 640px) {
+    .ui-table--stack thead { display: none; }
+    .ui-table--stack, .ui-table--stack tbody, .ui-table--stack tr, .ui-table--stack td { display: block; width: 100%; }
+    .ui-table--stack tr {
+        margin-bottom: var(--space-3);
+        padding: var(--space-3);
+        border: 1px solid var(--glass-border);
+        border-radius: var(--radius-md);
+        background: var(--glass);
+    }
+    .ui-table--stack td {
+        display: flex;
+        justify-content: space-between;
+        gap: var(--space-3);
+        padding: var(--space-2) 0;
+        border-bottom: 1px solid color-mix(in srgb, var(--text) 6%, transparent);
+    }
+    .ui-table--stack td:last-child { border-bottom: 0; }
+    .ui-table--stack td::before {
+        content: attr(data-label);
+        color: var(--text-muted);
+        font-size: var(--text-xs);
+        font-weight: var(--weight-semibold);
+    }
+}
+
+/* The cursor spotlight on the cards that joined with Lit Glass — the same
+   light globals.css gives the original list. GlassPointer writes --mx/--my and
+   data-glow on these too. */
+:is(.ui-card, .an-card, .chl-card, .staff-card, .diet-card, .st-card)[data-glow] {
+    background-image: radial-gradient(
+        360px circle at var(--mx, 50%) var(--my, 50%),
+        rgba(var(--primary-rgb), 0.12) 0%,
+        transparent 60%
+    );
+}

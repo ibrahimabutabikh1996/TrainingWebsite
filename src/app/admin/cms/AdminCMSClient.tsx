@@ -5,7 +5,8 @@ import type { JsonRecord, Testimonial } from "@/types";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { saveLandingContent, listImagesServer, deleteImageServer } from "./actions";
 import { uploadMediaWithProgress } from '@/lib/mediaUpload';
-import { Toaster, toast } from 'react-hot-toast';
+import { toast } from 'react-hot-toast';
+import AppToaster from '@/components/ui/AppToaster';
 import Cropper from 'react-easy-crop';
 import FreeCropStage from "./FreeCropStage";
 import getCroppedImg, { createImage, DEFAULT_MAX_EDGE } from '@/lib/cropUtils';
@@ -903,7 +904,7 @@ const TestimonialsEditor = () => {
                       <button type="button" onClick={handleSave} disabled={isSaving} className="cms-btn-primary">
                         {isSaving ? (
                           <>
-                            <div className="cms-spinner" style={{ width: 14, height: 14, borderWidth: 2 }} />
+                            <div className="cms-spinner ui-spinner--inline" style={{ width: 14, height: 14, borderWidth: 2 }} />
                             <span>جاري الحفظ...</span>
                           </>
                         ) : (
@@ -1441,22 +1442,7 @@ export default function AdminCMSClient({
   return (
     <CMSContext.Provider value={{ currentContent, setContent, isUploading, handleImageUpload, openMediaSelector, handleDeleteImage, isSaving, setPreviewImageUrl, processAndUploadImage, handleSave }}>
     <div className="cms-container">
-      <Toaster
-        position="top-center"
-        toastOptions={{
-          style: {
-            background: '#141414',
-            color: 'var(--text)',
-            border: '1px solid var(--admin-primary)',
-            padding: '16px 24px',
-            borderRadius: "var(--radius-lg)",
-            boxShadow: '0 20px 40px rgba(0,0,0,0.7), 0 0 20px rgba(var(--primary-rgb), 0.15)',
-            direction: 'rtl',
-            fontSize: '0.95rem',
-            fontWeight: '600'
-          }
-        }}
-      />
+      <AppToaster />
 
       {previewImageUrl && (
         <Overlay>
@@ -2134,7 +2120,7 @@ export default function AdminCMSClient({
             >
               {isSaving ? (
                 <>
-                  <div className="cms-spinner" style={{ width: 16, height: 16, border: "2px solid var(--text-inverse)", borderTopColor: "transparent" }}></div>
+                  <div className="cms-spinner ui-spinner--inline" style={{ width: 16, height: 16 }}></div>
                   <span>جاري الحفظ...</span>
                 </>
               ) : (

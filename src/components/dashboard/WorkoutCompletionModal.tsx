@@ -101,7 +101,7 @@ export function WorkoutCompletionModal({ isOpen, dayNumber, onClose }: WorkoutCo
         alignItems: "center",
         justifyContent: "center",
         padding: "20px",
-        backgroundColor: "rgba(0, 0, 0, 0.35)",
+        backgroundColor: "color-mix(in srgb, var(--bg) 35%, transparent)",
         backdropFilter: "blur(3px)",
         pointerEvents: "none",
         animation: "wlFadeIn 0.25s ease-out forwards",
@@ -145,7 +145,7 @@ export function WorkoutCompletionModal({ isOpen, dayNumber, onClose }: WorkoutCo
                 c.shape === "star"
                   ? "polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)"
                   : undefined,
-              boxShadow: "0 0 6px rgba(255, 255, 255, 0.3)",
+              boxShadow: "0 0 6px rgba(var(--text-rgb), 0.3)",
               animation: `wlConfettiFall ${c.duration}s linear ${c.delay}s infinite`,
             }}
           />
@@ -154,18 +154,15 @@ export function WorkoutCompletionModal({ isOpen, dayNumber, onClose }: WorkoutCo
 
       {/* Compact Celebratory Popup Dialog */}
       <div
+        className="ui-window"
         style={{
           position: "relative",
           zIndex: 2,
           pointerEvents: "auto",
           width: "100%",
           maxWidth: "400px",
-          background: "var(--bg2)",
-          border: "1.5px solid color-mix(in srgb, var(--primary) 55%, var(--border))",
-          borderRadius: "var(--radius-xl)",
           padding: "26px 24px 22px 24px",
           textAlign: "center",
-          boxShadow: "0 20px 60px rgba(0, 0, 0, 0.65), 0 0 35px color-mix(in srgb, var(--primary) 25%, transparent)",
           animation: "wlPopUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards",
         }}
       >
@@ -173,20 +170,11 @@ export function WorkoutCompletionModal({ isOpen, dayNumber, onClose }: WorkoutCo
         <button
           type="button"
           onClick={handleClose}
+          className="ui-btn ui-btn--icon ui-btn--sm"
           style={{
             position: "absolute",
             top: "14px",
             right: "16px",
-            background: "transparent",
-            border: "none",
-            color: "var(--text-muted)",
-            cursor: "pointer",
-            padding: "4px",
-            fontSize: "20px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            borderRadius: "50%",
           }}
           title="إغلاق"
         >
@@ -195,20 +183,13 @@ export function WorkoutCompletionModal({ isOpen, dayNumber, onClose }: WorkoutCo
 
         {/* Compact Trophy & Glowing Header */}
         <div
+          className="ui-icon-tile ui-icon-tile--lg ui-icon-tile--lit"
           style={{
             width: "70px",
             height: "70px",
             margin: "0 auto 14px auto",
-            borderRadius: "50%",
-            background: "linear-gradient(135deg, var(--bg3) 0%, color-mix(in srgb, var(--primary) 22%, var(--bg2)) 100%)",
-            border: "1.5px solid var(--primary)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "var(--primary)",
             fontSize: "36px",
             animation: "wlBounceTrophy 2.5s infinite ease-in-out",
-            boxShadow: "0 8px 25px color-mix(in srgb, var(--primary) 30%, transparent)",
           }}
         >
           🏆
@@ -249,39 +230,13 @@ export function WorkoutCompletionModal({ isOpen, dayNumber, onClose }: WorkoutCo
             marginBottom: "22px",
           }}
         >
-          <span
-            style={{
-              background: "color-mix(in srgb, var(--primary) 12%, var(--bg3))",
-              color: "var(--primary)",
-              border: "1px solid color-mix(in srgb, var(--primary) 25%, transparent)",
-              padding: "5px 12px",
-              borderRadius: "var(--radius-pill)",
-              fontSize: "0.84rem",
-              fontWeight: 700,
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "6px",
-            }}
-          >
-            <Icon name="verified" style={{ fontSize: "16px" }} />
+          <span className="ui-badge">
+            <Icon name="verified" style={{ fontSize: "14px" }} />
             <span>اليوم {dayNumber} مكتمل</span>
           </span>
 
-          <span
-            style={{
-              background: "color-mix(in srgb, var(--success) 15%, var(--bg3))",
-              color: "var(--success-text)",
-              border: "1px solid color-mix(in srgb, var(--success) 30%, transparent)",
-              padding: "5px 12px",
-              borderRadius: "var(--radius-pill)",
-              fontSize: "0.84rem",
-              fontWeight: 700,
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "5px",
-            }}
-          >
-            <Icon name="bolt" style={{ fontSize: "16px" }} />
+          <span className="ui-badge tone-success">
+            <Icon name="bolt" style={{ fontSize: "14px" }} />
             <span>الهمة: 100% 🦍</span>
           </span>
         </div>
@@ -298,8 +253,6 @@ export function WorkoutCompletionModal({ isOpen, dayNumber, onClose }: WorkoutCo
             fontWeight: 800,
             justifyContent: "center",
             gap: "10px",
-            borderRadius: "var(--radius-lg)",
-            cursor: "pointer",
           }}
         >
           <span>استمر في العظمة (إغلاق)</span>

@@ -106,12 +106,9 @@ export default function PendingRenewalCard({ profileId, data, planNames, canDeci
 
   return (
     <div
-      className="crm-modal-section"
+      className="crm-modal-section ui-card"
       style={{
-        background: "linear-gradient(135deg, color-mix(in srgb, var(--warning) 14%, var(--bg2)), var(--bg2))",
-        border: "1px solid color-mix(in srgb, var(--warning) 45%, var(--border))",
         borderInlineStart: "5px solid var(--warning)",
-        borderRadius: "var(--radius-xl)",
         padding: "24px 28px",
         display: "flex",
         flexDirection: "column",
@@ -119,20 +116,8 @@ export default function PendingRenewalCard({ profileId, data, planNames, canDeci
       }}
     >
       <div style={{ display: "flex", alignItems: "flex-start", gap: "16px", flexWrap: "wrap" }}>
-        <div
-          style={{
-            width: "52px",
-            height: "52px",
-            borderRadius: "var(--radius-xl)",
-            background: "color-mix(in srgb, var(--warning) 22%, var(--bg3))",
-            color: "var(--warning-text)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexShrink: 0,
-          }}
-        >
-          <Icon name="hourglass" style={{ fontSize: 28 }} />
+        <div className="ui-icon-tile ui-icon-tile--lg ui-icon-tile--lit tone-warning">
+          <Icon name="hourglass" />
         </div>
         <div style={{ flex: "1 1 260px", minWidth: 0 }}>
           <h3
@@ -149,16 +134,7 @@ export default function PendingRenewalCard({ profileId, data, planNames, canDeci
           >
             <span>طلب تجديد اشتراك بانتظار المراجعة</span>
             {monthNumber && (
-              <span
-                style={{
-                  fontSize: "0.78rem",
-                  background: "var(--warning)",
-                  color: "#1a1a1a",
-                  padding: "3px 10px",
-                  borderRadius: "var(--radius-pill)",
-                  fontWeight: 800,
-                }}
-              >
+              <span className="ui-badge tone-warning">
                 الشهر {monthNumber}
               </span>
             )}
@@ -218,15 +194,7 @@ export default function PendingRenewalCard({ profileId, data, planNames, canDeci
                   href={href}
                   target="_blank"
                   rel="noreferrer"
-                  className="crm-btn-primary"
-                  style={{
-                    padding: "10px 18px",
-                    fontSize: "0.9rem",
-                    textDecoration: "none",
-                    background: "var(--bg3)",
-                    color: "var(--text)",
-                    border: "1px solid var(--border)",
-                  }}
+                  className="ui-btn ui-btn--secondary"
                 >
                   <Icon name="visibility" style={{ fontSize: 18 }} />
                   <span>{receipts.length > 1 ? `فتح الوصل ${i + 1}` : "فتح الوصل"}</span>
@@ -245,8 +213,7 @@ export default function PendingRenewalCard({ profileId, data, planNames, canDeci
               type="button"
               onClick={approve}
               disabled={busy}
-              className="crm-btn-primary"
-              style={{ padding: "12px 22px", fontSize: "0.95rem", background: "var(--success)", border: "none", color: "var(--text-inverse)" }}
+              className="ui-btn ui-btn--primary ui-btn--success"
             >
               <Icon name="check_circle" style={{ fontSize: 20 }} />
               <span>{busy ? "جارٍ التجديد..." : "تأكيد — أضف الشهر"}</span>
@@ -255,8 +222,7 @@ export default function PendingRenewalCard({ profileId, data, planNames, canDeci
               type="button"
               onClick={() => setArmed(null)}
               disabled={busy}
-              className="crm-btn-primary"
-              style={{ padding: "12px 18px", fontSize: "0.9rem", background: "var(--bg3)", color: "var(--text)", border: "1px solid var(--border)" }}
+              className="ui-btn ui-btn--secondary"
             >
               تراجع
             </button>
@@ -267,8 +233,7 @@ export default function PendingRenewalCard({ profileId, data, planNames, canDeci
               type="button"
               onClick={reject}
               disabled={busy}
-              className="crm-btn-primary"
-              style={{ padding: "12px 22px", fontSize: "0.95rem", background: "var(--error)", border: "none", color: "var(--text-inverse)" }}
+              className="ui-btn ui-btn--primary ui-btn--danger"
             >
               <Icon name="block" style={{ fontSize: 20 }} />
               <span>{busy ? "جارٍ الرفض..." : "تأكيد الرفض"}</span>
@@ -277,8 +242,7 @@ export default function PendingRenewalCard({ profileId, data, planNames, canDeci
               type="button"
               onClick={() => setArmed(null)}
               disabled={busy}
-              className="crm-btn-primary"
-              style={{ padding: "12px 18px", fontSize: "0.9rem", background: "var(--bg3)", color: "var(--text)", border: "1px solid var(--border)" }}
+              className="ui-btn ui-btn--secondary"
             >
               تراجع
             </button>
@@ -289,8 +253,7 @@ export default function PendingRenewalCard({ profileId, data, planNames, canDeci
               type="button"
               onClick={() => setArmed("approve")}
               disabled={busy}
-              className="crm-btn-primary"
-              style={{ padding: "12px 24px", fontSize: "0.98rem", fontWeight: 800, background: "var(--success)", border: "none", color: "var(--text-inverse)" }}
+              className="ui-btn ui-btn--primary ui-btn--success"
             >
               <Icon name="verified" style={{ fontSize: 20 }} />
               <span>موافقة وتجديد الاشتراك</span>
@@ -299,8 +262,7 @@ export default function PendingRenewalCard({ profileId, data, planNames, canDeci
               type="button"
               onClick={() => setArmed("reject")}
               disabled={busy}
-              className="crm-btn-primary"
-              style={{ padding: "12px 20px", fontSize: "0.92rem", background: "var(--bg3)", color: "var(--text)", border: "1px solid var(--border)" }}
+              className="ui-btn ui-btn--secondary"
             >
               <Icon name="close" style={{ fontSize: 18 }} />
               <span>رفض الطلب</span>
@@ -321,10 +283,8 @@ export default function PendingRenewalCard({ profileId, data, planNames, canDeci
 function Fact({ label, value, icon }: { label: string; value: string; icon: "label" | "event_note" | "schedule" }) {
   return (
     <div
+      className="ui-card"
       style={{
-        background: "var(--bg3)",
-        border: "1px solid var(--border)",
-        borderRadius: "var(--radius-lg)",
         padding: "12px 14px",
         minWidth: 0,
       }}

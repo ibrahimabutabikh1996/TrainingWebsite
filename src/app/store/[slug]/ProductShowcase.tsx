@@ -184,7 +184,7 @@ export default function ProductShowcase({ product: p, related }: { product: Stor
                   <>
                     <button
                       type="button"
-                      className="st-gallery-nav st-gallery-nav--prev"
+                      className="ui-btn ui-btn--icon st-gallery-nav st-gallery-nav--prev"
                       onClick={() => setShot((n) => (n - 1 + gallery.length) % gallery.length)}
                       aria-label="الصورة السابقة"
                     >
@@ -192,7 +192,7 @@ export default function ProductShowcase({ product: p, related }: { product: Stor
                     </button>
                     <button
                       type="button"
-                      className="st-gallery-nav st-gallery-nav--next"
+                      className="ui-btn ui-btn--icon st-gallery-nav st-gallery-nav--next"
                       onClick={() => setShot((n) => (n + 1) % gallery.length)}
                       aria-label="الصورة التالية"
                     >
@@ -264,11 +264,11 @@ export default function ProductShowcase({ product: p, related }: { product: Stor
             <fieldset className="st-option">
               <legend>الكمية</legend>
               <div className="st-qty st-qty--lg" role="group" aria-label="الكمية">
-                <button type="button" onClick={() => setQty((q) => Math.min(MAX_LINE_QTY, q + 1))} aria-label="زيادة">
+                <button type="button" className="ui-btn ui-btn--icon" onClick={() => setQty((q) => Math.min(MAX_LINE_QTY, q + 1))} aria-label="زيادة">
                   <Plus aria-hidden="true" />
                 </button>
                 <span aria-live="polite">{qty}</span>
-                <button type="button" onClick={() => setQty((q) => Math.max(1, q - 1))} aria-label="إنقاص" disabled={qty <= 1}>
+                <button type="button" className="ui-btn ui-btn--icon" onClick={() => setQty((q) => Math.max(1, q - 1))} aria-label="إنقاص" disabled={qty <= 1}>
                   <Minus aria-hidden="true" />
                 </button>
               </div>

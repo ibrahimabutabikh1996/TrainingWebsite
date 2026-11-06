@@ -2,7 +2,8 @@
 
 import { Fragment, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
+import AppToaster from "@/components/ui/AppToaster";
 import type { NutritionSource, TraineeOption } from "@/types/admin";
 import { CustomSelect } from "@/components/CustomSelect";
 import {
@@ -488,19 +489,7 @@ export default function DietPlanBuilder({
           than from local state, because picking one remounts this builder. */}
       <TraineeIntakeHelp view="diet" traineeId={initialTraineeId} />
 
-      <Toaster
-        position="top-center"
-        toastOptions={{
-          style: {
-            background: "var(--bg2)",
-            color: "var(--text)",
-            border: "1px solid var(--border)",
-            direction: "rtl",
-            fontFamily: "inherit",
-            fontWeight: 600,
-          },
-        }}
-      />
+      <AppToaster />
 
       <header className="diet-header">
         <div className="diet-header-text">
@@ -791,12 +780,13 @@ export default function DietPlanBuilder({
                                     ? `${item.weight}${item.unit && item.unit !== "بدون وحدة قياس" ? ` ${item.unit}` : ""}`
                                     : "";
                                   return (
-                                    <div style={{ display: "flex", alignItems: "center", flex: "1 1 320px", minWidth: 0, background: "color-mix(in srgb, var(--bg2) 85%, transparent)", padding: "6px 12px", borderRadius: "var(--radius-lg)", border: "1px solid color-mix(in srgb, var(--primary) 25%, rgba(255,255,255,0.08))", boxShadow: "inset 0 1px 3px rgba(0,0,0,0.4)" }}>
+                                    <div className="dplan-amount-wrap" style={{ display: "flex", alignItems: "center", flex: "1 1 320px", minWidth: 0, padding: "6px 12px" }}>
                                       {/* Free-text amount */}
                                       <input
                                         type="text"
                                         maxLength={200}
-                                        style={{ width: "100%", background: "color-mix(in srgb, #071926 75%, var(--bg1, #080808))", fontWeight: 800, color: "#38BDF8", border: "1px solid color-mix(in srgb, #38BDF8 45%, transparent)", borderRadius: "var(--radius-sm)", padding: "6px 10px" }}
+                                        className="dplan-amount-input"
+                                        style={{ width: "100%", fontWeight: 800, padding: "6px 10px" }}
                                         value={item.amount ?? ""}
                                         placeholder={legacyAmount || "الكمية، مثال: 2 بيضة مسلوقة"}
                                         onChange={(e) => handleAmountChange(meal.id, item.id, e.target.value)}
@@ -856,6 +846,7 @@ export default function DietPlanBuilder({
                 
                 <button
                   onClick={handleAddMeal}
+                  className="dplan-add-meal"
                   style={{
                     width: "100%",
                     display: "flex",
@@ -863,10 +854,6 @@ export default function DietPlanBuilder({
                     justifyContent: "center",
                     gap: "8px",
                     padding: "16px",
-                    borderRadius: "var(--radius-lg)",
-                    border: "2px dashed color-mix(in srgb, var(--primary) 30%, transparent)",
-                    background: "transparent",
-                    color: "var(--primary)",
                     fontWeight: 800,
                     fontSize: "1.1rem",
                     cursor: "pointer",
@@ -1044,18 +1031,15 @@ function SourcePicker({
                 <li key={s.id}>
                   <button
                     onClick={() => onPick(s)}
+                    className="dplan-picker-food"
                     style={{
                       "--cat-color": badge.color,
                       display: "flex",
                       alignItems: "center",
                       gap: "14px",
                       padding: "12px 14px",
-                      background: "linear-gradient(to left, color-mix(in srgb, var(--cat-color) 18%, var(--bg2)) 0%, color-mix(in srgb, var(--cat-color) 7%, var(--bg2)) 45%, var(--bg2) 100%)",
-                      border: "1px solid transparent",
-                      borderRadius: "var(--radius-lg)",
                       width: "100%",
                       textAlign: "right",
-                      cursor: "pointer",
                     } as React.CSSProperties}
                   >
                     <span className="dplan-picker-name" style={{ flex: 1, display: "flex", flexDirection: "column", gap: "4px" }}>
@@ -1064,18 +1048,7 @@ function SourcePicker({
                         ● {badge.label}
                       </small>
                     </span>
-                    <span
-                      style={{
-                        width: "30px",
-                        height: "30px",
-                        borderRadius: "var(--radius-sm)",
-                        background: "var(--primary-dim)",
-                        color: "var(--primary)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
+                    <span className="ui-icon-tile ui-icon-tile--sm">
                       <Icon name="add" style={{ fontSize: 18 }} />
                     </span>
                   </button>

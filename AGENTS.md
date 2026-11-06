@@ -324,37 +324,56 @@ Every interactive element needs hover, focus and active states. Keep them restra
 
 Default `--text-secondary` → hover `--text` → active `--primary`, with an underline or edge marker. Active markers use `inset-inline-end`, not `right`.
 
-### Primary buttons
+### Lit Glass — the one material
 
-A dark glass pill (`--radius-pill`) with a lit edge — the "Lit-edge buttons" block in `globals.css`. Three background layers on one element: a cursor light (padding-box, at `--mx`/`--my`), the dark fill (padding-box), and a conic gradient edge (border-box, through a transparent 1.5px border) running `--primary` → `--primary-light` → `--primary-active` and fading out, plus a soft inset glow of the same colours. Text is `--text`. On a plan card `--primary` is the plan's colour, so the edge runs from the plan into the blues. Hover raises `--btn-spot` (the cursor light) and turns `--btn-angle`; both are registered with `@property` so they transition. The rule sits at `html:root:root` so it outranks each button's own fill without `!important`; an inline `background` (the red delete in the confirm dialog) still wins. A new primary button goes into that list and GlassPointer's `LIT` list.
+Everything interactive or elevated is the same material: **dark glass with a thin edge of light** that runs `--primary` → `--primary-light` → `--primary-active` and fades out along one side, plus a soft inner glow of the same colours. It began as the primary button (the "Lit-edge buttons" block at the end of `globals.css`) and is now the whole interface. The system lives in `src/styles/lit/`, imported by the root layout after `globals.css`:
 
-### Secondary / ghost buttons
+| File | What it holds |
+|---|---|
+| `tokens.css` | the registered knobs (`--lit-a`, `--lit-glow`, `--surf-a`, `--surf-angle`), the tone stops (`--danger-*`, `--success-*`, `--warning-*`), control and icon sizes, `.tone-*` |
+| `primitives.css` | buttons, tabs/segments, chips, fields, icons, badges, counts |
+| `surfaces.css` | cards, windows (modals, drawers, sheets, dropdowns, pickers), scrims, tables |
+| `navigation.css` | the active item in every nav, eyebrows, page headers, dividers, avatars |
+| `feedback.css` | spinners, progress, skeletons, empty states, alerts, toasts |
 
-Transparent or `--primary-dim` background, `--border-primary` border, `--primary` text. Hover deepens the border and fill.
+`/admin/design` (owner only) shows every component at every level. Look there before building a screen; check it after changing `src/styles/lit/`.
 
-### Icon buttons
+**Levels.** What changes between elements is only how much light they carry:
 
-34×34, `--radius-sm`, 18px glyph. Two variants: **ghost** (transparent fill and border, `--text-muted`) for actions inside a card or row, and **outlined** (`--bg3` fill, `--border-strong` border, `--text-secondary`) for standalone controls. Both tint to `--primary` on hover; a destructive one tints to `--error-text` over `--error-bg`.
+1. **Lit** — full edge and glow; the edge turns and a light follows the cursor on hover. The main action, the selected tab, the active nav item, the open window, featured cards. **One per section.**
+2. **Edged** — the same edge at ~40%, no glow; full light on hover. Secondary actions, ordinary tables.
+3. **Quiet** — plain glass; the edge appears on hover or focus. Icon buttons, row actions, chips, filters.
 
-### Cards and panels
+**Tones** are four custom properties on the element (`--primary`, `--primary-rgb`, `--primary-light`, `--primary-active`) — every gradient reads them where it paints, so a tone never restates a style. Use `.tone-danger` / `.tone-success` / `.tone-warning` (or `.ui-btn--danger` etc.). A token derived on `:root` from `--primary-rgb` (`--primary-soft`, `--primary-dim`) is resolved once and stays blue inside a tone — inside a toned element write `rgba(var(--primary-rgb), …)` instead.
 
-`--glass` with `--glass-blur`, 1px `--glass-border`, `--radius-lg`, `--shadow-soft`, padding `--space-6`. A **container** reacts at its edge only (`--glass-border-strong` + `--elev-3`) — it must not lift, or hovering a wide dashboard makes the page twitch. A **clickable** card may add `translateY(-2px)`.
+**How it is applied.** Controls (buttons, the selected tab, a focused field) carry the light in their own `background`: a cursor-light layer and the dark fill on `padding-box`, the conic edge on `border-box` through a transparent `--lit-w` border. Surfaces keep their own fill, so their light is a `::before` ring masked to the border band — **a surface in the lists must not use its own `::before`**. Existing classes are mapped to a level by selector list, so most screens needed no JSX change; new markup uses the `ui-*` classes directly:
 
-### Inputs
+* buttons — `.ui-btn` + `--primary | --secondary | --ghost | --icon`, `--sm | --lg`, `--block`, `--danger | --success | --warning`
+* tabs — `.ui-segment` (the recessed track) with `.ui-tab[aria-selected]`; chips — `.ui-chip.is-active`
+* fields — `.ui-field`, `.ui-field-label`, `.ui-field-control`, `.ui-field-hint`
+* icons — `.ui-icon-tile` (`--sm | --lg | --lit`); badges — `.ui-badge`; counts — `.ui-count`; `.ui-avatar`
+* surfaces — `.ui-card` (`--featured`), `.ui-window` with `-head | -title | -body | -foot`, `.ui-scrim`
+* tables — `.ui-table-wrap` > `.ui-table` (`.is-num` cells, `tr.is-selected`); add `.ui-table--stack` with `data-label` on each `td` to turn rows into cards on a phone
+* states — `.ui-empty` (+ `-title`, `-text`), `.ui-alert` (`--success | --warning | --danger`), `.ui-spinner`, `.ui-skeleton`, `.ui-progress` > `.ui-progress-fill`
+* page — `.ui-page-head` (+ `-text`, `.ui-page-title`, `.ui-page-sub`, `.ui-page-actions`), `.ui-eyebrow`, `.ui-section`, `.ui-divider`
 
-`--input-bg` fill, `--border` border, `--radius-md`, `--text-md` text. Focus: `--primary` border plus `--focus-ring`. Leading icons shift to `--primary` on focus.
+**Specificity.** Every rule in `src/styles/lit/` sits at `html:root:root:root:root:root :where(…)`: a fixed floor above each component's own selectors (some are three classes plus `:hover:not()`), with the lists themselves at zero so the last rule written wins. An inline `style` still wins over all of it — keep that for deliberate one-offs.
 
-### Segmented controls and tabs
+**Adding a component.** A new class that should be a level-N button goes into that level's lists in `primitives.css` (the recipe list, the shape list, the level list, hover, active, focus, disabled) and into GlassPointer's `LIT` list; a new card into the surface lists in `surfaces.css` and GlassPointer's `GLOW` list. Or just use the `ui-*` class.
 
-Container at `--radius-lg` with `--space-1` padding; segments at `--radius-md`. Only the selected segment gets a fill, so the row reads as one control.
+**Toasts** go through `src/components/ui/AppToaster.tsx` — mount it instead of `<Toaster>`; the look is `.lit-toast`.
+
+**Icons** all share one line weight, `--icon-stroke` (1.75), set on `svg.lucide` and `svg.app-icon`, and three sizes (`--icon-sm | md | lg`). Prefer `<Icon name>` from `src/components/Icon.tsx`.
+
+**Motion.** The edge turns over `--lit-turn` (1.8s) on hover; windows and featured cards keep a still light. Under reduced motion the edge does not turn and skeletons do not sweep.
 
 ### Tables
 
-Bordered wrapper (`--radius-lg`, `--elev-1`, `overflow: hidden`), `--bg3` header row, `--text-xs` `--text-secondary` headers (`--text-muted` cannot reach AA on `--bg3`), hairline `--border` row separators, `--bg3` row hover, `--space-3 --space-4` cell padding. See `.co-minimal-table`, `.wl-exercise-table`, `.dpv-min-table` — all three follow this.
+A glass wrapper with a faint edge, `--text-xs` `--text-secondary` headers over a line of light, hairline row separators, a soft `--primary` wash on row hover with an edge of light on the reading side (the right), tabular numbers, `--space-3 --space-4` cell padding.
 
 ### Modals and drawers
 
-`--overlay-scrim` backdrop with a light `blur(3–4px)`, `--bg2` surface, `--radius-xl`, `--elev-3`, `--border` border. Header and footer separated by hairline `--border` rules. See `AdminModal.tsx`, `.cms-modal-card`, `.dplan-picker`.
+The scrim is darker and blurred; the window is `--radius-xl` glass with its light at the top (still, not turning), `--elev-3`, and a line of light under the header instead of a flat rule. See `AdminModal.tsx`, `.cms-modal-card`, `.ui-window`.
 
 ---
 
@@ -362,7 +381,7 @@ Bordered wrapper (`--radius-lg`, `--elev-1`, `overflow: hidden`), `--bg3` header
 
 * **Minimal and flat.** Clean surfaces, generous whitespace, no ornament that does not carry meaning.
 * **Tokens, not literals.** No hex colours, raw px radii, or ad-hoc shadows in component stylesheets.
-* **No brand-tinted shadows.** Glows are the fastest way to make a modern UI look dated.
+* **Light is the system's, not the component's.** The only glows are the lit edge and its inner glow, at the levels above. Don't add a free-standing brand-coloured shadow to a component — give it a level instead.
 * **No `transition: all`.** Name the properties; `all` animates layout and makes hovers feel heavy.
 * **No `!important` for styling.** It is only acceptable to defeat a third-party or inline style you cannot reach. If you reach for it to win a specificity fight, fix the selector instead.
 * **Restrained micro-interactions.** Hover lifts stay at 2–3px; scale stays under 1.06. Prefer a colour or border change over movement, especially for items in a list.

@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Toaster, toast } from "react-hot-toast";
+import { toast } from "react-hot-toast";
+import AppToaster from "@/components/ui/AppToaster";
 import AdminModal from "../components/AdminModal";
 import { DatePicker } from "@/components/DatePicker";
 import { Icon } from "@/components/Icon";
@@ -255,7 +256,7 @@ export default function ChallengesClient({
 
   return (
     <div className="chl-page">
-      <Toaster position="top-center" />
+      <AppToaster />
 
       <header className="chl-header">
         <div>

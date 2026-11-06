@@ -67,10 +67,19 @@ export type AnalyticsData = {
 
 type Tone = "primary" | "success" | "warning" | "error" | "muted";
 
+/* The icon tile's tone. Muted has no tone class: its tile stays unlit. */
+const TILE_TONE: Record<Tone, string> = {
+  primary: "ui-icon-tile--lit",
+  success: "ui-icon-tile--lit tone-success",
+  warning: "ui-icon-tile--lit tone-warning",
+  error: "ui-icon-tile--lit tone-danger",
+  muted: "",
+};
+
 function Stat({ icon, label, value, tone = "primary", hint }: { icon: IconName; label: string; value: number; tone?: Tone; hint?: string }) {
   return (
     <div className={`an-stat an-tone-${tone}`}>
-      <span className="an-stat-icon">
+      <span className={`an-stat-icon ui-icon-tile ${TILE_TONE[tone]}`}>
         <Icon name={icon} />
       </span>
       <div className="an-stat-body">
@@ -190,11 +199,11 @@ export default function AnalyticsClient({ data }: { data: AnalyticsData | null }
               <div className="an-chart" dir="ltr">
                 <ResponsiveContainer width="100%" height={240}>
                   <BarChart data={data.monthly} margin={{ top: 8, right: 8, bottom: 0, left: -20 }}>
-                    <CartesianGrid vertical={false} />
-                    <XAxis dataKey="label" tickLine={false} axisLine={false} interval="preserveStartEnd" />
-                    <YAxis allowDecimals={false} tickLine={false} axisLine={false} />
-                    <Tooltip cursor={{ fill: "currentColor", fillOpacity: 0.08 }} content={<ChartTip unit="مشترك" />} />
-                    <Bar dataKey="count" fill="currentColor" radius={[6, 6, 0, 0]} maxBarSize={36} />
+                    <CartesianGrid vertical={false} stroke="var(--glass-border)" />
+                    <XAxis dataKey="label" tickLine={false} axisLine={false} interval="preserveStartEnd" tick={{ fill: "var(--text-muted)" }} />
+                    <YAxis allowDecimals={false} tickLine={false} axisLine={false} tick={{ fill: "var(--text-muted)" }} />
+                    <Tooltip cursor={{ fill: "var(--primary)", fillOpacity: 0.08 }} content={<ChartTip unit="مشترك" />} />
+                    <Bar dataKey="count" fill="var(--primary)" radius={[6, 6, 0, 0]} maxBarSize={36} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -239,15 +248,15 @@ export default function AnalyticsClient({ data }: { data: AnalyticsData | null }
                   <AreaChart data={training.daily} margin={{ top: 8, right: 8, bottom: 0, left: -20 }}>
                     <defs>
                       <linearGradient id="an-area-fill" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="currentColor" stopOpacity={0.35} />
-                        <stop offset="100%" stopColor="currentColor" stopOpacity={0} />
+                        <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.35} />
+                        <stop offset="100%" stopColor="var(--primary)" stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid vertical={false} />
-                    <XAxis dataKey="label" tickLine={false} axisLine={false} interval="preserveStartEnd" minTickGap={16} />
-                    <YAxis allowDecimals={false} tickLine={false} axisLine={false} />
-                    <Tooltip cursor={{ stroke: "currentColor", strokeOpacity: 0.3 }} content={<ChartTip unit="تمرين" />} />
-                    <Area type="monotone" dataKey="count" stroke="currentColor" strokeWidth={2} fill="url(#an-area-fill)" />
+                    <CartesianGrid vertical={false} stroke="var(--glass-border)" />
+                    <XAxis dataKey="label" tickLine={false} axisLine={false} interval="preserveStartEnd" minTickGap={16} tick={{ fill: "var(--text-muted)" }} />
+                    <YAxis allowDecimals={false} tickLine={false} axisLine={false} tick={{ fill: "var(--text-muted)" }} />
+                    <Tooltip cursor={{ stroke: "var(--primary)", strokeOpacity: 0.3 }} content={<ChartTip unit="تمرين" />} />
+                    <Area type="monotone" dataKey="count" stroke="var(--primary)" strokeWidth={2} fill="url(#an-area-fill)" />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>

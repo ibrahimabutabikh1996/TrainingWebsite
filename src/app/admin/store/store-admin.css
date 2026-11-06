@@ -88,7 +88,10 @@
 }
 .sa-icon-btn:hover { background: var(--glass-2); color: var(--text); }
 .sa-icon-btn svg { width: 18px; height: 18px; }
-.sa-icon-btn.is-on { color: var(--warning-text); border-color: color-mix(in srgb, var(--warning) 40%, transparent); background: color-mix(in srgb, var(--warning) 12%, transparent); }
+/* The "on" state (featured star). The Lit Glass level-3 rule sits on a fixed
+   specificity floor, so this state takes the same floor to stay visible: the
+   warning tone, edged at rest. */
+html:root:root:root:root:root .sa-icon-btn.is-on { --primary: var(--warning); --primary-rgb: var(--warning-rgb); --primary-light: var(--warning-light); --primary-active: var(--warning-active); --primary-on-tint: var(--warning); --lit-a: 0.85; --lit-glow: 0.5; color: var(--warning-text); }
 .sa-icon-btn.is-on svg { fill: currentColor; }
 .sa-icon-btn--danger:hover { color: var(--error-text); border-color: color-mix(in srgb, var(--error) 40%, transparent); background: color-mix(in srgb, var(--error) 10%, transparent); }
 
@@ -108,11 +111,12 @@
   color: inherit;
   text-decoration: none;
 }
-.sa-stat-icon { display: grid; place-items: center; width: 42px; height: 42px; border-radius: var(--radius-md); background: var(--primary-soft); color: var(--primary-on-tint); margin-bottom: var(--space-2); }
+.sa-stat-icon { margin-bottom: var(--space-2); }
 .sa-stat-icon svg { width: 22px; height: 22px; }
-.sa-stat--success .sa-stat-icon { background: color-mix(in srgb, var(--success) 14%, transparent); color: var(--success-text); }
-.sa-stat--warning .sa-stat-icon { background: color-mix(in srgb, var(--warning) 14%, transparent); color: var(--warning-text); }
-.sa-stat--muted .sa-stat-icon { background: var(--glass-2); color: var(--text-muted); }
+/* The icon is a lit `.ui-icon-tile`; each tone only moves its three stops. */
+.sa-stat--success .sa-stat-icon { --primary: var(--success); --primary-light: var(--success-light); --primary-active: var(--success-active); }
+.sa-stat--warning .sa-stat-icon { --primary: var(--warning); --primary-light: var(--warning-light); --primary-active: var(--warning-active); }
+.sa-stat--muted .sa-stat-icon { background: var(--glass); border: 1px solid var(--glass-border); box-shadow: none; color: var(--text-muted); }
 .sa-stat-label { font-size: var(--text-sm); color: var(--text-muted); }
 .sa-stat-value { font-size: var(--text-xl); font-weight: var(--weight-bold); }
 
@@ -140,6 +144,7 @@
   font-size: var(--text-2xs);
   font-weight: var(--weight-bold);
   white-space: nowrap;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 28%, transparent);
 }
 .sa-status--new { background: color-mix(in srgb, var(--warning) 16%, transparent); color: var(--warning-text); }
 .sa-status--confirmed { background: var(--primary-soft); color: var(--primary-on-tint); }
@@ -393,7 +398,7 @@
 /* --- Stat cards as filters (inventory) -------------------------------------------- */
 button.sa-stat { font: inherit; text-align: start; cursor: pointer; border: 1px solid var(--admin-card-border); }
 button.sa-stat.is-selected { border-color: var(--primary); box-shadow: inset 0 0 0 1px var(--primary); }
-.sa-stat--danger .sa-stat-icon { background: color-mix(in srgb, var(--error) 14%, transparent); color: var(--error-text); }
+.sa-stat--danger .sa-stat-icon { --primary: var(--danger); --primary-light: var(--danger-light); --primary-active: var(--danger-active); }
 .sa-stats--3 { grid-template-columns: repeat(3, 1fr); }
 
 /* --- Tables ------------------------------------------------------------------------- */
@@ -438,7 +443,7 @@ button.sa-stat.is-selected { border-color: var(--primary); box-shadow: inset 0 0
 .sa-inline-num:focus { outline: none; border-color: var(--primary); box-shadow: var(--focus-ring); }
 .sa-row-actions { display: flex; gap: var(--space-2); justify-content: flex-end; flex-wrap: wrap; }
 
-.sa-level { display: inline-flex; padding: 2px var(--space-3); border-radius: var(--radius-pill); font-size: var(--text-2xs); font-weight: var(--weight-bold); white-space: nowrap; }
+.sa-level { display: inline-flex; padding: 2px var(--space-3); border-radius: var(--radius-pill); font-size: var(--text-2xs); font-weight: var(--weight-bold); white-space: nowrap; box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 28%, transparent); }
 .sa-level--ok { background: color-mix(in srgb, var(--success) 16%, transparent); color: var(--success-text); }
 .sa-level--low { background: color-mix(in srgb, var(--warning) 16%, transparent); color: var(--warning-text); }
 .sa-level--out { background: color-mix(in srgb, var(--error) 14%, transparent); color: var(--error-text); }

@@ -58,8 +58,8 @@ export function ConfirmDialog() {
           <button
             type="button"
             onClick={() => settleConfirm(true)}
-            className="crm-btn-primary"
-            style={danger ? { flex: 1, background: "var(--error)", color: "var(--text-inverse)" } : { flex: 1 }}
+            className={danger ? "crm-btn-primary ui-btn--danger" : "crm-btn-primary"}
+            style={{ flex: 1 }}
           >
             {confirmLabel ?? (danger ? "نعم، احذف" : "متابعة")}
           </button>

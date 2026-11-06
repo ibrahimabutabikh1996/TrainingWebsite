@@ -70,7 +70,7 @@ function StoreHeader() {
         </nav>
 
         <div className="st-header-actions">
-          <Link href="/" className="st-header-home" aria-label="العودة للموقع الرئيسي">
+          <Link href="/" className="ui-btn ui-btn--icon st-header-home" aria-label="العودة للموقع الرئيسي">
             <House aria-hidden="true" />
           </Link>
           <button type="button" className="st-cart-btn" onClick={open} aria-label={`السلة، ${count} منتج`}>
@@ -292,12 +292,13 @@ function CartDrawer() {
                       )}
                       <div className="st-line-row">
                         <div className="st-qty" role="group" aria-label="الكمية">
-                          <button type="button" onClick={() => cart.setQty(line.key, line.qty + 1)} aria-label="زيادة">
+                          <button type="button" className="ui-btn ui-btn--icon" onClick={() => cart.setQty(line.key, line.qty + 1)} aria-label="زيادة">
                             <Plus aria-hidden="true" />
                           </button>
                           <span aria-live="polite">{line.qty}</span>
                           <button
                             type="button"
+                            className="ui-btn ui-btn--icon"
                             onClick={() => (line.qty > 1 ? cart.setQty(line.key, line.qty - 1) : cart.remove(line.key))}
                             aria-label={line.qty > 1 ? "إنقاص" : "حذف"}
                           >

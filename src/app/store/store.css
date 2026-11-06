@@ -50,7 +50,7 @@ body.st-lock { overflow: hidden; }
   color: var(--text);
 }
 .st-root .st-btn--ghost:hover { background: var(--glass-2); }
-.st-root .st-btn--whatsapp { --primary: var(--success); --primary-light: var(--success); --primary-active: var(--success); }
+.st-root .st-btn--whatsapp { --primary: var(--success); --primary-rgb: var(--success-rgb); --primary-light: var(--success-light); --primary-active: var(--success-active); --primary-on-tint: var(--success); }
 
 .st-link {
   display: inline-flex;
@@ -170,6 +170,7 @@ body.st-lock { overflow: hidden; }
   place-items: center;
   width: 42px;
   height: 42px;
+  min-height: 0;
   border-radius: var(--radius-circle);
   border: 1px solid var(--glass-border-strong);
   background: var(--glass);
@@ -770,9 +771,12 @@ body.st-lock { overflow: hidden; }
 .st-qty {
   display: inline-flex;
   align-items: center;
+  gap: 2px;
+  padding: 3px;
   border-radius: var(--radius-pill);
-  border: 1px solid var(--glass-border-strong);
-  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  background: var(--lit-track);
+  box-shadow: var(--lit-track-shadow);
   overflow: hidden;
 }
 .st-qty button {
@@ -780,6 +784,7 @@ body.st-lock { overflow: hidden; }
   place-items: center;
   width: 34px;
   height: 34px;
+  min-height: 0;
   border: 0;
   background: transparent;
   color: var(--text-secondary);
@@ -1397,6 +1402,7 @@ body.st-lock { overflow: hidden; }
   place-items: center;
   width: 40px;
   height: 40px;
+  min-height: 0;
   border-radius: var(--radius-circle);
   border: 1px solid var(--glass-border-strong);
   background: var(--glass-solid);
@@ -1407,3 +1413,16 @@ body.st-lock { overflow: hidden; }
 .st-gallery-nav svg { width: 20px; height: 20px; }
 .st-gallery-nav--prev { inset-inline-start: 0; }
 .st-gallery-nav--next { inset-inline-end: 0; }
+
+/* Lit Glass in the store: the option buttons and the add button carry the
+   product's own colour as their tone, so the lit edge runs through the
+   product's colour rather than the brand blue. Same prefix as
+   src/styles/lit/ so it sits level with the rules it tunes. */
+html:root:root:root:root:root :where(.st-option-btn, .st-add-btn) {
+  --primary: var(--accent);
+  --primary-light: color-mix(in srgb, var(--accent) 60%, var(--text));
+  --primary-active: color-mix(in srgb, var(--accent) 70%, var(--bg));
+}
+html:root:root:root:root:root :where(.st-option-btn.is-active) {
+  background-color: color-mix(in srgb, var(--accent) 12%, transparent);
+}

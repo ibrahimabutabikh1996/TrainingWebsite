@@ -9,7 +9,8 @@ import { copyDietPlanToTraineeAction, duplicateDietPlanAction } from "./actions"
 import { type MealsData } from "@/types/diet";
 import type { TraineeOption } from "@/types/admin";
 import { arabicCount, CHOICE, MEAL } from "@/lib/arabicCount";
-import { toast, Toaster } from "react-hot-toast";
+import { toast } from "react-hot-toast";
+import AppToaster from "@/components/ui/AppToaster";
 import { Icon } from "@/components/Icon";
 import { CustomSelect } from "@/components/CustomSelect";
 import { formatTimestamp } from "@/lib/trainingDates";
@@ -259,21 +260,7 @@ export default function DietLibraryClient({
 
   return (
     <div className="crm-dashboard">
-      <Toaster
-        position="top-center"
-        toastOptions={{
-          style: {
-            background: "var(--admin-bg-2)",
-            color: "var(--admin-on-surface)",
-            border: "1px solid var(--admin-primary)",
-            padding: "16px 24px",
-            borderRadius: "4px",
-            direction: "rtl",
-            fontSize: "0.95rem",
-            fontWeight: "600",
-          },
-        }}
-      />
+      <AppToaster />
 
       <div className="crm-split-layout">
         <div className="crm-main-area co-page">
@@ -701,13 +688,9 @@ export default function DietLibraryClient({
                     return (
                       <div
                         key={meal.id || mIndex}
-                        className="crm-modal-section"
+                        className="crm-modal-section co-day-panel"
                         style={{
-                          background: "var(--admin-bg-3)",
                           padding: "18px 20px",
-                          borderRadius: "8px",
-                          border:
-                            "1px solid color-mix(in srgb, var(--admin-on-surface) 5%, transparent)",
                         }}
                       >
                         <h4
@@ -730,7 +713,6 @@ export default function DietLibraryClient({
                               style={{
                                 padding: "2px 12px",
                                 fontSize: "0.75rem",
-                                borderRadius: "20px",
                               }}
                             >
                               {meal.time}
@@ -1013,14 +995,10 @@ export default function DietLibraryClient({
                 sentence that makes every other warning easier to ignore. */}
             {deleteTarget.ownerId ? (
               <p
+                className="ui-alert ui-alert--danger"
                 style={{
+                  display: "block",
                   margin: "0 0 16px 0",
-                  padding: "12px",
-                  borderRadius: 4,
-                  background: "color-mix(in srgb, var(--error) 10%, transparent)",
-                  border: "1px solid color-mix(in srgb, var(--error) 30%, transparent)",
-                  color: "var(--admin-on-surface)",
-                  fontSize: "0.88rem",
                   lineHeight: 1.7,
                 }}
               >
@@ -1061,8 +1039,8 @@ export default function DietLibraryClient({
               <button
                 onClick={handleDeletePlan}
                 disabled={isActionLoading}
-                className="crm-btn-primary"
-                style={{ flex: 1, background: "var(--error)", color: "var(--text-inverse)" }}
+                className="crm-btn-primary ui-btn--danger"
+                style={{ flex: 1 }}
               >
                 {isActionLoading ? "جاري الحذف..." : "نعم، احذف"}
               </button>

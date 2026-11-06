@@ -392,38 +392,22 @@ export default function DashboardPage() {
             asked for on day 25 is just as pending as one asked for on day 31 —
             and in both cases the trainee needs to know their form arrived. */}
         {renewalPending && (
-          <div style={{
-            background: "linear-gradient(135deg, color-mix(in srgb, var(--warning) 16%, var(--bg2)), var(--bg2))",
-            border: "1px solid color-mix(in srgb, var(--warning) 45%, var(--border))",
-            borderInlineStart: "5px solid var(--warning)",
-            borderRadius: "var(--radius-xl)",
+          <div className="ui-alert ui-alert--warning" style={{
             padding: "24px 28px",
             marginBottom: "28px",
-            boxShadow: "0 8px 32px color-mix(in srgb, var(--warning) 12%, rgba(0, 0, 0, 0.35))",
             display: "flex",
             alignItems: "flex-start",
             gap: "18px",
             flexWrap: "wrap"
           }}>
-            <div style={{
-              width: "52px",
-              height: "52px",
-              borderRadius: "var(--radius-xl)",
-              background: "color-mix(in srgb, var(--warning) 20%, var(--bg3))",
-              color: "var(--warning-text)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "28px",
-              flexShrink: 0
-            }}>
+            <div className="ui-icon-tile ui-icon-tile--lg ui-icon-tile--lit tone-warning">
               <Icon name="hourglass" />
             </div>
             <div style={{ flex: "1 1 320px", minWidth: 0 }}>
               <h3 style={{ margin: "0 0 8px 0", fontSize: "1.3rem", fontWeight: 800, color: "var(--text)", display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
                 <span>طلب التجديد قيد المراجعة</span>
                 {typeof renewalRequestedMonth === "number" && (
-                  <span style={{ fontSize: "0.78rem", background: "var(--warning)", color: "var(--text-inverse)", padding: "3px 10px", borderRadius: "var(--radius-pill)", fontWeight: 800 }}>
+                  <span className="ui-badge tone-warning">
                     الشهر {renewalRequestedMonth}
                   </span>
                 )}
@@ -443,14 +427,9 @@ export default function DashboardPage() {
             button inside it stands down, because the server refuses a second
             submission and a button that cannot work is worse than no button. */}
         {isSubscriptionExpired && (
-          <div style={{
-            background: "linear-gradient(135deg, color-mix(in srgb, var(--error) 16%, var(--bg2)), var(--bg2))",
-            border: "1px solid color-mix(in srgb, var(--error) 45%, var(--border))",
-            borderInlineStart: "5px solid var(--error)",
-            borderRadius: "var(--radius-xl)",
+          <div className="ui-alert ui-alert--danger" style={{
             padding: "24px 28px",
             marginBottom: "28px",
-            boxShadow: "0 8px 32px color-mix(in srgb, var(--error) 12%, rgba(0, 0, 0, 0.35))",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
@@ -458,25 +437,13 @@ export default function DashboardPage() {
             gap: "20px"
           }}>
             <div style={{ display: "flex", alignItems: "flex-start", gap: "18px", maxWidth: "700px" }}>
-              <div style={{
-                width: "52px",
-                height: "52px",
-                borderRadius: "var(--radius-xl)",
-                background: "color-mix(in srgb, var(--error) 20%, var(--bg3))",
-                color: "var(--error-text)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "30px",
-                flexShrink: 0,
-                boxShadow: "0 4px 14px color-mix(in srgb, var(--error) 25%, transparent)"
-              }}>
+              <div className="ui-icon-tile ui-icon-tile--lg ui-icon-tile--lit tone-danger">
                 <Icon name="lock" />
               </div>
               <div>
                 <h3 style={{ margin: "0 0 8px 0", fontSize: "1.35rem", fontWeight: 800, color: "var(--text)", display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
                   <span>انتهت صلاحية اشتراكك الحالي</span>
-                  <span style={{ fontSize: "0.78rem", background: "var(--error)", color: "var(--text-inverse)", padding: "3px 10px", borderRadius: "var(--radius-pill)", fontWeight: 700 }}>وضع المعاينة فقط (View Only)</span>
+                  <span className="ui-badge tone-danger">وضع المعاينة فقط (View Only)</span>
                 </h3>
                 <p style={{ margin: "0", fontSize: "0.98rem", color: "var(--text-muted)", lineHeight: 1.65 }}>
                   لقد وصلت إلى نهاية فترة اشتراكك التدريبي (30 يوماً). جميع التمارين، الأوزان، والجداول متاحة الآن <b>للمعاينة والمراجعة فقط</b> ولا يمكن التعديل عليها أو إضافة أرقام جديدة. لاستكمال تدريبك والحصول على خطة جديدة، يُرجى تجديد الاشتراك.
@@ -485,15 +452,11 @@ export default function DashboardPage() {
             </div>
             <div>
               {renewalPending ? (
-                <span style={{
+                <span className="ui-alert ui-alert--warning" style={{
                   display: "inline-flex",
                   alignItems: "center",
                   gap: "10px",
                   padding: "14px 24px",
-                  borderRadius: "var(--radius-lg)",
-                  background: "var(--bg3)",
-                  border: "1px dashed color-mix(in srgb, var(--warning) 55%, var(--border))",
-                  color: "var(--warning-text)",
                   fontWeight: 800,
                   fontSize: "0.98rem"
                 }}>
@@ -503,19 +466,14 @@ export default function DashboardPage() {
               ) : (
               <Link
                 href={`/form?renew=true&profileId=${profile.id}`}
-                className="dash-primary-btn"
+                className="dash-primary-btn ui-btn--danger"
                 style={{
-                  background: "var(--error)",
-                  color: "var(--text-inverse)",
                   padding: "14px 28px",
                   fontSize: "1.05rem",
                   fontWeight: 800,
-                  borderRadius: "var(--radius-lg)",
-                  textDecoration: "none",
                   display: "inline-flex",
                   alignItems: "center",
-                  gap: "10px",
-                  boxShadow: "0 6px 24px color-mix(in srgb, var(--error) 45%, transparent)"
+                  gap: "10px"
                 }}
               >
                 <Icon name="lock_reset" style={{ fontSize: "24px" }} />
@@ -602,11 +560,11 @@ export default function DashboardPage() {
                         تاريخ الاشتراك: {profile.created_at ? formatDate(new Date(profile.created_at)) : "مسجل"}
                       </span>
                       {isSubscriptionExpired ? (
-                        <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: "0.85rem", fontWeight: "700", color: "var(--error-text)", background: "color-mix(in srgb, var(--error) 15%, transparent)", padding: "4px 12px", borderRadius: "var(--radius-pill)" }}>
+                        <span className="ui-badge tone-danger">
                           <Icon name="warning" style={{ fontSize: "14px" }} /> منتهي الصلاحية (معاينة فقط)
                         </span>
                       ) : (
-                        <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: "0.85rem", fontWeight: "700", color: "var(--success-text)", background: "color-mix(in srgb, var(--success) 15%, transparent)", padding: "4px 12px", borderRadius: "var(--radius-pill)" }}>
+                        <span className="ui-badge tone-success">
                           <Icon name="check_circle" style={{ fontSize: "14px" }} /> الحساب فعال
                         </span>
                       )}

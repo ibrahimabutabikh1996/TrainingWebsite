@@ -779,4 +779,11 @@
   .co-header-actions .co-add-btn { flex: 1; }
   /* The row spans the screen here and the button is at its edge. */
   .co-header-actions .install-app-help { inset-inline-end: auto; inset-inline-start: 0; }
+/* --- Lit Glass: course preview ---------------------------------------------
+   A day inside the course preview dialog — a quiet glass panel, taken out of
+   the inline style it used to carry. */
+.co-day-panel {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
 }

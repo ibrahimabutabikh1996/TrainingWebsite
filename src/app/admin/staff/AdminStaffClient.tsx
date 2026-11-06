@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Toaster, toast } from "react-hot-toast";
+import { toast } from "react-hot-toast";
+import AppToaster from "@/components/ui/AppToaster";
 import AdminModal from "../components/AdminModal";
 import { Icon } from "@/components/Icon";
 import { confirmDialog } from "@/lib/confirmDialog";
@@ -351,7 +352,7 @@ export default function AdminStaffClient({
 
   return (
     <div className="staff-page">
-      <Toaster position="top-center" />
+      <AppToaster />
 
       <header className="staff-header">
         <div>

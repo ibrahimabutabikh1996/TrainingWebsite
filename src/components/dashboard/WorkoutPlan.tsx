@@ -527,24 +527,17 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
           <>
             {isSubscriptionExpired ? (
               <div
-                className="wl-locked"
+                className="ui-alert ui-alert--danger"
                 style={{
-                  background: "color-mix(in srgb, var(--error) 14%, var(--bg2))",
-                  borderColor: "color-mix(in srgb, var(--error) 45%, transparent)",
-                  color: "var(--error-text)",
                   marginBottom: "16px",
                   padding: "16px 20px",
-                  borderRadius: "var(--radius-lg)",
                   display: "flex",
                   alignItems: "center",
                   gap: "12px",
                   fontWeight: 700,
                 }}
               >
-                <Icon
-                  name="visibility"
-                  style={{ fontSize: "24px", color: "var(--error-text)" }}
-                />
+                <Icon name="visibility" />
                 <span>
                   انتهت فترة اشتراكك الحالية (30 يوماً). البرنامج والتمارين
                   السابقة في وضع المشاهدة فقط (View Only) ولا يمكن التعديل عليها
@@ -581,21 +574,13 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
                     onClick={() => setActiveDay(s.day_number)}
                     style={
                       {
+                        /* The day's hue is the tone of its tab: the lit
+                           edge of the selected one is drawn in it. */
                         "--day-accent": dayColor,
-                        background: isSelected
-                          ? dayColor
-                          : `color-mix(in srgb, ${dayColor} 10%, var(--bg2))`,
-                        borderColor: isSelected
-                          ? dayColor
-                          : `color-mix(in srgb, ${dayColor} 40%, var(--border))`,
-                        color: isSelected
-                          ? "var(--text-inverse)"
-                          : "var(--text)",
-                        boxShadow: isSelected
-                          ? `0 6px 20px color-mix(in srgb, ${dayColor} 35%, transparent)`
-                          : "0 2px 8px rgba(0, 0, 0, 0.1)",
+                        "--primary": dayColor,
+                        "--primary-light": dayColor,
+                        "--primary-active": dayColor,
                         fontWeight: isSelected ? 800 : 700,
-                        transition: "background-color 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s cubic-bezier(0.16, 1, 0.3, 1), color 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
                       } as React.CSSProperties
                     }
                   >
@@ -611,19 +596,14 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
                           width: "8px",
                           height: "8px",
                           borderRadius: "50%",
-                          background: isSelected
-                            ? "var(--text-inverse)"
-                            : dayColor,
+                          background: dayColor,
                         }}
                       />
                       <span>اليوم {s.day_number}</span>
                     </span>
                     <small
                       style={{
-                        color: isSelected
-                          ? "var(--text-inverse)"
-                          : "var(--text-muted)",
-                        opacity: isSelected ? 0.85 : 1,
+                        color: "var(--text-muted)",
                       }}
                     >
                       {s.performed_on
@@ -645,23 +625,22 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
                     "--primary": getDayAccent(activeDay),
                     "--border-primary": `color-mix(in srgb, ${getDayAccent(activeDay)} 45%, var(--border))`,
                     "--primary-dim": `color-mix(in srgb, ${getDayAccent(activeDay)} 15%, transparent)`,
+                    "--primary-light": getDayAccent(activeDay),
+                    "--primary-active": getDayAccent(activeDay),
                   } as React.CSSProperties
                 }
               >
                 {/* Calendar date selector placed at the top next to the active training day */}
                 <div
+                  className="ui-card ui-card--featured"
                   style={{
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
                     flexWrap: "wrap",
                     gap: "16px",
-                    background: `linear-gradient(to left, color-mix(in srgb, ${getDayAccent(activeDay)} 14%, var(--bg3)) 0%, var(--bg3) 85%)`,
-                    border: `1px solid color-mix(in srgb, ${getDayAccent(activeDay)} 35%, var(--border))`,
-                    borderRadius: "var(--radius-xl)",
                     padding: "18px 22px",
                     margin: "16px 0 22px 0",
-                    boxShadow: `0 8px 28px color-mix(in srgb, ${getDayAccent(activeDay)} 8%, rgba(0, 0, 0, 0.25))`,
                   }}
                 >
                   <div
@@ -671,21 +650,7 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
                       gap: "12px",
                     }}
                   >
-                    <div
-                      style={{
-                        width: "46px",
-                        height: "46px",
-                        borderRadius: "var(--radius-lg)",
-                        background: `color-mix(in srgb, ${getDayAccent(activeDay)} 18%, var(--bg2))`,
-                        border: `1px solid color-mix(in srgb, ${getDayAccent(activeDay)} 40%, transparent)`,
-                        color: getDayAccent(activeDay),
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: "25px",
-                        boxShadow: `0 4px 14px color-mix(in srgb, ${getDayAccent(activeDay)} 18%, transparent)`,
-                      }}
-                    >
+                    <div className="ui-icon-tile ui-icon-tile--lit">
                       <Icon name="event_available" />
                     </div>
                     <div>
@@ -1483,6 +1448,7 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
         typeof document !== "undefined" &&
         createPortal(
           <div
+            className={`ui-window ${toastAlert.type === "warning" ? "tone-warning" : "tone-danger"}`}
             style={{
               position: "fixed",
               bottom: "38px",
@@ -1492,15 +1458,7 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
               display: "flex",
               alignItems: "flex-start",
               gap: "18px",
-              background:
-                "linear-gradient(145deg, rgba(26, 26, 26, 0.98) 0%, rgba(15, 15, 15, 0.98) 100%)",
-              backdropFilter: "blur(20px)",
-              WebkitBackdropFilter: "blur(20px)",
-              border: `1px solid ${toastAlert.type === "warning" ? "rgba(245, 158, 11, 0.4)" : "rgba(239, 68, 68, 0.4)"}`,
-              borderInlineStart: `5px solid ${toastAlert.type === "warning" ? "var(--warning)" : "var(--error)"}`,
               padding: "18px 22px",
-              borderRadius: "var(--radius-xl)",
-              boxShadow: `0 20px 50px rgba(0, 0, 0, 0.85), 0 0 35px ${toastAlert.type === "warning" ? "rgba(245, 158, 11, 0.16)" : "rgba(239, 68, 68, 0.16)"}`,
               color: "var(--text)",
               animation:
                 "toastSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards",
@@ -1509,32 +1467,13 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
             }}
             role="alert"
           >
-            <div
-              style={{
-                width: "44px",
-                height: "44px",
-                borderRadius: "var(--radius-lg)",
-                background:
-                  toastAlert.type === "warning"
-                    ? "radial-gradient(circle, rgba(245, 158, 11, 0.22) 0%, rgba(245, 158, 11, 0.08) 100%)"
-                    : "radial-gradient(circle, rgba(239, 68, 68, 0.22) 0%, rgba(239, 68, 68, 0.08) 100%)",
-                border: `1px solid ${toastAlert.type === "warning" ? "rgba(245, 158, 11, 0.35)" : "rgba(239, 68, 68, 0.35)"}`,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: toastAlert.type === "warning" ? "var(--warning-text)" : "var(--error-text)",
-                boxShadow: `0 0 16px ${toastAlert.type === "warning" ? "rgba(245, 158, 11, 0.15)" : "rgba(239, 68, 68, 0.15)"}`,
-                flexShrink: 0,
-                marginTop: "2px",
-              }}
-            >
+            <div className="ui-icon-tile ui-icon-tile--lit" style={{ marginTop: "2px" }}>
               <Icon
                 name={
                   toastAlert.type === "warning"
                     ? "error_outline"
                     : "report_problem"
                 }
-                style={{ fontSize: "26px" }}
               />
             </div>
 
@@ -1552,7 +1491,7 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
                   margin: 0,
                   fontSize: "1.02rem",
                   fontWeight: 800,
-                  color: toastAlert.type === "warning" ? "#FDBA74" : "#FCA5A5",
+                  color: "var(--primary-light)",
                   letterSpacing: "0.1px",
                 }}
               >
@@ -1563,7 +1502,7 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
                   style={{
                     margin: 0,
                     fontSize: "0.9rem",
-                    color: "#C4BFBA",
+                    color: "var(--text-secondary)",
                     lineHeight: "1.65",
                     fontWeight: 500,
                   }}
@@ -1576,22 +1515,10 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
             <button
               type="button"
               onClick={() => setToastAlert(null)}
-              style={{
-                background: "rgba(255, 255, 255, 0.05)",
-                border: "1px solid rgba(255, 255, 255, 0.1)",
-                borderRadius: "var(--radius-lg)",
-                color: "var(--text-muted)",
-                cursor: "pointer",
-                width: "36px",
-                height: "36px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0,
-              }}
+              className="ui-btn ui-btn--icon ui-btn--sm"
               title="إغلاق التنبيه"
             >
-              <Icon name="close" style={{ fontSize: "19px" }} />
+              <Icon name="close" />
             </button>
           </div>,
           document.body,
