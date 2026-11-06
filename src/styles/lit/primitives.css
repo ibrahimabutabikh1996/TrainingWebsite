@@ -448,6 +448,62 @@ html:root:root:root:root:root .admin-mode-switch.is-store .admin-mode-switch-thu
         conic-gradient(from 200deg, var(--primary) 0deg, var(--primary-light) 70deg, var(--primary-active) 140deg, var(--lit-rest) 210deg, var(--lit-rest) 300deg, var(--primary) 360deg) border-box;
 }
 
+/* Sliding selection — driven by src/components/SegmentSlide.tsx, which lists
+   the tracks. Only while the selection moves: the track's `::before` wears the
+   new item's own look (copied into --seg-*) and travels from the old item to
+   the new one, whose fill is hidden until it lands. At rest none of this
+   applies. `left`/`top` are physical on purpose: the offsets are measured
+   physically, in the same frame, so RTL needs no mirroring. */
+html:root:root:root:root:root :where([data-seg-pos]) {
+    position: relative;
+}
+
+html:root:root:root:root:root :where([data-seg-slide]) {
+    isolation: isolate;
+}
+
+html:root:root:root:root:root :where([data-seg-slide])::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: -1;
+    box-sizing: border-box;
+    width: var(--seg-w);
+    height: var(--seg-h);
+    transform: translate(var(--seg-x), var(--seg-y));
+    border: var(--seg-bw) solid var(--seg-bc);
+    border-radius: var(--seg-r);
+    background-color: var(--seg-bgc);
+    background-image: var(--seg-bgi);
+    background-origin: var(--seg-bgo);
+    background-clip: var(--seg-bgcl);
+    background-position: var(--seg-bgp);
+    background-size: var(--seg-bgs);
+    background-repeat: var(--seg-bgr);
+    box-shadow: var(--seg-sh);
+    pointer-events: none;
+    transition:
+        transform var(--dur-slow) var(--ease-out),
+        width var(--dur-slow) var(--ease-out),
+        height var(--dur-slow) var(--ease-out);
+}
+
+html:root:root:root:root:root :where([data-seg-instant])::before {
+    transition: none;
+}
+
+/* One attribute outside :where(), so these beat every item rule above. */
+html:root:root:root:root:root [data-seg-snap] {
+    transition: none;
+}
+
+html:root:root:root:root:root [data-seg-arriving] {
+    background: transparent;
+    border-color: transparent;
+    box-shadow: none;
+}
+
 html:root:root:root:root:root .admin-mode-switch-option.is-active {
     color: var(--text);
 }
