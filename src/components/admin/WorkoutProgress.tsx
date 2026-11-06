@@ -273,50 +273,18 @@ export default function WorkoutProgress({
                 /* Two parts and no more: the exercise, then a column per round carrying
          that round's reps and weight. Scrolls inside its own box like the
          progression table, for a day that ran to many rounds. */
-                <div style={{ overflowX: "auto" }}>
-                  <table
-                    style={{
-                      width: "100%",
-                      borderCollapse: "separate",
-                      borderSpacing: 0,
-                    }}
-                  >
+                <div className="crm-wp-scroll">
+                  <table className="crm-wp-table">
                     <thead>
                       <tr>
                         {/* The head carries no fill of its own — a label line over a rule
                   reads lighter than a banded row, and the rule is the strong
                   border so the head is told apart from the row separators. */}
-                        <th
-                          style={{
-                            textAlign: "start",
-                            padding: "0 14px 10px",
-                            color: "var(--text-muted)",
-                            fontWeight: 600,
-                            fontSize: "0.72rem",
-                            letterSpacing: "0.04em",
-                            borderBottom: "1px solid var(--border-strong)",
-                            borderInlineEnd: "1px solid var(--border)",
-                            position: "sticky",
-                            insetInlineStart: 0,
-                            background: "var(--bg2)",
-                          }}
-                        >
+                        <th className="crm-wp-name">
                           التمرين
                         </th>
                         {daySets.map((setIndex) => (
-                          <th
-                            key={setIndex}
-                            style={{
-                              padding: "0 14px 10px",
-                              color: "var(--text-muted)",
-                              fontWeight: 600,
-                              fontSize: "0.72rem",
-                              letterSpacing: "0.04em",
-                              whiteSpace: "nowrap",
-                              minWidth: 96,
-                              borderBottom: "1px solid var(--border-strong)",
-                            }}
-                          >
+                          <th key={setIndex} className="crm-wp-set">
                             سيت {setIndex + 1}
                           </th>
                         ))}
@@ -330,16 +298,8 @@ export default function WorkoutProgress({
                     is why the column reads as no fill at all. The rule at its
                     end is what separates it from the numbers. */}
                           <td
+                            className="crm-wp-name"
                             style={{
-                              padding: "12px 14px",
-                              color: "var(--text)",
-                              fontWeight: 600,
-                              fontSize: "0.86rem",
-                              whiteSpace: "nowrap",
-                              borderBottom: "1px solid var(--border)",
-                              borderInlineEnd: "1px solid var(--border)",
-                              position: "sticky",
-                              insetInlineStart: 0,
                               background: supersetIds.has(exId) ? supersetTint : "var(--bg2)",
                             }}
                           >
@@ -350,12 +310,9 @@ export default function WorkoutProgress({
                             return (
                               <td
                                 key={setIndex}
+                                className="crm-wp-set"
+                                data-label={`سيت ${setIndex + 1}`}
                                 style={{
-                                  padding: "12px 14px",
-                                  textAlign: "center",
-                                  whiteSpace: "nowrap",
-                                  verticalAlign: "middle",
-                                  borderBottom: "1px solid var(--border)",
                                   background: supersetIds.has(exId) ? supersetTint : undefined,
                                 }}
                               >
