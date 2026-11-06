@@ -665,6 +665,79 @@
   color: var(--primary-on-tint);
 }
 
+/* On a phone the seven columns cannot fit, so each row becomes a card: the
+   trainee on top, then one "label: value" line per column, the label taken
+   from the cell's data-label. Nothing scrolls sideways. */
+@media (max-width: 640px) {
+  .crm-table-wrap {
+    overflow: visible;
+  }
+
+  .crm-table {
+    min-width: 0;
+  }
+
+  .crm-table,
+  .crm-table tbody,
+  .crm-table tr,
+  .crm-table td {
+    display: block;
+  }
+
+  .crm-table thead,
+  .crm-table .crm-table-rank {
+    display: none;
+  }
+
+  .crm-table tbody tr,
+  .crm-table tbody tr:nth-child(odd) {
+    position: relative;
+    margin-bottom: var(--space-3);
+    padding: var(--space-4);
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+  }
+
+  .crm-table tbody tr:hover {
+    background: var(--bg3);
+  }
+
+  .crm-table td {
+    padding: 0;
+    white-space: normal;
+  }
+
+  .crm-table-person {
+    flex-wrap: wrap;
+    padding-block-end: var(--space-3);
+    padding-inline-end: var(--space-8);
+  }
+
+  .crm-table td[data-label] {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding-block: var(--space-2);
+    border-top: 1px solid var(--border);
+  }
+
+  .crm-table td[data-label]::before {
+    content: attr(data-label);
+    color: var(--text-secondary);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+  }
+
+  .crm-table .crm-table-chevron {
+    position: absolute;
+    inset-block-start: var(--space-4);
+    inset-inline-end: var(--space-4);
+    width: auto;
+  }
+}
+
 .crm-sr-only {
   position: absolute;
   width: 1px;

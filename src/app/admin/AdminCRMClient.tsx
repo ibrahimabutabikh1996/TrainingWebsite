@@ -577,7 +577,7 @@ export default function AdminCRMClient({
                             )}
                           </div>
                         </td>
-                        <td>
+                        <td data-label="الخطة">
                           {/* The third copy of the plan-to-colour chain, which had
                               no arm for the offers. Shared now, so the tag is
                               coloured from the same table the timeline reads. */}
@@ -596,14 +596,14 @@ export default function AdminCRMClient({
                             {planNameFrom(planNames, data.plan, "غير محدد")}
                           </span>
                         </td>
-                        <td className="crm-table-muted">
+                        <td className="crm-table-muted" data-label="نوع الاشتراك">
                           {data.plan_type === 'both' ? 'تدريبي + غذائي' :
                            data.plan_type === 'diet' ? 'غذائي فقط' :
                            data.plan_type === 'training' ? 'تدريبي فقط' : (data.plan_type || "—")}
                         </td>
-                        <td>{planStatus("training", profile.course_assigned_at)}</td>
-                        <td>{planStatus("diet", profile.diet_updated_at)}</td>
-                        <td className="crm-table-muted crm-table-date">
+                        <td data-label="النظام التدريبي">{planStatus("training", profile.course_assigned_at)}</td>
+                        <td data-label="النظام الغذائي">{planStatus("diet", profile.diet_updated_at)}</td>
+                        <td className="crm-table-muted crm-table-date" data-label="تاريخ البدء">
                           {formatTimestamp(data.activation_date || profile.created_at)}
                         </td>
                         <td className="crm-table-chevron">
