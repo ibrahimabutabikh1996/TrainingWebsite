@@ -643,7 +643,7 @@ svg.app-icon {
    -------------------------------------------------------------------------- */
 :where(
     .ui-badge, .crm-badge, .an-badge, .st-badge, .pill-badge, .pw-badge,
-    .co-sets-badge, .wl-set-badge, .wl-readonly-badge, .membership-badge
+    .co-sets-badge, .wl-set-badge, .wl-readonly-badge
 ) {
     border-radius: var(--radius-pill);
     box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 28%, transparent);

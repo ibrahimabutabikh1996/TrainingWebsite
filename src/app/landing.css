@@ -1477,6 +1477,25 @@ body::before {
   color: var(--primary-on-tint);
   margin-bottom: 12px;
 }
+
+/* The plan's name as a pill in the plan's own colour. `fit-content` so the
+   pill wraps the name rather than the whole card width; inside a plan card
+   `--primary` is the plan's colour, so the ink is that colour lifted towards
+   white and the ring and tint are the colour itself. */
+.membership-card .membership-badge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  max-width: 100%;
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  background: rgba(var(--primary-rgb), 0.16);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--primary) 55%, transparent),
+    inset 10px 0 16px -12px var(--primary);
+  color: color-mix(in srgb, var(--primary) 50%, var(--text));
+  line-height: 1.4;
+}
 .membership-desc {
   font-size: var(--text-sm);
   color: var(--muted2);
