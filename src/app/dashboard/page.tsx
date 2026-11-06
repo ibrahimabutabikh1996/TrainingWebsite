@@ -13,13 +13,14 @@ import { WorkoutPlan } from "@/components/dashboard/WorkoutPlan";
 import { DietPlan } from "@/components/dashboard/DietPlan";
 import { TrainingCalendarCard } from "@/components/dashboard/TrainingCalendarMonth";
 import WeightLog from "@/components/dashboard/WeightLog";
+import Challenges from "@/components/dashboard/Challenges";
 import "./dashboard.css";
 import Link from "next/link";
 import { Icon, type IconName } from "@/components/Icon";
 import { optimizedSrc, optimizedSrcSet } from "@/lib/imageOptim";
 import type { JsonRecord } from "@/types";
 
-type TabId = "settings" | "weight" | "workout" | "home" | "diet" | "history" | "profile";
+type TabId = "settings" | "weight" | "workout" | "home" | "diet" | "history" | "profile" | "challenges";
 
 interface TabConfig {
   id: TabId;
@@ -106,7 +107,7 @@ export default function DashboardPage() {
      second copy of the list in @/lib/adminUsernames. */
   const username = useCurrentUsername();
   useEffect(() => {
-    if (isAdminUsername(username)) router.push("/admin");
+    if (isAdminUsername(username)) router.push("/admin/overview");
   }, [username, router]);
 
   useEffect(() => {
@@ -168,6 +169,7 @@ export default function DashboardPage() {
     { id: "workout", label: "البرنامج التدريبي", short: "التمارين", icon: "fitness_center" },
     { id: "diet", label: "النظام الغذائي", short: "الغذاء", icon: "restaurant" },
     { id: "weight", label: "سجل الأوزان", short: "الأوزان", icon: "monitor_weight" },
+    { id: "challenges", label: "التحديات", short: "التحديات", icon: "emoji_events" },
   ];
 
   const renderProcessingCard = (tabTitle: string) => (
@@ -526,6 +528,11 @@ export default function DashboardPage() {
 
 
 
+
+        {/* Tab: Challenges — reads its own endpoint; the live poller bumps the key. */}
+        <div style={{ display: activeTab === "challenges" ? "block" : "none" }}>
+          <Challenges reloadKey={calendarReloadKey} />
+        </div>
 
         {/* Tab: Weight Log */}
         <div style={{ display: activeTab === "weight" ? "block" : "none" }}>

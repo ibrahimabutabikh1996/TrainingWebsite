@@ -73,13 +73,13 @@ export default function SettingsClient({ initialSettings }: { initialSettings: S
         </section>
 
         <section className="admin-card sa-panel">
-          <h2>نصوص الواجهة</h2>
+          <h2>نصوص المتجر</h2>
           <label className="sa-field">
             <span>شريط الإعلان أعلى المتجر</span>
             <input value={form.announcement} onChange={(e) => set("announcement", e.target.value)} placeholder="اتركه فارغاً لإخفائه" />
           </label>
           <label className="sa-field">
-            <span>العنوان الرئيسي</span>
+            <span>العبارة الرئيسية (تظهر تحت المنتجات المتحركة)</span>
             <input value={form.hero_title} onChange={(e) => set("hero_title", e.target.value)} />
           </label>
           <label className="sa-field">

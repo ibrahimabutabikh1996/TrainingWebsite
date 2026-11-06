@@ -125,35 +125,14 @@ body.st-lock { overflow: hidden; }
   align-items: center;
   gap: var(--space-4);
 }
-/* The way back to the main site. It is the cart button's twin on the other
-   edge of the bar — same glass pill, same height — so it reads as a control,
-   not as a caption. */
-.st-header-back {
-  justify-self: start;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  min-height: 42px;
-  padding: var(--space-2) var(--space-4);
-  border-radius: var(--radius-pill);
-  border: 1px solid var(--glass-border-strong);
-  background: var(--glass);
-  color: var(--text);
-  text-decoration: none;
-  font-size: var(--text-sm);
-  font-weight: var(--weight-semibold);
-  transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease);
-}
-.st-header-back:hover { background: var(--glass-2); border-color: var(--border-primary); }
-.st-header-back svg { width: 20px; height: 20px; }
 .st-header-logo {
+  justify-self: start;
   display: flex;
   align-items: center;
   gap: var(--space-2);
   text-decoration: none;
 }
-.st-header-logo img { height: 34px; width: auto; display: block; }
+.st-header-logo img { height: 32px; width: auto; display: block; }
 .st-header-tag {
   font-size: var(--text-2xs);
   font-weight: var(--weight-bold);
@@ -163,21 +142,50 @@ body.st-lock { overflow: hidden; }
   border: 1px solid var(--border-primary);
   background: var(--primary-soft);
 }
-.st-cart-btn {
-  justify-self: end;
+.st-header-nav { display: flex; align-items: center; gap: var(--space-8); }
+.st-header-nav a {
   position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-height: 42px;
-  padding: var(--space-2) var(--space-4);
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  transition: color var(--dur) var(--ease);
+}
+.st-header-nav a::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: -6px;
+  height: 2px;
   border-radius: var(--radius-pill);
+  background: var(--text);
+  scale: 0 1;
+  transition: scale var(--dur-slow) var(--ease-out);
+}
+.st-header-nav a:hover { color: var(--text); }
+.st-header-nav a:hover::after { scale: 1 1; }
+.st-header-actions { justify-self: end; display: flex; align-items: center; gap: var(--space-2); }
+.st-header-home {
+  display: none;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-circle);
+  border: 1px solid var(--glass-border-strong);
+  background: var(--glass);
+  color: var(--text-secondary);
+}
+.st-header-home svg { width: 19px; height: 19px; }
+.st-cart-btn {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-circle);
   border: 1px solid var(--glass-border-strong);
   background: var(--glass);
   color: var(--text);
-  font: inherit;
-  font-weight: var(--weight-semibold);
-  font-size: var(--text-sm);
   cursor: pointer;
   transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease);
 }
@@ -233,61 +241,227 @@ body.st-lock { overflow: hidden; }
   filter: drop-shadow(0 24px 40px color-mix(in srgb, var(--bg) 80%, transparent));
 }
 
-/* --- Home hero ------------------------------------------------------------------ */
-.st-hero {
-  max-width: var(--st-max);
-  margin-inline: auto;
-  padding: var(--space-16) var(--space-6) var(--space-12);
-  display: grid;
-  grid-template-columns: 1fr 1.1fr;
-  align-items: center;
-  gap: var(--space-10);
-  min-height: calc(88vh - var(--st-header-h));
+/* --- Stage (home) -----------------------------------------------------------------
+   One product at a time: its type written huge behind it, pieces of it floating
+   at three depths, and the light behind it all in the product's colour.
+   `--stage-accent` is registered so that light can cross-fade between products;
+   an unregistered custom property only snaps. `--px`/`--py` (−1…1) are the
+   pointer, written by StoreStage, and move the pieces by their depth. */
+@property --stage-accent {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #60a5fa;
 }
-.st-hero-copy { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-5); }
-.st-hero-title {
-  font-size: clamp(2.4rem, 5.6vw, 4.6rem);
-  line-height: 1.12;
-  font-weight: var(--weight-bold);
-  margin: 0;
-  background: linear-gradient(180deg, var(--text) 30%, var(--text-muted));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-.st-hero-sub {
-  font-size: clamp(1rem, 1.6vw, 1.25rem);
-  line-height: var(--leading-relaxed);
-  color: var(--text-secondary);
-  margin: 0;
-  max-width: 34ch;
-}
-.st-hero-actions { display: flex; align-items: center; gap: var(--space-6); flex-wrap: wrap; margin-top: var(--space-2); }
 
-.st-hero-stage {
+.st-stage {
+  --px: 0;
+  --py: 0;
   position: relative;
-  height: min(60vh, 520px);
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
+  isolation: isolate;
+  overflow: hidden;
+  min-height: min(100svh, 940px);
+  margin-top: calc(var(--st-header-h) * -1);
+  padding: calc(var(--st-header-h) + var(--space-6)) var(--space-6) var(--space-10);
+  display: grid;
+  place-items: center;
+  touch-action: pan-y;
+  transition: --stage-accent 0.9s var(--ease-out);
 }
-.st-hero-item { position: absolute; bottom: 8%; }
-.st-hero-item--0 { width: 46%; z-index: 3; inset-inline-start: 27%; animation: st-float 7s ease-in-out infinite; }
-.st-hero-item--1 { width: 34%; z-index: 2; inset-inline-start: 2%; bottom: 12%; opacity: 0.9; animation: st-float 8s ease-in-out -2s infinite; }
-.st-hero-item--2 { width: 34%; z-index: 2; inset-inline-end: 2%; bottom: 12%; opacity: 0.9; animation: st-float 9s ease-in-out -4s infinite; }
-.st-hero-floor {
+.st-stage-glow {
   position: absolute;
-  inset-inline: 5%;
-  bottom: 4%;
-  height: 40%;
-  background: radial-gradient(ellipse at 50% 100%, rgba(var(--primary-rgb), 0.35), transparent 65%);
-  filter: blur(10px);
-  z-index: 1;
+  inset: 0;
+  z-index: -3;
+  background:
+    radial-gradient(60% 55% at 50% 52%, color-mix(in srgb, var(--stage-accent) 30%, transparent), transparent 70%),
+    radial-gradient(90% 70% at 50% 110%, color-mix(in srgb, var(--stage-accent) 18%, transparent), transparent 70%),
+    linear-gradient(to bottom, color-mix(in srgb, var(--stage-accent) 8%, var(--bg)), var(--bg));
+}
+
+/* The word */
+.st-stage-word-wrap {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+.st-stage-word {
+  font-size: clamp(5rem, 21vw, 19rem);
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+  color: color-mix(in srgb, var(--stage-accent) 72%, var(--text));
+  text-shadow: 0 30px 60px color-mix(in srgb, var(--bg) 60%, transparent);
+  translate: 0 -4%;
+  animation: st-word-in 0.85s var(--ease-out) both;
+}
+.st-stage-word[data-dir="-1"] { animation-name: st-word-in-back; }
+/* RTL: forward comes in from the left. */
+@keyframes st-word-in {
+  from { opacity: 0; transform: translateX(-28%); filter: blur(18px); }
+  60% { filter: blur(2px); }
+  to { opacity: 1; transform: none; filter: blur(0); }
+}
+@keyframes st-word-in-back {
+  from { opacity: 0; transform: translateX(28%); filter: blur(18px); }
+  60% { filter: blur(2px); }
+  to { opacity: 1; transform: none; filter: blur(0); }
+}
+
+/* The pieces — position, size, focus and depth per slot */
+.st-stage-pieces { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+.st-piece {
+  --depth: 0.5;
+  --size: 110px;
+  --rot: 0deg;
+  --blur: 0px;
+  position: absolute;
+  width: var(--size);
+  aspect-ratio: 1;
+  translate: calc(var(--px) * var(--depth) * -34px) calc(var(--py) * var(--depth) * -26px);
+  transition: translate 0.6s var(--ease-out);
+  filter: blur(var(--blur)) drop-shadow(0 18px 24px color-mix(in srgb, var(--bg) 70%, transparent));
+  animation: st-piece-in 0.9s var(--ease-out) both;
+}
+.st-piece-spin { display: block; width: 100%; height: 100%; rotate: var(--rot); animation: st-piece-float 7s ease-in-out infinite; }
+.st-piece svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.st-piece--0 { --size: clamp(70px, 9vw, 130px); --rot: -22deg; --depth: 0.4; top: 15%; inset-inline-end: 27%; animation-delay: 0.05s; }
+.st-piece--1 { --size: clamp(60px, 7.5vw, 110px); --rot: 28deg; --depth: 0.5; top: 13%; inset-inline-start: 28%; animation-delay: 0.12s; }
+.st-piece--2 { --size: clamp(140px, 19vw, 280px); --rot: 14deg; --depth: 1.3; --blur: 7px; top: 46%; inset-inline-end: -3%; z-index: 3; animation-delay: 0s; }
+.st-piece--3 { --size: clamp(100px, 13vw, 190px); --rot: -32deg; --depth: 0.9; --blur: 1.5px; top: 54%; inset-inline-start: 1%; z-index: 3; animation-delay: 0.08s; }
+.st-piece--4 { --size: clamp(46px, 5vw, 76px); --rot: 40deg; --depth: 0.25; --blur: 3px; top: 70%; inset-inline-end: 24%; animation-delay: 0.18s; }
+.st-piece--1 .st-piece-spin { animation-duration: 8.5s; animation-delay: -2s; }
+.st-piece--2 .st-piece-spin { animation-duration: 9s; animation-delay: -4s; }
+.st-piece--3 .st-piece-spin { animation-duration: 7.5s; animation-delay: -1s; }
+.st-piece--4 .st-piece-spin { animation-duration: 6s; animation-delay: -3s; }
+@keyframes st-piece-in {
+  from { opacity: 0; scale: 0.55; }
+  to { opacity: 1; scale: 1; }
+}
+@keyframes st-piece-float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-14px) rotate(6deg); }
+}
+
+/* The product, arrows, caption, button, dots */
+.st-stage-center { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: var(--space-4); }
+.st-stage-product { position: relative; display: flex; align-items: center; justify-content: center; }
+.st-stage-visual {
+  display: block;
+  width: clamp(220px, 30vw, 420px);
+  animation: st-prod-in 0.7s var(--ease-out) both;
+}
+.st-stage-visual .st-visual { animation: st-float 7s ease-in-out infinite; }
+.st-stage-visual .st-visual :is(svg, img) { filter: drop-shadow(0 40px 50px color-mix(in srgb, var(--bg) 85%, transparent)); }
+@keyframes st-prod-in {
+  from { opacity: 0; scale: 0.9; translate: 0 20px; }
+  to { opacity: 1; scale: 1; translate: 0 0; }
 }
 @keyframes st-float {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-12px); }
 }
+
+.st-stage-arrow {
+  position: absolute;
+  top: 50%;
+  translate: 0 -50%;
+  z-index: 4;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: var(--radius-circle);
+  border: 1px solid var(--glass-border-strong);
+  background: var(--glass-solid);
+  backdrop-filter: var(--glass-solid-blur);
+  -webkit-backdrop-filter: var(--glass-solid-blur);
+  color: var(--text);
+  cursor: pointer;
+  box-shadow: var(--elev-2);
+  transition: background var(--dur) var(--ease), scale 0.35s var(--ease-spring, var(--ease-out));
+}
+.st-stage-arrow:hover { background: color-mix(in srgb, var(--stage-accent) 30%, var(--bg2)); }
+.st-stage-arrow:active { scale: 0.92; }
+.st-stage-arrow svg { width: 22px; height: 22px; }
+/* Overlapping the product's edges, the way the reference sets them: previous on
+   the start side (the right in RTL), next on the end side. */
+.st-stage-arrow--prev { inset-inline-start: -10px; }
+.st-stage-arrow--next { inset-inline-end: -10px; }
+
+.st-stage-caption { display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; animation: st-fade 0.6s var(--ease-out) both; }
+.st-stage-caption strong { font-size: var(--text-lg); }
+.st-stage-caption span { font-size: var(--text-sm); color: var(--text-secondary); }
+
+.st-stage-shop {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: var(--space-2) var(--space-6);
+  border-radius: var(--radius-pill);
+  background: var(--text);
+  color: var(--text-inverse);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  text-decoration: none;
+  box-shadow: var(--elev-2);
+  transition: background var(--dur) var(--ease), translate var(--dur-slow) var(--ease-out), scale 0.35s var(--ease-spring, var(--ease-out));
+}
+.st-stage-shop:hover { background: color-mix(in srgb, var(--stage-accent) 18%, var(--text)); translate: 0 -2px; }
+.st-stage-shop:active { scale: 0.96; }
+
+.st-stage-dots { display: flex; gap: var(--space-2); margin-top: var(--space-2); }
+.st-stage-dot {
+  position: relative;
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--text) 30%, transparent);
+  overflow: hidden;
+  cursor: pointer;
+  transition: width var(--dur-slow) var(--ease-out), background var(--dur) var(--ease);
+}
+.st-stage-dot.is-active { width: 34px; background: color-mix(in srgb, var(--text) 25%, transparent); }
+.st-stage-dot-fill {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: 100%;
+  background: var(--text);
+  transform-origin: right;
+  animation: st-dot-fill linear both;
+}
+@keyframes st-dot-fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+/* The row of actions under a headline (the product page's hero uses it). */
+.st-hero-actions { display: flex; align-items: center; gap: var(--space-6); flex-wrap: wrap; margin-top: var(--space-2); }
+
+/* --- Statement (the coach's line, below the stage) ------------------------------------ */
+.st-statement {
+  max-width: 900px;
+  margin-inline: auto;
+  padding: var(--space-16) var(--space-6) var(--space-6);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+}
+.st-statement-title {
+  margin: 0;
+  font-size: clamp(2.2rem, 5vw, 4rem);
+  line-height: 1.15;
+  font-weight: var(--weight-bold);
+  background: linear-gradient(180deg, var(--text) 30%, var(--text-muted));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-wrap: balance;
+}
+.st-statement-sub { margin: 0; font-size: var(--text-lg); line-height: var(--leading-relaxed); color: var(--text-secondary); max-width: 46ch; }
 
 /* --- Featured tiles ------------------------------------------------------------ */
 .st-tiles {
@@ -994,12 +1168,18 @@ body.st-lock { overflow: hidden; }
 }
 
 @media (max-width: 768px) {
-  .st-hero { grid-template-columns: 1fr; min-height: auto; padding-top: var(--space-10); text-align: center; gap: var(--space-6); }
-  .st-hero-copy { align-items: center; }
-  .st-hero-sub { max-width: none; }
-  .st-hero-actions { justify-content: center; }
-  .st-hero-stage { height: 340px; }
-
+  .st-stage { min-height: min(92svh, 760px); padding-inline: var(--space-4); }
+  .st-stage-visual { width: clamp(190px, 56vw, 300px); }
+  /* Wider than the product on a phone, so the word reads past both its edges. */
+  .st-stage-word { font-size: 31vw; }
+  .st-stage-arrow { width: 40px; height: 40px; }
+  .st-stage-arrow--prev { inset-inline-start: -14px; }
+  .st-stage-arrow--next { inset-inline-end: -14px; }
+  .st-piece--0 { inset-inline-end: 8%; top: 13%; }
+  .st-piece--1 { inset-inline-start: 6%; top: 16%; }
+  .st-piece--2 { top: 56%; inset-inline-end: -12%; }
+  .st-piece--3 { top: 62%; inset-inline-start: -8%; }
+  .st-piece--4 { display: none; }
   .st-tiles { grid-template-columns: 1fr; padding-inline: var(--space-4); }
   .st-tile, .st-tile--wide { min-height: 400px; flex-direction: column; text-align: center; padding: var(--space-10) var(--space-5) 0; gap: var(--space-4); }
   .st-tile--wide .st-tile-copy { align-items: center; }
@@ -1007,6 +1187,7 @@ body.st-lock { overflow: hidden; }
 
   .st-p-hero { grid-template-columns: 1fr; min-height: auto; text-align: center; padding-top: var(--space-6); }
   .st-p-hero-copy { align-items: center; order: 2; }
+  .st-p-hero .st-hero-actions { justify-content: center; }
   .st-p-hero-visual .st-visual { width: min(320px, 80%); }
 
   .st-p-feature, .st-p-feature.is-flipped { grid-template-columns: 1fr; padding: var(--space-8) var(--space-6); text-align: center; gap: var(--space-6); }
@@ -1018,6 +1199,9 @@ body.st-lock { overflow: hidden; }
 
   /* nowrap: a wrapping column sizes its line to the widest item, and the
      chip row's widest is all the chips — which widened the whole page. */
+  .st-header-inner { grid-template-columns: 1fr auto; }
+  .st-header-nav { display: none; }
+  .st-header-home { display: grid; }
   .st-filters { flex-direction: column; flex-wrap: nowrap; align-items: stretch; }
   .st-chips { min-width: 0; max-width: 100%; }
   .st-chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: var(--space-1); }
@@ -1028,9 +1212,7 @@ body.st-lock { overflow: hidden; }
 
 @media (max-width: 640px) {
   .st-header-inner { padding-inline: var(--space-4); }
-  .st-header-back span, .st-cart-label { display: none; }
-  .st-header-logo img { height: 28px; }
-  .st-header-back, .st-cart-btn { padding: var(--space-2) var(--space-3); }
+  .st-header-logo img { height: 26px; }
 
   .st-grid { grid-template-columns: repeat(2, 1fr); gap: var(--space-3); }
   .st-card-visual { padding: var(--space-4) var(--space-4) 0; }
@@ -1051,12 +1233,12 @@ body.st-lock { overflow: hidden; }
 }
 
 @media (max-width: 480px) {
-  .st-hero-stage { height: 260px; }
   .st-root .st-btn { padding-inline: var(--space-6); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .st-hero-item, .st-p-hero-visual .st-visual, .st-p-glow { animation: none; }
+  .st-stage-visual, .st-stage-visual .st-visual, .st-stage-word, .st-piece, .st-piece-spin, .st-p-hero-visual .st-visual, .st-p-glow { animation: none; }
+  .st-stage { transition: none; }
   .st-p-hero-visual { transform: none; }
   .st-p-hero-copy { opacity: 1; }
 }

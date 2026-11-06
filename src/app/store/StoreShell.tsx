@@ -53,26 +53,31 @@ function StoreHeader() {
   return (
     <header className={`st-header${scrolled ? " is-scrolled" : ""}`}>
       <div className="st-header-inner">
-        <Link href="/" className="st-header-back" aria-label="العودة للموقع الرئيسي">
-          <House aria-hidden="true" />
-          <span>الموقع الرئيسي</span>
-        </Link>
-
         <Link href="/store" className="st-header-logo" aria-current={pathname === "/store" ? "page" : undefined}>
           <img
             src={optimizedSrc("/images/logo/hLogo.png", 384)}
             srcSet={optimizedSrcSet("/images/logo/hLogo.png", [384, 640])}
-            sizes="180px"
+            sizes="170px"
             alt="Ibrahim Abutabikh"
           />
           <span className="st-header-tag">STORE</span>
         </Link>
 
-        <button type="button" className="st-cart-btn" onClick={open} aria-label={`السلة، ${count} منتج`}>
-          <ShoppingBag aria-hidden="true" />
-          <span className="st-cart-label">السلة</span>
-          {count > 0 && <span className="st-cart-badge">{count}</span>}
-        </button>
+        <nav className="st-header-nav" aria-label="المتجر">
+          <Link href="/store#catalog">المنتجات</Link>
+          <Link href="/store#featured">الأكثر طلباً</Link>
+          <Link href="/">الموقع الرئيسي</Link>
+        </nav>
+
+        <div className="st-header-actions">
+          <Link href="/" className="st-header-home" aria-label="العودة للموقع الرئيسي">
+            <House aria-hidden="true" />
+          </Link>
+          <button type="button" className="st-cart-btn" onClick={open} aria-label={`السلة، ${count} منتج`}>
+            <ShoppingBag aria-hidden="true" />
+            {count > 0 && <span className="st-cart-badge">{count}</span>}
+          </button>
+        </div>
       </div>
     </header>
   );

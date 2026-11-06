@@ -48,9 +48,9 @@ function subscribeCollapsed(onChange: () => void) {
 
 /* The sidebar's sections, in the order they are drawn. A heading is drawn only
    over a group this person has at least one item in. */
-type NavGroup = "players" | "training" | "diet" | "admin" | "store";
+type NavGroup = "home" | "training" | "diet" | "admin" | "store_sales" | "store_catalog" | "store_admin";
 const GYM_NAV_GROUPS: { id: NavGroup; title: string }[] = [
-  { id: "players", title: "اللاعبين" },
+  { id: "home", title: "الرئيسية" },
   { id: "training", title: "التمارين" },
   { id: "diet", title: "الأنظمة الغذائية" },
   { id: "admin", title: "الإدارة" },
@@ -58,7 +58,11 @@ const GYM_NAV_GROUPS: { id: NavGroup; title: string }[] = [
 /* The supplements store is a second panel in the same shell: under
    /admin/store the sidebar swaps to the store's sections, and a switch at the
    top of it moves between the two. The coach's alone. */
-const STORE_NAV_GROUPS: { id: NavGroup; title: string }[] = [{ id: "store", title: "متجر المكملات" }];
+const STORE_NAV_GROUPS: { id: NavGroup; title: string }[] = [
+  { id: "store_sales", title: "المبيعات" },
+  { id: "store_catalog", title: "المنتجات والمخزن" },
+  { id: "store_admin", title: "الإعدادات" },
+];
 const STORE_PREFIX = "/admin/store";
 
 export default function AdminLayout({
@@ -102,26 +106,69 @@ export default function AdminLayout({
     };
   }, []);
 
+  /* Challenge submissions waiting on a review — the number on the "التحديات"
+     link. Read again on every page change, once a minute while the tab is in
+     front, and when the challenges screen says it reviewed one. */
+  const canSeeChallenges =
+    access !== null && (access.isOwner || hasPermission(access.permissions, "challenges.view"));
+  const [pendingChallenges, setPendingChallenges] = useState(0);
+  useEffect(() => {
+    if (!canSeeChallenges) return;
+    let cancelled = false;
+    const load = () => {
+      fetch("/api/challenges/pending")
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (!cancelled && data && typeof data.pending === "number") setPendingChallenges(data.pending);
+        })
+        .catch(() => {});
+    };
+    load();
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") load();
+    }, 60_000);
+    window.addEventListener("challenges-changed", load);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+      window.removeEventListener("challenges-changed", load);
+    };
+  }, [canSeeChallenges, pathname]);
+  const challengeBadge = (path: string) =>
+    path === "/admin/challenges" && pendingChallenges > 0 ? (
+      <span
+        aria-label={`${pendingChallenges} طلب بانتظار المراجعة`}
+        style={{ position: "absolute", top: "-6px", insetInlineEnd: "-8px", minWidth: "18px", height: "18px", padding: "0 5px", borderRadius: "var(--radius-pill)", background: "var(--error)", color: "var(--text-inverse)", fontSize: "11px", fontWeight: 700, lineHeight: "18px", textAlign: "center" }}
+      >
+        {pendingChallenges > 99 ? "99+" : pendingChallenges}
+      </span>
+    ) : null;
+
   /* `short` is the label under the icon in the phone tab bar. An item with no
      `section` is the coach's alone — no grant opens it. */
   const isStoreMode = pathname === STORE_PREFIX || pathname.startsWith(`${STORE_PREFIX}/`);
   const NAV_GROUPS = isStoreMode ? STORE_NAV_GROUPS : GYM_NAV_GROUPS;
   const storeNavItems: { name: string; short: string; path: string; icon: IconName; group: NavGroup; section?: StaffSection; edit?: true }[] = [
-    { name: "لوحة المتجر", short: "اللوحة", path: "/admin/store", icon: "monitoring", group: "store" },
-    { name: "المنتجات", short: "المنتجات", path: "/admin/store/products", icon: "inventory_2", group: "store" },
-    { name: "الطلبات", short: "الطلبات", path: "/admin/store/orders", icon: "receipt_long", group: "store" },
-    { name: "الزبائن", short: "الزبائن", path: "/admin/store/customers", icon: "group", group: "store" },
-    { name: "المخزن", short: "المخزن", path: "/admin/store/inventory", icon: "layers", group: "store" },
-    { name: "إعدادات المتجر", short: "الإعدادات", path: "/admin/store/settings", icon: "settings", group: "store" },
+    /* In group order: the first four are the phone's tabs. */
+    { name: "لوحة المتجر", short: "اللوحة", path: "/admin/store", icon: "monitoring", group: "store_sales" },
+    { name: "الطلبات", short: "الطلبات", path: "/admin/store/orders", icon: "receipt_long", group: "store_sales" },
+    { name: "الزبائن", short: "الزبائن", path: "/admin/store/customers", icon: "group", group: "store_sales" },
+    { name: "المنتجات", short: "المنتجات", path: "/admin/store/products", icon: "inventory_2", group: "store_catalog" },
+    { name: "المخزن", short: "المخزن", path: "/admin/store/inventory", icon: "layers", group: "store_catalog" },
+    { name: "إعدادات المتجر", short: "الإعدادات", path: "/admin/store/settings", icon: "settings", group: "store_admin" },
   ];
   const gymNavItems: { name: string; short: string; path: string; icon: IconName; group: NavGroup; section?: StaffSection; edit?: true }[] = [
-    { name: "إدارة المشتركين", short: "المشتركين", path: "/admin", icon: "group", group: "players", section: "subscribers" },
+    /* Home: where the day starts. Overview and Analytics are the coach's alone;
+       a staff member with the subscribers grant sees the list here. */
+    { name: "نظرة عامة", short: "الرئيسية", path: "/admin/overview", icon: "home", group: "home" },
+    { name: "إدارة المشتركين", short: "المشتركين", path: "/admin", icon: "group", group: "home", section: "subscribers" },
+    { name: "التحليلات", short: "التحليلات", path: "/admin/analytics", icon: "monitoring", group: "home" },
     { name: "مكتبة الكورسات", short: "الكورسات", path: "/admin/courses", icon: "library_big", group: "training", section: "courses" },
     { name: "صانع الكورسات", short: "الصانع", path: "/admin/builder", icon: "clipboard_pen", group: "training", section: "courses", edit: true },
     { name: "التمارين", short: "التمارين", path: "/admin/exercises", icon: "fitness_center", group: "training", section: "exercises" },
+    { name: "التحديات", short: "التحديات", path: "/admin/challenges", icon: "emoji_events", group: "training", section: "challenges" },
     { name: "النظام الغذائي", short: "الغذائي", path: "/admin/diet", icon: "restaurant", group: "diet", section: "diet" },
     { name: "مكتبة الأنظمة الغذائية", short: "مكتبة الأنظمة", path: "/admin/diet/library", icon: "notebook_text", group: "diet", section: "diet" },
-    { name: "التحليلات", short: "التحليلات", path: "/admin/analytics", icon: "monitoring", group: "admin" },
     { name: "محتوى الموقع", short: "المحتوى", path: "/admin/cms", icon: "app_window", group: "admin", section: "cms" },
     { name: "إدارة المشرفين", short: "المشرفين", path: "/admin/staff", icon: "verified_user", group: "admin" },
   ];
@@ -195,18 +242,31 @@ export default function AdminLayout({
           </button>
         </div>
 
-        {/* Gym ⇄ store. The coach only; on a phone it lives in the "more" sheet. */}
+        {/* Gym ⇄ store, as a two-part switch that shows both sides and lights
+            the one you are in. The coach only; on a phone it is in the "more"
+            sheet. */}
         {access?.isOwner && (
-          <Link
-            href={isStoreMode ? "/admin" : STORE_PREFIX}
-            className={`admin-mode-switch${isStoreMode ? " is-store" : ""}`}
-            title={isStoreMode ? "انتقل إلى الجم" : "انتقل إلى المتجر"}
-          >
-            <span className="admin-mode-switch-icon">
-              {isStoreMode ? <Dumbbell aria-hidden="true" /> : <Store aria-hidden="true" />}
-            </span>
-            <span className="admin-mode-switch-label">{isStoreMode ? "انتقل إلى الجم" : "انتقل إلى المتجر"}</span>
-          </Link>
+          <div className={`admin-mode-switch${isStoreMode ? " is-store" : ""}`} role="group" aria-label="الانتقال بين الجم والمتجر">
+            <span className="admin-mode-switch-thumb" aria-hidden="true" />
+            <Link
+              href="/admin/overview"
+              className={`admin-mode-switch-option${!isStoreMode ? " is-active" : ""}`}
+              aria-current={!isStoreMode ? "true" : undefined}
+              title="الجم: اللاعبين، الكورسات، التغذية"
+            >
+              <Dumbbell aria-hidden="true" />
+              <span className="admin-mode-switch-label">الجم</span>
+            </Link>
+            <Link
+              href={STORE_PREFIX}
+              className={`admin-mode-switch-option${isStoreMode ? " is-active" : ""}`}
+              aria-current={isStoreMode ? "true" : undefined}
+              title="متجر المكملات"
+            >
+              <Store aria-hidden="true" />
+              <span className="admin-mode-switch-label">المتجر</span>
+            </Link>
+          </div>
         )}
 
         <div className="admin-nav-container">
@@ -230,8 +290,9 @@ export default function AdminLayout({
                       onClick={() => setIsMoreOpen(false)}
                       className={`admin-nav-link ${isActive ? "active" : ""} ${navItems.indexOf(item) >= PHONE_TABS ? "is-overflow" : ""}`}
                     >
-                      <span className="admin-nav-icon">
+                      <span className="admin-nav-icon" style={{ position: "relative" }}>
                         <Icon name={item.icon} className="app-icon" />
+                        {challengeBadge(item.path)}
                       </span>
                       <span className="admin-nav-label">{item.name}</span>
                       <span className="admin-nav-short">{item.short}</span>
@@ -250,8 +311,9 @@ export default function AdminLayout({
             aria-expanded={isMoreOpen}
             className={`admin-nav-link admin-nav-more ${isMoreOpen || isOverflowActive ? "active" : ""}`}
           >
-            <span className="admin-nav-icon">
+            <span className="admin-nav-icon" style={{ position: "relative" }}>
               <Icon name="settings" className="app-icon" />
+              {overflowItems.some((item) => item.path === "/admin/challenges") && challengeBadge("/admin/challenges")}
             </span>
             <span className="admin-nav-short">المزيد</span>
           </button>
@@ -299,6 +361,11 @@ export default function AdminLayout({
                     >
                       <Icon name={item.icon} />
                       <span>{item.name}</span>
+                      {item.path === "/admin/challenges" && pendingChallenges > 0 && (
+                        <span style={{ marginInlineStart: "auto", minWidth: "20px", padding: "0 6px", borderRadius: "var(--radius-pill)", background: "var(--error)", color: "var(--text-inverse)", fontSize: "12px", fontWeight: 700, lineHeight: "20px", textAlign: "center" }}>
+                          {pendingChallenges}
+                        </span>
+                      )}
                     </Link>
                   ))}
                 </div>
@@ -309,7 +376,7 @@ export default function AdminLayout({
 
             {access?.isOwner && (
               <Link
-                href={isStoreMode ? "/admin" : STORE_PREFIX}
+                href={isStoreMode ? "/admin/overview" : STORE_PREFIX}
                 role="menuitem"
                 className="admin-dropdown-item admin-dropdown-item--switch"
                 onClick={() => setIsMoreOpen(false)}

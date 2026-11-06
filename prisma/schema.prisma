@@ -629,6 +629,7 @@ model profiles {
   upload_sessions      upload_sessions[]
   workout_logs         workout_logs[]
   staff_trainees       staff_trainees[]
+  challenge_submissions challenge_submissions[]
 
   @@index([username, created_at(sort: Desc)], map: "idx_profiles_username_created")
   @@index([current_course_id], map: "idx_profiles_current_course_id")
@@ -1040,5 +1041,51 @@ model store_stock_movements {
 
   @@index([product_id, created_at(sort: Desc)], map: "idx_store_stock_movements_product")
   @@index([created_at(sort: Desc)], map: "idx_store_stock_movements_created")
+  @@schema("public")
+}
+
+/// A challenge the coach sets for every trainee. See
+/// prisma/manual/2026-11-04-challenges.sql and src/lib/challenges.ts.
+model challenges {
+  id              String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title           String
+  description     String                  @default("")
+  target          String                  @default("")
+  points          Int                     @default(10)
+  video_url       String?
+  starts_at       DateTime?               @db.Timestamptz(6)
+  ends_at         DateTime?               @db.Timestamptz(6)
+  is_active       Boolean                 @default(true)
+  /// The staff member who made it; NULL for the coach's own. A plain column —
+  /// the foreign key (ON DELETE SET NULL) is declared in the SQL file.
+  created_by      String?                 @db.Uuid
+  created_by_name String?
+  created_at      DateTime                @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime                @default(now()) @updatedAt @db.Timestamptz(6)
+  submissions     challenge_submissions[]
+
+  @@index([is_active, created_at(sort: Desc)], map: "idx_challenges_active")
+  @@schema("public")
+}
+
+/// One trainee's claim to have done one challenge: pending | approved | rejected.
+/// Approving it is what awards `points_awarded`.
+model challenge_submissions {
+  id               String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  challenge_id     String     @db.Uuid
+  profile_id       String     @db.Uuid
+  reference        String     @unique
+  status           String     @default("pending")
+  points_awarded   Int        @default(0)
+  reject_reason    String?
+  submitted_at     DateTime   @default(now()) @db.Timestamptz(6)
+  reviewed_at      DateTime?  @db.Timestamptz(6)
+  reviewed_by_name String?
+  challenge        challenges @relation(fields: [challenge_id], references: [id], onDelete: Cascade)
+  profiles         profiles   @relation(fields: [profile_id], references: [id], onDelete: Cascade)
+
+  @@unique([challenge_id, profile_id], map: "uq_challenge_submissions_entry")
+  @@index([status, submitted_at(sort: Desc)], map: "idx_challenge_submissions_status")
+  @@index([profile_id], map: "idx_challenge_submissions_profile")
   @@schema("public")
 }

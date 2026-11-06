@@ -530,3 +530,4 @@ button.sa-stat.is-selected { border-color: var(--primary); box-shadow: inset 0 0
   .sa-stats--3 { grid-template-columns: 1fr; }
   .sa-log-meta { display: none; }
 }
+

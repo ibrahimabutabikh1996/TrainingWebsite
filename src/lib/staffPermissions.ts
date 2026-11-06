@@ -24,6 +24,7 @@ export const STAFF_SECTIONS = [
   { key: "exercises", label: "التمارين", hint: "مكتبة التمارين", home: "/admin/exercises" },
   { key: "diet", label: "النظام الغذائي", hint: "مصادر الطعام، الأنظمة، مكتبة الأنظمة الغذائية", home: "/admin/diet" },
   { key: "cms", label: "محتوى الموقع", hint: "الصفحة الرئيسية والصور", home: "/admin/cms" },
+  { key: "challenges", label: "التحديات", hint: "إنشاء التحديات ومراجعة طلبات اللاعبين وتسجيل النقاط", home: "/admin/challenges" },
 ] as const;
 
 export type StaffSection = (typeof STAFF_SECTIONS)[number]["key"];

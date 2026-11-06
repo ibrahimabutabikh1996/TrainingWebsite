@@ -151,7 +151,7 @@ export default function ChangePasswordPage() {
     }
   };
 
-  const homeHref = isAdminUsername(username) ? "/admin" : "/dashboard";
+  const homeHref = isAdminUsername(username) ? "/admin/overview" : "/dashboard";
 
   return (
     <div className="pw-page" lang="ar">

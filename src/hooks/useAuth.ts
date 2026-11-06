@@ -38,7 +38,7 @@ export function useAuth() {
          answer keeps the redirect and the proxy's admin check from ever
          disagreeing about who the coach is. */
       if (data.isAdmin ?? isAdminUsername(data.username)) {
-        router.push("/admin");
+        router.push("/admin/overview");
       } else {
         router.push("/dashboard");
       }

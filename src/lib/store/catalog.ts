@@ -125,3 +125,4 @@ export async function getStoreSettings(): Promise<StoreSettings> {
     return DEFAULT_STORE_SETTINGS;
   }
 }
+

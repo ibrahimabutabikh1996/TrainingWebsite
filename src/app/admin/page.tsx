@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { Prisma } from "@prisma/client";
-import { requireAdminPage, sessionMaySeeTrainee } from "@/lib/authGuard";
+import { requireAdminPage, sessionCan, sessionMaySeeTrainee } from "@/lib/authGuard";
+import { getSubmissions } from "./challenges/data";
 import AdminCRMClient from "./AdminCRMClient";
 import LiveRefresh from "@/components/LiveRefresh";
 import type { JsonRecord } from "@/types";
@@ -168,13 +169,29 @@ export default async function AdminDashboardPage() {
     (await getLandingContent())?.content_ar as JsonRecord | undefined
   );
 
+  /* Challenge submissions for the bell: every pending one, and the latest
+     reviewed ones under "read". Only for someone allowed to review them, and a
+     staff member's own trainees only — `getSubmissions` scopes it. */
+  const challengeNotices = sessionCan(session, "challenges.view")
+    ? ((await getSubmissions(session, 100)) ?? []).map((s) => ({
+        id: s.id,
+        profileId: s.profile_id,
+        name: s.trainee_name,
+        title: s.challenge_title,
+        reference: s.reference,
+        status: s.status,
+        at: s.submitted_at,
+        reviewedAt: s.reviewed_at,
+      }))
+    : [];
+
   /* A fragment because this page returns the client component bare — there is
      no wrapper here to hang it inside, and adding one would change the layout
      for the sake of a component that renders nothing. */
   return (
     <>
       <LiveRefresh scope="panel" />
-      <AdminCRMClient initialProfiles={serializedProfiles} planNames={planNames} />
+      <AdminCRMClient initialProfiles={serializedProfiles} planNames={planNames} challengeNotices={challengeNotices} />
     </>
   );
 }

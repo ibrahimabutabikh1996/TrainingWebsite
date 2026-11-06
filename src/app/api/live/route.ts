@@ -149,6 +149,30 @@ async function panelFingerprint(): Promise<string> {
   return (row?.fp ?? "none").slice(0, 16);
 }
 
+/* Challenges and their submissions: for the panel, all of them; for a trainee,
+   the challenges and their own submissions. A separate statement rather than a
+   clause in the two above, because the tables come from a SQL file that may not
+   have been run yet — and a missing table would fail the whole statement, taking
+   every live page down with it. A failure here only means "no challenge news". */
+async function challengeFingerprint(profileId?: string): Promise<string> {
+  try {
+    const [row] = await prisma.$queryRaw<Array<{ fp: string | null }>>`
+      SELECT md5(
+        (SELECT count(*)::text || ':' || COALESCE(max(updated_at)::text, '')
+           FROM public.challenges) || '|' ||
+        (SELECT count(*)::text || ':' || COALESCE(md5(string_agg(
+                  id::text || '=' || status || '@' || submitted_at::text || '@' || COALESCE(reviewed_at::text, ''),
+                  ',' ORDER BY id)), '')
+           FROM public.challenge_submissions
+          WHERE ${profileId ?? null}::uuid IS NULL OR profile_id = ${profileId ?? null}::uuid)
+      ) AS fp
+    `;
+    return (row?.fp ?? "").slice(0, 8);
+  } catch {
+    return "";
+  }
+}
+
 export async function GET(request: NextRequest) {
   /* `requireUser`, not `getSession`.
    *
@@ -184,7 +208,7 @@ export async function GET(request: NextRequest) {
          than quietly served their own scope — a wrong answer to a question the
          caller had no business asking is still an answer. */
       if (!admin && !session.isStaff) return DENIED;
-      v = await panelFingerprint();
+      v = (await panelFingerprint()) + (await challengeFingerprint());
     } else if (scope === "profile") {
       if (!id || !isValidUUID(id)) {
         return NextResponse.json({ error: "طلب غير صالح" }, { status: 400 });
@@ -192,14 +216,14 @@ export async function GET(request: NextRequest) {
       /* The coach may watch any trainee; a trainee may watch only themselves,
          and `sessionOwnsProfile` is the same check every write path uses. */
       if (!admin && !(await sessionOwnsProfile(session, id, "view"))) return DENIED;
-      v = await profileFingerprint(id);
+      v = (await profileFingerprint(id)) + (await challengeFingerprint(id));
     } else if (scope === "me") {
       const own = await prisma.profiles.findFirst({
         where: { user_id: session.userId },
         orderBy: { created_at: "desc" },
         select: { id: true },
       });
-      v = own ? await profileFingerprint(own.id) : "none";
+      v = own ? (await profileFingerprint(own.id)) + (await challengeFingerprint(own.id)) : "none";
     } else {
       return NextResponse.json({ error: "طلب غير صالح" }, { status: 400 });
     }

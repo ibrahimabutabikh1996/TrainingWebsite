@@ -1,62 +1,94 @@
 /* The gym ⇄ store switch at the top of the panel's sidebar — see
-   src/app/admin/layout.tsx. Its own file so admin.css stays untouched. */
+   src/app/admin/layout.tsx. Its own file so admin.css stays untouched.
+
+   A segmented control: both sides are always there, and a lit thumb sits
+   under the one you are in, sliding across when you change. Open, the two
+   sides sit in a row; folded to icons, they stack, each the size of a nav item. */
 
 .admin-mode-switch {
   position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  margin: 0 0 var(--space-4);
+  padding: 4px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--glass-border);
+  background: color-mix(in srgb, var(--bg) 55%, transparent);
+  box-shadow: inset 0 1px 3px color-mix(in srgb, var(--bg) 70%, transparent);
+}
+
+/* The thumb — one element that slides, rather than two that blink. */
+.admin-mode-switch-thumb {
+  position: absolute;
+  z-index: -1;
+  top: 4px;
+  bottom: 4px;
+  inset-inline-start: 4px;
+  width: calc(50% - 6px);
+  border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, var(--primary-active), var(--primary));
+  box-shadow: var(--elev-1), inset 0 1px 0 color-mix(in srgb, var(--text) 25%, transparent);
+  transition: inset-inline-start var(--dur-slow) var(--ease-out), background var(--dur-slow) var(--ease);
+}
+.admin-mode-switch.is-store .admin-mode-switch-thumb {
+  inset-inline-start: calc(50% + 2px);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--success) 70%, var(--bg)), var(--success));
+}
+
+.admin-mode-switch-option {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-  margin: 0 var(--space-3) var(--space-3);
-  padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-primary);
-  background:
-    linear-gradient(135deg, rgba(var(--primary-rgb), 0.22), rgba(var(--primary-rgb), 0.06));
-  color: var(--text);
-  font-size: var(--text-sm);
-  font-weight: var(--weight-bold);
-  text-decoration: none;
-  overflow: hidden;
-  transition: border-color var(--dur) var(--ease), background var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
-}
-.admin-mode-switch:hover {
-  border-color: var(--primary);
-  box-shadow: inset 0 0 24px -8px var(--primary);
-}
-.admin-mode-switch.is-store {
-  border-color: color-mix(in srgb, var(--success) 40%, transparent);
-  background: linear-gradient(135deg, color-mix(in srgb, var(--success) 20%, transparent), color-mix(in srgb, var(--success) 5%, transparent));
-}
-.admin-mode-switch.is-store:hover {
-  border-color: var(--success);
-  box-shadow: inset 0 0 24px -8px var(--success);
-}
-.admin-mode-switch-icon {
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  flex-shrink: 0;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 38px;
+  padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-sm);
-  background: var(--primary);
-  color: var(--text-inverse);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color var(--dur) var(--ease), background var(--dur) var(--ease);
 }
-.admin-mode-switch.is-store .admin-mode-switch-icon { background: var(--success); }
-.admin-mode-switch-icon svg { width: 18px; height: 18px; }
-.admin-mode-switch-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.admin-mode-switch-option:hover:not(.is-active) { color: var(--text); background: var(--glass-2); }
+.admin-mode-switch-option.is-active { color: var(--text-inverse); font-weight: var(--weight-bold); }
+.admin-mode-switch-option svg { width: 18px; height: 18px; flex-shrink: 0; }
+.admin-mode-switch-label { overflow: hidden; text-overflow: ellipsis; }
 
+/* Folded: the two sides stack, each a nav-item-sized square, and the thumb
+   moves down instead of across. */
 @media (min-width: 769px) {
   .is-nav-collapsed .admin-mode-switch {
-    justify-content: center;
-    padding: var(--space-2);
-    margin-inline: var(--space-2);
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr 1fr;
+    margin-bottom: var(--space-3);
   }
   .is-nav-collapsed .admin-mode-switch-label { display: none; }
+  .is-nav-collapsed .admin-mode-switch-option { min-height: 40px; padding: 0; }
+  .is-nav-collapsed .admin-mode-switch-option svg { width: 20px; height: 20px; }
+  .is-nav-collapsed .admin-mode-switch-thumb {
+    inset-inline: 4px;
+    width: auto;
+    top: 4px;
+    bottom: calc(50% + 2px);
+    transition: top var(--dur-slow) var(--ease-out), bottom var(--dur-slow) var(--ease-out), background var(--dur-slow) var(--ease);
+  }
+  .is-nav-collapsed .admin-mode-switch.is-store .admin-mode-switch-thumb {
+    inset-inline-start: 4px;
+    top: calc(50% + 2px);
+    bottom: 4px;
+  }
 }
 
 /* On a phone the sidebar is a tab bar; the switch is in the "more" sheet. */
 @media (max-width: 768px) {
   .admin-mode-switch { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-mode-switch-thumb { transition: none; }
 }
 
 .admin-dropdown-item--switch {

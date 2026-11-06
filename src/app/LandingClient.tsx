@@ -317,7 +317,7 @@ export default function LandingClient({
      away from it, so the wrong screen simply opened. Which panel to draw is a
      drawing decision, which is exactly what the username hint is for; the
      server still decides what either screen may show. */
-  const panelHref = isAdminUsername(currentUsername) ? "/admin" : "/dashboard";
+  const panelHref = isAdminUsername(currentUsername) ? "/admin/overview" : "/dashboard";
 
   /* Nothing on a preview may be operated — see @/hooks/usePreviewGuard, which
      is where the effect that used to do this below now lives. The second

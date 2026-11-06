@@ -34,11 +34,27 @@ type Notice = {
   id: string;
   profileId: string;
   name: string;
-  type: "new" | "renewal";
+  type: "new" | "renewal" | "challenge";
   at: string;
   month?: number;
   plan: unknown;
   readAt: string | null;
+  /** A challenge entry: which challenge, and the code in the trainee's WhatsApp message. */
+  title?: string;
+  reference?: string;
+};
+
+/* A challenge submission as the bell lists it — see /admin/challenges. Unread
+   while it waits for a review; reviewing it is what moves it to "read". */
+export type ChallengeNotice = {
+  id: string;
+  profileId: string;
+  name: string;
+  title: string;
+  reference: string;
+  status: "pending" | "approved" | "rejected";
+  at: string;
+  reviewedAt: string | null;
 };
 
 /* The filter dropdowns here used to be a second `CustomSelect`, declared in
@@ -61,9 +77,11 @@ type Notice = {
 export default function AdminCRMClient({
   initialProfiles,
   planNames,
+  challengeNotices = [],
 }: {
   initialProfiles: Profile[];
   planNames: PlanNames;
+  challengeNotices?: ChallengeNotice[];
 }) {
   const [search, setSearch] = useState("");
   const [filterPlan, setFilterPlan] = useState("all");
@@ -264,7 +282,7 @@ export default function AdminCRMClient({
   /* The bell: every registration and renewal request, newest first. A trainee
      from before `notifications` existed has no list, so an unread `is_new` on
      them stands in as one entry — /api/mark-read turns it into a real one. */
-  const notices: Notice[] = profiles.flatMap((p) => {
+  const notices: Notice[] = profiles.flatMap<Notice>((p) => {
     const data = getProfileData(p);
     const name = data.fullname || p.username || "غير معروف";
     const list: JsonRecord[] = Array.isArray(data.notifications)
@@ -284,7 +302,19 @@ export default function AdminCRMClient({
         plan: n.plan ?? data.plan,
         readAt: typeof n.read_at === "string" ? n.read_at : null,
       }));
-  }).sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
+  }).concat(
+    challengeNotices.map((c) => ({
+      id: `challenge-${c.id}`,
+      profileId: c.profileId,
+      name: c.name,
+      type: "challenge" as const,
+      at: c.at,
+      plan: undefined,
+      readAt: c.status === "pending" ? null : c.reviewedAt ?? c.at,
+      title: c.title,
+      reference: c.reference,
+    }))
+  ).sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
   const unreadCount = notices.filter((n) => !n.readAt).length;
   const shownNotices = notices.filter((n) =>
     noticeFilter === "all" ? true : noticeFilter === "unread" ? !n.readAt : !!n.readAt
@@ -405,20 +435,36 @@ export default function AdminCRMClient({
                           aria-label={`فتح ملف ${n.name}`}
                           style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: "12px", background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "start", color: "inherit", font: "inherit" }}
                         >
-                          <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: n.readAt ? "var(--bg4)" : n.type === "renewal" ? "var(--warning)" : "var(--error)", flexShrink: 0 }} />
+                          <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: n.readAt ? "var(--bg4)" : n.type === "renewal" ? "var(--warning)" : n.type === "challenge" ? "var(--primary)" : "var(--error)", flexShrink: 0 }} />
                           <div style={{ display: "flex", flexDirection: "column", gap: "4px", minWidth: 0 }}>
                             <span>
                               <strong style={{ color: "var(--text)", fontSize: "0.95rem" }}>{n.name}</strong>
                               <span style={{ color: "var(--text-secondary)", fontSize: "0.9rem" }}>
-                                {" — "}{n.type === "renewal" ? `طلب تجديد اشتراك${n.month ? ` — الشهر ${n.month}` : ""}` : "مشترك جديد"}
+                                {" — "}{n.type === "challenge" ? `أتمّ تحدي «${n.title ?? ""}»` : n.type === "renewal" ? `طلب تجديد اشتراك${n.month ? ` — الشهر ${n.month}` : ""}` : "مشترك جديد"}
                               </span>
                             </span>
                             <span style={{ color: "var(--text-secondary)", fontSize: "0.85rem" }}>
-                              {planNameFrom(planNames, n.plan, "غير محدد")} · {formatTimestamp(n.at)}
+                              {n.type === "challenge" ? <span dir="ltr">{n.reference}</span> : planNameFrom(planNames, n.plan, "غير محدد")} · {formatTimestamp(n.at)}
                             </span>
                           </div>
                         </button>
-                        {n.readAt ? (
+                        {n.type === "challenge" ? (
+                          n.readAt ? (
+                            <span style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0, color: "var(--text-muted)", fontSize: "0.85rem" }}>
+                              <Icon name="check_circle" style={{ fontSize: 18 }} />
+                              تمت المراجعة
+                            </span>
+                          ) : (
+                            <a
+                              href="/admin/challenges?tab=pending"
+                              title="مراجعة التحدي"
+                              style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0, background: "var(--bg3)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)", padding: "6px 10px", color: "var(--primary-on-tint)", fontSize: "0.85rem", fontWeight: 700, textDecoration: "none" }}
+                            >
+                              <Icon name="emoji_events" style={{ fontSize: 18 }} />
+                              مراجعة
+                            </a>
+                          )
+                        ) : n.readAt ? (
                           <span title={`قُرئ ${formatTimestamp(n.readAt)}`} style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0, color: "var(--text-muted)", fontSize: "0.85rem" }}>
                             <Icon name="check_circle" style={{ fontSize: 18 }} />
                             مقروء

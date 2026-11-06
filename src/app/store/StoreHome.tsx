@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, Plus, Search, SearchX } from "lucide-react";
+import { Plus, Search, SearchX } from "lucide-react";
+import StoreStage from "./StoreStage";
 import {
   STORE_CATEGORIES,
   categoryLabel,
@@ -21,7 +22,9 @@ export default function StoreHome({ products, settings }: { products: StoreProdu
   const [query, setQuery] = useState("");
 
   const featured = products.filter((p) => p.is_featured).slice(0, 4);
-  const stage = (featured.length >= 3 ? featured : products).slice(0, 3);
+  /* The stage shows the featured products; with fewer than two featured it
+     falls back to the first few, so there is always something to move between. */
+  const stageProducts = (featured.length >= 2 ? featured : products).slice(0, 6);
 
   const usedCategories = STORE_CATEGORIES.filter((c) => products.some((p) => p.category === c.key));
 
@@ -38,36 +41,19 @@ export default function StoreHome({ products, settings }: { products: StoreProdu
 
   return (
     <>
-      {/* HERO */}
-      <section className="st-hero">
-        <div className="st-hero-copy">
-          <span className="st-eyebrow st-reveal">متجر المكملات الغذائية</span>
-          <h1 className="st-hero-title st-reveal">{settings.hero_title}</h1>
-          <p className="st-hero-sub st-reveal">{settings.hero_subtitle}</p>
-          <div className="st-hero-actions st-reveal">
-            <a href="#catalog" className="btn-primary st-btn">تسوّق الآن</a>
-            {featured[0] && (
-              <Link href={`/store/${featured[0].slug}`} className="st-link">
-                اكتشف {featured[0].name} <ChevronLeft aria-hidden="true" />
-              </Link>
-            )}
-          </div>
-        </div>
-        {stage.length > 0 && (
-          <div className="st-hero-stage" aria-hidden="true">
-            {stage.map((p, i) => (
-              <div key={p.id} className={`st-hero-item st-hero-item--${i}`}>
-                <ProductVisual name={p.name} category={p.category} accent={p.accent} image_url={p.image_url} size={360} priority />
-              </div>
-            ))}
-            <div className="st-hero-floor" />
-          </div>
-        )}
+      {/* STAGE — the featured products, one at a time. */}
+      <StoreStage products={stageProducts} />
+
+      {/* The coach's line, from the store settings, introducing the range. */}
+      <section className="st-statement">
+        <span className="st-eyebrow st-reveal">متجر المكملات الغذائية</span>
+        <h1 className="st-statement-title st-reveal">{settings.hero_title}</h1>
+        <p className="st-statement-sub st-reveal">{settings.hero_subtitle}</p>
       </section>
 
       {/* FEATURED TILES — one product per tile, the way a product line is introduced */}
       {featured.length > 0 && (
-        <section className="st-tiles" aria-label="منتجات مميزة">
+        <section id="featured" className="st-tiles" aria-label="منتجات مميزة">
           {featured.map((p, i) => {
             /* The first is full width; so is the last when it would otherwise sit alone. */
             const wide = i === 0 || (i === featured.length - 1 && featured.length % 2 === 0);

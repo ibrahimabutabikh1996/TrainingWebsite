@@ -1,0 +1,255 @@
+/* ─── Challenges (trainee dashboard) ──────────────────────────────────────
+   Cards are .home-stat-card, so they are the same glass as the home tab and get
+   its spotlight; the primary button is .dash-primary-btn. Only what is new is
+   here, scoped under .chl-tr. Tokens only. */
+
+.chl-tr {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.chl-tr-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.chl-tr-total {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-primary);
+  background: var(--primary-soft);
+  color: var(--primary-on-tint);
+}
+
+.chl-tr-total > .app-icon {
+  font-size: 28px;
+}
+
+.chl-tr-total div {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.chl-tr-total strong {
+  font-size: 1.6rem;
+  color: var(--text);
+}
+
+.chl-tr-total span {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.chl-tr-how {
+  margin: 0;
+  max-width: 70ch;
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+  color: var(--text-muted);
+}
+
+.chl-tr-notice {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+}
+
+.chl-tr-notice.is-ok {
+  background: var(--success-bg);
+  color: var(--success-text);
+}
+
+.chl-tr-notice.is-error {
+  background: var(--error-bg);
+  color: var(--error-text);
+}
+
+.chl-tr-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
+  align-items: start;
+  gap: var(--space-4);
+}
+
+.chl-tr-sub {
+  margin: var(--space-3) 0 0;
+  font-size: var(--text-md);
+  color: var(--text-secondary);
+}
+
+/* The card itself is .home-stat-card; this only tightens its rhythm. */
+.home-stat-card.chl-tr-card {
+  justify-content: flex-start;
+  gap: var(--space-4);
+}
+
+.chl-tr-card.is-approved {
+  border-color: color-mix(in srgb, var(--success) 40%, var(--glass-border));
+}
+
+.chl-tr-card.is-pending {
+  border-color: color-mix(in srgb, var(--warning) 40%, var(--glass-border));
+}
+
+.chl-tr-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.chl-tr-id {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.chl-tr-id .home-card-title {
+  overflow-wrap: anywhere;
+}
+
+.chl-tr-target {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--primary-light);
+}
+
+.chl-tr-points {
+  flex-shrink: 0;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-pill);
+  background: var(--success-bg);
+  color: var(--success-text);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.chl-tr-desc {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+  color: var(--text-secondary);
+  white-space: pre-line;
+}
+
+.chl-tr-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.chl-tr-meta:empty {
+  display: none;
+}
+
+.chl-tr-meta span,
+.chl-tr-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chl-tr-meta .app-icon {
+  font-size: 16px;
+}
+
+.chl-tr-link {
+  color: var(--primary-on-tint);
+  font-weight: var(--weight-semibold);
+  text-decoration: none;
+}
+
+.chl-tr-link:hover {
+  text-decoration: underline;
+}
+
+.chl-tr-state {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+}
+
+.chl-tr-state .app-icon {
+  flex-shrink: 0;
+  font-size: 18px;
+}
+
+.chl-tr-state.is-approved {
+  background: var(--success-bg);
+  color: var(--success-text);
+}
+
+.chl-tr-state.is-pending {
+  background: color-mix(in srgb, var(--warning) 14%, transparent);
+  color: var(--warning-text);
+}
+
+.chl-tr-state.is-rejected {
+  background: var(--error-bg);
+  color: var(--error-text);
+}
+
+.chl-tr-resend {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-sm);
+  color: var(--success-text);
+  text-decoration: none;
+}
+
+.chl-tr-resend:hover {
+  text-decoration: underline;
+}
+
+.chl-tr-done {
+  width: 100%;
+}
+
+.chl-tr-done:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.chl-tr-closed {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.chl-tr-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--text-muted);
+}
+
+.chl-tr-empty .app-icon {
+  font-size: 36px;
+  color: var(--primary-on-tint);
+}
+
+.chl-tr-empty p {
+  margin: 0;
+}
