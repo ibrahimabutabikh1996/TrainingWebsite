@@ -2127,12 +2127,25 @@ a.contact-item:hover p {
   }
 }
 
+/* The signed-in pair in the bar — "go to the panel" and "sign out". */
+.nav-actions-auth {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
 /* Drawer takes over before the link row gets cramped */
 @media (max-width: 900px) {
   .burger-menu {
     display: flex;
   }
   .nav-actions > .nav-cta {
+    display: none;
+  }
+  /* Signed in, the bar held "go to the panel" and "sign out" in a wrapper
+     the rule above could not reach, and on a phone they pushed the bar past
+     the screen edge. They are already in the drawer (`.nav-drawer-cta`). */
+  .nav-actions-auth {
     display: none;
   }
   .nav-links {
@@ -3111,4 +3124,55 @@ body.offers-active .nav-links a[href="#offers"]::after {
 }
 @media (prefers-reduced-motion: reduce) {
   .nav-store-btn::before, .nav-store-btn::after { animation: none; }
+}
+
+/* ─── STORE BUTTON: green, in the link row ───
+   The store sits with the section links on a wide screen and keeps every bit
+   of its motion — the band of light, the breathing ring, the lit edge that
+   turns under the cursor — in green. The tone is four custom properties, so
+   the ring (`--primary-light`) and the lit edge follow without restating
+   them. The `html:root…` line sits level with src/styles/lit/primitives.css,
+   which maps this button to the edged level; this lifts it nearer to full
+   light so it stands apart from the links. */
+.nav-store-btn {
+  --primary: var(--success);
+  --primary-rgb: var(--success-rgb);
+  --primary-light: var(--success-light);
+  --primary-active: var(--success-active);
+  --primary-on-tint: var(--success-light);
+}
+html:root:root:root:root:root .nav-store-btn {
+  --lit-a: 0.85;
+  --lit-glow: 0.7;
+  color: var(--success-light);
+}
+
+.nav-store-item { display: flex; align-items: center; }
+
+/* `.nav-links a` gives every link its padding, caps and underline; the store
+   is a button, not a link with an underline, so it takes its own shape back
+   and its ring back from the underline rule. */
+.nav-links .nav-store-btn {
+  display: inline-flex;
+  padding: 6px 16px;
+  letter-spacing: normal;
+  text-transform: none;
+  font-weight: var(--weight-bold);
+}
+.nav-links .nav-store-btn::after {
+  inset: -4px;
+  height: auto;
+  background: none;
+  transform: none;
+  transition: none;
+  border: 1.5px solid var(--primary-light);
+  border-radius: inherit;
+}
+
+/* One store at a time: in the row on a wide screen, in the bar on a phone. */
+@media (min-width: 901px) {
+  .nav-actions > .nav-store-btn { display: none; }
+}
+@media (max-width: 900px) {
+  .nav-store-item { display: none; }
 }

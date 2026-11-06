@@ -21,6 +21,7 @@ import {
   type PlanCard,
 } from "@/lib/planCards";
 import { PromotionalPopup } from "@/components/PromotionalPopup";
+import { StoreShowcase } from "@/components/landing/StoreShowcase";
 import { PreviewBar } from "@/components/ui/PreviewBar";
 import { usePreviewGuard } from "@/hooks/usePreviewGuard";
 
@@ -1214,6 +1215,16 @@ export default function LandingClient({
               تواصل معنا
             </a>
           </li>
+          {/* The store, in the row with the section links on a wide screen —
+              green, so it reads as somewhere else to go rather than another
+              section. On a phone this row is the drawer, so this one is hidden
+              there and the copy in `.nav-actions` keeps the store in the bar. */}
+          <li className="nav-store-item">
+            <Link href="/store" className="nav-store-btn">
+              <ShoppingBag aria-hidden="true" className="nav-store-btn-icon" />
+              <span>المتجر</span>
+            </Link>
+          </li>
           <li className="nav-drawer-cta">
             {isLoggedIn ? (
               <div
@@ -1237,15 +1248,16 @@ export default function LandingClient({
           </li>
         </ul>
         <div className="nav-actions">
-          {/* The supplements store. Always in the bar — not in the drawer — on
-              every width, so it is the one thing the header never hides. */}
+          {/* The supplements store on a phone, where the link row above is the
+              drawer: here it stays in the bar, so the header never hides it.
+              On a wide screen the copy in the link row is shown instead. */}
           <Link href="/store" className="nav-store-btn">
             <ShoppingBag aria-hidden="true" className="nav-store-btn-icon" />
             <span className="nav-store-btn-full">متجر المكملات الغذائية</span>
             <span className="nav-store-btn-short">المتجر</span>
           </Link>
           {isLoggedIn ? (
-            <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+            <div className="nav-actions-auth">
               <Link
                 href={panelHref}
                 className="nav-cta nav-cta-dashboard"
@@ -1875,6 +1887,9 @@ export default function LandingClient({
             </div>
           </div>
         </section>
+
+        {/* STORE — one card that leads into the supplements store. */}
+        <StoreShowcase />
 
         {/* CONTACT */}
         <section id="contact" style={{ display: activeData.section_contact_active === "false" ? "none" : undefined }}>
