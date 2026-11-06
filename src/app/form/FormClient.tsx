@@ -267,6 +267,9 @@ function FormContent({ planNames }: { planNames: PlanNames }) {
     }
 
     setIsSubmitting(true);
+    /* The server's list of what it refused, e.g. "missing required field:
+       meas_hips". Not shown to the visitor; it goes to the owner's alert. */
+    let refusedDetails = "";
     try {
       /* The attachments are already in storage; the submission carries the
          answers, the upload session, and which of its files are still wanted.
@@ -287,13 +290,14 @@ function FormContent({ planNames }: { planNames: PlanNames }) {
       });
       if (!res.ok) {
         const errorText = await res.text().catch(() => "");
-        let errorData: { error?: string; message?: string } = {};
+        let errorData: { error?: string; message?: string; details?: unknown } = {};
         try {
           errorData = JSON.parse(errorText);
         } catch {
           console.error(`Server rejected submission [${res.status} ${res.statusText}] HTML/Text:`, errorText);
         }
         console.error(`Server rejected submission [${res.status} ${res.statusText}] JSON:`, errorData);
+        if (Array.isArray(errorData.details)) refusedDetails = errorData.details.join(", ");
         throw new Error(errorData.error || t("form_error_send"));
       }
 
@@ -310,7 +314,9 @@ function FormContent({ planNames }: { planNames: PlanNames }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: "SubmitFailed",
-          message: err instanceof Error ? err.message : String(err),
+          message:
+            (err instanceof Error ? err.message : String(err)) +
+            (refusedDetails ? ` — ${refusedDetails}` : ""),
           path: window.location.pathname,
         }),
         keepalive: true,
