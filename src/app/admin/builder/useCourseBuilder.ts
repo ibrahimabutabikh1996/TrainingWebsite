@@ -254,7 +254,7 @@ export function useCourseBuilder(init: CourseBuilderInit = {}) {
           target_muscle: ex.target_muscle || "",
           video_url: ex.video_url || null,
           sets: 3,
-          reps: ["10", "10", "10"],
+          reps: ["12", "10", "8"],
           rest_from: "60",
           rest_from_unit: "ثانية",
           rest_to: "90",
@@ -312,7 +312,7 @@ export function useCourseBuilder(init: CourseBuilderInit = {}) {
           target_muscle: ex.target_muscle || "",
           video_url: ex.video_url || null,
           sets: 3,
-          reps: ["10", "10", "10"],
+          reps: ["12", "10", "8"],
         },
       ],
     }));
