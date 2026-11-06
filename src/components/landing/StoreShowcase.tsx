@@ -25,7 +25,7 @@ import "./store-showcase.css";
  * here, so they come from the seed catalogue rather than a database read the
  * landing page would otherwise not need. */
 
-const SHOWN = ["whey-gold", "creatine-mono", "pre-workout-ignite"]
+const SHOWN = ["vast-mass", "rvit-creatine", "lusty-preworkout"]
   .map((slug) => SEED_PRODUCTS.find((p) => p.slug === slug))
   .filter((p): p is (typeof SEED_PRODUCTS)[number] => Boolean(p));
 
@@ -138,7 +138,7 @@ export function StoreShowcase() {
               <span className="ssc-halo" />
               {SHOWN.map((p, i) => (
                 <span key={p.slug} className={`ssc-product ssc-product--${i}`}>
-                  <ProductVisual name={p.name} category={p.category} accent={p.accent} image_url={null} size={260} />
+                  <ProductVisual name={p.name} category={p.category} accent={p.accent} image_url={p.image_url} size={260} />
                 </span>
               ))}
             </div>
