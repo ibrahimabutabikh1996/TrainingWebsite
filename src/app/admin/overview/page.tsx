@@ -125,7 +125,8 @@ export default async function AdminOverviewPage() {
             WHEN jsonb_typeof(p.data) = 'object' THEN jsonb_build_object(
               'fullname', p.data -> 'fullname',
               'plan_type', p.data -> 'plan_type',
-              'renewal_pending', p.data -> 'renewal_pending'
+              'renewal_pending', p.data -> 'renewal_pending',
+              'activation_date', p.data -> 'activation_date'
             )
             ELSE p.data
           END AS data
@@ -158,10 +159,18 @@ export default async function AdminOverviewPage() {
         counts.renewalPending += 1;
         renewals.push({ id: p.id, name, note: "طلب تجديد بانتظار الموافقة" });
       }
-      if (p.is_suspended || !p.subscription_ends_at || isSubscriptionExpired(p.subscription_ends_at, now)) continue;
+      /* Most trainees have no stored end date. The account card the coach
+         opens (AccountManager) and the trainee's own dashboard read that as
+         thirty days from activation, or from sign-up when there is no
+         activation date; read it the same way here, or this page calls them
+         all inactive while their cards say active. */
+      const endsAt =
+        p.subscription_ends_at ??
+        new Date(new Date(typeof blob.activation_date === "string" ? blob.activation_date : p.created_at).getTime() + SUBSCRIPTION_DAYS * DAY_MS);
+      if (p.is_suspended || Number.isNaN(endsAt.getTime()) || isSubscriptionExpired(endsAt, now)) continue;
 
       counts.active += 1;
-      const left = daysRemaining(p.subscription_ends_at, now);
+      const left = daysRemaining(endsAt, now);
       if (left !== null && left <= 7) {
         counts.expiringSoon += 1;
         expiring.push({ id: p.id, name, sort: left, note: left <= 0 ? "ينتهي اليوم" : left === 1 ? "باقي يوم واحد" : `باقي ${left} أيام` });
@@ -176,7 +185,7 @@ export default async function AdminOverviewPage() {
 
       if (p.current_course_id) {
         const last = lastOf.get(p.id) ?? null;
-        const since = last ?? new Date(p.subscription_ends_at.getTime() - SUBSCRIPTION_DAYS * DAY_MS);
+        const since = last ?? new Date(endsAt.getTime() - SUBSCRIPTION_DAYS * DAY_MS);
         const days = Math.floor((today.getTime() - since.getTime()) / DAY_MS);
         if (days >= IDLE_DAYS) idle.push({ id: p.id, name, sort: -days, note: last ? `آخر تمرين قبل ${days} يوم` : "لم يسجّل أي تمرين" });
       }

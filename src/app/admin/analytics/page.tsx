@@ -98,7 +98,8 @@ export default async function AdminAnalyticsPage() {
               'fullname', p.data -> 'fullname',
               'plan', p.data -> 'plan',
               'plan_type', p.data -> 'plan_type',
-              'renewal_pending', p.data -> 'renewal_pending'
+              'renewal_pending', p.data -> 'renewal_pending',
+              'activation_date', p.data -> 'activation_date'
             )
             ELSE p.data
           END AS data
@@ -180,17 +181,23 @@ export default async function AdminAnalyticsPage() {
         players.suspended += 1;
         continue;
       }
-      if (!p.subscription_ends_at) {
+      /* No stored end date is read the way the coach's account card and the
+         trainee's dashboard read it: thirty days from activation, or from
+         sign-up when there is no activation date. Same rule as Overview. */
+      const endsAt =
+        p.subscription_ends_at ??
+        new Date(new Date(typeof blob.activation_date === "string" ? blob.activation_date : p.created_at).getTime() + SUBSCRIPTION_DAYS * DAY_MS);
+      if (Number.isNaN(endsAt.getTime())) {
         players.notActivated += 1;
         continue;
       }
-      if (isSubscriptionExpired(p.subscription_ends_at, now)) {
+      if (isSubscriptionExpired(endsAt, now)) {
         players.expired += 1;
         continue;
       }
 
       players.active += 1;
-      const left = daysRemaining(p.subscription_ends_at, now);
+      const left = daysRemaining(endsAt, now);
       if (left !== null && left <= 7) players.expiringSoon += 1;
 
       /* What this trainee's package asks the coach to prepare. No answer on
@@ -207,7 +214,7 @@ export default async function AdminAnalyticsPage() {
          trainee activated yesterday is not already "idle". */
       if (p.current_course_id) {
         const last = lastWorkoutOf.get(p.id) ?? null;
-        const since = last ?? new Date(p.subscription_ends_at.getTime() - SUBSCRIPTION_DAYS * DAY_MS);
+        const since = last ?? new Date(endsAt.getTime() - SUBSCRIPTION_DAYS * DAY_MS);
         const days = Math.floor((today.getTime() - since.getTime()) / DAY_MS);
         if (days >= IDLE_DAYS) idle.push({ id: p.id, name, days, lastOn: last ? toISODate(last) : null });
       }
