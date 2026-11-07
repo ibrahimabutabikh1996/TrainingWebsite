@@ -599,6 +599,28 @@
   color: var(--text-muted);
 }
 
+/* ─── Required fields left empty ───
+ *
+ * The browser's own bubble is all that pointed at an empty required field when
+ * "التالي" refused to move on, and on a phone it is small and gone in a moment.
+ * `:user-invalid` starts matching once a step has been submitted and stops on
+ * its own when the field is filled, so nothing in the components tracks it.
+ *
+ * The select, chips and dropzone are not inputs themselves; each carries a
+ * hidden required <input> (see Fields.tsx), and the rule reads that. A full
+ * border and a tint, never a stripe down one side. */
+.form-page .field:has(:user-invalid) > .field-label {
+  color: var(--error);
+}
+
+.form-page .control .form-input:user-invalid,
+.form-page .control--select:has(> input:user-invalid) .custom-select-trigger,
+.form-page .dropzone:has(> input:user-invalid),
+.form-page .chip-group:has(> input:user-invalid) .chip {
+  border-color: var(--error);
+  background-color: var(--error-bg);
+}
+
 /* Selected files */
 .form-page .file-list {
   display: flex;
