@@ -70,3 +70,6 @@ next-env.d.ts
 /exercises.json
 /exercises_dump.json
 /temp_skills_repo/
+
+.vercel
+.env*
