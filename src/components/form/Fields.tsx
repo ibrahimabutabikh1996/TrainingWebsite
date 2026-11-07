@@ -251,7 +251,21 @@ export function SelectField({
   return (
     <Field label={label} htmlFor={id} required={required} optional={optional} hint={hint} full={full}>
       <div className="control control--select">
+        {/* CustomSelect is a button, so the browser never sees `required` on it
+            and let an empty choice through to the next step. Same stand-in as
+            ChipGroup and Dropzone below. */}
+        {required && (
+          <input
+            type="text"
+            required
+            value={value}
+            onChange={() => {}}
+            style={{ opacity: 0, position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: -1 }}
+            tabIndex={-1}
+          />
+        )}
         <CustomSelect
+          id={id}
           disabled={disabled}
           value={value}
           onChange={onChange}
