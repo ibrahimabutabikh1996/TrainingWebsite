@@ -76,6 +76,166 @@ export interface ErrorReport {
   userAgent?: string;
 }
 
+/* Which copy of the site raised it. The alerts used to read the same whether a
+   visitor hit the live site or the owner's own `npm run dev` cancelled a page
+   mid-load — "The destination stream closed early" from localhost looked as
+   alarming as a broken checkout. Read on the server that sends the email, which
+   is also the one the visitor was talking to. */
+function environmentLabel(): string {
+  if (process.env.NODE_ENV !== "production") return "سيرفر التطوير على جهازك (ليس الموقع الحقيقي)";
+  if (process.env.VERCEL_ENV === "production") return "الموقع المنشور (الحقيقي)";
+  if (process.env.VERCEL_ENV === "preview") return "نسخة معاينة على Vercel (ليست الموقع الحقيقي)";
+  return "نسخة إنتاج خارج Vercel (مثل npm run start على جهازك)";
+}
+
+interface Explanation {
+  meaning: string;
+  action: string;
+}
+
+/* What the error means and whether anything needs doing, for the ones that
+   actually arrive. Matched on name and message together; first match wins, so
+   the specific entries sit above the general ones. Anything unmatched still
+   gets a line saying so, rather than a silent gap. */
+function explainError(report: ErrorReport, dev: boolean): Explanation {
+  const { name, message } = report;
+  const has = (pattern: RegExp) => pattern.test(message);
+
+  if (has(/destination stream closed early/i)) {
+    return {
+      meaning: "المتصفح أوقف تحميل الصفحة قبل أن يكتمل — انتقال لصفحة أخرى، أو إعادة تحميل، أو إغلاق التبويب.",
+      action: "لا شيء عادةً، الزائر لم يرَ خطأ. إن تكرر كثيراً على الموقع المنشور فهو يستحق المراجعة.",
+    };
+  }
+  if (name === "SubmitFailed" && has(/missing required field|قيمة غير صحيحة|يرجى تعبئة/)) {
+    return {
+      meaning: "رفض السيرفر الاستمارة لأن حقلاً إجبارياً وصل فارغاً أو بقيمة غير صحيحة، وقيل للزائر اسم الحقل.",
+      action: "لا شيء إن كان مرة واحدة. إن تكرر مع نفس الحقل فالصفحة لا تفحص ذلك الحقل قبل الانتقال، ويحتاج إصلاحاً.",
+    };
+  }
+  if (name === "SubmitFailed") {
+    return {
+      meaning: "لم تُحفظ استمارة زائر.",
+      action: "راجع «الخطأ» أعلاه. إن كان الزائر قد دفع فتواصل معه، فاستمارته لم تصل.",
+    };
+  }
+  if (name === "UploadRejected" || name === "UploadFailed") {
+    return {
+      meaning: "لم يُرفع ملف اختاره الزائر في الاستمارة، وقد قيل له ذلك.",
+      action: "إن كان السبب نوع الملف أو حجمه فلا شيء. إن كان خطأ في التخزين وتكرر فيحتاج مراجعة.",
+    };
+  }
+  if (name === "ChunkLoadError" || has(/Loading chunk|dynamically imported module|Importing a module script failed/i)) {
+    return {
+      meaning: "المتصفح كان يفتح نسخة قديمة من الموقع بعد نشر تحديث جديد، فلم يجد جزءاً منها.",
+      action: "لا شيء عادةً، إعادة تحميل الصفحة تحلها.",
+    };
+  }
+  if (has(/^(Failed to fetch|Load failed|NetworkError)/i)) {
+    return {
+      meaning: "انقطع اتصال الزائر بالإنترنت أثناء الطلب.",
+      action: "لا شيء، المشكلة في شبكة الزائر.",
+    };
+  }
+  if (has(/Hydration failed|did not match|hydrat/i)) {
+    return {
+      meaning: "ما رسمه السيرفر للصفحة يختلف عمّا رسمه متصفح الزائر.",
+      action: "يحتاج مراجعة إن تكرر — الصفحة قد تظهر بشكل خاطئ أو لا تستجيب.",
+    };
+  }
+  if (name === "ReferenceError" || has(/is not defined/)) {
+    return {
+      meaning: "الكود يستخدم اسماً غير موجود — خطأ برمجي، والجزء الذي ظهر فيه من الصفحة توقف.",
+      action: dev
+        ? "غالباً حدث أثناء تعديل ملف قبل اكتمال التعديل. إن اختفى بعد الحفظ فلا شيء."
+        : "يحتاج إصلاحاً: الصفحة معطّلة عند الزائر.",
+    };
+  }
+  if (name === "TypeError" && has(/Cannot read propert|undefined|null/)) {
+    return {
+      meaning: "الكود حاول قراءة بيانات غير موجودة — غالباً قيمة فارغة لم يتوقعها.",
+      action: "يحتاج إصلاحاً إن تكرر. «الصفحة» و«تفاصيل مكان الخطأ» تحددان أين.",
+    };
+  }
+  if (name.startsWith("PrismaClientInitialization") || has(/Can't reach database|connection pool|ECONNREFUSED/i)) {
+    return {
+      meaning: "تعذّر الاتصال بقاعدة البيانات.",
+      action: "عاجل إن كان على الموقع المنشور — تحقق من قاعدة البيانات ومن متغيرات البيئة.",
+    };
+  }
+  if (name.startsWith("Prisma")) {
+    return {
+      meaning: "قاعدة البيانات رفضت طلباً من الموقع.",
+      action: "يحتاج مراجعة: «الخطأ» أعلاه يحدد الجدول أو الحقل.",
+    };
+  }
+  return {
+    meaning: "لا يوجد شرح جاهز لهذا الخطأ.",
+    action: "راجع «الخطأ» و«تفاصيل مكان الخطأ» أدناه، أو أرسل الرسالة كما هي للمطوّر.",
+  };
+}
+
+/* The user-agent string, read for a person. The raw one stays in the email
+   below this, for anything the summary leaves out. */
+function describeDevice(ua?: string): string | undefined {
+  if (!ua) return undefined;
+  const parts: string[] = [];
+
+  const ios = /\b(iPhone|iPad|iPod)\b.*? OS (\d+)(?:_(\d+))?/.exec(ua);
+  const android = /Android (\d+(?:\.\d+)?)/.exec(ua);
+  if (ios) parts.push(`${ios[1] === "iPad" ? "آيباد" : "آيفون"} — iOS ${ios[2]}${ios[3] ? `.${ios[3]}` : ""}`);
+  else if (android) parts.push(`أندرويد ${android[1]}`);
+  else if (/Windows NT/.test(ua)) parts.push("ويندوز");
+  else if (/Mac OS X/.test(ua)) parts.push("ماك");
+  else if (/Linux/.test(ua)) parts.push("لينكس");
+
+  /* The in-app browsers first: a visitor coming from an Instagram link is told
+     apart from one in Safari only here, and those browsers behave differently. */
+  const inApp: Array<[RegExp, string]> = [
+    [/Instagram/, "Instagram"],
+    [/FBAN|FBAV|FB_IAB/, "Facebook"],
+    [/musical_ly|BytedanceWebview|TikTok/i, "TikTok"],
+    [/Snapchat/, "Snapchat"],
+  ];
+  const app = inApp.find(([pattern]) => pattern.test(ua));
+  if (app) {
+    parts.push(`من داخل تطبيق ${app[1]}`);
+  } else {
+    const browsers: Array<[RegExp, string]> = [
+      [/Edg(?:A|iOS)?\/(\d+)/, "Edge"],
+      [/OPR\/(\d+)/, "Opera"],
+      [/SamsungBrowser\/(\d+)/, "Samsung Internet"],
+      [/CriOS\/(\d+)/, "Chrome"],
+      [/FxiOS\/(\d+)/, "Firefox"],
+      [/Firefox\/(\d+)/, "Firefox"],
+      [/Chrome\/(\d+)/, "Chrome"],
+      [/Version\/(\d+(?:\.\d+)?).*Safari/, "Safari"],
+    ];
+    for (const [pattern, browserName] of browsers) {
+      const match = pattern.exec(ua);
+      if (match) {
+        parts.push(`${browserName} ${match[1]}`);
+        break;
+      }
+    }
+  }
+
+  return parts.length ? parts.join(" — ") : undefined;
+}
+
+/* The owner's clock. UTC stays in the email as well, for matching against logs. */
+function localTime(at: Date): string {
+  return at.toLocaleString("sv-SE", { timeZone: "Asia/Baghdad", hour12: false });
+}
+
+/* Which deployment was live. Only Vercel sets these, so a local run shows none. */
+function deployedVersion(): string | undefined {
+  const sha = process.env.VERCEL_GIT_COMMIT_SHA;
+  if (!sha) return undefined;
+  const subject = process.env.VERCEL_GIT_COMMIT_MESSAGE?.split("\n")[0];
+  return subject ? `${sha.slice(0, 7)} — ${subject}` : sha.slice(0, 7);
+}
+
 const esc = (value: unknown) =>
   String(value ?? "")
     .replace(/&/g, "&amp;")
@@ -104,20 +264,29 @@ export async function sendErrorAlert(report: ErrorReport): Promise<void> {
 
     const arabicName = ARABIC_ERROR_NAMES[report.name] ?? "خطأ غير معروف";
     const sourceLabel = report.source === "server" ? "السيرفر" : "متصفح الزائر";
+    const dev = process.env.NODE_ENV !== "production";
+    const explanation = explainError(report, dev);
+    const now = new Date();
 
     const rows: Array<[string, unknown]> = [
       ["اسم الموقع", SITE_NAME],
+      ["البيئة", environmentLabel()],
       ["اسم الخطأ (بالإنكليزي)", report.name],
       ["اسم الخطأ (بالعربي)", arabicName],
       ["الخطأ", report.message],
+      ["الشرح", explanation.meaning],
+      ["ماذا تفعل", explanation.action],
       ["مصدر الخطأ", sourceLabel],
       ["الصفحة", report.path],
       ["الطريقة", report.method],
       ["ملف المسار", report.routePath],
       ["نوع الطلب", report.routeType],
       ["رمز الخطأ (digest)", report.digest],
+      ["الجهاز", describeDevice(report.userAgent)],
       ["المتصفح", report.userAgent],
-      ["الوقت (UTC)", new Date().toISOString()],
+      ["نسخة الكود المنشورة", deployedVersion()],
+      ["الوقت (بغداد)", localTime(now)],
+      ["الوقت (UTC)", now.toISOString()],
     ];
 
     const transporter = nodemailer.createTransport({
