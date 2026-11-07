@@ -316,6 +316,15 @@
     transition: width var(--dur-slow) var(--ease-out), padding var(--dur-slow) var(--ease-out);
   }
 
+  /* The gym's list is long enough to scroll and the store's is not, so the
+     8px scrollbar came and went with the switch and the whole column narrowed
+     and shifted by it. The gutter is held either way, so the two panels are
+     the same width inside. Not while folded: 8px of a 76px rail would push the
+     icons off centre. */
+  .admin-layout-wrapper:not(.is-nav-collapsed) .admin-shell-nav {
+    scrollbar-gutter: stable;
+  }
+
   .is-nav-collapsed .admin-shell-nav {
     padding-inline: var(--space-3);
   }
