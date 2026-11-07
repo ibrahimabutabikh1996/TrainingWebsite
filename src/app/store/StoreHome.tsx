@@ -37,7 +37,7 @@ export default function StoreHome({ products, settings }: { products: StoreProdu
     );
   }, [products, category, query]);
 
-  useReveal([visible.length]);
+  useReveal([visible.map((p) => p.id).join()]);
 
   return (
     <>
