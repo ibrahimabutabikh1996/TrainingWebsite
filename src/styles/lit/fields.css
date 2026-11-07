@@ -187,18 +187,28 @@ html:root:root:root:root:root :where(.custom-select-dropdown, .dp-cal) {
    view. So on the list the ring is drawn by the list's own border instead —
    a border-box background stays put while the content scrolls — in the same
    colours, angle and width, over the same faint hairline. The date picker
-   does not scroll and keeps the ::before. */
-html:root:root:root:root:root .custom-select-dropdown::before {
+   does not scroll and keeps the ::before.
+
+   The phone's "المزيد" sheet in the panel scrolls itself too (overflow-y on
+   the sheet, once it is taller than the screen) and gets the same treatment
+   over its own glass fill. The other windows that carry the ring scroll an
+   inner body, not themselves, so their ::before covers them whole. */
+html:root:root:root:root:root .custom-select-dropdown {
+    --ring-fill: color-mix(in srgb, var(--bg2) 94%, var(--primary));
+}
+
+html:root:root:root:root:root .admin-more-sheet {
+    --ring-fill: var(--glass-solid);
+}
+
+html:root:root:root:root:root :is(.custom-select-dropdown, .admin-more-sheet)::before {
     content: none;
 }
 
-html:root:root:root:root:root .custom-select-dropdown {
+html:root:root:root:root:root :is(.custom-select-dropdown, .admin-more-sheet) {
     border: var(--lit-w) solid transparent;
     background:
-        linear-gradient(
-            color-mix(in srgb, var(--bg2) 94%, var(--primary)),
-            color-mix(in srgb, var(--bg2) 94%, var(--primary))
-        ) padding-box,
+        linear-gradient(var(--ring-fill), var(--ring-fill)) padding-box,
         conic-gradient(
             from var(--surf-angle),
             color-mix(in srgb, var(--primary) calc(var(--surf-a) * 100%), transparent) 0deg,
@@ -236,11 +246,16 @@ html:root:root:root:root:root .custom-select-option.selected :where(svg, .app-ic
     color: var(--primary-light);
 }
 
-/* The search inside the list: a field like any other. */
+/* The search inside the list: a field like any other — but it stays stuck to
+   the top while the options scroll under it, and --field-fill is 55% opaque,
+   so the names showed through the box. The field fill is laid over the list's
+   own fill: the same colour as before, with nothing behind it showing. */
 html:root:root:root:root:root .custom-select-search {
     border: var(--lit-w) solid var(--field-line);
     border-radius: var(--radius-md);
-    background-color: var(--field-fill);
+    background:
+        linear-gradient(var(--field-fill), var(--field-fill)),
+        color-mix(in srgb, var(--bg2) 94%, var(--primary));
 }
 
 html:root:root:root:root:root .custom-select-search:focus-within {
