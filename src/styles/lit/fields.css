@@ -180,6 +180,37 @@ html:root:root:root:root:root :where(.custom-select-dropdown, .dp-cal) {
     background: color-mix(in srgb, var(--bg2) 94%, var(--primary));
 }
 
+/* The list is its own scroller, and the window ring in surfaces.css is an
+   absolute ::before at inset 0. Inside a scroller that box is only the first
+   screen of the content, and it scrolls away with the options: scrolled down a
+   long list, the edge of light curved shut under the last row that had been in
+   view. So on the list the ring is drawn by the list's own border instead —
+   a border-box background stays put while the content scrolls — in the same
+   colours, angle and width, over the same faint hairline. The date picker
+   does not scroll and keeps the ::before. */
+html:root:root:root:root:root .custom-select-dropdown::before {
+    content: none;
+}
+
+html:root:root:root:root:root .custom-select-dropdown {
+    border: var(--lit-w) solid transparent;
+    background:
+        linear-gradient(
+            color-mix(in srgb, var(--bg2) 94%, var(--primary)),
+            color-mix(in srgb, var(--bg2) 94%, var(--primary))
+        ) padding-box,
+        conic-gradient(
+            from var(--surf-angle),
+            color-mix(in srgb, var(--primary) calc(var(--surf-a) * 100%), transparent) 0deg,
+            color-mix(in srgb, var(--primary-light) calc(var(--surf-a) * 100%), transparent) 60deg,
+            color-mix(in srgb, var(--primary-active) calc(var(--surf-a) * 100%), transparent) 120deg,
+            transparent 190deg,
+            transparent 310deg,
+            color-mix(in srgb, var(--primary) calc(var(--surf-a) * 100%), transparent) 360deg
+        ) border-box,
+        linear-gradient(var(--glass-border-strong), var(--glass-border-strong)) border-box;
+}
+
 html:root:root:root:root:root .custom-select-option {
     border-radius: var(--radius-sm);
     color: var(--text-secondary);
