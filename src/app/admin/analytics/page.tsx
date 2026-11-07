@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
 import { requireAdminPage } from "@/lib/authGuard";
 import { getLandingContent } from "../cms/actions";
-import { resolvePlanDisplayNames, planNameFrom } from "@/lib/planNames";
+import { resolvePlanDisplayNames, planNameFrom, planOptions } from "@/lib/planNames";
 import { PLAN_COLOUR_SLOT } from "@/lib/formLabels";
 import { planTagStyle } from "@/lib/planCards";
 import { SUBSCRIPTION_DAYS, daysRemaining, isSubscriptionExpired } from "@/lib/subscription";
@@ -213,11 +213,15 @@ export default async function AdminAnalyticsPage() {
       }
     }
 
+    /* An offer carries its plan's name, so by name alone plan1 and offer1 were
+       two bars reading the same. planOptions marks the offer wherever the name
+       is shared, as the subscriber filter and the intake form already do. */
+    const planLabels = new Map(planOptions(planNames).map((o) => [o.value, o.label]));
     const plans = [...planCounts.entries()]
       .map(([value, count]) => {
         const slot = PLAN_COLOUR_SLOT[value];
         const color = slot ? `var(--plan-${slot})` : planTagStyle(value)?.background ?? "var(--text-muted)";
-        return { name: planNameFrom(planNames, value, "غير محدد"), count, color };
+        return { name: planLabels.get(value) ?? planNameFrom(planNames, value, "غير محدد"), count, color };
       })
       .sort((a, b) => b.count - a.count);
 
