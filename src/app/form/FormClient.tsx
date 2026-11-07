@@ -17,6 +17,7 @@ import type { SubscriptionFormData } from "@/components/form/types";
 import { useUploads } from "@/hooks/useUploads";
 import { INTAKE_UPLOAD_FIELDS, isIntakeUploadField } from "@/lib/uploadFields";
 import { t, type TranslationKey } from "@/lib/translations";
+import { INTAKE_FIELDS } from "@/lib/subscriptionMonths";
 import "../landing.css"; // fixed navbar + shared premium chrome
 import "./form.css";
 import { optimizedSrc, optimizedSrcSet } from "@/lib/imageOptim";
@@ -31,6 +32,38 @@ const STEP_NAMES: TranslationKey[] = [
 ];
 
 const STEP_TITLES: TranslationKey[] = ["step1_title", "step2_title", "step3_title", "step4_title"];
+
+/* The server names what it refused by key ("missing required field: buy_supp"),
+   and the visitor was shown only "بيانات الاستمارة غير صالحة" — with nothing to
+   say which of forty questions to go back to. These turn the keys into the
+   questions as they read on screen. The three below are not in INTAKE_FIELDS. */
+const EXTRA_FIELD_LABELS: Record<string, string> = {
+  plan_type: "نوع الاشتراك المطلوب",
+  body_photos: t("lbl_photos_male"),
+  payment_receipt: t("form_gate_receipt"),
+};
+
+const fieldLabel = (key: string) =>
+  INTAKE_FIELDS.find((f) => f.key === key)?.label ?? EXTRA_FIELD_LABELS[key] ?? key;
+
+/** The visitor's version of the server's refusal, or null when nothing in it names a field. */
+function refusalMessage(details: string[]): string | null {
+  const missing = new Set<string>();
+  const invalid = new Set<string>();
+  for (const detail of details) {
+    const empty = /^missing required field: (\w+)/.exec(detail);
+    if (empty) {
+      missing.add(`«${fieldLabel(empty[1])}»`);
+      continue;
+    }
+    const wrong = /^(\w+)(?:\[\d+\])? (?:must be numeric|out of range|is too long|has too many)/.exec(detail);
+    if (wrong) invalid.add(`«${fieldLabel(wrong[1])}»`);
+  }
+  const parts: string[] = [];
+  if (missing.size) parts.push(`يرجى تعبئة: ${[...missing].join("، ")}`);
+  if (invalid.size) parts.push(`قيمة غير صحيحة في: ${[...invalid].join("، ")}`);
+  return parts.length ? `لم يتم إرسال الاستمارة. ${parts.join(" — ")}` : null;
+}
 
 function FormNavbar() {
 
@@ -369,7 +402,8 @@ function FormContent({ planNames }: { planNames: PlanNames }) {
           setNow(Date.now());
           setLockedUntil(Date.now() + retryAfter * 1000);
         }
-        throw new Error(errorData.error || t("form_error_send"));
+        const named = Array.isArray(errorData.details) ? refusalMessage(errorData.details.map(String)) : null;
+        throw new Error(named || errorData.error || t("form_error_send"));
       }
 
       setIsSubmitting(false);
