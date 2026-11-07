@@ -473,46 +473,16 @@ export default function LandingClient({
     );
     reveals.forEach((r) => obs.observe(r));
 
-    /* The coach's figures count up the first time they come into view.
-     *
-     * The real value is already in the markup — written by the server, then by
-     * the content pass from whatever the coach saved — and this only animates
-     * toward it, so search engines, a reader with motion reduced and a browser
-     * without script all see the true figure. The target is read from the node
-     * at the moment it is seen, not from a constant, so a number the coach
-     * changes in the panel is the number counted to. A value with no digits in
-     * it ("ISSA") is not counted; `is-counted` gives every figure its entrance
-     * either way.
-     *
-     * If anything else writes the node mid-count — the content manager's live
-     * preview — the count stops and leaves what was written. */
-    const COUNT_MS = 1600;
+    /* The coach's figures get their staggered entrance (`is-counted`) the first
+     * time the row comes into view. The count-up itself is the effect further
+     * down that holds each figure's width; only one of the two may write the
+     * numbers, or they race over the same text. */
     const stats = document.querySelector<HTMLElement>(".coach-stats");
-    const countFrames: number[] = [];
     const statsObs = new IntersectionObserver(
       (entries) => {
         if (!stats || !entries.some((e) => e.isIntersecting)) return;
         statsObs.disconnect();
         stats.classList.add("is-counted");
-        if (reduceMotion) return;
-        stats.querySelectorAll<HTMLElement>("li strong").forEach((el) => {
-          const final = el.textContent ?? "";
-          const match = final.match(/^(\D*)(\d[\d,]*)(\D*)$/);
-          if (!match) return;
-          const [, before, digits, after] = match;
-          const target = Number(digits.replace(/,/g, ""));
-          const start = performance.now();
-          let written = final;
-          const step = (now: number) => {
-            if (el.textContent !== written) return;
-            const t = Math.min(1, (now - start) / COUNT_MS);
-            const eased = 1 - Math.pow(1 - t, 3);
-            written = t < 1 ? `${before}${Math.round(target * eased)}${after}` : final;
-            el.textContent = written;
-            if (t < 1) countFrames.push(requestAnimationFrame(step));
-          };
-          countFrames.push(requestAnimationFrame(step));
-        });
       },
       { threshold: 0.4 },
     );
@@ -544,7 +514,6 @@ export default function LandingClient({
       document.removeEventListener("click", handleAnchorClick);
       obs.disconnect();
       statsObs.disconnect();
-      countFrames.forEach(cancelAnimationFrame);
     };
   }, []);
 

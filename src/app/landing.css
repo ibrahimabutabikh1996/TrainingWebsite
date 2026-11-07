@@ -1267,7 +1267,7 @@ body::before {
 }
 
 /* Their entrance, once, when the row is first seen (LandingClient adds
-   `is-counted`, and counts the numeric ones up at the same moment). */
+   `is-counted`; the numeric ones count up in their own effect). */
 .coach-stats.is-counted li strong {
   animation: stat-in 0.8s var(--ease-out) both;
 }
