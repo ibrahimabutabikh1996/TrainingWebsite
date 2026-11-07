@@ -22,6 +22,7 @@ import {
 } from "@/lib/planCards";
 import { PromotionalPopup } from "@/components/PromotionalPopup";
 import { StoreShowcase } from "@/components/landing/StoreShowcase";
+import type { ShowcaseProduct } from "@/lib/storePromo";
 import { PreviewBar } from "@/components/ui/PreviewBar";
 import { usePreviewGuard } from "@/hooks/usePreviewGuard";
 
@@ -295,9 +296,12 @@ export default function LandingClient({
    * wrong nav is drawn.
    */
   isPreview = false,
+  /** The store's active products, for the store card to pick its three from. */
+  storeProducts,
 }: {
   initialCmsData?: JsonRecord | null;
   isPreview?: boolean;
+  storeProducts?: ShowcaseProduct[];
 }) {
   const { logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -1899,7 +1903,7 @@ export default function LandingClient({
         </section>
 
         {/* STORE — one card that leads into the supplements store. */}
-        <StoreShowcase hidden={activeData.section_store_active === "false"} />
+        <StoreShowcase hidden={activeData.section_store_active === "false"} content={activeData} products={storeProducts} />
 
         {/* CONTACT */}
         <section id="contact" style={{ display: activeData.section_contact_active === "false" ? "none" : undefined }}>

@@ -6,6 +6,14 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, BadgeCheck, ShoppingBag, Truck, Wallet } from "lucide-react";
 import { ProductVisual } from "@/app/store/ProductVisual";
 import { SEED_PRODUCTS } from "@/lib/store/seed";
+import {
+  pickShowcaseProducts,
+  storePromoShown,
+  storePromoText,
+  toShowcaseProduct,
+  type ShowcaseProduct,
+  type StorePromoTextKey,
+} from "@/lib/storePromo";
 import "./store-showcase.css";
 
 /* The landing page's way into the supplements store: one card, green-lit,
@@ -21,20 +29,32 @@ import "./store-showcase.css";
  * plain click is held for the animation, and not for anyone who has asked
  * for reduced motion.
  *
- * The products are the store's own drawn containers. They are decoration
- * here, so they come from the seed catalogue rather than a database read the
- * landing page would otherwise not need. */
+ * The texts and the three products are the coach's, from the content
+ * manager's "قسم المتجر" tab — see @/lib/storePromo for the keys, the
+ * defaults and how the products are picked. The products come from the
+ * store's active list the page reads; the seed catalogue stands in only if a
+ * caller passes none. */
 
-const SHOWN = ["vast-mass", "rvit-creatine", "lusty-preworkout"]
-  .map((slug) => SEED_PRODUCTS.find((p) => p.slug === slug))
-  .filter((p): p is (typeof SEED_PRODUCTS)[number] => Boolean(p));
+const SEED_SHOWCASE: ShowcaseProduct[] = SEED_PRODUCTS.map(toShowcaseProduct);
 
 /** How long the way-in plays before the store opens, in ms. */
 const LAUNCH_MS = 620;
 
-/** `hidden` is the content manager's "قسم المتجر" switch (`section_store_active`). */
-export function StoreShowcase({ hidden = false }: { hidden?: boolean }) {
+/** `hidden` is the content manager's "قسم المتجر" switch (`section_store_active`);
+ *  `content` is the landing content the texts and picks are read from. */
+export function StoreShowcase({
+  hidden = false,
+  content = {},
+  products,
+}: {
+  hidden?: boolean;
+  content?: Record<string, unknown>;
+  products?: ShowcaseProduct[];
+}) {
   const router = useRouter();
+  const shown = pickShowcaseProducts(content, products && products.length > 0 ? products : SEED_SHOWCASE);
+  const text = (key: StorePromoTextKey) => storePromoText(content, key);
+  const on = (key: StorePromoTextKey) => storePromoShown(content, key);
   const cardRef = useRef<HTMLAnchorElement>(null);
   const [launch, setLaunch] = useState<{ x: number; y: number } | null>(null);
   const timer = useRef<number | null>(null);
@@ -113,31 +133,35 @@ export function StoreShowcase({ hidden = false }: { hidden?: boolean }) {
             aria-label="ادخل متجر المكملات الغذائية"
           >
             <span className="ssc-spot" aria-hidden="true" />
-            <span className="ssc-word" aria-hidden="true">المتجر</span>
+            {on("store_promo_word") && <span className="ssc-word" aria-hidden="true">{text("store_promo_word")}</span>}
 
             <div className="ssc-text">
-              <span className="ssc-badge">
-                <ShoppingBag aria-hidden="true" />
-                متجر المكملات الغذائية
-              </span>
-              <h3 className="ssc-title">كل اللي يحتاجه جسمك، بمكان واحد</h3>
-              <p className="ssc-desc">
-                بروتين، كرياتين، أحماض أمينية وفيتامينات — مختارة من الكابتن نفسه، وتوصلك لباب البيت.
-              </p>
-              <ul className="ssc-perks">
-                <li><Truck aria-hidden="true" /> توصيل لكل المحافظات</li>
-                <li><Wallet aria-hidden="true" /> الدفع عند الاستلام</li>
-                <li><BadgeCheck aria-hidden="true" /> منتجات أصلية</li>
-              </ul>
-              <span className="ssc-cta">
-                ادخل المتجر
-                <ArrowLeft aria-hidden="true" />
-              </span>
+              {on("store_promo_badge") && (
+                <span className="ssc-badge">
+                  <ShoppingBag aria-hidden="true" />
+                  {text("store_promo_badge")}
+                </span>
+              )}
+              {on("store_promo_title") && <h3 className="ssc-title">{text("store_promo_title")}</h3>}
+              {on("store_promo_desc") && <p className="ssc-desc">{text("store_promo_desc")}</p>}
+              {(on("store_promo_perk1") || on("store_promo_perk2") || on("store_promo_perk3")) && (
+                <ul className="ssc-perks">
+                  {on("store_promo_perk1") && <li><Truck aria-hidden="true" /> {text("store_promo_perk1")}</li>}
+                  {on("store_promo_perk2") && <li><Wallet aria-hidden="true" /> {text("store_promo_perk2")}</li>}
+                  {on("store_promo_perk3") && <li><BadgeCheck aria-hidden="true" /> {text("store_promo_perk3")}</li>}
+                </ul>
+              )}
+              {on("store_promo_cta") && (
+                <span className="ssc-cta">
+                  {text("store_promo_cta")}
+                  <ArrowLeft aria-hidden="true" />
+                </span>
+              )}
             </div>
 
             <div className="ssc-stage" aria-hidden="true">
               <span className="ssc-halo" />
-              {SHOWN.map((p, i) => (
+              {shown.map((p, i) => (
                 <span key={p.slug} className={`ssc-product ssc-product--${i}`}>
                   <ProductVisual name={p.name} category={p.category} accent={p.accent} image_url={p.image_url} size={260} />
                 </span>

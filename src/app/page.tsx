@@ -1,5 +1,7 @@
 import { getLandingContent } from "./admin/cms/actions";
 import LandingClient from "./LandingClient";
+import { getActiveProducts } from "@/lib/store/catalog";
+import { toShowcaseProduct } from "@/lib/storePromo";
 import type { JsonRecord } from "@/types";
 
 /**
@@ -22,7 +24,10 @@ import type { JsonRecord } from "@/types";
 export const dynamic = "force-dynamic";
 
 export default async function LandingPage() {
-  const settings = await getLandingContent();
+  /* The store card's three products are the coach's picks from the store
+     (`store_promo_product1..3`), so it needs the store's active products —
+     only what drawing one takes. Read alongside the content, not after it. */
+  const [settings, products] = await Promise.all([getLandingContent(), getActiveProducts()]);
   const initialCmsData = settings ? (settings.content_ar as JsonRecord) : null;
-  return <LandingClient initialCmsData={initialCmsData} />;
+  return <LandingClient initialCmsData={initialCmsData} storeProducts={products.map(toShowcaseProduct)} />;
 }

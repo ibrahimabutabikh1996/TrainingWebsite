@@ -25,9 +25,12 @@ import {
   planAccent,
   type PlanRow,
 } from "@/lib/planCards";
+import { STORE_PROMO_TEXTS, STORE_PROMO_PRODUCT_KEYS, STORE_PROMO_DEFAULT_SLUGS } from "@/lib/storePromo";
 import "./cms.css";
 
 const DEFAULT_TEXTS: Record<string, string> = {
+  /* The store card's texts as they read before they were editable. */
+  ...STORE_PROMO_TEXTS,
   hero_title: "تدرب بقوة\\nتدرب بذكاء",
   hero_sub: "برامج لياقة بدنية نخبوية مصممة للمنجزين الجادين",
   hero_quote: "قاعدتي في الدايت: لا تدعه يستمر لأكثر من 3 أشهر",
@@ -929,11 +932,14 @@ const TestimonialsEditor = () => {
 export default function AdminCMSClient({
   initialAr,
   canEdit = true,
+  storeProducts = [],
 }: {
   initialAr: JsonRecord;
   /** False for a staff member with view only: every field is read-only and
    *  there is nothing to save. */
   canEdit?: boolean;
+  /** The store's active products, for the "قسم المتجر" tab's pickers. */
+  storeProducts?: { slug: string; name: string }[];
 }) {
   const [contentAr, setContentAr] = useState(initialAr);
   /* Snapshot of what is actually stored, so edits can be compared against it.
@@ -1034,6 +1040,8 @@ export default function AdminCMSClient({
       url = "/cms-preview#membership";
     } else if (activeTab === "coach") {
       url = "/cms-preview#coach";
+    } else if (activeTab === "storepromo") {
+      url = "/cms-preview#store-promo";
     }
 
     /* Written before the window opens so the draft is already there when the
@@ -1541,6 +1549,7 @@ export default function AdminCMSClient({
                 { id: "membership", label: "الخطط والاشتراكات" },
                 { id: "testimonials", label: "نتائج المشتركين" },
                 { id: "contact", label: "معلومات التواصل" },
+                { id: "storepromo", label: "قسم المتجر" },
                 { id: "login", label: "صفحة الدخول" },
                 /* Two different things used to answer to "العروض": this tab, which
                    edits the promotional pop-up, and the offers *section* on the
@@ -1981,6 +1990,50 @@ export default function AdminCMSClient({
                     <ImageUploadField label="صورة الخلفية (القسم الأيسر)" fieldKey="login_bg_url" recommendedSize="1080x1920 (عمودية)" />
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* The store card on the landing page — see @/lib/storePromo for
+                its keys and defaults. Each text shows its default as the
+                placeholder until the coach writes their own. */}
+            {activeTab === "storepromo" && (
+              <div className="cms-section-card">
+                <h3 className="cms-card-title">
+                  قسم المتجر في الصفحة الرئيسية
+                </h3>
+                <p className="cms-card-note">
+                  نصوص بطاقة المتجر والمنتجات الثلاثة الظاهرة فيها. لإخفاء القسم كله استخدم تبويب &quot;اخفاء واظهار الاقسام&quot;.
+                </p>
+                <InputField label="الشارة الصغيرة" fieldKey="store_promo_badge" hideable />
+                <InputField label="الكلمة الكبيرة خلف المنتجات" fieldKey="store_promo_word" hideable />
+                <InputField label="العنوان" fieldKey="store_promo_title" hideable />
+                <InputField label="الوصف" fieldKey="store_promo_desc" isTextarea hideable />
+                <div className="ui-grid-2" style={{ marginTop: 4 }}>
+                  <InputField label="الميزة الأولى" fieldKey="store_promo_perk1" hideable />
+                  <InputField label="الميزة الثانية" fieldKey="store_promo_perk2" hideable />
+                  <InputField label="الميزة الثالثة" fieldKey="store_promo_perk3" hideable />
+                  <InputField label="نص الزر" fieldKey="store_promo_cta" hideable />
+                </div>
+
+                <h4 className="cms-label" style={{ marginTop: "var(--space-6)" }}>المنتجات الظاهرة في البطاقة</h4>
+                {storeProducts.length === 0 ? (
+                  <p className="cms-card-note">لا توجد منتجات ظاهرة في المتجر بعد.</p>
+                ) : (
+                  <div className="ui-grid-2">
+                    {STORE_PROMO_PRODUCT_KEYS.map((key, i) => (
+                      <div className="cms-form-group" key={key}>
+                        <label className="cms-label">{`المنتج ${["الأول", "الثاني", "الثالث"][i]}`}</label>
+                        <CustomSelect
+                          value={typeof currentContent[key] === "string" && currentContent[key] ? String(currentContent[key]) : STORE_PROMO_DEFAULT_SLUGS[i]}
+                          onChange={(v) => setContentAr((prev: JsonRecord) => ({ ...prev, [key]: v }))}
+                          options={storeProducts.map((p) => ({ value: p.slug, label: p.name }))}
+                          searchable
+                          searchPlaceholder="ابحث عن منتج..."
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 

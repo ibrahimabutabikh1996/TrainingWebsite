@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { requireAdminPage, sessionCan } from "@/lib/authGuard";
 import AdminCMSClient from "./AdminCMSClient";
+import { getActiveProducts } from "@/lib/store/catalog";
 import { translations as defaultTranslations } from "@/lib/translations";
 import type { JsonRecord } from "@/types";
 
@@ -17,13 +18,17 @@ export default async function AdminCMSPage() {
 
   const contentAr = settings?.content_ar as JsonRecord || defaultTranslations;
 
+  /* For the "قسم المتجر" tab's three product pickers: the products a visitor
+     can see, which are the only ones the landing card will draw. */
+  const storeProducts = (await getActiveProducts()).map((p) => ({ slug: p.slug, name: p.name }));
+
   return (
     /* Named so the stylesheet can give this one screen a full-height column.
        The content manager scrolls its own content pane rather than the shell's
        main element — see `.cms-page-shell` in cms.css for why. `padding: 0` was
        a no-op on a bare div and is gone with it. */
     <div className="cms-page-shell">
-      <AdminCMSClient initialAr={contentAr} canEdit={sessionCan(session, "cms.edit")} />
+      <AdminCMSClient initialAr={contentAr} canEdit={sessionCan(session, "cms.edit")} storeProducts={storeProducts} />
     </div>
   );
 }

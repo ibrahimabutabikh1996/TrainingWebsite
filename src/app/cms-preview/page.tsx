@@ -2,6 +2,8 @@ import type { JsonRecord } from "@/types";
 import { requireAdminPage } from "@/lib/authGuard";
 import { getLandingContent } from "../admin/cms/actions";
 import LandingClient from "../LandingClient";
+import { getActiveProducts } from "@/lib/store/catalog";
+import { toShowcaseProduct } from "@/lib/storePromo";
 
 /**
  * The home page as it will look once the draft in the content manager is
@@ -30,8 +32,8 @@ export const dynamic = "force-dynamic";
 export default async function CmsPreviewPage() {
   await requireAdminPage("cms.view");
 
-  const settings = await getLandingContent();
+  const [settings, products] = await Promise.all([getLandingContent(), getActiveProducts()]);
   const initialCmsData = settings ? (settings.content_ar as JsonRecord) : null;
 
-  return <LandingClient initialCmsData={initialCmsData} isPreview />;
+  return <LandingClient initialCmsData={initialCmsData} storeProducts={products.map(toShowcaseProduct)} isPreview />;
 }
