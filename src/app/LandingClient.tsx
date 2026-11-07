@@ -932,7 +932,17 @@ export default function LandingClient({
           { id: "membership", flag: activeData.section_membership_active },
           { id: "offers", flag: activeData.section_offers_active },
           { id: "contact", flag: activeData.section_contact_active },
+          { id: "store-promo", flag: activeData.section_store_active },
         ];
+
+        /* The store button is two copies — the link row's on a wide screen,
+           the bar's on a phone — and is a link to /store, not to a section, so
+           it is not reached by the loop below. "" hands each copy back to the
+           stylesheet, which decides which of the two a width shows. */
+        document.querySelectorAll<HTMLElement>(".nav-store-btn").forEach((btn) => {
+          const host = btn.closest<HTMLElement>(".nav-store-item") ?? btn;
+          host.style.display = activeData.store_button_active === "false" ? "none" : "";
+        });
 
         sectionToggles.forEach((s) => {
           const el = document.getElementById(s.id);
@@ -1219,7 +1229,7 @@ export default function LandingClient({
               green, so it reads as somewhere else to go rather than another
               section. On a phone this row is the drawer, so this one is hidden
               there and the copy in `.nav-actions` keeps the store in the bar. */}
-          <li className="nav-store-item">
+          <li className="nav-store-item" style={{ display: activeData.store_button_active === "false" ? "none" : undefined }}>
             <Link href="/store" className="nav-store-btn">
               <ShoppingBag aria-hidden="true" className="nav-store-btn-icon" />
               <span>المتجر</span>
@@ -1251,7 +1261,7 @@ export default function LandingClient({
           {/* The supplements store on a phone, where the link row above is the
               drawer: here it stays in the bar, so the header never hides it.
               On a wide screen the copy in the link row is shown instead. */}
-          <Link href="/store" className="nav-store-btn">
+          <Link href="/store" className="nav-store-btn" style={{ display: activeData.store_button_active === "false" ? "none" : undefined }}>
             <ShoppingBag aria-hidden="true" className="nav-store-btn-icon" />
             <span className="nav-store-btn-full">متجر المكملات الغذائية</span>
             <span className="nav-store-btn-short">المتجر</span>
@@ -1889,7 +1899,7 @@ export default function LandingClient({
         </section>
 
         {/* STORE — one card that leads into the supplements store. */}
-        <StoreShowcase />
+        <StoreShowcase hidden={activeData.section_store_active === "false"} />
 
         {/* CONTACT */}
         <section id="contact" style={{ display: activeData.section_contact_active === "false" ? "none" : undefined }}>

@@ -32,7 +32,8 @@ const SHOWN = ["vast-mass", "rvit-creatine", "lusty-preworkout"]
 /** How long the way-in plays before the store opens, in ms. */
 const LAUNCH_MS = 620;
 
-export function StoreShowcase() {
+/** `hidden` is the content manager's "قسم المتجر" switch (`section_store_active`). */
+export function StoreShowcase({ hidden = false }: { hidden?: boolean }) {
   const router = useRouter();
   const cardRef = useRef<HTMLAnchorElement>(null);
   const [launch, setLaunch] = useState<{ x: number; y: number } | null>(null);
@@ -83,7 +84,7 @@ export function StoreShowcase() {
   };
 
   return (
-    <section id="store-promo" className="ssc-section">
+    <section id="store-promo" className="ssc-section" style={{ display: hidden ? "none" : undefined }}>
       {/* The outline behind the products. `-webkit-text-stroke` strokes each
           Arabic letter on its own, so the joins between letters showed as
           lines across the word. This draws the word filled, grows it by the

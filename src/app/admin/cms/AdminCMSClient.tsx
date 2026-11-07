@@ -1592,7 +1592,7 @@ export default function AdminCMSClient({
                 <p className="cms-card-note">
                   قم بتفعيل أو إيقاف الأقسام التي تود عرضها في الصفحة الرئيسية.
                 </p>
-                {/* Five switches in two columns of 40px rows. As a single column
+                {/* Seven switches in two columns of 40px rows. As a single column
                     of 16px-padded blocks they held ~360px to say five words
                     each. The keys and their `!== "false"` reading are
                     unchanged — only the row is. */}
@@ -1603,6 +1603,8 @@ export default function AdminCMSClient({
                     { key: "section_testimonials_active", label: "نتائج المشتركين" },
                     { key: "section_offers_active", label: "العروض الخاصة" },
                     { key: "section_contact_active", label: "معلومات التواصل" },
+                    { key: "section_store_active", label: "قسم المتجر" },
+                    { key: "store_button_active", label: "زر المتجر في الشريط العلوي" },
                   ] satisfies { key: string; label: string }[]).map(({ key, label }) => (
                     <div className="ui-switch-row" key={key}>
                       <Switch
