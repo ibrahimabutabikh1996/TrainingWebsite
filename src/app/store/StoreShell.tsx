@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  ArrowRight, CircleCheck, Minus, Plus, ShoppingBag, Trash2, Truck, X, MessageCircle, ShieldCheck, Star,
+  ArrowRight, CircleCheck, House, Minus, Plus, ShoppingBag, Trash2, Truck, X, MessageCircle, ShieldCheck, Star,
 } from "lucide-react";
 import { optimizedSrc, optimizedSrcSet } from "@/lib/imageOptim";
 import {
@@ -54,7 +54,7 @@ function StoreHeader() {
     <header className={`st-header${scrolled ? " is-scrolled" : ""}`}>
       <div className="st-header-inner">
         <Link href="/" className="st-header-back" aria-label="العودة للموقع الرئيسي">
-          <ArrowRight aria-hidden="true" />
+          <House aria-hidden="true" />
           <span>الموقع الرئيسي</span>
         </Link>
 

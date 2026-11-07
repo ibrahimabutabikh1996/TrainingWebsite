@@ -125,19 +125,28 @@ body.st-lock { overflow: hidden; }
   align-items: center;
   gap: var(--space-4);
 }
+/* The way back to the main site. It is the cart button's twin on the other
+   edge of the bar — same glass pill, same height — so it reads as a control,
+   not as a caption. */
 .st-header-back {
   justify-self: start;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: var(--space-2);
-  color: var(--text-secondary);
+  min-height: 42px;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--glass-border-strong);
+  background: var(--glass);
+  color: var(--text);
   text-decoration: none;
   font-size: var(--text-sm);
-  font-weight: var(--weight-medium);
-  transition: color var(--dur) var(--ease);
+  font-weight: var(--weight-semibold);
+  transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease);
 }
-.st-header-back:hover { color: var(--text); }
-.st-header-back svg { width: 18px; height: 18px; }
+.st-header-back:hover { background: var(--glass-2); border-color: var(--border-primary); }
+.st-header-back svg { width: 20px; height: 20px; }
 .st-header-logo {
   display: flex;
   align-items: center;
@@ -1021,7 +1030,7 @@ body.st-lock { overflow: hidden; }
   .st-header-inner { padding-inline: var(--space-4); }
   .st-header-back span, .st-cart-label { display: none; }
   .st-header-logo img { height: 28px; }
-  .st-cart-btn { padding: var(--space-2) var(--space-3); }
+  .st-header-back, .st-cart-btn { padding: var(--space-2) var(--space-3); }
 
   .st-grid { grid-template-columns: repeat(2, 1fr); gap: var(--space-3); }
   .st-card-visual { padding: var(--space-4) var(--space-4) 0; }

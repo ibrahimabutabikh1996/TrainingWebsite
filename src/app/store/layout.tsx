@@ -4,7 +4,7 @@ import StoreShell from "./StoreShell";
 import "./store.css";
 
 export const metadata: Metadata = {
-  title: "متجر المكملات الغذائية | Ibrahim Abutabikh",
+  title: "متجر المكملات الغذائية",
   description: "بروتين، كرياتين، بري وركاوت وفيتامينات مختارة من الكابتن إبراهيم — اطلب مباشرة عبر واتساب مع توصيل لكل العراق.",
 };
 
