@@ -65,7 +65,21 @@
   font-weight: var(--weight-bold);
   text-align: center;
 }
-.ov-list ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+/* Every name, about five rows tall, the rest under a vertical scrollbar in the
+   card itself. The rows reach out by --space-2 so their hover fill meets the
+   card's padding; the list reaches out by the same and pads back in, so that
+   overhang stays inside the scroll box and draws no sideways scrollbar. */
+.ov-list ul {
+  list-style: none;
+  margin: 0 calc(var(--space-2) * -1);
+  padding: 0 var(--space-2);
+  display: flex;
+  flex-direction: column;
+  max-height: 280px; /* five 56px rows */
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+}
 .ov-list li a {
   display: flex;
   align-items: center;

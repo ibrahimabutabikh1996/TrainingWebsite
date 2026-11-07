@@ -23,7 +23,6 @@ export const dynamic = "force-dynamic";
  * IDLE_DAYS), so the two screens never disagree. */
 
 const IDLE_DAYS = 14;
-const LIST_MAX = 5;
 
 /* A card's tone, as the system's tone class on its icon tile. Primary needs
    none; muted has none, and its tile is left unlit. */
@@ -274,7 +273,7 @@ export default async function AdminOverviewPage() {
                   <p className="ov-empty">{group.empty}</p>
                 ) : (
                   <ul>
-                    {group.people.slice(0, LIST_MAX).map((p) => (
+                    {group.people.map((p) => (
                       <li key={p.id}>
                         <Link href={`/admin/profile/${p.id}`}>
                           <span className="ov-avatar" aria-hidden="true">{p.name.trim().charAt(0)}</span>
@@ -287,9 +286,6 @@ export default async function AdminOverviewPage() {
                       </li>
                     ))}
                   </ul>
-                )}
-                {group.people.length > LIST_MAX && (
-                  <Link href="/admin" className="ov-more">و{group.people.length - LIST_MAX} آخرين — عرض المشتركين</Link>
                 )}
               </article>
             ))}
