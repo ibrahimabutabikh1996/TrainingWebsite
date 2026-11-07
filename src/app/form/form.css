@@ -151,7 +151,7 @@
   height: 3px;
   inset-inline: calc(50% / var(--step-count, 4));
   border-radius: 999px;
-  background: var(--border-strong);
+  background: var(--bg4);
 }
 
 .form-page .stepper-fill {
