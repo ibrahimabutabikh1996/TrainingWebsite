@@ -23,8 +23,8 @@ export const SEED_PRODUCTS: Seed[] = [
       "بروتين واي يحتوي على 22 غرام بروتين في السكوب الواحد و120 سعرة فقط. مناسب لأنظمة التنشيف ونزول الوزن وحرق الدهون، ولبناء العضلات.",
     price: 180000,
     compare_at_price: null,
-    image_url: null,
-    images: [],
+    image_url: "/images/store/ans-n-whey.webp",
+    images: ["/images/store/ans-n-whey.webp"],
     low_stock_threshold: 5,
     accent: "#FBBF24",
     highlights: [
