@@ -1207,6 +1207,8 @@ body.st-lock { overflow: hidden; }
   transition: border-color var(--dur) var(--ease);
 }
 .st-gallery-thumb .st-visual { aspect-ratio: 1; }
+/* Out of flow, or a tall picture such as a nutrition label outgrows the thumbnail. */
+.st-gallery-thumb .st-visual img { position: absolute; inset: 0; }
 .st-gallery-thumb:hover { border-color: color-mix(in srgb, var(--accent) 50%, transparent); }
 .st-gallery-thumb.is-active { border-color: var(--accent); }
 .st-gallery-nav {
