@@ -63,6 +63,12 @@ const RIPPLE =
   ".staff-add-btn, .diet-add-btn, .diet-btn-secondary, .promo-popup-cta, " +
   ".upw-close, .form-btn, .boundary-btn";
 
+/** The element, once React has claimed it. This component starts before the
+ *  page's own segments hydrate, and anything written on one of their elements
+ *  before that reads as a hydration mismatch. */
+const hydrated = (el: HTMLElement | null) =>
+  el && Object.keys(el).some((k) => k.startsWith("__reactFiber$")) ? el : null;
+
 export default function GlassPointer() {
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -77,14 +83,14 @@ export default function GlassPointer() {
       if (!last) return;
       const target = last.target instanceof Element ? last.target : null;
 
-      const button = target?.closest<HTMLElement>(LIT);
+      const button = hydrated(target?.closest<HTMLElement>(LIT) ?? null);
       if (button) {
         const b = button.getBoundingClientRect();
         button.style.setProperty("--mx", `${last.clientX - b.left}px`);
         button.style.setProperty("--my", `${last.clientY - b.top}px`);
       }
 
-      const card = target?.closest<HTMLElement>(GLOW) ?? null;
+      const card = hydrated(target?.closest<HTMLElement>(GLOW) ?? null);
 
       if (card !== current) {
         current?.removeAttribute("data-glow");
@@ -113,7 +119,7 @@ export default function GlassPointer() {
        one style pass, which reading `offsetWidth` forces. */
     const onDown = (e: PointerEvent) => {
       const target = e.target instanceof Element ? e.target : null;
-      const button = target?.closest<HTMLElement>(RIPPLE);
+      const button = hydrated(target?.closest<HTMLElement>(RIPPLE) ?? null);
       if (!button || button.matches(":disabled")) return;
       const box = button.getBoundingClientRect();
       button.style.setProperty("--bx", `${e.clientX - box.left}px`);

@@ -333,7 +333,7 @@ function ProductEditor({
       onClose={onClose}
       title={form.id ? `تعديل: ${initial.name}` : "منتج جديد"}
       icon="inventory_2"
-      maxWidth={960}
+      maxWidth={1200}
       footer={
         <div className="sa-modal-foot">
           <button type="button" className="btn-secondary sa-btn sa-btn--ghost" onClick={onClose}>إلغاء</button>
@@ -382,6 +382,7 @@ function ProductEditor({
           <p className="sa-hint">
             حتى {MAX_IMAGES} صور، الأولى هي الرئيسية. يمكنك اختيار عدة صور مرة واحدة. بدون صور، يُرسم المنتج تلقائياً بلونه.
           </p>
+          <div className="sa-editor-settings">
           <label className="sa-field">
             <span>لون المنتج</span>
             <div className="sa-color">
@@ -397,6 +398,7 @@ function ProductEditor({
             <input type="checkbox" checked={form.is_featured} onChange={(e) => set("is_featured", e.target.checked)} />
             <span>إظهار شارة «الأكثر طلباً» على بطاقة المنتج</span>
           </label>
+          </div>
         </aside>
 
         <div className="sa-editor-form">
@@ -463,6 +465,10 @@ function ProductEditor({
                 <input type="number" min={0} dir="ltr" value={form.low_stock_threshold} onChange={(e) => set("low_stock_threshold", Number(e.target.value))} />
               </label>
             </div>
+          </fieldset>
+
+          <fieldset className="sa-fieldset">
+            <legend>النكهات والمخزون</legend>
             <FlavorRows rows={flavorRows} setRows={setFlavorRows} onBusy={setFlavorUploading} category={form.category} accent={form.accent} />
             <VariantGrid
               sizes={form.sizes}
