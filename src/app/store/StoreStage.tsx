@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { formatIQD, priceFor, type StoreProduct } from "@/lib/store/types";
+import { type StoreProduct } from "@/lib/store/types";
 import { ProductVisual } from "./ProductVisual";
 
 /* The store's opening stage — one product at a time, centred, with its type
@@ -173,13 +173,8 @@ export default function StoreStage({ products }: { products: StoreProduct[] }) {
           )}
         </div>
 
-        <div key={`c-${index}`} className="st-stage-caption" aria-live="polite">
-          <strong>{p.name}</strong>
-          <span>{p.tagline}</span>
-        </div>
-
         <Link href={`/store/${p.slug}`} className="st-stage-shop">
-          تسوّق الآن · {formatIQD(priceFor(p))}
+          اشتريه الان
         </Link>
 
         {count > 1 && (

@@ -17,7 +17,7 @@ import { useCart } from "./cart";
 import { ProductVisual } from "./ProductVisual";
 import { useReveal } from "./useReveal";
 
-export default function StoreHome({ products, settings }: { products: StoreProduct[]; settings: StoreSettings }) {
+export default function StoreHome({ products }: { products: StoreProduct[]; settings: StoreSettings }) {
   const [category, setCategory] = useState<string>("all");
   const [query, setQuery] = useState("");
 
@@ -44,49 +44,10 @@ export default function StoreHome({ products, settings }: { products: StoreProdu
       {/* STAGE — the featured products, one at a time. */}
       <StoreStage products={stageProducts} />
 
-      {/* The coach's line, from the store settings, introducing the range. */}
-      <section className="st-statement">
-        <span className="st-eyebrow st-reveal">متجر المكملات الغذائية</span>
-        <h1 className="st-statement-title st-reveal">{settings.hero_title}</h1>
-        <p className="st-statement-sub st-reveal">{settings.hero_subtitle}</p>
-      </section>
-
-      {/* FEATURED TILES — one product per tile, the way a product line is introduced */}
-      {featured.length > 0 && (
-        <section id="featured" className="st-tiles" aria-label="منتجات مميزة">
-          {featured.map((p, i) => {
-            /* The first is full width; so is the last when it would otherwise sit alone. */
-            const wide = i === 0 || (i === featured.length - 1 && featured.length % 2 === 0);
-            return (
-            <article
-              key={p.id}
-              className={`st-tile st-reveal${wide ? " st-tile--wide" : ""}`}
-              style={{ "--accent": p.accent } as React.CSSProperties}
-            >
-              <div className="st-tile-copy">
-                <span className="st-tile-cat">{categoryLabel(p.category)}</span>
-                <h2>{p.name}</h2>
-                <p>{p.tagline}</p>
-                <div className="st-tile-links">
-                  <Link href={`/store/${p.slug}`} className="btn-primary st-btn st-btn--sm">اعرف المزيد</Link>
-                  <span className="st-tile-price">
-                    يبدأ من {formatIQD(priceFor(p))}
-                  </span>
-                </div>
-              </div>
-              <Link href={`/store/${p.slug}`} className="st-tile-visual" tabIndex={-1} aria-hidden="true">
-                <ProductVisual name={p.name} category={p.category} accent={p.accent} image_url={p.image_url} size={wide ? 420 : 300} />
-              </Link>
-            </article>
-            );
-          })}
-        </section>
-      )}
-
       {/* CATALOGUE */}
       <section id="catalog" className="st-catalog">
         <div className="st-section-head st-reveal">
-          <h2>كل المنتجات</h2>
+          <h1>كل المنتجات</h1>
           <p>اختر هدفك، ونحن نوفّر الوقود.</p>
         </div>
 

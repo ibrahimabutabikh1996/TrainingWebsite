@@ -65,7 +65,6 @@ function StoreHeader() {
 
         <nav className="st-header-nav" aria-label="المتجر">
           <Link href="/store#catalog">المنتجات</Link>
-          <Link href="/store#featured">الأكثر طلباً</Link>
           <Link href="/">الموقع الرئيسي</Link>
         </nav>
 

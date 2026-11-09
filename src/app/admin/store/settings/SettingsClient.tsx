@@ -78,14 +78,6 @@ export default function SettingsClient({ initialSettings }: { initialSettings: S
             <span>شريط الإعلان أعلى المتجر</span>
             <input value={form.announcement} onChange={(e) => set("announcement", e.target.value)} placeholder="اتركه فارغاً لإخفائه" />
           </label>
-          <label className="sa-field">
-            <span>العبارة الرئيسية (تظهر تحت المنتجات المتحركة)</span>
-            <input value={form.hero_title} onChange={(e) => set("hero_title", e.target.value)} />
-          </label>
-          <label className="sa-field">
-            <span>النص تحت العنوان</span>
-            <textarea rows={3} value={form.hero_subtitle} onChange={(e) => set("hero_subtitle", e.target.value)} />
-          </label>
         </section>
       </div>
     </form>
