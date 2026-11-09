@@ -70,7 +70,7 @@ interface CartContextValue {
   isOpen: boolean;
   open: () => void;
   close: () => void;
-  add: (product: StoreProduct, options?: { size?: string | null; flavor?: string | null; qty?: number }) => void;
+  add: (product: StoreProduct, options?: { size?: string | null; flavor?: string | null; qty?: number; image_url?: string }) => void;
   setQty: (key: string, qty: number) => void;
   remove: (key: string) => void;
   clear: () => void;
@@ -98,7 +98,7 @@ export function CartProvider({ settings, children }: { settings: StoreSettings; 
             productId: product.id,
             slug: product.slug,
             name: product.name,
-            image_url: product.image_url,
+            image_url: options.image_url ?? product.image_url,
             accent: product.accent,
             category: product.category,
             size,

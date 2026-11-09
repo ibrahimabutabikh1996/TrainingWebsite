@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { Check, ChevronLeft, ChevronRight, Minus, Plus, ShoppingBag, Truck, ShieldCheck, MessageCircle } from "lucide-react";
+import { Check, ChevronDown, ChevronLeft, ChevronRight, Minus, Plus, ShoppingBag, Truck, ShieldCheck, MessageCircle } from "lucide-react";
+import { CustomSelect } from "@/components/CustomSelect";
 import {
   MAX_LINE_QTY,
   categoryLabel,
@@ -11,6 +12,7 @@ import {
   priceFor,
   type StoreProduct,
 } from "@/lib/store/types";
+import { FLAVOR_IMAGES } from "@/lib/store/flavorImages";
 import { useCart } from "../cart";
 import { ProductVisual } from "../ProductVisual";
 import { ProductCard } from "../StoreHome";
@@ -22,13 +24,21 @@ export default function ProductShowcase({ product: p, related }: { product: Stor
   const [flavor, setFlavor] = useState<string | null>(p.flavors[0] ?? null);
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
-  const [showBar, setShowBar] = useState(false);
-  const [shot, setShot] = useState(0);
-  const gallery = p.images.length > 0 ? p.images : [null];
-  /* A feature row shows the next picture along, so a gallery is seen as the page scrolls. */
-  const featureImage = (i: number) => (p.images.length > 1 ? p.images[(i + 1) % p.images.length] : p.image_url);
-  const heroRef = useRef<HTMLElement>(null);
-  const buyRef = useRef<HTMLElement>(null);
+  /* The flavours on sale that have their own photo. With two or more, those
+     photos are the gallery, and picking a flavour or a photo moves the other. */
+  const listed = (FLAVOR_IMAGES[p.slug] ?? []).filter((f) => p.flavors.includes(f.label));
+  const flavorShots = listed.length > 1 ? listed : [];
+  const [shot, setShot] = useState(() => Math.max(0, flavorShots.findIndex((f) => f.label === p.flavors[0])));
+  const gallery = flavorShots.length > 0 ? flavorShots.map((f) => f.src) : p.images.length > 0 ? p.images : [null];
+  const pickFlavor = (label: string) => {
+    setFlavor(label);
+    const at = flavorShots.findIndex((f) => f.label === label);
+    if (at >= 0) setShot(at);
+  };
+  const pickShot = (i: number) => {
+    setShot(i);
+    if (flavorShots[i]) setFlavor(flavorShots[i].label);
+  };
 
   const soldOut = isSoldOut(p);
   const price = priceFor(p, size);
@@ -37,139 +47,18 @@ export default function ProductShowcase({ product: p, related }: { product: Stor
 
   useReveal([p.id]);
 
-  /* The hero picture settles as the page scrolls past it, and the buy bar
-     slides in once the hero is gone. `--p` is 0 at the top, 1 when the hero
-     has scrolled away; only `transform` and `opacity` read it. */
-  useEffect(() => {
-    const hero = heroRef.current;
-    if (!hero) return;
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    let frame = 0;
-    const update = () => {
-      frame = 0;
-      const rect = hero.getBoundingClientRect();
-      const progress = Math.min(1, Math.max(0, -rect.top / Math.max(1, rect.height)));
-      if (!reduce) hero.style.setProperty("--p", progress.toFixed(3));
-      setShowBar(rect.bottom < 80);
-    };
-    const onScroll = () => {
-      if (!frame) frame = requestAnimationFrame(update);
-    };
-    update();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
-      if (frame) cancelAnimationFrame(frame);
-    };
-  }, []);
-
   const addToCart = () => {
     if (soldOut) return;
-    add(p, { size, flavor, qty });
+    add(p, { size, flavor, qty, image_url: flavorShots.find((f) => f.label === flavor)?.src });
     setAdded(true);
     window.setTimeout(() => setAdded(false), 1800);
   };
 
-  const scrollToBuy = () => buyRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-
   return (
     <div className="st-product" style={{ "--accent": p.accent } as React.CSSProperties}>
-      {/* Sticky buy bar */}
-      <div className={`st-buybar${showBar ? " is-shown" : ""}`} aria-hidden={!showBar} inert={!showBar}>
-        <div className="st-buybar-inner">
-          <strong>{p.name}</strong>
-          <div className="st-buybar-actions">
-            <span>{formatIQD(price)}</span>
-            <button type="button" className="btn-primary st-btn st-btn--sm" onClick={scrollToBuy}>
-              اشترِ الآن
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Breadcrumb */}
-      <nav className="st-crumbs" aria-label="مسار التصفح">
-        <Link href="/store">المتجر</Link>
-        <ChevronLeft aria-hidden="true" />
-        <span>{categoryLabel(p.category)}</span>
-        <ChevronLeft aria-hidden="true" />
-        <span aria-current="page">{p.name}</span>
-      </nav>
-
-      {/* HERO */}
-      <section ref={heroRef} className="st-p-hero">
-        <div className="st-p-hero-copy">
-          <span className="st-eyebrow st-reveal">{categoryLabel(p.category)}</span>
-          <h1 className="st-reveal">{p.name}</h1>
-          <p className="st-p-tagline st-reveal">{p.tagline}</p>
-          <div className="st-p-hero-price st-reveal">
-            <span>يبدأ من</span>
-            <strong>{formatIQD(basePrice)}</strong>
-            {compare && <s>{formatIQD(compare)}</s>}
-          </div>
-          <div className="st-hero-actions st-reveal">
-            <button type="button" className="btn-primary st-btn" onClick={scrollToBuy} disabled={soldOut}>
-              {soldOut ? "نفدت الكمية" : "اشترِ الآن"}
-            </button>
-            <a href="#overview" className="st-link">
-              تعرّف عليه <ChevronLeft aria-hidden="true" />
-            </a>
-          </div>
-        </div>
-        <div className="st-p-hero-visual">
-          <div className="st-p-glow" aria-hidden="true" />
-          <ProductVisual name={p.name} category={p.category} accent={p.accent} image_url={p.image_url} size={520} priority />
-        </div>
-      </section>
-
-      {/* HIGHLIGHTS */}
-      {p.highlights.length > 0 && (
-        <section id="overview" className="st-p-highlights">
-          {p.highlights.map((h, i) => (
-            <div key={i} className="st-p-stat st-reveal" style={{ transitionDelay: `${i * 80}ms` }}>
-              <strong dir="ltr">{h.value}</strong>
-              <span>{h.label}</span>
-            </div>
-          ))}
-        </section>
-      )}
-
-      {/* STORY */}
-      {p.description && (
-        <section className="st-p-story">
-          <p className="st-reveal">{p.description}</p>
-        </section>
-      )}
-
-      {/* FEATURES */}
-      {p.features.length > 0 && (
-        <section className="st-p-features">
-          {p.features.map((f, i) => (
-            <article key={i} className={`st-p-feature st-reveal${i % 2 ? " is-flipped" : ""}`}>
-              <div className="st-p-feature-copy">
-                <span className="st-p-feature-num">0{i + 1}</span>
-                <h2>{f.title}</h2>
-                <p>{f.text}</p>
-              </div>
-              <div className="st-p-feature-visual" aria-hidden="true">
-                <div className="st-p-ring" />
-                <ProductVisual name={p.name} category={p.category} accent={p.accent} image_url={featureImage(i)} size={280} />
-              </div>
-            </article>
-          ))}
-        </section>
-      )}
-
-      {/* BUY */}
-      <section ref={buyRef} id="buy" className="st-p-buy">
-        <div className="st-section-head st-reveal">
-          <h2>اختر طلبك.</h2>
-          <p>{p.name}</p>
-        </div>
+      <section className="st-p-buy">
         <div className="st-p-buy-grid">
-          <div className="st-p-buy-visual st-reveal">
+          <div className="st-p-buy-visual">
             <div className="st-gallery">
               <div className="st-gallery-main">
                 <ProductVisual
@@ -179,13 +68,14 @@ export default function ProductShowcase({ product: p, related }: { product: Stor
                   accent={p.accent}
                   image_url={gallery[shot] ?? null}
                   size={420}
+                  priority
                 />
                 {gallery.length > 1 && (
                   <>
                     <button
                       type="button"
                       className="ui-btn ui-btn--icon st-gallery-nav st-gallery-nav--prev"
-                      onClick={() => setShot((n) => (n - 1 + gallery.length) % gallery.length)}
+                      onClick={() => pickShot((shot - 1 + gallery.length) % gallery.length)}
                       aria-label="الصورة السابقة"
                     >
                       <ChevronRight aria-hidden="true" />
@@ -193,7 +83,7 @@ export default function ProductShowcase({ product: p, related }: { product: Stor
                     <button
                       type="button"
                       className="ui-btn ui-btn--icon st-gallery-nav st-gallery-nav--next"
-                      onClick={() => setShot((n) => (n + 1) % gallery.length)}
+                      onClick={() => pickShot((shot + 1) % gallery.length)}
                       aria-label="الصورة التالية"
                     >
                       <ChevronLeft aria-hidden="true" />
@@ -210,7 +100,7 @@ export default function ProductShowcase({ product: p, related }: { product: Stor
                       role="tab"
                       aria-selected={shot === i}
                       className={`st-gallery-thumb${shot === i ? " is-active" : ""}`}
-                      onClick={() => setShot(i)}
+                      onClick={() => pickShot(i)}
                       aria-label={`الصورة ${i + 1}`}
                     >
                       <ProductVisual name={p.name} category={p.category} accent={p.accent} image_url={url} size={64} />
@@ -220,7 +110,23 @@ export default function ProductShowcase({ product: p, related }: { product: Stor
               )}
             </div>
           </div>
-          <div className="st-p-buy-panel st-reveal">
+          <div className="st-p-buy-panel">
+            <div className="st-p-buy-head">
+              <nav className="st-crumbs" aria-label="مسار التصفح">
+                <Link href="/store">المتجر</Link>
+                <ChevronLeft aria-hidden="true" />
+                <span>{categoryLabel(p.category)}</span>
+                <ChevronLeft aria-hidden="true" />
+                <span aria-current="page">{p.name}</span>
+              </nav>
+              <h1>{p.name}</h1>
+              <div className="st-p-price">
+                <strong>{formatIQD(price)}</strong>
+                {compare && price === basePrice && <s>{formatIQD(compare)}</s>}
+              </div>
+              {p.tagline && <p className="st-p-tagline">{p.tagline}</p>}
+            </div>
+
             {p.sizes.length > 0 && (
               <fieldset className="st-option">
                 <legend>الحجم</legend>
@@ -242,27 +148,19 @@ export default function ProductShowcase({ product: p, related }: { product: Stor
             )}
 
             {p.flavors.length > 0 && (
-              <fieldset className="st-option">
-                <legend>النكهة</legend>
-                <div className="st-option-grid st-option-grid--pills">
-                  {p.flavors.map((f) => (
-                    <button
-                      key={f}
-                      type="button"
-                      className={`st-option-btn st-option-btn--pill${flavor === f ? " is-active" : ""}`}
-                      aria-pressed={flavor === f}
-                      onClick={() => setFlavor(f)}
-                    >
-                      {flavor === f && <Check aria-hidden="true" />}
-                      {f}
-                    </button>
-                  ))}
-                </div>
-              </fieldset>
+              <div className="st-option">
+                <label className="st-option-label" htmlFor="st-flavor">النكهة</label>
+                <CustomSelect
+                  id="st-flavor"
+                  className="st-select"
+                  value={flavor ?? ""}
+                  onChange={pickFlavor}
+                  options={p.flavors.map((f) => ({ value: f, label: f }))}
+                />
+              </div>
             )}
 
-            <fieldset className="st-option">
-              <legend>الكمية</legend>
+            <div className="st-p-buy-row">
               <div className="st-qty st-qty--lg" role="group" aria-label="الكمية">
                 <button type="button" className="ui-btn ui-btn--icon" onClick={() => setQty((q) => Math.min(MAX_LINE_QTY, q + 1))} aria-label="زيادة">
                   <Plus aria-hidden="true" />
@@ -272,25 +170,82 @@ export default function ProductShowcase({ product: p, related }: { product: Stor
                   <Minus aria-hidden="true" />
                 </button>
               </div>
-            </fieldset>
-
-            <div className="st-p-buy-total">
-              <span>الإجمالي</span>
-              <strong>{formatIQD(price * qty)}</strong>
+              <button
+                type="button"
+                className="btn-primary st-btn st-btn--lg"
+                onClick={addToCart}
+                disabled={soldOut}
+              >
+                {soldOut ? "نفدت الكمية" : added ? <><Check aria-hidden="true" /> أُضيف للسلة</> : <><ShoppingBag aria-hidden="true" /> أضف إلى السلة</>}
+              </button>
             </div>
 
-            <button
-              type="button"
-              className="btn-primary st-btn st-btn--block st-btn--lg"
-              onClick={addToCart}
-              disabled={soldOut}
-            >
-              {soldOut ? "نفدت الكمية" : added ? <><Check aria-hidden="true" /> أُضيف للسلة</> : <><ShoppingBag aria-hidden="true" /> أضف إلى السلة</>}
-            </button>
+            {qty > 1 && (
+              <div className="st-p-buy-total">
+                <span>الإجمالي</span>
+                <strong>{formatIQD(price * qty)}</strong>
+              </div>
+            )}
 
             {p.stock !== null && p.stock > 0 && p.stock <= 5 && (
               <p className="st-low-stock">باقي {p.stock} قطع فقط</p>
             )}
+
+            <div className="st-p-accordion">
+              {(p.description || p.features.length > 0) && (
+                <details className="st-p-acc" open>
+                  <summary>الوصف<ChevronDown aria-hidden="true" /></summary>
+                  <div className="st-p-acc-body">
+                    {p.description && <p>{p.description}</p>}
+                    {p.features.length > 0 && (
+                      <ul>
+                        {p.features.map((f, i) => (
+                          <li key={i}><strong>{f.title}:</strong> {f.text}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </details>
+              )}
+              {p.nutrition.length > 0 && (
+                <details className="st-p-acc">
+                  <summary>القيم الغذائية<ChevronDown aria-hidden="true" /></summary>
+                  <div className="st-p-acc-body">
+                    <dl className="st-facts">
+                      {p.nutrition.map((n, i) => (
+                        <div key={i}>
+                          <dt>{n.label}</dt>
+                          <dd>{n.value}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </div>
+                </details>
+              )}
+              {p.usage.length > 0 && (
+                <details className="st-p-acc">
+                  <summary>طريقة الاستخدام<ChevronDown aria-hidden="true" /></summary>
+                  <div className="st-p-acc-body">
+                    <ol className="st-steps">
+                      {p.usage.map((u, i) => (
+                        <li key={i}>
+                          <span>{i + 1}</span>
+                          <p>{u}</p>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                </details>
+              )}
+              {p.ingredients && (
+                <details className="st-p-acc">
+                  <summary>المكونات<ChevronDown aria-hidden="true" /></summary>
+                  <div className="st-p-acc-body">
+                    <p>{p.ingredients}</p>
+                  </div>
+                </details>
+              )}
+            </div>
 
             <ul className="st-p-perks">
               <li><Truck aria-hidden="true" />{settings.free_delivery_over > 0 ? `توصيل مجاني فوق ${formatIQD(settings.free_delivery_over)}` : "توصيل لكل المحافظات"}</li>
@@ -300,44 +255,6 @@ export default function ProductShowcase({ product: p, related }: { product: Stor
           </div>
         </div>
       </section>
-
-      {/* DETAILS */}
-      {(p.nutrition.length > 0 || p.ingredients || p.usage.length > 0) && (
-        <section className="st-p-details">
-          {p.nutrition.length > 0 && (
-            <div className="st-p-panel st-reveal">
-              <h2>القيم الغذائية</h2>
-              <dl className="st-facts">
-                {p.nutrition.map((n, i) => (
-                  <div key={i}>
-                    <dt>{n.label}</dt>
-                    <dd>{n.value}</dd>
-                  </div>
-                ))}
-              </dl>
-            </div>
-          )}
-          {p.usage.length > 0 && (
-            <div className="st-p-panel st-reveal">
-              <h2>طريقة الاستخدام</h2>
-              <ol className="st-steps">
-                {p.usage.map((u, i) => (
-                  <li key={i}>
-                    <span>{i + 1}</span>
-                    <p>{u}</p>
-                  </li>
-                ))}
-              </ol>
-            </div>
-          )}
-          {p.ingredients && (
-            <div className="st-p-panel st-p-panel--wide st-reveal">
-              <h2>المكونات</h2>
-              <p>{p.ingredients}</p>
-            </div>
-          )}
-        </section>
-      )}
 
       {/* RELATED */}
       {related.length > 0 && (
