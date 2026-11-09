@@ -1184,14 +1184,35 @@ body.st-lock { overflow: hidden; }
 .st-gallery { display: flex; flex-direction: row-reverse; align-items: flex-start; gap: var(--space-4); }
 .st-gallery-main {
   position: relative;
+  isolation: isolate;
   flex: 1 1 0;
   min-width: 0;
   padding: var(--space-10);
   border-radius: var(--radius-xl);
   border: 1px solid var(--glass-border);
   background:
-    radial-gradient(70% 60% at 50% 80%, color-mix(in srgb, var(--accent) 28%, transparent), transparent 70%),
-    var(--glass);
+    radial-gradient(62% 62% at 50% 46%, color-mix(in srgb, var(--accent) 30%, transparent), transparent 72%),
+    linear-gradient(155deg, color-mix(in srgb, var(--accent) 12%, var(--glass)), var(--glass) 62%);
+}
+/* The rings behind the product and the light it stands on. Both take its colour. */
+.st-gallery-main::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: repeating-radial-gradient(circle at 50% 50%, transparent 0 30px, color-mix(in srgb, var(--accent) 34%, transparent) 30px 31px);
+  -webkit-mask-image: radial-gradient(62% 62% at 50% 50%, var(--bg) 25%, transparent 100%);
+  mask-image: radial-gradient(62% 62% at 50% 50%, var(--bg) 25%, transparent 100%);
+}
+.st-gallery-main::after {
+  content: "";
+  position: absolute;
+  inset-inline: 22%;
+  bottom: 9%;
+  height: 11%;
+  z-index: -1;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--accent) 55%, transparent), transparent);
 }
 .st-gallery-main .st-visual { aspect-ratio: 1; animation: st-fade var(--dur-slow) var(--ease-out); }
 @keyframes st-fade { from { opacity: 0.2; } to { opacity: 1; } }

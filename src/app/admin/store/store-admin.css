@@ -211,8 +211,12 @@ html:root:root:root:root:root .sa-icon-btn.is-on { --primary: var(--warning); --
    the 24px of the modal's header and footer. */
 .sa-editor { display: grid; grid-template-columns: clamp(240px, 33%, 340px) minmax(0, 1fr); gap: var(--space-6); align-items: start; padding: var(--space-6); }
 .sa-editor-preview { display: flex; flex-direction: column; gap: var(--space-4); }
-.sa-editor-visual { padding: var(--space-4); border-radius: var(--radius-lg); border: 1px solid var(--glass-border); background: radial-gradient(70% 60% at 50% 80%, color-mix(in srgb, var(--accent) 30%, transparent), var(--glass) 75%); }
+.sa-editor-visual { position: relative; isolation: isolate; padding: var(--space-4); border-radius: var(--radius-lg); border: 1px solid var(--glass-border); background: radial-gradient(62% 72% at 50% 46%, color-mix(in srgb, var(--accent) 30%, transparent), transparent 72%), linear-gradient(155deg, color-mix(in srgb, var(--accent) 12%, var(--glass)), var(--glass) 62%); }
+/* The rings behind the product and the light it stands on. Both take its colour. */
+.sa-editor-visual::before { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: repeating-radial-gradient(circle at 50% 50%, transparent 0 25px, color-mix(in srgb, var(--accent) 34%, transparent) 25px 26px); -webkit-mask-image: radial-gradient(58% 78% at 50% 50%, var(--bg) 25%, transparent 100%); mask-image: radial-gradient(58% 78% at 50% 50%, var(--bg) 25%, transparent 100%); }
+.sa-editor-visual::after { content: ""; position: absolute; inset-inline: 20%; bottom: 9%; height: 13%; z-index: -1; background: radial-gradient(closest-side, color-mix(in srgb, var(--accent) 55%, transparent), transparent); }
 .sa-editor-visual .st-visual { aspect-ratio: 4 / 3; }
+.sa-editor-visual .st-visual img { filter: drop-shadow(0 14px 18px color-mix(in srgb, var(--bg) 70%, transparent)); }
 /* Out of flow, or a tall picture such as a nutrition label stretches its box.
    store.css is not loaded in the panel, so the box and the fit are set here. */
 :is(.sa-editor-visual, .sa-gallery-pick) .st-visual { position: relative; }
