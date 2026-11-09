@@ -4,6 +4,8 @@ import { seedCatalog } from "./seed";
 import {
   DEFAULT_STORE_SETTINGS,
   normalizeSettings,
+  parseVariants,
+  type FlavorImage,
   type ProductFact,
   type ProductFeature,
   type ProductHighlight,
@@ -74,11 +76,17 @@ export function toProduct(row: NonNullable<ProductRow>): StoreProduct {
     ),
     ingredients: row.ingredients,
     flavors: row.flavors,
+    flavor_images: list<FlavorImage>(row.flavor_images, (i) =>
+      str(i.label) && str(i.src)
+        ? { label: str(i.label), src: str(i.src), ...(Number(i.fit) > 0 ? { fit: Number(i.fit) } : {}) }
+        : null
+    ),
     sizes: list<ProductSize>(row.sizes, (i) => {
       const price = Number(i.price);
       return str(i.label) && Number.isFinite(price) ? { label: str(i.label), price: Math.round(price) } : null;
     }),
     stock: row.stock,
+    variant_stock: parseVariants(row.variant_stock),
     low_stock_threshold: row.low_stock_threshold,
     is_active: row.is_active,
     is_featured: row.is_featured,

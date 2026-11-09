@@ -78,6 +78,14 @@ export default function SettingsClient({ initialSettings }: { initialSettings: S
             <span>شريط الإعلان أعلى المتجر</span>
             <input value={form.announcement} onChange={(e) => set("announcement", e.target.value)} placeholder="اتركه فارغاً لإخفائه" />
           </label>
+          <label className="sa-field">
+            <span>ضمان المنتج في صفحة المنتج</span>
+            <input value={form.perk_original} onChange={(e) => set("perk_original", e.target.value)} placeholder="اتركه فارغاً لإخفائه" />
+          </label>
+          <label className="sa-field">
+            <span>طريقة الطلب والدفع في صفحة المنتج</span>
+            <input value={form.perk_order} onChange={(e) => set("perk_order", e.target.value)} placeholder="اتركه فارغاً لإخفائه" />
+          </label>
         </section>
       </div>
     </form>

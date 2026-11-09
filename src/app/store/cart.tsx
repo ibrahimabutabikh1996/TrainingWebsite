@@ -4,8 +4,10 @@ import { createContext, useCallback, useContext, useMemo, useState, useSyncExter
 import {
   MAX_LINE_QTY,
   deliveryFeeFor,
+  firstAvailable,
   lineKey,
   priceFor,
+  variantQty,
   type CartLine,
   type StoreProduct,
   type StoreSettings,
@@ -83,14 +85,19 @@ export function CartProvider({ settings, children }: { settings: StoreSettings; 
   const [isOpen, setIsOpen] = useState(false);
 
   const add = useCallback<CartContextValue["add"]>((product, options = {}) => {
-    const size = options.size ?? product.sizes[0]?.label ?? null;
-    const flavor = options.flavor ?? product.flavors[0] ?? null;
-    const qty = Math.max(1, Math.min(MAX_LINE_QTY, options.qty ?? 1));
+    /* The quick add on a card names no size or flavour: it takes one in stock. */
+    const pick = options.size === undefined && options.flavor === undefined ? firstAvailable(product) : null;
+    const size = options.size ?? pick?.size ?? product.sizes[0]?.label ?? null;
+    const flavor = options.flavor ?? pick?.flavor ?? product.flavors[0] ?? null;
+    const tracked = product.variant_stock.length > 0 ? (variantQty(product, size, flavor) ?? 0) : null;
+    if (tracked === 0) return;
+    const max = Math.min(MAX_LINE_QTY, tracked ?? MAX_LINE_QTY);
+    const qty = Math.max(1, Math.min(max, options.qty ?? 1));
     const key = lineKey(product.id, size, flavor);
     const current = readLines();
     const existing = current.find((l) => l.key === key);
     const next = existing
-      ? current.map((l) => (l.key === key ? { ...l, qty: Math.min(MAX_LINE_QTY, l.qty + qty) } : l))
+      ? current.map((l) => (l.key === key ? { ...l, qty: Math.min(max, l.qty + qty), max } : l))
       : [
           ...current,
           {
@@ -98,13 +105,14 @@ export function CartProvider({ settings, children }: { settings: StoreSettings; 
             productId: product.id,
             slug: product.slug,
             name: product.name,
-            image_url: options.image_url ?? product.image_url,
+            image_url: options.image_url ?? product.flavor_images.find((f) => f.label === flavor)?.src ?? product.image_url,
             accent: product.accent,
             category: product.category,
             size,
             flavor,
             unitPrice: priceFor(product, size),
             qty,
+            max,
           },
         ];
     writeLines(next);
@@ -113,7 +121,7 @@ export function CartProvider({ settings, children }: { settings: StoreSettings; 
 
   const setQty = useCallback((key: string, qty: number) => {
     const clamped = Math.max(1, Math.min(MAX_LINE_QTY, Math.floor(qty)));
-    writeLines(readLines().map((l) => (l.key === key ? { ...l, qty: clamped } : l)));
+    writeLines(readLines().map((l) => (l.key === key ? { ...l, qty: Math.min(clamped, l.max ?? MAX_LINE_QTY) } : l)));
   }, []);
 
   const remove = useCallback((key: string) => {

@@ -14,7 +14,10 @@ import {
   formatIQD,
   isSoldOut,
   priceFor,
+  sumVariants,
+  type ProductSize,
   type StoreProduct,
+  type VariantStock,
 } from "@/lib/store/types";
 import { ProductVisual } from "@/app/store/ProductVisual";
 import { deleteProduct, saveProduct, setProductFlag, type ProductInput } from "../actions";
@@ -38,8 +41,10 @@ const BLANK: ProductInput = {
   nutrition: [],
   ingredients: "",
   flavors: [],
+  flavor_images: [],
   sizes: [{ label: "", price: 0 }],
   stock: null,
+  variant_stock: [],
   low_stock_threshold: 5,
   is_active: true,
   is_featured: false,
@@ -47,6 +52,15 @@ const BLANK: ProductInput = {
 };
 
 const MAX_IMAGES = 8;
+const MAX_FLAVORS = 12;
+
+/* A flavour while it is being edited. `key` stays put as the name is typed. */
+interface FlavorRow {
+  key: string;
+  label: string;
+  src: string;
+  fit?: number;
+}
 
 export default function ProductsClient({ initialProducts, isSample }: { initialProducts: StoreProduct[]; isSample: boolean }) {
   const [products, setProducts] = useState(initialProducts);
@@ -147,7 +161,7 @@ export default function ProductsClient({ initialProducts, isSample }: { initialP
                 <button type="button" className="sa-icon-btn" onClick={() => setEditing({ ...p })} title="تعديل" aria-label={`تعديل ${p.name}`}>
                   <Pencil aria-hidden="true" />
                 </button>
-                <button type="button" className={`sa-icon-btn${p.is_featured ? " is-on" : ""}`} onClick={() => toggle(p, "is_featured")} title={p.is_featured ? "إلغاء التمييز" : "تمييز في الواجهة"} aria-label="تمييز">
+                <button type="button" className={`sa-icon-btn${p.is_featured ? " is-on" : ""}`} onClick={() => toggle(p, "is_featured")} title={p.is_featured ? "إخفاء شارة «الأكثر طلباً»" : "إظهار شارة «الأكثر طلباً»"} aria-label="تمييز">
                   <Star aria-hidden="true" />
                 </button>
                 <button type="button" className="sa-icon-btn" onClick={() => toggle(p, "is_active")} title={p.is_active ? "إخفاء من المتجر" : "إظهار في المتجر"} aria-label={p.is_active ? "إخفاء" : "إظهار"}>
@@ -198,6 +212,27 @@ function ProductEditor({
     sizes: initial.sizes.length ? initial.sizes : [{ label: "", price: initial.price }],
     images: initial.images?.length ? initial.images : initial.image_url ? [initial.image_url] : [],
   }));
+  const [flavorRows, setFlavorRows] = useState<FlavorRow[]>(() =>
+    initial.flavors.map((label, i) => {
+      const photo = initial.flavor_images.find((f) => f.label === label);
+      return { key: `f${i}`, label, src: photo?.src ?? "", fit: photo?.fit };
+    })
+  );
+  const [flavorUploading, setFlavorUploading] = useState(false);
+  /* One record per size row, in the same order: flavour row key -> what is typed. */
+  const [counts, setCounts] = useState<Record<string, string>[]>(() =>
+    (initial.sizes.length ? initial.sizes : [{ label: "", price: initial.price }]).map((s) => {
+      const cells: Record<string, string> = {};
+      const qtyOf = (flavor: string | null) => initial.variant_stock.find((v) => v.size === s.label && v.flavor === flavor)?.qty;
+      initial.flavors.forEach((label, i) => {
+        const qty = qtyOf(label);
+        if (qty !== undefined) cells[`f${i}`] = String(qty);
+      });
+      const whole = qtyOf(null);
+      if (whole !== undefined) cells[""] = String(whole);
+      return cells;
+    })
+  );
   const [activeImage, setActiveImage] = useState(0);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -244,13 +279,47 @@ function ProductEditor({
   const images = form.images ?? [];
   const shownImage = images[Math.min(activeImage, images.length - 1)] ?? null;
 
+  /* A size row removed takes its column of counts with it. */
+  const changeSizes = (next: ProductSize[]) => {
+    if (next.length < form.sizes.length) {
+      const found = form.sizes.findIndex((s) => !next.includes(s));
+      const gone = found >= 0 ? found : form.sizes.length - 1;
+      setCounts((list) => list.filter((_, i) => i !== gone));
+    } else if (next.length > form.sizes.length) {
+      setCounts((list) => [...list, {}]);
+    }
+    set("sizes", next);
+  };
+
+  const gridFlavors = flavorRows.filter((r) => r.label.trim()).map((r) => ({ key: r.key, flavor: r.label.trim() as string | null }));
+  const gridColumns = gridFlavors.length > 0 ? gridFlavors : [{ key: "", flavor: null as string | null }];
+  const variants: VariantStock[] = form.sizes.flatMap((s, i) =>
+    !s.label.trim()
+      ? []
+      : gridColumns.flatMap(({ key, flavor }) => {
+          const typed = (counts[i]?.[key] ?? "").trim();
+          return typed === "" ? [] : [{ size: s.label.trim(), flavor, qty: Math.max(0, Math.floor(Number(typed)) || 0) }];
+        })
+  );
+
   const submit = async () => {
     if (isSample) {
       toast.error("شغّل ملف قاعدة البيانات أولاً لتتمكن من الحفظ");
       return;
     }
+    const named = flavorRows.map((r) => ({ ...r, label: r.label.trim() }));
+    if (named.some((r) => r.src && !r.label)) {
+      toast.error("اكتب اسم النكهة التي رفعت صورتها");
+      return;
+    }
     setSaving(true);
-    const res = await saveProduct({ ...form, image_url: images[0] ?? null });
+    const res = await saveProduct({
+      ...form,
+      image_url: images[0] ?? null,
+      variant_stock: variants,
+      flavors: named.filter((r) => r.label).map((r) => r.label),
+      flavor_images: named.filter((r) => r.label && r.src).map(({ label, src, fit }) => ({ label, src, ...(fit ? { fit } : {}) })),
+    });
     setSaving(false);
     if (res.success && res.data) {
       toast.success(form.id ? "تم حفظ التعديلات" : "تمت إضافة المنتج");
@@ -268,7 +337,7 @@ function ProductEditor({
       footer={
         <div className="sa-modal-foot">
           <button type="button" className="btn-secondary sa-btn sa-btn--ghost" onClick={onClose}>إلغاء</button>
-          <button type="button" className="btn-primary sa-btn" onClick={submit} disabled={saving || uploading}>
+          <button type="button" className="btn-primary sa-btn" onClick={submit} disabled={saving || uploading || flavorUploading}>
             {saving ? "جارِ الحفظ…" : "حفظ المنتج"}
           </button>
         </div>
@@ -326,7 +395,7 @@ function ProductEditor({
           </label>
           <label className="sa-check">
             <input type="checkbox" checked={form.is_featured} onChange={(e) => set("is_featured", e.target.checked)} />
-            <span>منتج مميز (يظهر في الواجهة)</span>
+            <span>إظهار شارة «الأكثر طلباً» على بطاقة المنتج</span>
           </label>
         </aside>
 
@@ -371,7 +440,7 @@ function ProductEditor({
             <Rows
               label="الأحجام والأسعار (أول حجم هو السعر الافتراضي)"
               items={form.sizes}
-              onChange={(v) => set("sizes", v)}
+              onChange={changeSizes}
               blank={{ label: "", price: 0 }}
               render={(item, update) => (
                 <>
@@ -386,34 +455,29 @@ function ProductEditor({
                 <input type="number" min={0} step={500} dir="ltr" value={form.compare_at_price ?? ""} onChange={(e) => set("compare_at_price", e.target.value === "" ? null : Number(e.target.value))} />
               </label>
               <label className="sa-field">
-                <span>المخزون (فارغ = غير محدود)</span>
-                <input type="number" min={0} dir="ltr" value={form.stock ?? ""} onChange={(e) => set("stock", e.target.value === "" ? null : Number(e.target.value))} />
+                <span>{variants.length > 0 ? "المخزون (مجموع الجدول بالأسفل)" : "المخزون (فارغ = غير محدود)"}</span>
+                <input type="number" min={0} dir="ltr" disabled={variants.length > 0} value={variants.length > 0 ? sumVariants(variants) : (form.stock ?? "")} onChange={(e) => set("stock", e.target.value === "" ? null : Number(e.target.value))} />
               </label>
               <label className="sa-field">
                 <span>تنبيه عند انخفاض المخزون إلى</span>
                 <input type="number" min={0} dir="ltr" value={form.low_stock_threshold} onChange={(e) => set("low_stock_threshold", Number(e.target.value))} />
               </label>
             </div>
-            <TagInput label="النكهات" values={form.flavors} onChange={(v) => set("flavors", v)} placeholder="اكتب نكهة واضغط Enter" />
+            <FlavorRows rows={flavorRows} setRows={setFlavorRows} onBusy={setFlavorUploading} category={form.category} accent={form.accent} />
+            <VariantGrid
+              sizes={form.sizes}
+              columns={gridColumns}
+              counts={counts}
+              onChange={(sizeIndex, key, value) =>
+                setCounts((list) => list.map((cells, i) => (i === sizeIndex ? { ...cells, [key]: value } : cells)))
+              }
+            />
           </fieldset>
 
           <fieldset className="sa-fieldset">
             <legend>محتوى صفحة العرض</legend>
             <Rows
-              label="أرقام بارزة (حتى 4)"
-              items={form.highlights}
-              max={4}
-              onChange={(v) => set("highlights", v)}
-              blank={{ value: "", label: "" }}
-              render={(item, update) => (
-                <>
-                  <input dir="ltr" value={item.value} onChange={(e) => update({ ...item, value: e.target.value })} placeholder="24g" />
-                  <input value={item.label} onChange={(e) => update({ ...item, label: e.target.value })} placeholder="بروتين بكل حصة" />
-                </>
-              )}
-            />
-            <Rows
-              label="المميزات"
+              label="المميزات (تظهر كنقاط داخل الوصف)"
               items={form.features}
               max={6}
               onChange={(v) => set("features", v)}
@@ -439,7 +503,7 @@ function ProductEditor({
             <Rows
               label="القيم الغذائية"
               items={form.nutrition}
-              max={16}
+              max={24}
               onChange={(v) => set("nutrition", v)}
               blank={{ label: "", value: "" }}
               render={(item, update) => (
@@ -493,6 +557,148 @@ function Rows<T>({
           <Plus aria-hidden="true" /> إضافة
         </button>
       )}
+    </div>
+  );
+}
+
+/* The count for each size and flavour. An empty cell is a combination that is
+   not sold; a 0 is one that has sold out. */
+function VariantGrid({
+  sizes,
+  columns,
+  counts,
+  onChange,
+}: {
+  sizes: ProductSize[];
+  columns: { key: string; flavor: string | null }[];
+  counts: Record<string, string>[];
+  onChange: (sizeIndex: number, key: string, value: string) => void;
+}) {
+  const named = sizes.map((s, index) => ({ label: s.label.trim(), index })).filter((s) => s.label);
+  if (named.length === 0) return null;
+  return (
+    <div className="sa-rows">
+      <span className="sa-rows-label">المخزون لكل نكهة وحجم (فارغ = غير متوفر بهذا الحجم، 0 = نفدت)</span>
+      <div className="sa-variants">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">النكهة</th>
+              {named.map((s) => (
+                <th key={s.index} scope="col">{s.label}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {columns.map(({ key, flavor }) => (
+              <tr key={key}>
+                <th scope="row">{flavor ?? "الكمية"}</th>
+                {named.map((s) => (
+                  <td key={s.index}>
+                    <input
+                      type="number"
+                      min={0}
+                      dir="ltr"
+                      value={counts[s.index]?.[key] ?? ""}
+                      onChange={(e) => onChange(s.index, key, e.target.value)}
+                      aria-label={[flavor, s.label].filter(Boolean).join(" · ")}
+                    />
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+/* One row per flavour: its photo, its name. The first is the one a visitor
+   lands on, and with two or more photos they become the product's gallery. */
+function FlavorRows({
+  rows,
+  setRows,
+  onBusy,
+  category,
+  accent,
+}: {
+  rows: FlavorRow[];
+  setRows: React.Dispatch<React.SetStateAction<FlavorRow[]>>;
+  onBusy: (busy: boolean) => void;
+  category: string;
+  accent: string;
+}) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const targetRef = useRef<string | null>(null);
+  const nextKey = useRef(0);
+  const [busyKey, setBusyKey] = useState<string | null>(null);
+
+  const patch = (key: string, change: Partial<FlavorRow>) =>
+    setRows((list) => list.map((r) => (r.key === key ? { ...r, ...change } : r)));
+
+  const pick = (key: string) => {
+    targetRef.current = key;
+    fileRef.current?.click();
+  };
+
+  const upload = async (file: File | undefined) => {
+    const key = targetRef.current;
+    if (fileRef.current) fileRef.current.value = "";
+    if (!file || !key) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("اختر ملف صورة");
+      return;
+    }
+    setBusyKey(key);
+    onBusy(true);
+    const url = await uploadMediaWithProgress(file, { maxEdge: 1600 });
+    /* A new photo has its own framing, so an old scale no longer applies. */
+    if (url) patch(key, { src: url, fit: undefined });
+    else toast.error(`تعذّر رفع ${file.name}`);
+    setBusyKey(null);
+    onBusy(false);
+  };
+
+  return (
+    <div className="sa-rows">
+      <span className="sa-rows-label">النكهات (الأولى تظهر افتراضياً، ولكل نكهة صورتها)</span>
+      {rows.map((r) => (
+        <div key={r.key} className="sa-row sa-flavor-row">
+          <button
+            type="button"
+            className="sa-flavor-photo"
+            onClick={() => pick(r.key)}
+            disabled={busyKey !== null}
+            title={r.src ? "تغيير الصورة" : "رفع صورة"}
+            aria-label={`${r.src ? "تغيير صورة" : "رفع صورة"} ${r.label || "النكهة"}`}
+          >
+            {r.src ? <ProductVisual name={r.label} category={category} accent={accent} image_url={r.src} size={56} /> : <ImagePlus aria-hidden="true" />}
+          </button>
+          <div className="sa-row-fields">
+            <input value={r.label} maxLength={40} onChange={(e) => patch(r.key, { label: e.target.value })} placeholder="اسم النكهة" aria-label="اسم النكهة" />
+          </div>
+          <button
+            type="button"
+            className="sa-icon-btn sa-icon-btn--danger"
+            onClick={() => setRows((list) => list.filter((x) => x.key !== r.key))}
+            disabled={busyKey === r.key}
+            aria-label={`حذف ${r.label || "النكهة"}`}
+          >
+            <X aria-hidden="true" />
+          </button>
+        </div>
+      ))}
+      {rows.length < MAX_FLAVORS && (
+        <button
+          type="button"
+          className="sa-add-row"
+          onClick={() => setRows((list) => [...list, { key: `n${nextKey.current++}`, label: "", src: "" }])}
+        >
+          <Plus aria-hidden="true" /> إضافة نكهة
+        </button>
+      )}
+      <input ref={fileRef} type="file" accept="image/*" hidden onChange={(e) => upload(e.target.files?.[0])} />
     </div>
   );
 }

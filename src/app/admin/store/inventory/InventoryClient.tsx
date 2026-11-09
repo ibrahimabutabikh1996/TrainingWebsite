@@ -6,8 +6,8 @@ import { AlertTriangle, ArrowDownToLine, ClipboardCheck, History, Infinity as In
 import AdminModal from "../../components/AdminModal";
 import { CustomSelect } from "@/components/CustomSelect";
 import { ProductVisual } from "@/app/store/ProductVisual";
-import type { StoreProduct } from "@/lib/store/types";
-import { changeStock, setLowStockThreshold, type StockAction } from "../actions";
+import { variantLabel, type StoreProduct } from "@/lib/store/types";
+import { changeStock, setLowStockThreshold, type StockAction, type StockVariant } from "../actions";
 import type { StockMovement } from "../data";
 
 const dateFmt = new Intl.DateTimeFormat("ar-IQ-u-nu-latn", { dateStyle: "medium", timeStyle: "short" });
@@ -84,7 +84,8 @@ export default function InventoryClient({
     }
     const after = res.data.stock;
     const before = product.stock;
-    setProducts((list) => list.map((p) => (p.id === product.id ? { ...p, stock: after } : p)));
+    const variant_stock = res.data.variant_stock;
+    setProducts((list) => list.map((p) => (p.id === product.id ? { ...p, stock: after, variant_stock } : p)));
     if (after !== before) {
       setMovements((list) => [
         {
@@ -95,7 +96,10 @@ export default function InventoryClient({
           stock_after: after,
           reason: action.kind === "track" ? "tracking" : action.kind,
           order_reference: null,
-          note: note || (action.kind === "track" ? (action.tracked ? "تفعيل تتبع المخزون" : "إيقاف تتبع المخزون") : null),
+          note:
+            action.kind === "track"
+              ? action.tracked ? "تفعيل تتبع المخزون" : "إيقاف تتبع المخزون"
+              : [action.variant ? variantLabel(action.variant) : null, note].filter(Boolean).join(" — ") || null,
           created_at: new Date().toISOString(),
         },
         ...list,
@@ -183,7 +187,18 @@ export default function InventoryClient({
                       <span className="sa-thumb">
                         <ProductVisual name={p.name} category={p.category} accent={p.accent} image_url={p.image_url} size={48} />
                       </span>
-                      <span>{p.name}</span>
+                      <div className="sa-variant-cell">
+                        <span>{p.name}</span>
+                        {p.variant_stock.length > 0 && (
+                          <div className="sa-variant-list">
+                            {p.variant_stock.map((v) => (
+                              <span key={`${v.size}|${v.flavor}`} className={`sa-variant-chip${v.qty === 0 ? " is-out" : ""}`}>
+                                {variantLabel(v, p.sizes.length > 1)}: {v.qty}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </td>
                   <td className="sa-cell-num">{p.stock === null ? "∞" : p.stock}</td>
@@ -217,15 +232,17 @@ export default function InventoryClient({
                           <button type="button" className="btn-secondary sa-btn sa-btn--ghost sa-btn--sm" onClick={() => setDialog({ product: p, kind: "count" })}>
                             <ClipboardCheck aria-hidden="true" /> جرد
                           </button>
-                          <button
-                            type="button"
-                            className="sa-icon-btn"
-                            title="إيقاف تتبع المخزون (متوفر دائماً)"
-                            aria-label="إيقاف تتبع المخزون"
-                            onClick={() => apply(p, { kind: "track", tracked: false })}
-                          >
-                            <InfinityIcon aria-hidden="true" />
-                          </button>
+                          {p.variant_stock.length === 0 && (
+                            <button
+                              type="button"
+                              className="sa-icon-btn"
+                              title="إيقاف تتبع المخزون (متوفر دائماً)"
+                              aria-label="إيقاف تتبع المخزون"
+                              onClick={() => apply(p, { kind: "track", tracked: false })}
+                            >
+                              <InfinityIcon aria-hidden="true" />
+                            </button>
+                          )}
                         </>
                       )}
                     </div>
@@ -281,10 +298,10 @@ export default function InventoryClient({
           product={dialog.product}
           kind={dialog.kind}
           onClose={() => setDialog(null)}
-          onSubmit={async (value, note) => {
+          onSubmit={async (value, note, variant) => {
             const ok = await apply(
               dialog.product,
-              dialog.kind === "restock" ? { kind: "restock", qty: value, note } : { kind: "count", stock: value, note },
+              dialog.kind === "restock" ? { kind: "restock", qty: value, note, variant } : { kind: "count", stock: value, note, variant },
               note
             );
             if (ok) setDialog(null);
@@ -304,14 +321,18 @@ function StockDialog({
   product: StoreProduct;
   kind: "restock" | "count";
   onClose: () => void;
-  onSubmit: (value: number, note: string) => Promise<void>;
+  onSubmit: (value: number, note: string, variant?: StockVariant) => Promise<void>;
 }) {
-  const [value, setValue] = useState(kind === "count" ? String(product.stock ?? 0) : "");
+  const variants = product.variant_stock;
+  const [picked, setPicked] = useState(0);
+  const chosen = variants[picked];
+  const current = chosen ? chosen.qty : product.stock ?? 0;
+  const [value, setValue] = useState(kind === "count" ? String(current) : "");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const n = Math.floor(Number(value));
   const valid = value !== "" && Number.isFinite(n) && (kind === "restock" ? n > 0 : n >= 0);
-  const after = kind === "restock" ? (product.stock ?? 0) + (valid ? n : 0) : valid ? n : product.stock ?? 0;
+  const after = kind === "restock" ? current + (valid ? n : 0) : valid ? n : current;
 
   return (
     <AdminModal
@@ -329,7 +350,7 @@ function StockDialog({
             disabled={!valid || busy}
             onClick={async () => {
               setBusy(true);
-              await onSubmit(n, note);
+              await onSubmit(n, note, chosen ? { size: chosen.size, flavor: chosen.flavor } : undefined);
               setBusy(false);
             }}
           >
@@ -339,6 +360,21 @@ function StockDialog({
       }
     >
       <div className="sa-dialog-body">
+        {variants.length > 0 && (
+          <div className="sa-field">
+            <span>النكهة والحجم</span>
+            <CustomSelect
+              className="sa-custom-select"
+              value={String(picked)}
+              onChange={(v) => {
+                const i = Number(v);
+                setPicked(i);
+                if (kind === "count") setValue(String(variants[i].qty));
+              }}
+              options={variants.map((v, i) => ({ value: String(i), label: `${variantLabel(v, product.sizes.length > 1)} (${v.qty})` }))}
+            />
+          </div>
+        )}
         <label className="sa-field">
           <span>{kind === "restock" ? "الكمية المستلمة" : "الكمية الموجودة فعلياً"}</span>
           <input type="number" min={kind === "restock" ? 1 : 0} dir="ltr" autoFocus value={value} onChange={(e) => setValue(e.target.value)} />

@@ -10,7 +10,7 @@ import type { StoreProduct } from "./types";
  * These are the coach's real products, with the brands' own product photos
  * from public/images/store. The prices are placeholders for the coach to set. */
 
-type Seed = Omit<StoreProduct, "id">;
+type Seed = Omit<StoreProduct, "id" | "flavor_images" | "variant_stock">;
 
 export const SEED_PRODUCTS: Seed[] = [
   {
@@ -24,7 +24,7 @@ export const SEED_PRODUCTS: Seed[] = [
     price: 180000,
     compare_at_price: null,
     image_url: "/images/store/ans-n-whey-banana-cream.png",
-    images: ["/images/store/ans-n-whey-banana-cream.png"],
+    images: ["/images/store/ans-n-whey-banana-cream.png", "/images/store/nutrition/ans-n-whey.webp"],
     low_stock_threshold: 5,
     accent: "#FBBF24",
     highlights: [
@@ -39,9 +39,23 @@ export const SEED_PRODUCTS: Seed[] = [
     ],
     usage: [],
     nutrition: [
-      { label: "حجم الحصة", value: "سكوب واحد" },
-      { label: "البروتين", value: "22 غرام" },
+      { label: "حجم الحصة", value: "سكوب واحد (31 غرام)" },
+      { label: "عدد الحصص", value: "حوالي 73" },
       { label: "السعرات", value: "120 سعرة" },
+      { label: "الدهون", value: "1.5 غرام" },
+      { label: "الدهون المشبعة", value: "1 غرام" },
+      { label: "الدهون المتحولة", value: "0 غرام" },
+      { label: "الكوليسترول", value: "60 ملغ" },
+      { label: "الصوديوم", value: "70 ملغ" },
+      { label: "الكربوهيدرات", value: "5 غرام" },
+      { label: "الألياف", value: "0 غرام" },
+      { label: "السكريات", value: "2 غرام" },
+      { label: "السكر المضاف", value: "0 غرام" },
+      { label: "البروتين", value: "22 غرام" },
+      { label: "فيتامين D", value: "0 ميكروغرام" },
+      { label: "الكالسيوم", value: "110 ملغ" },
+      { label: "الحديد", value: "0 ملغ" },
+      { label: "البوتاسيوم", value: "135 ملغ" },
     ],
     ingredients: "",
     flavors: [],
@@ -62,7 +76,7 @@ export const SEED_PRODUCTS: Seed[] = [
     price: 60000,
     compare_at_price: null,
     image_url: "/images/store/protein-pancake.webp",
-    images: ["/images/store/protein-pancake.webp"],
+    images: ["/images/store/protein-pancake.webp", "/images/store/nutrition/protein-pancake-waffle-1200g.webp", "/images/store/nutrition/protein-pancake-waffle-3000g.webp"],
     low_stock_threshold: 5,
     accent: "#F59E0B",
     highlights: [
@@ -76,9 +90,17 @@ export const SEED_PRODUCTS: Seed[] = [
     ],
     usage: [],
     nutrition: [
-      { label: "حجم الحصة", value: "50 غرام (4 سكوبات)" },
-      { label: "السعرات", value: "181.8 سعرة" },
+      { label: "حجم الحصة", value: "4 سكوبات (50 غرام)" },
+      { label: "عدد الحصص في 1.2 كغ", value: "24" },
+      { label: "عدد الحصص في 3 كغ", value: "60" },
+      { label: "الطاقة", value: "768.2 كيلوجول / 181.8 سعرة" },
+      { label: "الدهون", value: "3.0 غرام" },
+      { label: "الدهون المشبعة", value: "1.3 غرام" },
+      { label: "الكربوهيدرات", value: "25 غرام" },
+      { label: "السكريات", value: "8.8 غرام" },
+      { label: "الألياف", value: "1.4 غرام" },
       { label: "البروتين", value: "13 غرام" },
+      { label: "الملح", value: "0.27 غرام" },
     ],
     ingredients: "",
     flavors: [],
@@ -102,7 +124,7 @@ export const SEED_PRODUCTS: Seed[] = [
     price: 40000,
     compare_at_price: null,
     image_url: "/images/store/ans-creatine-monohydrate-300g.png",
-    images: ["/images/store/ans-creatine-monohydrate-300g.png"],
+    images: ["/images/store/ans-creatine-monohydrate-300g.png", "/images/store/nutrition/ans-creatine.webp"],
     low_stock_threshold: 5,
     accent: "#22D3EE",
     highlights: [
@@ -122,7 +144,8 @@ export const SEED_PRODUCTS: Seed[] = [
       "اشرب ماء كافياً خلال اليوم.",
     ],
     nutrition: [
-      { label: "حجم الحصة", value: "5 غرام" },
+      { label: "حجم الحصة", value: "سكوب واحد (5 غرام)" },
+      { label: "عدد الحصص", value: "60" },
       { label: "كرياتين مونوهيدرات", value: "5000 ملغ" },
     ],
     ingredients: "كرياتين مونوهيدرات ميكروني 100%.",
@@ -144,7 +167,7 @@ export const SEED_PRODUCTS: Seed[] = [
     price: 65000,
     compare_at_price: null,
     image_url: "/images/store/rvit-creatine-monohydrate-blackcurrant.png",
-    images: ["/images/store/rvit-creatine-monohydrate-blackcurrant.png"],
+    images: ["/images/store/rvit-creatine-monohydrate-blackcurrant.png", "/images/store/nutrition/rvit-creatine-unflavored.webp", "/images/store/nutrition/rvit-creatine-flavored.webp"],
     low_stock_threshold: 5,
     accent: "#A78BFA",
     highlights: [
@@ -159,8 +182,12 @@ export const SEED_PRODUCTS: Seed[] = [
     ],
     usage: ["سكوب واحد (5 غرام) يومياً يغطي احتياج جسمك من الكرياتين."],
     nutrition: [
-      { label: "حجم الحصة", value: "سكوب واحد" },
-      { label: "كرياتين مونوهيدرات", value: "5 غرام" },
+      { label: "حجم الحصة (غير مطعّم)", value: "سكوب واحد (5 غرام)" },
+      { label: "عدد الحصص (غير مطعّم)", value: "60" },
+      { label: "كرياتين مونوهيدرات (غير مطعّم)", value: "4950 ملغ" },
+      { label: "حجم الحصة (مطعّم)", value: "سكوب واحد (6 غرام)" },
+      { label: "عدد الحصص (مطعّم)", value: "50" },
+      { label: "كرياتين مونوهيدرات (مطعّم)", value: "5000 ملغ" },
     ],
     ingredients: "",
     flavors: [],
@@ -184,7 +211,7 @@ export const SEED_PRODUCTS: Seed[] = [
     price: 60000,
     compare_at_price: null,
     image_url: "/images/store/rvit-lusty-preworkout-blackcurrant.png",
-    images: ["/images/store/rvit-lusty-preworkout-blackcurrant.png"],
+    images: ["/images/store/rvit-lusty-preworkout-blackcurrant.png", "/images/store/nutrition/lusty-preworkout.webp"],
     low_stock_threshold: 5,
     accent: "#818CF8",
     highlights: [
@@ -200,10 +227,26 @@ export const SEED_PRODUCTS: Seed[] = [
     ],
     usage: [],
     nutrition: [
-      { label: "حجم الحصة", value: "2 سكوب" },
+      { label: "حجم الحصة", value: "2 سكوب مستوي (14 غرام)" },
+      { label: "عدد الحصص", value: "30" },
+      { label: "بيتا ألانين", value: "5000 ملغ" },
+      { label: "كرياتين مونوهيدرات", value: "2000 ملغ" },
+      { label: "إل-أرجينين", value: "2000 ملغ" },
+      { label: "إل-تايروسين", value: "1000 ملغ" },
+      { label: "كالسيوم", value: "120 ملغ (15%)" },
+      { label: "مغنيسيوم", value: "60 ملغ (16%)" },
+      { label: "مستخلص البرتقال المر", value: "300 ملغ" },
       { label: "كافيين", value: "300 ملغ" },
-      { label: "بيتا ألانين", value: "5 غرام" },
-      { label: "إل-تايروسين", value: "1 غرام" },
+      { label: "مستخلص التوت (5% كيتونات)", value: "200 ملغ" },
+      { label: "منها كيتونات التوت", value: "10 ملغ" },
+      { label: "ثيامين (فيتامين B1)", value: "2.2 ملغ (200%)" },
+      { label: "ريبوفلافين (فيتامين B2)", value: "2.8 ملغ (200%)" },
+      { label: "نياسين", value: "32 ملغ (200%)" },
+      { label: "حمض البانتوثينيك", value: "12 ملغ (200%)" },
+      { label: "فيتامين B6", value: "2.8 ملغ (200%)" },
+      { label: "بيوتين", value: "100 ميكروغرام (200%)" },
+      { label: "حمض الفوليك", value: "400 ميكروغرام (200%)" },
+      { label: "فيتامين B12", value: "5 ميكروغرام (200%)" },
     ],
     ingredients: "",
     flavors: [],
@@ -224,7 +267,7 @@ export const SEED_PRODUCTS: Seed[] = [
     price: 95000,
     compare_at_price: null,
     image_url: "/images/store/rvit-vast-mass-strawberry.png",
-    images: ["/images/store/rvit-vast-mass-strawberry.png"],
+    images: ["/images/store/rvit-vast-mass-strawberry.png", "/images/store/nutrition/vast-mass.webp"],
     low_stock_threshold: 5,
     accent: "#F87171",
     highlights: [
@@ -239,9 +282,15 @@ export const SEED_PRODUCTS: Seed[] = [
     ],
     usage: [],
     nutrition: [
-      { label: "حجم الحصة", value: "4 سكوبات" },
-      { label: "السعرات", value: "777 سعرة" },
+      { label: "حجم الحصة", value: "4 سكوبات (200 غرام)" },
+      { label: "عدد الحصص", value: "15" },
+      { label: "الطاقة", value: "3298 كيلوجول / 777 سعرة" },
+      { label: "الدهون", value: "4.6 غرام" },
+      { label: "الدهون المشبعة", value: "3.0 غرام" },
+      { label: "الكربوهيدرات", value: "142 غرام" },
+      { label: "السكريات", value: "22 غرام" },
       { label: "البروتين", value: "42 غرام" },
+      { label: "الملح", value: "0.54 غرام" },
     ],
     ingredients: "",
     flavors: [],
@@ -262,7 +311,7 @@ export const SEED_PRODUCTS: Seed[] = [
     price: 35000,
     compare_at_price: null,
     image_url: "/images/store/rvit-rice-carbs-pure-banana.png",
-    images: ["/images/store/rvit-rice-carbs-pure-banana.png"],
+    images: ["/images/store/rvit-rice-carbs-pure-banana.png", "/images/store/nutrition/rice-carbs-pure.webp"],
     low_stock_threshold: 5,
     accent: "#FACC15",
     highlights: [
@@ -282,10 +331,15 @@ export const SEED_PRODUCTS: Seed[] = [
       "حرّك بقوة وتناوله بعد التمرين.",
     ],
     nutrition: [
-      { label: "حجم الحصة", value: "30 غرام" },
-      { label: "السعرات", value: "102" },
+      { label: "حجم الحصة", value: "سكوب مستوي (30 غرام)" },
+      { label: "عدد الحصص", value: "66" },
+      { label: "الطاقة", value: "433 كيلوجول / 102 سعرة" },
+      { label: "الدهون", value: "0.5 غرام" },
+      { label: "الدهون المشبعة", value: "0.2 غرام" },
       { label: "الكربوهيدرات", value: "22 غرام" },
+      { label: "السكريات", value: "0.2 غرام" },
       { label: "البروتين", value: "2.4 غرام" },
+      { label: "الملح", value: "0 غرام" },
     ],
     ingredients: "طحين الرز 96%، قرفة مطحونة، نكهات، محلّيات (أسيسلفام البوتاسيوم والسكرالوز)، حمض الستريك، كاروتين.",
     flavors: ["موز"],
@@ -306,7 +360,7 @@ export const SEED_PRODUCTS: Seed[] = [
     price: 45000,
     compare_at_price: null,
     image_url: "/images/store/rvit-beta-alanine-cola.png",
-    images: ["/images/store/rvit-beta-alanine-cola.png"],
+    images: ["/images/store/rvit-beta-alanine-cola.png", "/images/store/nutrition/beta-alanine.webp"],
     low_stock_threshold: 5,
     accent: "#F97316",
     highlights: [
@@ -324,7 +378,11 @@ export const SEED_PRODUCTS: Seed[] = [
       "لا تتجاوز الجرعة اليومية الموصى بها.",
       "الإحساس بالوخز طبيعي ومصدره البيتا ألانين.",
     ],
-    nutrition: [{ label: "حجم الحصة", value: "7 غرام" }],
+    nutrition: [
+      { label: "حجم الحصة", value: "سكوب واحد (7 غرام)" },
+      { label: "عدد الحصص", value: "60" },
+      { label: "بيتا ألانين", value: "6 غرام" },
+    ],
     ingredients: "بيتا ألانين، مالتوديكسترين، نكهة، مانع تكتّل، محلّيات (أسيسلفام البوتاسيوم والأسبارتام). يحتوي على مصدر للفينيل ألانين.",
     flavors: ["كولا"],
     sizes: [{ label: "420 غرام", price: 45000 }],
@@ -381,7 +439,7 @@ export const SEED_PRODUCTS: Seed[] = [
     price: 25000,
     compare_at_price: null,
     image_url: "/images/store/rvit-ashwagandha.png",
-    images: ["/images/store/rvit-ashwagandha.png"],
+    images: ["/images/store/rvit-ashwagandha.png", "/images/store/nutrition/ashwagandha.webp"],
     low_stock_threshold: 5,
     accent: "#4ADE80",
     highlights: [
@@ -398,7 +456,12 @@ export const SEED_PRODUCTS: Seed[] = [
       "كبسولة واحدة يومياً، ويُفضّل قبل النوم.",
       "لا تتجاوز الجرعة اليومية الموصى بها.",
     ],
-    nutrition: [{ label: "مستخلص جذر الأشواغاندا", value: "7% ويثانوليدات" }],
+    nutrition: [
+      { label: "حجم الحصة", value: "كبسولة واحدة" },
+      { label: "عدد الحصص", value: "60" },
+      { label: "مستخلص جذر الأشواغاندا", value: "300 ملغ" },
+      { label: "منها ويثانوليدات", value: "21 ملغ" },
+    ],
     ingredients: "مستخلص جذر الأشواغاندا (Withania somnifera)، غلاف الكبسولة.",
     flavors: [],
     sizes: [{ label: "60 كبسولة", price: 25000 }],
@@ -411,5 +474,5 @@ export const SEED_PRODUCTS: Seed[] = [
 
 /** The seed as full products, with stable ids, for the fallback catalogue. */
 export function seedCatalog(): StoreProduct[] {
-  return SEED_PRODUCTS.map((p) => ({ ...p, id: `seed-${p.slug}` }));
+  return SEED_PRODUCTS.map((p) => ({ ...p, id: `seed-${p.slug}`, flavor_images: [], variant_stock: [] }));
 }

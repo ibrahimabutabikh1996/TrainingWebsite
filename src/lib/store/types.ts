@@ -56,6 +56,21 @@ export interface ProductSize {
   price: number;
 }
 
+export interface FlavorImage {
+  /** The flavour's name, exactly as it stands in `flavors`. */
+  label: string;
+  src: string;
+  /** Scales a picture whose tub fills more of its frame, so the hero's row matches. */
+  fit?: number;
+}
+
+/** A combination on sale. Qty 0 is sold out; no row is not offered at that size. */
+export interface VariantStock {
+  size: string | null;
+  flavor: string | null;
+  qty: number;
+}
+
 export interface StoreProduct {
   id: string;
   slug: string;
@@ -81,9 +96,13 @@ export interface StoreProduct {
   nutrition: ProductFact[];
   ingredients: string;
   flavors: string[];
+  /** The photos of those flavours, in the order they are shown. */
+  flavor_images: FlavorImage[];
   sizes: ProductSize[];
   /** Null is "not tracked" — always available. Zero is sold out. */
   stock: number | null;
+  /** Empty means the product is counted as a whole. Otherwise `stock` is the sum. */
+  variant_stock: VariantStock[];
   /** At or under this the inventory screen flags the product. */
   low_stock_threshold: number;
   is_active: boolean;
@@ -93,6 +112,45 @@ export interface StoreProduct {
 
 export function isSoldOut(product: Pick<StoreProduct, "stock">): boolean {
   return product.stock !== null && product.stock <= 0;
+}
+
+/** Whatever is in the column, as rows that can be trusted. */
+export function parseVariants(value: unknown): VariantStock[] {
+  if (!Array.isArray(value)) return [];
+  const label = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : null);
+  const rows: VariantStock[] = [];
+  for (const item of value) {
+    if (!item || typeof item !== "object") continue;
+    const raw = item as Record<string, unknown>;
+    const qty = Math.floor(Number(raw.qty));
+    if (Number.isFinite(qty) && qty >= 0 && qty <= 1_000_000) rows.push({ size: label(raw.size), flavor: label(raw.flavor), qty });
+  }
+  return rows;
+}
+
+export function sumVariants(rows: VariantStock[]): number {
+  return rows.reduce((total, row) => total + row.qty, 0);
+}
+
+export function variantLabel(row: Pick<VariantStock, "size" | "flavor">, withSize = true): string {
+  return [withSize ? row.size : null, row.flavor].filter(Boolean).join(" · ");
+}
+
+/** How many of a combination are left. Null is "not tracked". */
+export function variantQty(product: Pick<StoreProduct, "stock" | "variant_stock">, size: string | null, flavor: string | null): number | null {
+  if (product.variant_stock.length === 0) return product.stock;
+  return product.variant_stock.find((v) => v.size === size && v.flavor === flavor)?.qty ?? 0;
+}
+
+/** The flavours offered at a size, sold-out ones included. */
+export function flavorsFor(product: Pick<StoreProduct, "flavors" | "variant_stock">, size: string | null): string[] {
+  if (product.variant_stock.length === 0) return product.flavors;
+  return product.flavors.filter((f) => product.variant_stock.some((v) => v.size === size && v.flavor === f));
+}
+
+/** The first combination that can actually be bought. */
+export function firstAvailable(product: Pick<StoreProduct, "variant_stock">): VariantStock | null {
+  return product.variant_stock.find((v) => v.qty > 0) ?? product.variant_stock[0] ?? null;
 }
 
 /** The price a given size sells at, falling back to the product's own. */
@@ -121,6 +179,9 @@ export interface StoreSettings {
   hero_subtitle: string;
   /** Loyalty points earned per 1,000 IQD of an order's subtotal. Zero turns points off. */
   points_per_1000: number;
+  /** The product page's guarantees. Empty hides the line. */
+  perk_original: string;
+  perk_order: string;
 }
 
 /* The same number the registration form sends people to — see COACH_WHATSAPP
@@ -134,6 +195,8 @@ export const DEFAULT_STORE_SETTINGS: StoreSettings = {
   hero_title: "وقود العضلات. بلا مساومة.",
   hero_subtitle: "مكملات مختارة بعناية من الكابتن إبراهيم — لكل هدف، لكل مرحلة، ولكل تمرين.",
   points_per_1000: 1,
+  perk_original: "منتج أصلي مضمون",
+  perk_order: "تأكيد الطلب عبر واتساب والدفع عند الاستلام",
 };
 
 export function normalizeSettings(raw: unknown): StoreSettings {
@@ -153,6 +216,8 @@ export function normalizeSettings(raw: unknown): StoreSettings {
     announcement: text("announcement"),
     hero_title: text("hero_title", 120),
     hero_subtitle: text("hero_subtitle"),
+    perk_original: text("perk_original", 80),
+    perk_order: text("perk_order", 120),
     points_per_1000: (() => {
       const n = Number(src.points_per_1000);
       return Number.isFinite(n) && n >= 0 ? Math.min(100, Math.round(n * 10) / 10) : DEFAULT_STORE_SETTINGS.points_per_1000;
@@ -189,6 +254,8 @@ export interface CartLine {
   flavor: string | null;
   unitPrice: number;
   qty: number;
+  /** The most this line can hold, as of when it was added. */
+  max?: number;
 }
 
 export function lineKey(productId: string, size: string | null, flavor: string | null): string {

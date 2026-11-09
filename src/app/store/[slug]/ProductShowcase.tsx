@@ -7,12 +7,13 @@ import { CustomSelect } from "@/components/CustomSelect";
 import {
   MAX_LINE_QTY,
   categoryLabel,
+  firstAvailable,
+  flavorsFor,
   formatIQD,
-  isSoldOut,
   priceFor,
+  variantQty,
   type StoreProduct,
 } from "@/lib/store/types";
-import { FLAVOR_IMAGES } from "@/lib/store/flavorImages";
 import { useCart } from "../cart";
 import { ProductVisual } from "../ProductVisual";
 import { ProductCard } from "../StoreHome";
@@ -20,16 +21,34 @@ import { useReveal } from "../useReveal";
 
 export default function ProductShowcase({ product: p, related }: { product: StoreProduct; related: StoreProduct[] }) {
   const { add, settings } = useCart();
-  const [size, setSize] = useState<string | null>(p.sizes[0]?.label ?? null);
-  const [flavor, setFlavor] = useState<string | null>(p.flavors[0] ?? null);
+  /* A visitor lands on something that can be bought. */
+  const start = firstAvailable(p);
+  const [size, setSize] = useState<string | null>(start ? start.size : (p.sizes[0]?.label ?? null));
+  const [flavor, setFlavor] = useState<string | null>(start ? start.flavor : (p.flavors[0] ?? null));
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
-  /* The flavours on sale that have their own photo. With two or more, those
-     photos are the gallery, and picking a flavour or a photo moves the other. */
-  const listed = (FLAVOR_IMAGES[p.slug] ?? []).filter((f) => p.flavors.includes(f.label));
-  const flavorShots = listed.length > 1 ? listed : [];
-  const [shot, setShot] = useState(() => Math.max(0, flavorShots.findIndex((f) => f.label === p.flavors[0])));
-  const gallery = flavorShots.length > 0 ? flavorShots.map((f) => f.src) : p.images.length > 0 ? p.images : [null];
+  /* The flavours offered at this size that have their own photo. Those photos
+     are the gallery, and picking a flavour or a photo moves the other. */
+  const shotsFor = (s: string | null) => {
+    const offered = flavorsFor(p, s);
+    return p.flavor_images.filter((f) => offered.includes(f.label));
+  };
+  const flavorShots = shotsFor(size);
+  const [shot, setShot] = useState(() => Math.max(0, flavorShots.findIndex((f) => f.label === flavor)));
+  const gallery = flavorShots.length > 0 ? [...flavorShots.map((f) => f.src), ...p.images.filter((src) => !p.flavor_images.some((f) => f.src === src))] : p.images.length > 0 ? p.images : [null];
+  const offered = flavorsFor(p, size);
+  const inStock = (s: string | null, f: string | null) => {
+    const left = variantQty(p, s, f);
+    return left === null || left > 0;
+  };
+  /* A flavour that is out at the new size gives way to one that is not. */
+  const pickSize = (label: string) => {
+    const options = flavorsFor(p, label);
+    const next = flavor !== null && options.includes(flavor) && inStock(label, flavor) ? flavor : (options.find((f) => inStock(label, f)) ?? options[0] ?? null);
+    setSize(label);
+    setFlavor(next);
+    setShot(Math.max(0, shotsFor(label).findIndex((f) => f.label === next)));
+  };
   const pickFlavor = (label: string) => {
     setFlavor(label);
     const at = flavorShots.findIndex((f) => f.label === label);
@@ -40,7 +59,10 @@ export default function ProductShowcase({ product: p, related }: { product: Stor
     if (flavorShots[i]) setFlavor(flavorShots[i].label);
   };
 
-  const soldOut = isSoldOut(p);
+  const left = variantQty(p, size, flavor);
+  const soldOut = left !== null && left <= 0;
+  const maxQty = Math.max(1, Math.min(MAX_LINE_QTY, left ?? MAX_LINE_QTY));
+  const shownQty = Math.min(qty, maxQty);
   const price = priceFor(p, size);
   const basePrice = priceFor(p);
   const compare = p.compare_at_price && p.compare_at_price > basePrice ? p.compare_at_price : null;
@@ -49,7 +71,7 @@ export default function ProductShowcase({ product: p, related }: { product: Stor
 
   const addToCart = () => {
     if (soldOut) return;
-    add(p, { size, flavor, qty, image_url: flavorShots.find((f) => f.label === flavor)?.src });
+    add(p, { size, flavor, qty: shownQty, image_url: flavorShots.find((f) => f.label === flavor)?.src });
     setAdded(true);
     window.setTimeout(() => setAdded(false), 1800);
   };
@@ -137,7 +159,7 @@ export default function ProductShowcase({ product: p, related }: { product: Stor
                       type="button"
                       className={`st-option-btn${size === s.label ? " is-active" : ""}`}
                       aria-pressed={size === s.label}
-                      onClick={() => setSize(s.label)}
+                      onClick={() => pickSize(s.label)}
                     >
                       <strong>{s.label}</strong>
                       <span>{formatIQD(s.price)}</span>
@@ -147,7 +169,7 @@ export default function ProductShowcase({ product: p, related }: { product: Stor
               </fieldset>
             )}
 
-            {p.flavors.length > 0 && (
+            {offered.length > 0 && (
               <div className="st-option">
                 <label className="st-option-label" htmlFor="st-flavor">النكهة</label>
                 <CustomSelect
@@ -155,18 +177,18 @@ export default function ProductShowcase({ product: p, related }: { product: Stor
                   className="st-select"
                   value={flavor ?? ""}
                   onChange={pickFlavor}
-                  options={p.flavors.map((f) => ({ value: f, label: f }))}
+                  options={offered.map((f) => (inStock(size, f) ? { value: f, label: f } : { value: f, label: `${f} — نفدت`, disabled: true }))}
                 />
               </div>
             )}
 
             <div className="st-p-buy-row">
               <div className="st-qty st-qty--lg" role="group" aria-label="الكمية">
-                <button type="button" className="ui-btn ui-btn--icon" onClick={() => setQty((q) => Math.min(MAX_LINE_QTY, q + 1))} aria-label="زيادة">
+                <button type="button" className="ui-btn ui-btn--icon" onClick={() => setQty(Math.min(maxQty, shownQty + 1))} aria-label="زيادة" disabled={shownQty >= maxQty}>
                   <Plus aria-hidden="true" />
                 </button>
-                <span aria-live="polite">{qty}</span>
-                <button type="button" className="ui-btn ui-btn--icon" onClick={() => setQty((q) => Math.max(1, q - 1))} aria-label="إنقاص" disabled={qty <= 1}>
+                <span aria-live="polite">{shownQty}</span>
+                <button type="button" className="ui-btn ui-btn--icon" onClick={() => setQty(Math.max(1, shownQty - 1))} aria-label="إنقاص" disabled={shownQty <= 1}>
                   <Minus aria-hidden="true" />
                 </button>
               </div>
@@ -180,15 +202,15 @@ export default function ProductShowcase({ product: p, related }: { product: Stor
               </button>
             </div>
 
-            {qty > 1 && (
+            {shownQty > 1 && (
               <div className="st-p-buy-total">
                 <span>الإجمالي</span>
-                <strong>{formatIQD(price * qty)}</strong>
+                <strong>{formatIQD(price * shownQty)}</strong>
               </div>
             )}
 
-            {p.stock !== null && p.stock > 0 && p.stock <= 5 && (
-              <p className="st-low-stock">باقي {p.stock} قطع فقط</p>
+            {left !== null && left > 0 && left <= 5 && (
+              <p className="st-low-stock">{left === 1 ? "باقي قطعة واحدة فقط" : `باقي ${left} قطع فقط`}</p>
             )}
 
             <div className="st-p-accordion">
@@ -249,8 +271,8 @@ export default function ProductShowcase({ product: p, related }: { product: Stor
 
             <ul className="st-p-perks">
               <li><Truck aria-hidden="true" />{settings.free_delivery_over > 0 ? `توصيل مجاني فوق ${formatIQD(settings.free_delivery_over)}` : "توصيل لكل المحافظات"}</li>
-              <li><ShieldCheck aria-hidden="true" />منتج أصلي مضمون</li>
-              <li><MessageCircle aria-hidden="true" />تأكيد الطلب عبر واتساب والدفع عند الاستلام</li>
+              {settings.perk_original && <li><ShieldCheck aria-hidden="true" />{settings.perk_original}</li>}
+              {settings.perk_order && <li><MessageCircle aria-hidden="true" />{settings.perk_order}</li>}
             </ul>
           </div>
         </div>

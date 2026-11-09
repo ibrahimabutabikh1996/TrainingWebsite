@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { type StoreProduct } from "@/lib/store/types";
-import { FLAVOR_IMAGES } from "@/lib/store/flavorImages";
 import { optimizedSrc, optimizedSrcSet } from "@/lib/imageOptim";
 import { ProductVisual } from "./ProductVisual";
 
@@ -124,7 +123,7 @@ export default function StoreStage({ products }: { products: StoreProduct[] }) {
   const p = products[Math.min(index, count - 1)];
   const word = CATEGORY_WORD[p.category] ?? p.name.split(" ")[0];
   const pieces = PIECES[p.category] ?? PIECES.protein;
-  const flavors = FLAVOR_IMAGES[p.slug] ?? [];
+  const flavors = p.flavor_images;
   const hasFlavors = flavors.length > 1;
 
   return (

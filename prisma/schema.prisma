@@ -937,9 +937,13 @@ model store_products {
   nutrition        Json     @default("[]")
   ingredients      String   @default("")
   flavors          String[] @default([])
+  /// Each flavour's photo: [{ label, src, fit? }]. See 2026-11-10-store-flavor-images.sql.
+  flavor_images    Json     @default("[]")
   sizes            Json     @default("[]")
   /// Null is "not tracked"; zero is sold out.
   stock            Int?
+  /// Per size and flavour: [{ size, flavor, qty }]. `stock` is their sum. See 2026-11-10-store-variant-stock.sql.
+  variant_stock    Json     @default("[]")
   is_active        Boolean  @default(true)
   is_featured      Boolean  @default(false)
   sort_order       Int      @default(0)

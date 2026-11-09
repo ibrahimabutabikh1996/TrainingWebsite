@@ -9,9 +9,13 @@ import {
   isOrderStatus,
   isStoreCategory,
   normalizeSettings,
+  parseVariants,
+  sumVariants,
+  variantLabel,
   type OrderItem,
   type StoreProduct,
   type StoreSettings,
+  type VariantStock,
 } from "@/lib/store/types";
 
 /* The store panel's writes. The coach only: `requireAdminAction()` with no
@@ -97,6 +101,22 @@ function cleanProduct(input: ProductInput): { ok: true; data: Omit<StoreProduct,
   if (images.some((u) => !/^(https:\/\/|\/)/.test(u))) return { ok: false, error: "رابط صورة غير صالح" };
   const threshold = Math.max(0, Math.min(10_000, Math.floor(Number(input.low_stock_threshold) || 0)));
 
+  const flavors = (input.flavors ?? []).map((f) => text(f, 40)).filter(Boolean).slice(0, 12);
+  if (new Set(flavors).size !== flavors.length) return { ok: false, error: "لكل نكهة اسم مختلف، وهناك اسم مكرر" };
+  const flavor_images = (Array.isArray(input.flavor_images) ? input.flavor_images : [])
+    .map((f) => {
+      const fit = Number(f?.fit);
+      return { label: text(f?.label, 40), src: text(f?.src, 1000), ...(fit >= 0.5 && fit <= 1.5 ? { fit } : {}) };
+    })
+    .filter((f) => f.src && flavors.includes(f.label));
+  if (flavor_images.some((f) => !/^(https:\/\/|\/)/.test(f.src))) return { ok: false, error: "رابط صورة غير صالح" };
+
+  /* A row must name a size and a flavour the product sells, once each. */
+  const variant_stock = parseVariants(input.variant_stock)
+    .filter((v) => (v.size === null ? sizes.length === 0 : sizes.some((s) => s.label === v.size)))
+    .filter((v) => (v.flavor === null ? flavors.length === 0 : flavors.includes(v.flavor)))
+    .filter((v, i, all) => all.findIndex((x) => x.size === v.size && x.flavor === v.flavor) === i);
+
   const slugSource = text(input.slug, 60) || slugify(name);
   const slug = slugify(slugSource) || `product-${Date.now().toString(36)}`;
 
@@ -126,11 +146,13 @@ function cleanProduct(input: ProductInput): { ok: true; data: Omit<StoreProduct,
       nutrition: (input.nutrition ?? [])
         .map((n) => ({ label: text(n?.label, 60), value: text(n?.value, 40) }))
         .filter((n) => n.label)
-        .slice(0, 16),
+        .slice(0, 24),
       ingredients: text(input.ingredients, 2000),
-      flavors: (input.flavors ?? []).map((f) => text(f, 40)).filter(Boolean).slice(0, 12),
+      flavors,
+      flavor_images,
       sizes,
-      stock,
+      stock: variant_stock.length > 0 ? sumVariants(variant_stock) : stock,
+      variant_stock,
       low_stock_threshold: threshold,
       is_active: input.is_active !== false,
       is_featured: input.is_featured === true,
@@ -163,6 +185,8 @@ export async function saveProduct(input: ProductInput): Promise<Result<StoreProd
       usage: data.usage as object,
       nutrition: data.nutrition as object,
       sizes: data.sizes as object,
+      flavor_images: data.flavor_images as object,
+      variant_stock: data.variant_stock as object,
     };
 
     /* A stock figure changed in the editor is a count, and goes in the log
@@ -253,11 +277,16 @@ export async function updateOrderStatus(id: string, status: string): Promise<Res
           if (typeof item?.productId !== "string" || !/^[0-9a-f-]{36}$/i.test(item.productId)) continue;
           const qty = Math.max(0, Math.floor(Number(item.qty) || 0));
           if (qty === 0) continue;
-          const product = await tx.store_products.findUnique({ where: { id: item.productId }, select: { stock: true } });
+          const product = await tx.store_products.findUnique({ where: { id: item.productId }, select: { stock: true, variant_stock: true } });
           /* Only tracked stock moves; a null stock stays "not tracked". */
           if (!product || product.stock === null) continue;
-          const after = takes ? Math.max(0, product.stock - qty) : product.stock + qty;
-          await tx.store_products.update({ where: { id: item.productId }, data: { stock: after } });
+          const rows = parseVariants(product.variant_stock);
+          const row = rows.find((r) => r.size === (item.size ?? null) && r.flavor === (item.flavor ?? null));
+          /* An order for a combination no longer listed has nothing to move. */
+          if (rows.length > 0 && !row) continue;
+          if (row) row.qty = takes ? Math.max(0, row.qty - qty) : row.qty + qty;
+          const after = row ? sumVariants(rows) : takes ? Math.max(0, product.stock - qty) : product.stock + qty;
+          await tx.store_products.update({ where: { id: item.productId }, data: { stock: after, ...(row ? { variant_stock: rows as object } : {}) } });
           await tx.store_stock_movements.create({
             data: {
               product_id: item.productId,
@@ -265,6 +294,7 @@ export async function updateOrderStatus(id: string, status: string): Promise<Res
               stock_after: after,
               reason: takes ? "order" : "order_reversed",
               order_reference: order.reference,
+              note: row ? variantLabel(row) : null,
             },
           });
         }
@@ -346,62 +376,73 @@ export async function saveStoreSettings(input: StoreSettings): Promise<Result<St
  * ------------------------------------------------------------------ */
 
 export type StockAction =
-  | { kind: "restock"; qty: number; note?: string }
-  | { kind: "count"; stock: number; note?: string }
+  | { kind: "restock"; qty: number; note?: string; variant?: StockVariant }
+  | { kind: "count"; stock: number; note?: string; variant?: StockVariant }
   | { kind: "track"; tracked: boolean };
+
+export type StockVariant = Pick<VariantStock, "size" | "flavor">;
 
 /**
  * One change to a product's stock from the inventory screen: stock received
  * (added to what is there), a count (the shelf is now exactly this), or
  * switching tracking on or off. Returns the new figure.
  */
-export async function changeStock(productId: string, action: StockAction): Promise<Result<{ stock: number | null }>> {
+export async function changeStock(productId: string, action: StockAction): Promise<Result<{ stock: number | null; variant_stock: VariantStock[] }>> {
   if (!(await requireAdminAction())) return DENIED;
   const note = "note" in action ? text(action.note, 200) || null : null;
 
   try {
     const result = await prisma.$transaction(async (tx) => {
-      const product = await tx.store_products.findUnique({ where: { id: String(productId) }, select: { stock: true, slug: true } });
+      const product = await tx.store_products.findUnique({ where: { id: String(productId) }, select: { stock: true, slug: true, variant_stock: true } });
       if (!product) throw new Error("not-found");
       const before = product.stock;
+      const rows = parseVariants(product.variant_stock);
+      /* A product counted by combination changes one combination at a time. */
+      const wanted = action.kind === "track" ? undefined : action.variant;
+      const row = rows.find((r) => r.size === (wanted?.size ?? null) && r.flavor === (wanted?.flavor ?? null));
+      if (rows.length > 0 && action.kind !== "track" && !row) throw new Error("bad-variant");
       let after: number | null;
       let reason: string;
 
       if (action.kind === "restock") {
         const qty = Math.floor(Number(action.qty));
         if (!Number.isFinite(qty) || qty <= 0 || qty > 100_000) throw new Error("bad-qty");
-        after = (before ?? 0) + qty;
+        if (row) row.qty += qty;
+        after = row ? sumVariants(rows) : (before ?? 0) + qty;
         reason = "restock";
       } else if (action.kind === "count") {
         const stock = Math.floor(Number(action.stock));
         if (!Number.isFinite(stock) || stock < 0 || stock > 1_000_000) throw new Error("bad-qty");
-        after = stock;
+        if (row) row.qty = stock;
+        after = row ? sumVariants(rows) : stock;
         reason = "count";
       } else {
-        after = action.tracked ? (before ?? 0) : null;
+        /* Switching tracking off would throw away the per-combination count. */
+        after = rows.length > 0 ? before : action.tracked ? (before ?? 0) : null;
         reason = "tracking";
       }
 
-      if (after === before) return { stock: after, slug: product.slug };
+      if (after === before) return { stock: after, variant_stock: rows, slug: product.slug };
 
-      await tx.store_products.update({ where: { id: String(productId) }, data: { stock: after } });
+      await tx.store_products.update({ where: { id: String(productId) }, data: { stock: after, ...(row ? { variant_stock: rows as object } : {}) } });
       await tx.store_stock_movements.create({
         data: {
           product_id: String(productId),
           change: (after ?? 0) - (before ?? 0),
           stock_after: after,
           reason,
-          note: action.kind === "track" ? (action.tracked ? "تفعيل تتبع المخزون" : "إيقاف تتبع المخزون") : note,
+          note: action.kind === "track" ? (action.tracked ? "تفعيل تتبع المخزون" : "إيقاف تتبع المخزون") : [row ? variantLabel(row) : null, note].filter(Boolean).join(" — ") || null,
         },
       });
-      return { stock: after, slug: product.slug };
+      return { stock: after, variant_stock: rows, slug: product.slug };
     });
     revalidateStore(result.slug);
-    return { success: true, data: { stock: result.stock } };
+    return { success: true, data: { stock: result.stock, variant_stock: result.variant_stock } };
   } catch (error) {
     const msg = (error as Error)?.message;
     if (msg === "not-found") return { success: false, error: "المنتج غير موجود" };
     if (msg === "bad-qty") return { success: false, error: "الكمية غير صحيحة" };
+    if (msg === "bad-variant") return { success: false, error: "هذا الحجم أو النكهة غير موجود في المنتج" };
     return failure(error, "تعذّر تحديث المخزون");
   }
 }

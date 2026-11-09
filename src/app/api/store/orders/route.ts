@@ -11,6 +11,8 @@ import {
   normalizeIraqiPhone,
   pointsFor,
   priceFor,
+  variantLabel,
+  variantQty,
   type OrderItem,
 } from "@/lib/store/types";
 
@@ -91,6 +93,13 @@ export async function POST(request: Request) {
     }
     const size = typeof line.size === "string" && product.sizes.some((s) => s.label === line.size) ? line.size : null;
     const flavor = typeof line.flavor === "string" && product.flavors.includes(line.flavor) ? line.flavor : null;
+    if (product.variant_stock.length > 0) {
+      const left = variantQty(product, size, flavor) ?? 0;
+      const taken = items.filter((i) => i.productId === product.id && i.size === size && i.flavor === flavor).reduce((n, i) => n + i.qty, 0);
+      if (taken + qty > left) {
+        return NextResponse.json({ error: `${product.name} (${variantLabel({ size, flavor })}): المتوفر ${left} فقط` }, { status: 409 });
+      }
+    }
     items.push({
       productId: product.id,
       name: product.name,
