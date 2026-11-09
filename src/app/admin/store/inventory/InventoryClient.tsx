@@ -384,7 +384,7 @@ function StockDialog({
           <input value={note} onChange={(e) => setNote(e.target.value)} placeholder={kind === "restock" ? "اسم المورد، رقم الفاتورة…" : "سبب الفرق…"} />
         </label>
         <p className="sa-stock-preview">
-          الحالي <strong>{product.stock ?? 0}</strong> ← بعد الحفظ <strong>{after}</strong>
+          الحالي <strong>{current}</strong> ← بعد الحفظ <strong>{after}</strong>
         </p>
       </div>
     </AdminModal>
