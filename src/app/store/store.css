@@ -355,30 +355,53 @@ body.st-lock { overflow: hidden; }
 }
 .st-stage-visual .st-visual { animation: st-float 7s ease-in-out infinite; }
 .st-stage-visual .st-visual :is(svg, img) { filter: drop-shadow(0 40px 50px color-mix(in srgb, var(--bg) 85%, transparent)); }
-/* A product's flavours together: the main one in the middle, the others behind
-   it on either side, each step back smaller and a little darker. */
+/* A product's flavours in one row: every tub the same size and the same distance
+   from the next, centred on the screen. --span is the row's width as a share of
+   the product's box; more flavours means smaller tubs, so the row still fits. */
 .st-stage-flavors { isolation: isolate; }
 .st-stage-visual .st-stage-flavors .st-stage-flavor {
-  --x-step: 62%;
+  --span: 255%;
+  --x-step: 66%;
   position: absolute;
   inset-inline: 0;
-  bottom: calc(11% + var(--rank) * 2%);
-  z-index: calc(var(--rank) * -1);
-  width: calc(82% - var(--rank) * 10%);
-  height: auto;
+  top: 50%;
+  width: min(100%, calc(var(--span) / ((var(--count) - 1) * 0.66 + 0.6)));
   aspect-ratio: 1;
   margin-inline: auto;
-  translate: calc(var(--side) * var(--rank) * var(--x-step)) 0;
-  filter: brightness(calc(1 - var(--rank) * 0.07)) drop-shadow(0 16px 20px color-mix(in srgb, var(--bg) 70%, transparent));
+  translate: calc(var(--pos) * var(--x-step)) -50%;
+  pointer-events: none;
 }
-/* The flavours fill the space the arrows sit in, so the arrows move out to the
-   sides of the stage. */
-.st-stage-product--flavors {
+.st-stage-visual .st-stage-flavors .st-stage-flavor img {
+  filter: brightness(calc(var(--lit, 0.78) + var(--hover, 0)))
+    drop-shadow(0 24px 30px color-mix(in srgb, var(--bg) 85%, transparent));
+  scale: calc(var(--fit) * var(--lift, 1));
+  transition: filter var(--dur-slow) var(--ease-out), scale var(--dur-slow) var(--ease-out);
+}
+.st-stage-visual .st-stage-flavors .st-stage-flavor.is-chosen img { --lit: 1; --lift: 1.05; }
+/* Only the tub itself answers the pointer, not the empty corners of its square,
+   which would otherwise cover the neighbouring tubs. */
+.st-stage-flavor-hit {
+  position: absolute;
+  inset-block: 6%;
+  inset-inline: 22%;
+  z-index: 1;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: none;
+  cursor: pointer;
+  pointer-events: auto;
+}
+@media (hover: hover) {
+  .st-stage-visual .st-stage-flavors .st-stage-flavor:not(.is-chosen) .st-stage-flavor-hit:hover + img { --hover: 0.14; --lift: 1.03; }
+}
+/* The arrows are placed inside the product but belong at the screen's edges, so
+   their offset is worked out from the product's width (--stage-w, matching
+   .st-stage-visual above). */
+.st-stage-product {
   --stage-w: clamp(220px, 30vw, 420px);
-  --arrow-edge: max(-480px, calc(var(--stage-w) / 2 - 50vw + var(--space-4)));
+  --arrow-edge: calc(var(--stage-w) / 2 - 50vw + clamp(var(--space-6), 8vw, 160px));
 }
-.st-stage-product--flavors .st-stage-arrow--prev { inset-inline-start: var(--arrow-edge); }
-.st-stage-product--flavors .st-stage-arrow--next { inset-inline-end: var(--arrow-edge); }
 @keyframes st-prod-in {
   from { opacity: 0; scale: 0.9; translate: 0 20px; }
   to { opacity: 1; scale: 1; translate: 0 0; }
@@ -395,8 +418,8 @@ body.st-lock { overflow: hidden; }
   z-index: 4;
   display: grid;
   place-items: center;
-  width: 46px;
-  height: 46px;
+  width: 54px;
+  height: 54px;
   border-radius: var(--radius-circle);
   border: 1px solid var(--glass-border-strong);
   background: var(--glass-solid);
@@ -409,11 +432,10 @@ body.st-lock { overflow: hidden; }
 }
 .st-stage-arrow:hover { background: color-mix(in srgb, var(--stage-accent) 30%, var(--bg2)); }
 .st-stage-arrow:active { scale: 0.92; }
-.st-stage-arrow svg { width: 22px; height: 22px; }
-/* Overlapping the product's edges, the way the reference sets them: previous on
-   the start side (the right in RTL), next on the end side. */
-.st-stage-arrow--prev { inset-inline-start: -10px; }
-.st-stage-arrow--next { inset-inline-end: -10px; }
+.st-stage-arrow svg { width: 26px; height: 26px; }
+/* Previous on the start side (the right in RTL), next on the end side. */
+.st-stage-arrow--prev { inset-inline-start: var(--arrow-edge); }
+.st-stage-arrow--next { inset-inline-end: var(--arrow-edge); }
 
 .st-stage-shop {
   display: inline-flex;
@@ -1120,11 +1142,10 @@ body.st-lock { overflow: hidden; }
   .st-stage-visual { width: clamp(190px, 56vw, 300px); }
   /* Wider than the product on a phone, so the word reads past both its edges. */
   .st-stage-word { font-size: 31vw; }
-  .st-stage-arrow { width: 40px; height: 40px; }
-  .st-stage-arrow--prev { inset-inline-start: -14px; }
-  .st-stage-arrow--next { inset-inline-end: -14px; }
-  .st-stage-product--flavors { --stage-w: clamp(190px, 56vw, 300px); }
-  .st-stage-visual .st-stage-flavors .st-stage-flavor { --x-step: 48%; }
+  .st-stage-arrow { width: 46px; height: 46px; }
+  .st-stage-arrow svg { width: 24px; height: 24px; }
+  .st-stage-product { --stage-w: clamp(190px, 56vw, 300px); }
+  .st-stage-visual .st-stage-flavors .st-stage-flavor { --span: 170%; }
   .st-piece--0 { inset-inline-end: 8%; top: 13%; }
   .st-piece--1 { inset-inline-start: 6%; top: 16%; }
   .st-piece--2 { top: 56%; inset-inline-end: -12%; }

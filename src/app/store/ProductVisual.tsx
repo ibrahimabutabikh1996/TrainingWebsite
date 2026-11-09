@@ -24,12 +24,11 @@ export function ProductVisual({ name, category, accent, image_url, size = 400, c
   const uid = useId().replace(/:/g, "");
 
   if (image_url) {
-    const isLocal = image_url.startsWith("/");
     return (
       <div className={`st-visual ${className}`} style={{ "--accent": accent } as React.CSSProperties}>
         <img
-          src={isLocal ? image_url : optimizedSrc(image_url, Math.min(1200, size * 2))}
-          srcSet={isLocal ? undefined : optimizedSrcSet(image_url, [size, Math.min(1600, size * 2)])}
+          src={optimizedSrc(image_url, Math.min(1200, size * 2))}
+          srcSet={optimizedSrcSet(image_url, [size, Math.min(1600, size * 2)])}
           sizes={`${size}px`}
           alt={name}
           loading={priority ? "eager" : "lazy"}

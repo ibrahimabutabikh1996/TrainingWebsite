@@ -47,8 +47,27 @@ const str = (v: unknown) => (typeof v === "string" ? v : "");
 
 type ProductRow = Awaited<ReturnType<typeof prisma.store_products.findFirst>>;
 
+/* The photos in public/images/store were renamed, but the rows keep the old names
+ * until prisma/manual/2026-11-09-store-single-images.sql has run. After that
+ * nothing here matches any more and this can be removed. */
+const RENAMED_IMAGES: Record<string, string> = {
+  "/images/store/ans-creatine.webp": "/images/store/ans-creatine-monohydrate-300g.png",
+  "/images/store/rvit-creatine.webp": "/images/store/rvit-creatine-monohydrate-blackcurrant.png",
+  "/images/store/lusty-preworkout.webp": "/images/store/rvit-lusty-preworkout-blackcurrant.png",
+  "/images/store/vast-mass.webp": "/images/store/rvit-vast-mass-strawberry.png",
+  "/images/store/rice-carbs-pure.webp": "/images/store/rvit-rice-carbs-pure-banana.png",
+  "/images/store/beta-alanine.webp": "/images/store/rvit-beta-alanine-cola.png",
+  "/images/store/citrulline.webp": "/images/store/rvit-citrulline-cola.png",
+  "/images/store/ashwagandha.webp": "/images/store/rvit-ashwagandha.png",
+};
+const DELETED_GALLERY_IMAGE = /^\/images\/store\/[\w-]+-[23]\.webp$/;
+
+function currentImages(stored: string[]): string[] {
+  return stored.filter((url) => !DELETED_GALLERY_IMAGE.test(url)).map((url) => RENAMED_IMAGES[url] ?? url);
+}
+
 export function toProduct(row: NonNullable<ProductRow>): StoreProduct {
-  const images = row.images.length > 0 ? row.images : row.image_url ? [row.image_url] : [];
+  const images = currentImages(row.images.length > 0 ? row.images : row.image_url ? [row.image_url] : []);
   return {
     id: row.id,
     slug: row.slug,

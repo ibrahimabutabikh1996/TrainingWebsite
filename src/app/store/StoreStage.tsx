@@ -49,6 +49,10 @@ export default function StoreStage({ products }: { products: StoreProduct[] }) {
   const [index, setIndex] = useState(0);
   const [dir, setDir] = useState<1 | -1>(1);
   const [paused, setPaused] = useState(false);
+  /* Which of the banner's flavours stands in the middle. */
+  const [flavor, setFlavor] = useState(0);
+  const centerRef = useRef<HTMLAnchorElement>(null);
+  const keyboardPickRef = useRef(false);
   const stageRef = useRef<HTMLElement>(null);
   const swipeRef = useRef<{ x: number; y: number } | null>(null);
   const count = products.length;
@@ -57,6 +61,7 @@ export default function StoreStage({ products }: { products: StoreProduct[] }) {
     (step: 1 | -1) => {
       if (count < 2) return;
       setDir(step);
+      setFlavor(0);
       setIndex((i) => (i + step + count) % count);
     },
     [count]
@@ -65,8 +70,17 @@ export default function StoreStage({ products }: { products: StoreProduct[] }) {
   const goTo = (i: number) => {
     if (i === index) return;
     setDir(i > index ? 1 : -1);
+    setFlavor(0);
     setIndex(i);
   };
+
+  /* The tub a keyboard user pressed turns into the link in the middle, so the
+     focus follows it there rather than falling back to the page. */
+  useEffect(() => {
+    if (!keyboardPickRef.current) return;
+    keyboardPickRef.current = false;
+    centerRef.current?.focus({ preventScroll: true });
+  }, [flavor]);
 
   /* Autoplay. Restarts after every change, so a click never lands half-way
      through a countdown. */
@@ -77,7 +91,7 @@ export default function StoreStage({ products }: { products: StoreProduct[] }) {
       if (document.visibilityState === "visible") go(1);
     }, AUTOPLAY_MS);
     return () => window.clearTimeout(timer);
-  }, [index, paused, count, go]);
+  }, [index, flavor, paused, count, go]);
 
   /* The pieces drift a little with the pointer, the near ones more — depth.
      Written straight onto the element: no re-render per mouse move. */
@@ -161,40 +175,55 @@ export default function StoreStage({ products }: { products: StoreProduct[] }) {
       </div>
 
       <div className="st-stage-center">
-        <div className={`st-stage-product${hasFlavors ? " st-stage-product--flavors" : ""}`}>
+        <div className="st-stage-product">
           {count > 1 && (
             <button type="button" className="st-stage-arrow st-stage-arrow--prev" onClick={() => go(-1)} aria-label="المنتج السابق">
               <ChevronRight aria-hidden="true" />
             </button>
           )}
-          <Link href={`/store/${p.slug}`} key={`p-${index}`} className="st-stage-visual" data-dir={dir} aria-label={p.name}>
-            {hasFlavors ? (
-              <div className="st-visual st-stage-flavors">
-                {/* The rest of the flavours, alternating to either side and stepping back. */}
-                {flavors.slice(1).map((src, i) => (
-                  <img
-                    key={src}
-                    className="st-stage-flavor"
-                    style={{ "--rank": Math.ceil((i + 1) / 2), "--side": i % 2 === 0 ? 1 : -1 } as React.CSSProperties}
-                    src={optimizedSrc(src, 640)}
-                    srcSet={optimizedSrcSet(src, [256, 384, 640])}
-                    sizes="(max-width: 768px) 160px, 310px"
-                    alt=""
-                    decoding="async"
-                  />
-                ))}
-                <img
-                  src={optimizedSrc(flavors[0], 828)}
-                  srcSet={optimizedSrcSet(flavors[0], [384, 640, 828])}
-                  sizes="(max-width: 768px) 300px, 420px"
-                  alt=""
-                  decoding="async"
-                />
+          {hasFlavors ? (
+            <div key={`p-${index}`} className="st-stage-visual" data-dir={dir}>
+              <div className="st-visual st-stage-flavors" style={{ "--count": flavors.length } as React.CSSProperties}>
+                {/* One row of equal tubs, first flavour on the reading side. Picking
+                    one lights it where it stands; pressing it again opens the product. */}
+                {flavors.map((f, i) => {
+                  const isChosen = i === flavor;
+                  return (
+                    <div
+                      key={f.src}
+                      className={`st-stage-flavor${isChosen ? " is-chosen" : ""}`}
+                      style={{ "--pos": (flavors.length - 1) / 2 - i, "--fit": f.fit ?? 1 } as React.CSSProperties}
+                    >
+                      {isChosen ? (
+                        <Link ref={centerRef} href={`/store/${p.slug}`} className="st-stage-flavor-hit" aria-label={`${p.name} — ${f.label}`} />
+                      ) : (
+                        <button
+                          type="button"
+                          className="st-stage-flavor-hit"
+                          aria-label={`اختر نكهة ${f.label}`}
+                          onClick={(e) => {
+                            keyboardPickRef.current = e.detail === 0;
+                            setFlavor(i);
+                          }}
+                        />
+                      )}
+                      <img
+                        src={optimizedSrc(f.src, 828)}
+                        srcSet={optimizedSrcSet(f.src, [384, 640, 828])}
+                        sizes="(max-width: 768px) 300px, 420px"
+                        alt=""
+                        decoding="async"
+                      />
+                    </div>
+                  );
+                })}
               </div>
-            ) : (
+            </div>
+          ) : (
+            <Link href={`/store/${p.slug}`} key={`p-${index}`} className="st-stage-visual" data-dir={dir} aria-label={p.name}>
               <ProductVisual name={p.name} category={p.category} accent={p.accent} image_url={p.image_url} size={460} priority />
-            )}
-          </Link>
+            </Link>
+          )}
           {count > 1 && (
             <button type="button" className="st-stage-arrow st-stage-arrow--next" onClick={() => go(1)} aria-label="المنتج التالي">
               <ChevronLeft aria-hidden="true" />
@@ -218,7 +247,7 @@ export default function StoreStage({ products }: { products: StoreProduct[] }) {
                 className={`st-stage-dot${i === index ? " is-active" : ""}`}
                 onClick={() => goTo(i)}
               >
-                {i === index && !paused && <span className="st-stage-dot-fill" style={{ animationDuration: `${AUTOPLAY_MS}ms` }} />}
+                {i === index && !paused && <span key={flavor} className="st-stage-dot-fill" style={{ animationDuration: `${AUTOPLAY_MS}ms` }} />}
               </button>
             ))}
           </div>
