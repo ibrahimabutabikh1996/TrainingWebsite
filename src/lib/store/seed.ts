@@ -144,7 +144,7 @@ export const SEED_PRODUCTS: Seed[] = [
     price: 65000,
     compare_at_price: null,
     image_url: "/images/store/rvit-creatine.webp",
-    images: ["/images/store/rvit-creatine.webp", "/images/store/rvit-creatine-2.webp", "/images/store/rvit-creatine-3.webp"],
+    images: ["/images/store/rvit-creatine.webp"],
     low_stock_threshold: 5,
     accent: "#A78BFA",
     highlights: [
@@ -184,7 +184,7 @@ export const SEED_PRODUCTS: Seed[] = [
     price: 60000,
     compare_at_price: null,
     image_url: "/images/store/lusty-preworkout.webp",
-    images: ["/images/store/lusty-preworkout.webp", "/images/store/lusty-preworkout-2.webp", "/images/store/lusty-preworkout-3.webp"],
+    images: ["/images/store/lusty-preworkout.webp"],
     low_stock_threshold: 5,
     accent: "#818CF8",
     highlights: [
@@ -224,7 +224,7 @@ export const SEED_PRODUCTS: Seed[] = [
     price: 95000,
     compare_at_price: null,
     image_url: "/images/store/vast-mass.webp",
-    images: ["/images/store/vast-mass.webp", "/images/store/vast-mass-2.webp"],
+    images: ["/images/store/vast-mass.webp"],
     low_stock_threshold: 5,
     accent: "#F87171",
     highlights: [
@@ -306,7 +306,7 @@ export const SEED_PRODUCTS: Seed[] = [
     price: 45000,
     compare_at_price: null,
     image_url: "/images/store/beta-alanine.webp",
-    images: ["/images/store/beta-alanine.webp", "/images/store/beta-alanine-2.webp", "/images/store/beta-alanine-3.webp"],
+    images: ["/images/store/beta-alanine.webp"],
     low_stock_threshold: 5,
     accent: "#F97316",
     highlights: [
@@ -344,7 +344,7 @@ export const SEED_PRODUCTS: Seed[] = [
     price: 45000,
     compare_at_price: null,
     image_url: "/images/store/citrulline.webp",
-    images: ["/images/store/citrulline.webp", "/images/store/citrulline-2.webp", "/images/store/citrulline-3.webp"],
+    images: ["/images/store/citrulline.webp"],
     low_stock_threshold: 5,
     accent: "#FB923C",
     highlights: [
@@ -381,7 +381,7 @@ export const SEED_PRODUCTS: Seed[] = [
     price: 25000,
     compare_at_price: null,
     image_url: "/images/store/ashwagandha.webp",
-    images: ["/images/store/ashwagandha.webp", "/images/store/ashwagandha-2.webp", "/images/store/ashwagandha-3.webp"],
+    images: ["/images/store/ashwagandha.webp"],
     low_stock_threshold: 5,
     accent: "#4ADE80",
     highlights: [

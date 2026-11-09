@@ -4,6 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { type StoreProduct } from "@/lib/store/types";
+import { FLAVOR_IMAGES } from "@/lib/store/flavorImages";
+import { optimizedSrc, optimizedSrcSet } from "@/lib/imageOptim";
 import { ProductVisual } from "./ProductVisual";
 
 /* The store's opening stage — one product at a time, centred, with its type
@@ -108,6 +110,8 @@ export default function StoreStage({ products }: { products: StoreProduct[] }) {
   const p = products[Math.min(index, count - 1)];
   const word = CATEGORY_WORD[p.category] ?? p.name.split(" ")[0];
   const pieces = PIECES[p.category] ?? PIECES.protein;
+  const flavors = FLAVOR_IMAGES[p.slug] ?? [];
+  const hasFlavors = flavors.length > 1;
 
   return (
     <section
@@ -157,14 +161,39 @@ export default function StoreStage({ products }: { products: StoreProduct[] }) {
       </div>
 
       <div className="st-stage-center">
-        <div className="st-stage-product">
+        <div className={`st-stage-product${hasFlavors ? " st-stage-product--flavors" : ""}`}>
           {count > 1 && (
             <button type="button" className="st-stage-arrow st-stage-arrow--prev" onClick={() => go(-1)} aria-label="المنتج السابق">
               <ChevronRight aria-hidden="true" />
             </button>
           )}
           <Link href={`/store/${p.slug}`} key={`p-${index}`} className="st-stage-visual" data-dir={dir} aria-label={p.name}>
-            <ProductVisual name={p.name} category={p.category} accent={p.accent} image_url={p.image_url} size={460} priority />
+            {hasFlavors ? (
+              <div className="st-visual st-stage-flavors">
+                {/* The rest of the flavours, alternating to either side and stepping back. */}
+                {flavors.slice(1).map((src, i) => (
+                  <img
+                    key={src}
+                    className="st-stage-flavor"
+                    style={{ "--rank": Math.ceil((i + 1) / 2), "--side": i % 2 === 0 ? 1 : -1 } as React.CSSProperties}
+                    src={optimizedSrc(src, 640)}
+                    srcSet={optimizedSrcSet(src, [256, 384, 640])}
+                    sizes="(max-width: 768px) 160px, 310px"
+                    alt=""
+                    decoding="async"
+                  />
+                ))}
+                <img
+                  src={optimizedSrc(flavors[0], 828)}
+                  srcSet={optimizedSrcSet(flavors[0], [384, 640, 828])}
+                  sizes="(max-width: 768px) 300px, 420px"
+                  alt=""
+                  decoding="async"
+                />
+              </div>
+            ) : (
+              <ProductVisual name={p.name} category={p.category} accent={p.accent} image_url={p.image_url} size={460} priority />
+            )}
           </Link>
           {count > 1 && (
             <button type="button" className="st-stage-arrow st-stage-arrow--next" onClick={() => go(1)} aria-label="المنتج التالي">

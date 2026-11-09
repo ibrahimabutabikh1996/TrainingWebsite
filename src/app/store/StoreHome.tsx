@@ -21,10 +21,8 @@ export default function StoreHome({ products }: { products: StoreProduct[]; sett
   const [category, setCategory] = useState<string>("all");
   const [query, setQuery] = useState("");
 
-  const featured = products.filter((p) => p.is_featured).slice(0, 4);
-  /* The stage shows the featured products; with fewer than two featured it
-     falls back to the first few, so there is always something to move between. */
-  const stageProducts = (featured.length >= 2 ? featured : products).slice(0, 6);
+  /* The stage shows every product, one banner each. */
+  const stageProducts = products;
 
   const usedCategories = STORE_CATEGORIES.filter((c) => products.some((p) => p.category === c.key));
 
