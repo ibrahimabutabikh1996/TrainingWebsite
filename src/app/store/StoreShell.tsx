@@ -11,16 +11,13 @@ import {
   IRAQ_GOVERNORATES,
   buildWhatsAppMessage,
   formatIQD,
-  isInIraq,
   makeOrderReference,
   normalizeIraqiPhone,
   pointsFor,
   whatsAppUrl,
-  type GeoPoint,
   type StoreSettings,
 } from "@/lib/store/types";
 import { CustomSelect } from "@/components/CustomSelect";
-import { LocationPicker } from "./LocationPicker";
 import { CartProvider, useCart } from "./cart";
 import { ProductVisual } from "./ProductVisual";
 
@@ -112,10 +109,9 @@ interface Details {
   city: string;
   address: string;
   notes: string;
-  location: GeoPoint | null;
 }
 
-const EMPTY_DETAILS: Details = { name: "", phone: "", city: "", address: "", notes: "", location: null };
+const EMPTY_DETAILS: Details = { name: "", phone: "", city: "", address: "", notes: "" };
 const DETAILS_KEY = "store-checkout-details";
 
 function CartDrawer() {
@@ -162,7 +158,6 @@ function CartDrawer() {
     if (!normalizeIraqiPhone(details.phone)) next.phone = "رقم عراقي صحيح، مثل 07XXXXXXXXX";
     if (!details.city) next.city = "اختر المحافظة";
     if (details.address.trim().length < 4) next.address = "اكتب العنوان بالتفصيل";
-    if (!isInIraq(details.location)) next.location = "حدّد موقع التوصيل على الخريطة";
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -193,7 +188,7 @@ function CartDrawer() {
       subtotal,
       delivery_fee: deliveryFee,
       total,
-      location: details.location,
+      location: null,
       points,
     });
     const url = whatsAppUrl(settings.whatsapp, message);
@@ -209,7 +204,6 @@ function CartDrawer() {
         city: details.city,
         address: details.address,
         notes: details.notes,
-        location: details.location,
         items: items.map(({ productId, size, flavor, qty }) => ({ productId, size, flavor, qty })),
       }),
     }).catch(() => {});
@@ -224,7 +218,7 @@ function CartDrawer() {
     cart.clear();
   };
 
-  const field = (key: Exclude<keyof Details, "location">) => ({
+  const field = (key: keyof Details) => ({
     value: details[key],
     onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
       setDetails((d) => ({ ...d, [key]: e.target.value }));
@@ -373,19 +367,6 @@ function CartDrawer() {
                   options={IRAQ_GOVERNORATES.map((g) => ({ value: g, label: g }))}
                 />
                 {errors.city && <em>{errors.city}</em>}
-              </div>
-              <div className="st-field">
-                <span>موقع التوصيل على الخريطة</span>
-                <LocationPicker
-                  value={details.location}
-                  city={details.city}
-                  invalid={!!errors.location}
-                  onChange={(location) => {
-                    setDetails((d) => ({ ...d, location }));
-                    if (errors.location) setErrors((er) => ({ ...er, location: undefined }));
-                  }}
-                />
-                {errors.location && <em>{errors.location}</em>}
               </div>
               <label className="st-field">
                 <span>العنوان بالتفصيل</span>

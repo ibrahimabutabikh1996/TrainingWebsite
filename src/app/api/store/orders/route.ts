@@ -6,7 +6,6 @@ import {
   IRAQ_GOVERNORATES,
   MAX_LINE_QTY,
   deliveryFeeFor,
-  isInIraq,
   isOrderReference,
   normalizeIraqiPhone,
   pointsFor,
@@ -65,10 +64,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "اختر المحافظة" }, { status: 400 });
   }
   if (address.length < 4) return NextResponse.json({ error: "العنوان مطلوب" }, { status: 400 });
-  const location = isInIraq(body.location)
-    ? { lat: Number((body.location as { lat: number }).lat), lng: Number((body.location as { lng: number }).lng) }
-    : null;
-  if (!location) return NextResponse.json({ error: "حدّد موقع التوصيل على الخريطة" }, { status: 400 });
 
   if (!Array.isArray(body.items) || body.items.length === 0 || body.items.length > MAX_LINES) {
     return NextResponse.json({ error: "السلة فارغة" }, { status: 400 });
@@ -131,8 +126,6 @@ export async function POST(request: Request) {
         data: {
         reference,
         customer_id: customer.id,
-        location_lat: location.lat,
-        location_lng: location.lng,
         points_earned,
         customer_name: name,
         customer_phone: phone,
