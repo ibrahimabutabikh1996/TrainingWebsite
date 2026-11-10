@@ -20,6 +20,7 @@ import {
 import { CustomSelect } from "@/components/CustomSelect";
 import { CartProvider, useCart } from "./cart";
 import { ProductVisual } from "./ProductVisual";
+import { StoreHomeLink } from "./StoreHomeLink";
 
 export default function StoreShell({ settings, children }: { settings: StoreSettings; children: React.ReactNode }) {
   return (
@@ -62,16 +63,16 @@ function StoreHeader() {
 
         <nav className="st-header-nav" aria-label="المتجر">
           <Link href="/store#catalog">المنتجات</Link>
-          <Link href="/" className="ui-btn ui-btn--secondary st-header-main">
+          <StoreHomeLink className="ui-btn ui-btn--secondary st-header-main">
             <House aria-hidden="true" />
             <span>الموقع الرئيسي</span>
-          </Link>
+          </StoreHomeLink>
         </nav>
 
         <div className="st-header-actions">
-          <Link href="/" className="ui-btn ui-btn--icon st-header-home" aria-label="العودة للموقع الرئيسي">
+          <StoreHomeLink className="ui-btn ui-btn--icon st-header-home" ariaLabel="العودة للموقع الرئيسي">
             <House aria-hidden="true" />
-          </Link>
+          </StoreHomeLink>
           <button type="button" className="st-cart-btn" onClick={open} aria-label={`السلة، ${count} منتج`}>
             <ShoppingBag aria-hidden="true" />
             {count > 0 && <span className="st-cart-badge">{count}</span>}

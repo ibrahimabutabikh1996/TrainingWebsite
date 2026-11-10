@@ -188,6 +188,13 @@ body.st-lock { overflow: hidden; }
 .st-header-home {
   isolation: isolate;
   overflow: hidden;
+  animation: st-home-turn 12s linear infinite;
+}
+.st-header-main.is-launching,
+.st-header-home.is-launching {
+  animation:
+    st-home-turn 12s linear infinite,
+    ssc-flare 0.62s var(--ease-out) forwards;
 }
 .st-header-nav a.st-header-main {
   min-height: 40px;
@@ -231,6 +238,10 @@ html:root:root:root:root:root :is(.st-header-main, .st-header-home) {
 .st-header-main:active,
 .st-header-home:active { scale: 0.96; }
 
+@keyframes st-home-turn {
+  from { --btn-angle: 0deg; }
+  to { --btn-angle: 360deg; }
+}
 @keyframes st-home-shine {
   0%, 55% { translate: 120% 0; }
   100% { translate: -120% 0; }
@@ -240,6 +251,8 @@ html:root:root:root:root:root :is(.st-header-main, .st-header-home) {
   70%, 100% { opacity: 0; scale: 1.12; }
 }
 @media (prefers-reduced-motion: reduce) {
+  .st-header-main,
+  .st-header-home,
   .st-header-main::before,
   .st-header-home::before,
   .st-header-nav a.st-header-main::after,
