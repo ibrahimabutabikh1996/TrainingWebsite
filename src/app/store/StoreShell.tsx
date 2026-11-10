@@ -62,7 +62,10 @@ function StoreHeader() {
 
         <nav className="st-header-nav" aria-label="المتجر">
           <Link href="/store#catalog">المنتجات</Link>
-          <Link href="/">الموقع الرئيسي</Link>
+          <Link href="/" className="ui-btn ui-btn--secondary st-header-main">
+            <House aria-hidden="true" />
+            <span>الموقع الرئيسي</span>
+          </Link>
         </nav>
 
         <div className="st-header-actions">

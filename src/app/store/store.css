@@ -177,6 +177,74 @@ body.st-lock { overflow: hidden; }
   color: var(--text-secondary);
 }
 .st-header-home svg { width: 19px; height: 19px; }
+
+/* The way back to the main site. It stands out here the way the store button
+   stands out on the landing page: blue, with a band of light crossing it now
+   and then and a ring that breathes around it. A pill in the link row on a
+   wide screen, the round house button on a phone. landing.css is not loaded in
+   the store, so the motion is written here. The `html:root…` line sits level
+   with src/styles/lit/primitives.css and lifts both nearer to full light. */
+.st-header-main,
+.st-header-home {
+  isolation: isolate;
+  overflow: hidden;
+}
+.st-header-nav a.st-header-main {
+  min-height: 40px;
+  padding-inline: var(--space-5);
+  font-weight: var(--weight-bold);
+}
+html:root:root:root:root:root :is(.st-header-main, .st-header-home) {
+  --lit-a: 0.85;
+  --lit-glow: 0.7;
+  color: var(--primary-light);
+}
+.st-header-main::before,
+.st-header-home::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(100deg, transparent 30%, rgba(var(--text-rgb), 0.55) 50%, transparent 70%);
+  translate: -120% 0;
+  animation: st-home-shine 4.5s var(--ease-out) infinite;
+}
+.st-header-nav a.st-header-main::after,
+.st-header-home::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  height: auto;
+  border-radius: inherit;
+  border: 1.5px solid var(--primary-light);
+  background: none;
+  opacity: 0;
+  scale: 1;
+  transition: none;
+  animation: st-home-ring 2.8s var(--ease-out) infinite;
+  pointer-events: none;
+}
+@media (hover: hover) {
+  .st-header-main:hover,
+  .st-header-home:hover { translate: 0 -2px; }
+}
+.st-header-main:active,
+.st-header-home:active { scale: 0.96; }
+
+@keyframes st-home-shine {
+  0%, 55% { translate: 120% 0; }
+  100% { translate: -120% 0; }
+}
+@keyframes st-home-ring {
+  0% { opacity: 0.7; scale: 0.92; }
+  70%, 100% { opacity: 0; scale: 1.12; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .st-header-main::before,
+  .st-header-home::before,
+  .st-header-nav a.st-header-main::after,
+  .st-header-home::after { animation: none; }
+}
 .st-cart-btn {
   position: relative;
   display: grid;
