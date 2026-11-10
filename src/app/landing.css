@@ -718,7 +718,7 @@ body::before {
   display: flex;
   gap: 14px;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: flex-start;
 }
 
 /* ─── SCROLL CUE ─── */
@@ -2285,7 +2285,8 @@ a.contact-item:hover p {
     bottom: 18px;
   }
   .hero-btns .btn-primary,
-  .hero-btns .btn-secondary {
+  .hero-btns .btn-secondary,
+  .hero-btns .hero-btn-stack {
     flex: 1 1 160px;
   }
   .coach-inner,
@@ -3077,11 +3078,11 @@ body.offers-active .nav-links a[href="#offers"]::after {
   z-index: 1;
 }
 
-/* ─── STORE BUTTON (nav) ───
-   The one filled button in the bar: a brand-blue pill with a band of light
-   crossing it now and then, and a ring that breathes around it, so the store
-   reads as a destination rather than another link. It stays in the bar at
-   every width — the label shortens instead (`-full` / `-short`). */
+/* ─── STORE BUTTON ───
+   The store's button in the hero: a pill with a band of light crossing it now
+   and then, and a ring that breathes around it, so the store reads as a
+   destination rather than another link. The label shortens on a narrower
+   screen (`-full` / `-short`). */
 .nav-store-btn {
   position: relative;
   isolation: isolate;
@@ -3145,14 +3146,13 @@ body.offers-active .nav-links a[href="#offers"]::after {
   .nav-store-btn::before, .nav-store-btn::after { animation: none; }
 }
 
-/* ─── STORE BUTTON: green, in the link row ───
-   The store sits with the section links on a wide screen and keeps every bit
-   of its motion — the band of light, the breathing ring, the lit edge that
-   turns under the cursor — in green. The tone is four custom properties, so
-   the ring (`--primary-light`) and the lit edge follow without restating
-   them. The `html:root…` line sits level with src/styles/lit/primitives.css,
-   which maps this button to the edged level; this lifts it nearer to full
-   light so it stands apart from the links. */
+/* ─── STORE BUTTON: green ───
+   Every bit of its motion — the band of light, the breathing ring, the lit
+   edge — is in green. The tone is four custom properties, so the ring
+   (`--primary-light`) and the lit edge follow without restating them. The
+   `html:root…` line sits level with src/styles/lit/primitives.css, which maps
+   this button to the edged level; this lifts it nearer to full light so it
+   stands apart from the buttons beside it. */
 .nav-store-btn {
   --primary: var(--success);
   --primary-rgb: var(--success-rgb);
@@ -3166,32 +3166,53 @@ html:root:root:root:root:root .nav-store-btn {
   color: var(--success-light);
 }
 
-.nav-store-item { display: flex; align-items: center; }
-
-/* `.nav-links a` gives every link its padding, caps and underline; the store
-   is a button, not a link with an underline, so it takes its own shape back
-   and its ring back from the underline rule. */
-.nav-links .nav-store-btn {
-  display: inline-flex;
-  padding: 6px 16px;
-  letter-spacing: normal;
-  text-transform: none;
-  font-weight: var(--weight-bold);
-}
-.nav-links .nav-store-btn::after {
-  inset: -4px;
-  height: auto;
-  background: none;
-  transform: none;
-  transition: none;
-  border: 1.5px solid var(--primary-light);
-  border-radius: inherit;
+/* ─── STORE BUTTON: in the hero ───
+   Under "تصفح الاشتراكات", at its height and width — a grid, so the
+   `flex: 1 1 160px` the hero buttons take on a phone means nothing to the two
+   inside it. The motion is the store card's (see store-showcase.css): the edge
+   goes round on its own, and a press flares it and opens the green light. The
+   turn is on `--btn-angle` because that is the angle the lit button paints
+   its edge from. */
+.hero-btn-stack {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
 }
 
-/* One store at a time: in the row on a wide screen, in the bar on a phone. */
-@media (min-width: 901px) {
-  .nav-actions > .nav-store-btn { display: none; }
+.hero-store-btn {
+  justify-content: center;
+  min-height: 48px;
+  padding-block: var(--space-3);
+  font-size: var(--text-base);
+  animation: hero-store-turn 12s linear infinite;
 }
-@media (max-width: 900px) {
-  .nav-store-item { display: none; }
+
+@keyframes hero-store-turn {
+  from { --btn-angle: 0deg; }
+  to { --btn-angle: 360deg; }
+}
+
+.hero-store-btn-arrow { transition: translate var(--dur-slow) var(--ease-spring); }
+
+@media (hover: hover) {
+  .hero-store-btn:hover .hero-store-btn-arrow { translate: -6px 0; }
+}
+
+.hero-store-btn.is-launching {
+  animation:
+    hero-store-turn 12s linear infinite,
+    ssc-flare 0.62s var(--ease-out) forwards;
+}
+.hero-store-btn.is-launching .hero-store-btn-arrow { translate: -14px 0; }
+
+/* The light is outside the green section and the green button, so it takes
+   the tone itself. */
+.hero-store-wipe {
+  --primary: var(--success);
+  --primary-light: var(--success-light);
+  --primary-active: var(--success-active);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-store-btn { animation: none; }
 }

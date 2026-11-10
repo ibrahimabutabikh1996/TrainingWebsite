@@ -2,7 +2,6 @@
 import type { JsonRecord, Testimonial } from "@/types";
 import "./landing.css";
 import Link from "next/link";
-import { ShoppingBag } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { getLandingContent } from "./admin/cms/actions";
 import { useAuth } from "@/hooks/useAuth";
@@ -22,6 +21,7 @@ import {
 } from "@/lib/planCards";
 import { PromotionalPopup } from "@/components/PromotionalPopup";
 import { StoreShowcase } from "@/components/landing/StoreShowcase";
+import { StoreHeroButton } from "@/components/landing/StoreHeroButton";
 import type { ShowcaseProduct } from "@/lib/storePromo";
 import { PreviewBar } from "@/components/ui/PreviewBar";
 import { usePreviewGuard } from "@/hooks/usePreviewGuard";
@@ -939,13 +939,10 @@ export default function LandingClient({
           { id: "store-promo", flag: activeData.section_store_active },
         ];
 
-        /* The store button is two copies — the link row's on a wide screen,
-           the bar's on a phone — and is a link to /store, not to a section, so
-           it is not reached by the loop below. "" hands each copy back to the
-           stylesheet, which decides which of the two a width shows. */
+        /* The store button is a link to /store, not to a section, so it is not
+           reached by the loop below. "" hands it back to the stylesheet. */
         document.querySelectorAll<HTMLElement>(".nav-store-btn").forEach((btn) => {
-          const host = btn.closest<HTMLElement>(".nav-store-item") ?? btn;
-          host.style.display = activeData.store_button_active === "false" ? "none" : "";
+          btn.style.display = activeData.store_button_active === "false" ? "none" : "";
         });
 
         sectionToggles.forEach((s) => {
@@ -1229,16 +1226,6 @@ export default function LandingClient({
               تواصل معنا
             </a>
           </li>
-          {/* The store, in the row with the section links on a wide screen —
-              green, so it reads as somewhere else to go rather than another
-              section. On a phone this row is the drawer, so this one is hidden
-              there and the copy in `.nav-actions` keeps the store in the bar. */}
-          <li className="nav-store-item" style={{ display: activeData.store_button_active === "false" ? "none" : undefined }}>
-            <Link href="/store" className="nav-store-btn">
-              <ShoppingBag aria-hidden="true" className="nav-store-btn-icon" />
-              <span>المتجر</span>
-            </Link>
-          </li>
           <li className="nav-drawer-cta">
             {isLoggedIn ? (
               <div
@@ -1262,14 +1249,6 @@ export default function LandingClient({
           </li>
         </ul>
         <div className="nav-actions">
-          {/* The supplements store on a phone, where the link row above is the
-              drawer: here it stays in the bar, so the header never hides it.
-              On a wide screen the copy in the link row is shown instead. */}
-          <Link href="/store" className="nav-store-btn" style={{ display: activeData.store_button_active === "false" ? "none" : undefined }}>
-            <ShoppingBag aria-hidden="true" className="nav-store-btn-icon" />
-            <span className="nav-store-btn-full">متجر المكملات الغذائية</span>
-            <span className="nav-store-btn-short">المتجر</span>
-          </Link>
           {isLoggedIn ? (
             <div className="nav-actions-auth">
               <Link
@@ -1372,13 +1351,16 @@ export default function LandingClient({
                   تسجيل الدخول
                 </Link>
               )}
-              <a
-                href="#membership"
-                className="btn-secondary"
-                data-i18n="hero_btn2"
-              >
-                تصفح الاشتراكات
-              </a>
+              <div className="hero-btn-stack">
+                <a
+                  href="#membership"
+                  className="btn-secondary"
+                  data-i18n="hero_btn2"
+                >
+                  تصفح الاشتراكات
+                </a>
+                <StoreHeroButton hidden={activeData.store_button_active === "false"} />
+              </div>
             </div>
           </div>
           {/* The cue that says the page continues. It used to be the word

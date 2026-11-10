@@ -57,7 +57,7 @@ html:root:root:root:root:root .admin-dropdown-item--switch {
 
 /* --- Landing navbar --------------------------------------------------------
    The links underline with a short line of light. */
-html:root:root:root:root:root :where(.nav-links) > li > a:not(.nav-cta, .nav-store-btn) {
+html:root:root:root:root:root :where(.nav-links) > li > a:not(.nav-cta) {
     background-image: linear-gradient(to left, transparent, var(--primary-light), transparent);
     background-size: 0% 1.5px;
     background-position: center bottom;
@@ -66,7 +66,7 @@ html:root:root:root:root:root :where(.nav-links) > li > a:not(.nav-cta, .nav-sto
 }
 
 @media (hover: hover) {
-    html:root:root:root:root:root :where(.nav-links) > li > a:not(.nav-cta, .nav-store-btn):hover {
+    html:root:root:root:root:root :where(.nav-links) > li > a:not(.nav-cta):hover {
         background-size: 100% 1.5px;
     }
 }

@@ -1613,7 +1613,7 @@ export default function AdminCMSClient({
                     { key: "section_offers_active", label: "العروض الخاصة" },
                     { key: "section_contact_active", label: "معلومات التواصل" },
                     { key: "section_store_active", label: "قسم المتجر" },
-                    { key: "store_button_active", label: "زر المتجر في الشريط العلوي" },
+                    { key: "store_button_active", label: "زر المتجر في الواجهة الرئيسية" },
                   ] satisfies { key: string; label: string }[]).map(({ key, label }) => (
                     <div className="ui-switch-row" key={key}>
                       <Switch
