@@ -91,11 +91,6 @@ function StoreFooter({ settings }: { settings: StoreSettings }) {
         <div><ShieldCheck aria-hidden="true" /><span>منتجات أصلية مضمونة</span></div>
         <div><MessageCircle aria-hidden="true" /><span>طلب مباشر عبر واتساب</span></div>
       </div>
-      <p className="st-footer-note">
-        {settings.free_delivery_over > 0
-          ? `توصيل مجاني للطلبات فوق ${formatIQD(settings.free_delivery_over)}`
-          : `أجور التوصيل ${formatIQD(settings.delivery_fee)}`}
-      </p>
       <p className="st-footer-copy">© {new Date().getFullYear()} Ibrahim Abutabikh · متجر المكملات الغذائية</p>
     </footer>
   );
