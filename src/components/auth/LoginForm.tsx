@@ -24,6 +24,15 @@ export function LoginForm() {
     /* Cleared first so a second failure restarts the shake rather than
        leaving the class on and the card still. */
     setShake(false);
+    /* An empty field used to go to the server and come back as "wrong
+       username or password". Say which one is empty, and put the cursor in it. */
+    const empty = !username.trim() ? "username" : !password ? "password" : null;
+    if (empty) {
+      setError(`يرجى إدخال ${t(empty === "username" ? "user_label" : "password_label")}`);
+      setShake(true);
+      document.getElementById(empty)?.focus();
+      return;
+    }
     const ok = await login(username, password, remember, t("login_error_msg"));
     if (!ok) setShake(true);
   };

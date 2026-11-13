@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, Suspense } from "react";
+import { useCallback, useEffect, useRef, useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
@@ -331,6 +331,33 @@ function FormContent({ planNames }: { planNames: PlanNames }) {
   const secondsLocked = Math.max(0, Math.ceil((lockedUntil - now) / 1000));
   const isLocked = lockedUntil > 0 && secondsLocked > 0;
 
+  /* The browser's own bubble is small, gone in seconds, and on a custom
+     select, chip group or dropzone it points at an input nobody can see. One
+     toast naming the question, and the page brought to it, instead. Every
+     invalid control fires during the same check, so only the first speaks. */
+  const invalidShown = useRef(false);
+  const handleInvalid = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (invalidShown.current) return;
+    invalidShown.current = true;
+    requestAnimationFrame(() => {
+      invalidShown.current = false;
+    });
+    const control = e.target as HTMLInputElement;
+    const field = control.closest<HTMLElement>(".field");
+    const label = (
+      field?.querySelector(".field-label > span")?.textContent ??
+      control.closest("fieldset")?.querySelector("legend")?.textContent ??
+      ""
+    ).trim();
+    const question = label ? ` «${label}»` : "";
+    toast.error(control.validity?.valueMissing ? `يرجى تعبئة${question}` : `قيمة غير صحيحة في${question}`);
+    const visible =
+      field?.querySelector<HTMLElement>('input:not([tabindex="-1"]):not([type="file"]), textarea, select, button') ?? control;
+    visible.focus({ preventScroll: true });
+    (field ?? control).scrollIntoView({ behavior: "smooth", block: "center" });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -515,7 +542,7 @@ function FormContent({ planNames }: { planNames: PlanNames }) {
         <Stepper currentStep={currentStep} onJump={goTo} />
 
         <div className="form-sheet-body">
-          <form id="multi-step-form" onSubmit={handleSubmit} noValidate={false}>
+          <form id="multi-step-form" onSubmit={handleSubmit} onInvalidCapture={handleInvalid} noValidate={false}>
             <div className="form-step" key={currentStep}>
               <h2 className="form-step-title">{t(STEP_TITLES[currentStep - 1])}</h2>
               <p className="form-step-hint">{t("form_required_hint")}</p>

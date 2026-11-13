@@ -14,7 +14,9 @@
  * lets a renewal be submitted at all.
  */
 
+import { useRef } from "react";
 import toast from "react-hot-toast";
+import AppToaster from "@/components/ui/AppToaster";
 
 import { t } from "@/lib/translations";
 import { planNameFrom, planOptions, type PlanNames } from "@/lib/planNames";
@@ -71,9 +73,16 @@ export function PaymentGate({
   const waLink = `https://wa.me/${COACH_WHATSAPP}?text=${waText}`;
 
   const uploaded = receipt.length > 0;
-  const canStart = uploaded && !isUploading;
+  const receiptRef = useRef<HTMLDivElement>(null);
 
+  /* The button used to sit disabled until a slip was attached, so a press
+     without one did nothing at all. It now says what is missing and goes there. */
   const start = () => {
+    if (!uploaded) {
+      toast.error(`يرجى إرفاق «${t("form_gate_receipt")}» للمتابعة`);
+      receiptRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
     if (hasFailed) {
       toast.error(t("form_gate_failed"));
       return;
@@ -143,7 +152,7 @@ export function PaymentGate({
           )}
           {!plan && <p className="gate-note">{t("form_gate_plan_hint")}</p>}
 
-          <div className="gate-receipt">
+          <div className="gate-receipt" ref={receiptRef}>
             {/* Images only, so the thumbnail below is always a real preview of
                 what was sent — a PDF renders as a broken image in that grid. */}
             <Dropzone
@@ -162,7 +171,7 @@ export function PaymentGate({
               type="button"
               className="form-btn form-btn--primary"
               onClick={start}
-              disabled={!canStart}
+              disabled={isUploading}
             >
               {isUploading && <span className="btn-spinner" aria-hidden="true" />}
               {isUploading ? t("form_gate_uploading") : t("form_gate_start")}
@@ -171,6 +180,8 @@ export function PaymentGate({
           </div>
         </div>
       </article>
+      {/* The questionnaire's own toaster is not on screen yet while the gate is. */}
+      <AppToaster />
     </div>
   );
 }

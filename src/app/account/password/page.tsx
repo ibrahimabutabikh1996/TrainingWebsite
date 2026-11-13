@@ -111,10 +111,17 @@ export default function ChangePasswordPage() {
     e.preventDefault();
     setError(null);
 
+    /* Each refusal puts the cursor in the field it is about. */
+    const refuse = (message: string, fieldId: string) => {
+      setError(message);
+      document.getElementById(fieldId)?.focus();
+    };
+
     if (!signedIn) return setError(t("pw_not_logged_in"));
-    if (next.length < MIN_LENGTH) return setError(t("pw_too_short"));
-    if (next !== confirm) return setError(t("pw_mismatch"));
-    if (next === current) return setError(t("pw_same"));
+    if (!current) return refuse(`يرجى إدخال ${t("pw_current")}`, "current-password");
+    if (next.length < MIN_LENGTH) return refuse(t("pw_too_short"), "new-password");
+    if (next !== confirm) return refuse(t("pw_mismatch"), "confirm-password");
+    if (next === current) return refuse(t("pw_same"), "new-password");
 
     setSaving(true);
     try {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -18,6 +18,8 @@ import {
   type StoreSettings,
 } from "@/lib/store/types";
 import { CustomSelect } from "@/components/CustomSelect";
+import toast from "react-hot-toast";
+import AppToaster from "@/components/ui/AppToaster";
 import { CartProvider, useCart } from "./cart";
 import { ProductVisual } from "./ProductVisual";
 import { StoreHomeLink } from "./StoreHomeLink";
@@ -31,6 +33,7 @@ export default function StoreShell({ settings, children }: { settings: StoreSett
         <main className="st-main">{children}</main>
         <StoreFooter settings={settings} />
         <CartDrawer />
+        <AppToaster />
       </div>
     </CartProvider>
   );
@@ -113,6 +116,14 @@ interface Details {
 const EMPTY_DETAILS: Details = { name: "", phone: "", city: "", address: "", notes: "" };
 const DETAILS_KEY = "store-checkout-details";
 
+/* The required fields in the order they stand on screen, by the names they carry there. */
+const REQUIRED_LABELS: [keyof Details, string][] = [
+  ["name", "الاسم الكامل"],
+  ["phone", "رقم الهاتف"],
+  ["city", "المحافظة"],
+  ["address", "العنوان بالتفصيل"],
+];
+
 function CartDrawer() {
   const cart = useCart();
   const { isOpen, close, lines, subtotal, deliveryFee, total, settings } = cart;
@@ -121,6 +132,7 @@ function CartDrawer() {
   const [errors, setErrors] = useState<Partial<Record<keyof Details, string>>>({});
   const points = pointsFor(subtotal, settings);
   const [sent, setSent] = useState<{ reference: string; url: string } | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   /* Close on Escape, and hold the page still behind the drawer. */
   useEffect(() => {
@@ -158,6 +170,16 @@ function CartDrawer() {
     if (!details.city) next.city = "اختر المحافظة";
     if (details.address.trim().length < 4) next.address = "اكتب العنوان بالتفصيل";
     setErrors(next);
+    /* The fields scroll inside the drawer while the button stays at its foot,
+       so the red line under a field is often off screen on a phone: say which
+       ones, and take the customer to the first. */
+    const missing = REQUIRED_LABELS.filter(([key]) => next[key]);
+    if (missing.length > 0) {
+      toast.error(`يرجى إكمال: ${missing.map(([, label]) => label).join("، ")}`);
+      const box = formRef.current?.querySelector<HTMLElement>(`[data-field="${missing[0][0]}"]`);
+      box?.querySelector<HTMLElement>("input, textarea, button")?.focus({ preventScroll: true });
+      box?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
     return Object.keys(next).length === 0;
   };
 
@@ -333,6 +355,7 @@ function CartDrawer() {
 
         {step === "details" && (
           <form
+            ref={formRef}
             className="st-checkout"
             noValidate
             onSubmit={(e) => {
@@ -341,17 +364,17 @@ function CartDrawer() {
             }}
           >
             <div className="st-checkout-fields">
-              <label className="st-field">
+              <label className="st-field" data-field="name">
                 <span>الاسم الكامل</span>
                 <input type="text" autoComplete="name" placeholder="مثال: علي حسين" {...field("name")} />
                 {errors.name && <em>{errors.name}</em>}
               </label>
-              <label className="st-field">
+              <label className="st-field" data-field="phone">
                 <span>رقم الهاتف</span>
                 <input type="tel" dir="ltr" inputMode="tel" autoComplete="tel" placeholder="07XX XXX XXXX" {...field("phone")} />
                 {errors.phone && <em>{errors.phone}</em>}
               </label>
-              <div className="st-field">
+              <div className="st-field" data-field="city">
                 <span id="st-city-label">المحافظة</span>
                 <CustomSelect
                   className={`st-select${errors.city ? " is-invalid" : ""}`}
@@ -367,7 +390,7 @@ function CartDrawer() {
                 />
                 {errors.city && <em>{errors.city}</em>}
               </div>
-              <label className="st-field">
+              <label className="st-field" data-field="address">
                 <span>العنوان بالتفصيل</span>
                 <textarea rows={2} autoComplete="street-address" placeholder="المنطقة، الشارع، أقرب نقطة دالة" {...field("address")} />
                 {errors.address && <em>{errors.address}</em>}
