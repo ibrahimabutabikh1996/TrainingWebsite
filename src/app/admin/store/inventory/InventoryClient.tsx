@@ -66,6 +66,7 @@ export default function InventoryClient({
   }, [products, query, filter]);
 
   const shownMovements = logProduct === "all" ? movements : movements.filter((m) => m.product_id === logProduct);
+  const dialogProduct = dialog ? products.find((p) => p.id === dialog.product.id) ?? dialog.product : null;
 
   const guard = () => {
     if (isSample) {
@@ -293,19 +294,18 @@ export default function InventoryClient({
         )}
       </section>
 
-      {dialog && (
+      {dialog && dialogProduct && (
         <StockDialog
-          product={dialog.product}
+          product={dialogProduct}
           kind={dialog.kind}
           onClose={() => setDialog(null)}
-          onSubmit={async (value, note, variant) => {
-            const ok = await apply(
-              dialog.product,
+          onSubmit={(value, note, variant) =>
+            apply(
+              dialogProduct,
               dialog.kind === "restock" ? { kind: "restock", qty: value, note, variant } : { kind: "count", stock: value, note, variant },
               note
-            );
-            if (ok) setDialog(null);
-          }}
+            )
+          }
         />
       )}
     </div>
@@ -321,7 +321,7 @@ function StockDialog({
   product: StoreProduct;
   kind: "restock" | "count";
   onClose: () => void;
-  onSubmit: (value: number, note: string, variant?: StockVariant) => Promise<void>;
+  onSubmit: (value: number, note: string, variant?: StockVariant) => Promise<boolean>;
 }) {
   const variants = product.variant_stock;
   const [picked, setPicked] = useState(0);
@@ -350,7 +350,11 @@ function StockDialog({
             disabled={!valid || busy}
             onClick={async () => {
               setBusy(true);
-              await onSubmit(n, note, chosen ? { size: chosen.size, flavor: chosen.flavor } : undefined);
+              const ok = await onSubmit(n, note, chosen ? { size: chosen.size, flavor: chosen.flavor } : undefined);
+              if (ok) {
+                setValue(kind === "count" ? String(n) : "");
+                setNote("");
+              }
               setBusy(false);
             }}
           >
