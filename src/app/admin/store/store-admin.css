@@ -411,6 +411,28 @@ html:root:root:root:root:root .sa-icon-btn.is-on { --primary: var(--warning); --
   line-height: var(--leading-tight);
   text-align: center;
 }
+.sa-gallery-main { display: flex; align-items: center; justify-content: center; gap: 2px; }
+.sa-gallery-main svg { width: 11px; height: 11px; }
+/* On every other picture: one press makes it the main one. Always shown — touch has no hover. */
+.sa-gallery-home {
+  position: absolute;
+  top: var(--space-1);
+  inset-inline-start: var(--space-1);
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xs);
+  background: var(--glass-2);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background-color var(--dur) var(--ease), color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+.sa-gallery-home:hover { background: var(--primary-soft); border-color: var(--border-primary); color: var(--primary-on-tint); }
+.sa-gallery-home:focus-visible { box-shadow: var(--focus-ring); }
+.sa-gallery-home svg { width: 12px; height: 12px; }
 .sa-gallery-tools { display: flex; border-top: 1px solid var(--border); }
 .sa-gallery-tools button {
   flex: 1;

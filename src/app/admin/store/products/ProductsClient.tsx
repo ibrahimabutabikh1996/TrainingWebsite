@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import toast from "react-hot-toast";
-import { ChevronLeft, ChevronRight, Eye, EyeOff, ExternalLink, ImagePlus, Pencil, Plus, Search, Star, Trash2, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Eye, EyeOff, ExternalLink, House, ImagePlus, Pencil, Plus, Search, Star, Trash2, X } from "lucide-react";
 import { CustomSelect } from "@/components/CustomSelect";
 import AdminModal from "../../components/AdminModal";
 import { confirmDialog } from "@/lib/confirmDialog";
@@ -271,6 +271,17 @@ function ProductEditor({
     setActiveImage(to);
   };
 
+  /* The chosen picture to the front; the rest keep their order. */
+  const makeMain = (index: number) => {
+    setForm((f) => {
+      const images = [...(f.images ?? [])];
+      if (index <= 0 || index >= images.length) return f;
+      const [picked] = images.splice(index, 1);
+      return { ...f, images: [picked, ...images] };
+    });
+    setActiveImage(0);
+  };
+
   const removeImage = (index: number) => {
     setForm((f) => ({ ...f, images: (f.images ?? []).filter((_, i) => i !== index) }));
     setActiveImage(0);
@@ -357,7 +368,13 @@ function ProductEditor({
                 <button type="button" className="sa-gallery-pick" onClick={() => setActiveImage(i)} aria-label={`عرض الصورة ${i + 1}`}>
                   <ProductVisual name={form.name} category={form.category} accent={form.accent} image_url={url} size={72} />
                 </button>
-                {i === 0 && <span className="sa-gallery-main">الرئيسية</span>}
+                {i === 0 ? (
+                  <span className="sa-gallery-main"><House aria-hidden="true" />الرئيسية</span>
+                ) : (
+                  <button type="button" className="sa-gallery-home" onClick={() => makeMain(i)} aria-label="اجعلها الصورة الرئيسية" title="اجعلها الصورة الرئيسية">
+                    <House aria-hidden="true" />
+                  </button>
+                )}
                 <div className="sa-gallery-tools">
                   <button type="button" onClick={() => moveImage(i, i - 1)} disabled={i === 0} aria-label="تقديم">
                     <ChevronRight aria-hidden="true" />
@@ -380,7 +397,7 @@ function ProductEditor({
           </div>
           <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={(e) => upload(e.target.files)} />
           <p className="sa-hint">
-            حتى {MAX_IMAGES} صور، الأولى هي الرئيسية. يمكنك اختيار عدة صور مرة واحدة. بدون صور، يُرسم المنتج تلقائياً بلونه.
+            حتى {MAX_IMAGES} صور. اضغط أيقونة البيت على أي صورة لتجعلها الرئيسية. يمكنك اختيار عدة صور مرة واحدة. بدون صور، يُرسم المنتج تلقائياً بلونه.
           </p>
           <div className="sa-editor-settings">
           <label className="sa-field">
