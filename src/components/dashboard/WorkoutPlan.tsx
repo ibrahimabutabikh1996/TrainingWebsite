@@ -1052,6 +1052,7 @@ export function WorkoutPlan({ profile }: { profile: UserProfile }) {
                                 title={ex.name_ar}
                                 preload="metadata"
                                 maxHeight="52vh"
+                                deferFrame
                               />
                               <div
                                 style={{

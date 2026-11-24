@@ -2,6 +2,7 @@
 
 import { type CSSProperties, useEffect, useRef, useState } from "react";
 import { driveFileId, drivePosterUrl, getEmbedUrl, isDirectMediaUrl, safeVideoUrl } from "@/lib/videoEmbed";
+import { Icon } from "@/components/Icon";
 import "./VideoPlayer.css";
 
 /**
@@ -38,6 +39,7 @@ export default function VideoPlayer({
   title,
   preload = "auto",
   maxHeight = "70vh",
+  deferFrame = false,
 }: {
   url: string;
   title?: string;
@@ -52,6 +54,10 @@ export default function VideoPlayer({
    *  the card's full width, carrying its own ceiling instead; see `.wl-video`
    *  in workout-log.css. */
   maxHeight?: string;
+  /** يُظهر الصورة المصغّرة وزر تشغيل فقط، ولا يُحمَّل المشغّل إلا عند لمس
+   *  الفيديو نفسه. للقائمة التي فيها فيديو تحت كل تمرين: كل مشغّل Drive
+   *  تطبيق كامل، وتراكمها على الهاتف يُسقط الصفحة لنفاد الذاكرة. */
+  deferFrame?: boolean;
 }) {
   const embedUrl = getEmbedUrl(url);
   const fileId = driveFileId(url);
@@ -63,6 +69,7 @@ export default function VideoPlayer({
   /* Anything else was an iframe already and starts as one. */
   const [useFrame, setUseFrame] = useState(!directUrl);
   const [ready, setReady] = useState(false);
+  const [started, setStarted] = useState(!deferFrame);
   /* Width over height, once something has said what it is. Published as
      `--vp-ratio` below; which viewport actually spends it is the stylesheet's
      decision — see the note above the style. */
@@ -100,7 +107,7 @@ export default function VideoPlayer({
      being waited on — hand it to the viewer instead. Anything past 0 is
      loading normally and is left alone however slow the rest of it is. */
   useEffect(() => {
-    if (useFrame) return;
+    if (useFrame || !started) return;
     const timer = setTimeout(() => {
       if (videoRef.current?.readyState === 0) {
         setReady(false);
@@ -108,7 +115,7 @@ export default function VideoPlayer({
       }
     }, 8000);
     return () => clearTimeout(timer);
-  }, [useFrame]);
+  }, [useFrame, started]);
 
   /* The caller decides what to say about a link that may not be framed; this
      renders nothing rather than an empty stage. */
@@ -146,7 +153,19 @@ export default function VideoPlayer({
         } as CSSProperties
       }
     >
-      {useFrame ? (
+      {!started ? (
+        <button
+          type="button"
+          className="vp-start"
+          onClick={() => setStarted(true)}
+          aria-label={title ? `تشغيل فيديو ${title}` : "تشغيل الفيديو"}
+        >
+          {poster && <img className="vp-poster" src={poster} alt="" aria-hidden="true" />}
+          <span className="vp-play" aria-hidden="true">
+            <Icon name="play_circle" />
+          </span>
+        </button>
+      ) : useFrame ? (
         <iframe
           className="vp-media"
           src={embedUrl}
@@ -187,7 +206,7 @@ export default function VideoPlayer({
       {/* Sits over whichever of the two is loading, and leaves as soon as it
           has something to show. `pointer-events: none` keeps the player's own
           controls reachable underneath it. */}
-      {!ready && (
+      {started && !ready && (
         <div className="vp-loading">
           {poster && <img className="vp-poster" src={poster} alt="" aria-hidden="true" />}
           <span className="vp-spinner" role="status" aria-label="جاري تحميل الفيديو" />
