@@ -1,0 +1,679 @@
+/* The seasonal layer — see ChristmasEffect.tsx.
+ *
+ * Its bulb colours are a deliberate exception to the monochromatic-blue rule,
+ * like the training-day palette: they live here, scoped to the effect, and
+ * nothing else in the system reads them. Gold and blue come from the existing
+ * tokens; red, green and warm white have no token to borrow. */
+/* On the hero layer and on every string of lights, which ChristmasDecor also
+   hangs inside the sections, outside that layer. */
+.xmas-scope,
+.xmas-lights {
+  --xmas-red: #ff3b3b;
+  --xmas-green: #2fd27a;
+  --xmas-warm: #ffd9a0;
+  --xmas-gold: var(--plan-2);
+  --xmas-blue: var(--primary-light);
+  --xmas-wire: rgba(var(--text-rgb), 0.28);
+  --xmas-snow: rgb(var(--text-rgb));
+}
+
+/* ── Over the whole page ───────────────────────────────────────────────────
+   The falling snow and the frost are in seasonal/seasonal.css, shared with the
+   rest of the site. The greeting the sleigh gives sits in its own fixed layer,
+   at the snow's level. */
+.xmas-greet-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 95;
+  pointer-events: none;
+}
+
+.xmas-greet {
+  position: absolute;
+  translate: -50% -100%;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-pill);
+  background: var(--glass-solid);
+  -webkit-backdrop-filter: var(--glass-solid-blur);
+  backdrop-filter: var(--glass-solid-blur);
+  border: 1px solid var(--glass-border-strong);
+  color: var(--text);
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+  white-space: nowrap;
+  box-shadow: var(--elev-2);
+  animation: xmasGreet 2.4s var(--ease-out) forwards;
+}
+
+@keyframes xmasGreet {
+  0% { opacity: 0; transform: translateY(8px) scale(0.92); }
+  15% { opacity: 1; transform: translateY(-6px) scale(1); }
+  75% { opacity: 1; transform: translateY(-14px) scale(1); }
+  100% { opacity: 0; transform: translateY(-28px) scale(0.98); }
+}
+
+/* ── Inside the hero ───────────────────────────────────────────────────────
+   The hero already clips (`overflow: hidden`) and stacks its photo at 0, its
+   scrim at 1 and its text at 2. Lights and sleigh sit with the scrim, the snow
+   bank just above it, all under the text and the scroll cue (3). */
+.xmas-hero {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+/* Above `.hero-content` (z-index 2), for the pieces that take a tap. Only
+   those pieces opt back in to the pointer; the rest of the layer lets every
+   tap through. */
+.xmas-hero.xmas-hero-front {
+  z-index: 3;
+}
+
+.xmas-lights {
+  position: absolute;
+  top: calc(68px + env(safe-area-inset-top));
+  inset-inline: 0;
+  height: 64px;
+}
+
+.xmas-wire {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.xmas-wire path {
+  fill: none;
+  stroke: var(--xmas-wire);
+  stroke-width: 1.5;
+}
+
+.xmas-bulb {
+  --bulb: var(--xmas-warm);
+  position: absolute;
+  width: 11px;
+  height: 17px;
+  translate: -50% 0;
+  border-radius: 50% 50% 46% 46% / 40% 40% 60% 60%;
+  /* Glass with the filament's light inside it and a highlight on one shoulder. */
+  background:
+    radial-gradient(circle at 35% 30%, rgba(var(--text-rgb), 0.9) 0 12%, transparent 30%),
+    radial-gradient(circle at 50% 60%, color-mix(in srgb, var(--bulb) 60%, white) 0%, var(--bulb) 45%, color-mix(in srgb, var(--bulb) 55%, black) 100%);
+  box-shadow:
+    0 0 6px 1px color-mix(in srgb, var(--bulb) 80%, transparent),
+    0 0 18px 4px color-mix(in srgb, var(--bulb) 45%, transparent);
+  animation: xmasTwinkle 2.6s ease-in-out infinite;
+}
+/* The socket. */
+.xmas-bulb::before {
+  content: "";
+  position: absolute;
+  top: -5px;
+  left: 50%;
+  translate: -50% 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 2px 2px 1px 1px;
+  background: linear-gradient(90deg, var(--bg3), var(--bg4), var(--bg3));
+}
+.xmas-bulb.is-red { --bulb: var(--xmas-red); }
+.xmas-bulb.is-gold { --bulb: var(--xmas-gold); }
+.xmas-bulb.is-green { --bulb: var(--xmas-green); }
+.xmas-bulb.is-blue { --bulb: var(--xmas-blue); }
+.xmas-bulb.is-warm { --bulb: var(--xmas-warm); }
+
+@keyframes xmasTwinkle {
+  0%, 100% { opacity: 1; filter: brightness(1.1); }
+  45% { opacity: 0.55; filter: brightness(0.7); }
+  55% { opacity: 0.95; filter: brightness(1.25); }
+}
+
+/* Glass baubles (Baubles in ChristmasDecor, each on its own swing) hanging in
+   the reading-end corner (the left), under the lights. A tap swings the whole
+   string from its top (ChristmasEffect, onBalls). */
+.xmas-balls {
+  position: absolute;
+  top: calc(40px + env(safe-area-inset-top));
+  inset-inline-end: 2%;
+  width: clamp(150px, 20vw, 300px);
+  aspect-ratio: 220 / 210; /* the viewBox of Baubles in ChristmasDecor */
+  transform-origin: 50% 0;
+  filter: drop-shadow(0 10px 14px rgba(2, 6, 23, 0.5));
+}
+
+/* The drawing fills its box. (The `!important` is from when lottie-web drew
+   these and wrote its own inline size.) */
+.xmas-balls svg,
+.xmas-gifts svg {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Only the drawing takes a tap, not the empty corners of its box, so a
+   button that the box happens to overlap keeps every tap meant for it. */
+.xmas-balls svg *,
+.xmas-gifts svg * {
+  pointer-events: visiblePainted;
+  cursor: pointer;
+}
+
+/* Santa's sleigh (SantaSleigh — a Lottie animation of the reindeer running)
+   crosses the sky left to right, is off-screen a while, then comes back right
+   to left, mirrored so it still faces where it is going, and rests off-screen
+   again. The track does the travelling, `.xmas-sleigh` the gentle bob.
+   Physical `left`, not logical: the direction follows the drawing, not the
+   reading order. */
+.xmas-sleigh-track {
+  position: absolute;
+  top: 18%;
+  left: 0;
+  width: clamp(230px, 38vw, 520px);
+  translate: -110% 0;
+  animation: xmasFly 46s linear infinite;
+  animation-delay: 2s;
+}
+.xmas-sleigh {
+  display: block;
+  width: 100%;
+  animation: xmasBob 2.8s ease-in-out infinite;
+}
+@keyframes xmasFly {
+  0% { translate: -110% 40px; scale: 1 1; }
+  30% { translate: 105vw -36px; scale: 1 1; }
+  30.01% { translate: 105vw -10px; scale: -1 1; }
+  42% { translate: 105vw -10px; scale: -1 1; }
+  72% { translate: -110% 34px; scale: -1 1; }
+  72.01% { translate: -110% 40px; scale: 1 1; }
+  100% { translate: -110% 40px; scale: 1 1; }
+}
+
+/* The Lottie player's box: the drawing's own colours, with a soft shadow to
+   lift it off the photograph. The SVG lottie-web draws fills it. */
+.xmas-santa {
+  width: 100%;
+  aspect-ratio: 584 / 310; /* SantaSleigh's VIEWBOX */
+  cursor: pointer;
+  filter: drop-shadow(0 8px 10px rgba(2, 6, 23, 0.5));
+}
+.xmas-santa svg {
+  display: block;
+  width: 100% !important; /* lottie-web writes its own inline size */
+  height: 100% !important;
+}
+@keyframes xmasBob {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(-10px) rotate(1deg); }
+}
+
+.xmas-snowbank {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: clamp(56px, 9vw, 110px);
+  z-index: 1;
+}
+.xmas-snowbank svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 -4px 10px rgba(2, 6, 23, 0.35));
+}
+.xmas-bank-back {
+  fill: var(--xmas-snow);
+  opacity: 0.55;
+}
+.xmas-gifts {
+  position: absolute;
+  bottom: 38%;
+  /* Clear of the hero's scroll cue, which sits in this corner on wide screens. */
+  inset-inline-end: max(4%, 100px);
+  width: clamp(110px, 15vw, 230px);
+  aspect-ratio: 300 / 200; /* the viewBox of GiftPile in ChristmasDecor */
+  filter: drop-shadow(0 8px 10px rgba(2, 6, 23, 0.45));
+}
+
+/* ── Below the hero: ChristmasDecor ────────────────────────────────────── */
+
+/* A string of lights across the top of each section. Two classes, so it beats
+   the hero's `.xmas-lights` placement in every media block. */
+.xmas-lights.xmas-section-lights {
+  top: 0;
+  height: 40px;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Snow lying on a button. Positioned over the button from its parent (the
+   button clips its own overflow, so the snow cannot live inside it), above the
+   button's edge of light. */
+.xmas-btn-snow {
+  position: absolute;
+  z-index: 3;
+  pointer-events: none;
+  filter: drop-shadow(0 1px 1.5px rgba(2, 6, 23, 0.45));
+}
+.xmas-btn-snow svg {
+  display: block;
+  overflow: visible;
+}
+/* The small loose lumps on top. Each scales and turns about its own base. */
+.xmas-btn-snow path[data-lump] {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+}
+/* Knocked off by a press: a lump drops, drifts and turns, and is gone. */
+.xmas-btn-snow path[data-state="fall"] {
+  animation: xmasChunkFall 0.85s cubic-bezier(0.45, 0, 0.9, 0.6) forwards;
+}
+@keyframes xmasChunkFall {
+  0% { translate: 0 0; rotate: 0deg; opacity: 1; }
+  15% { translate: calc(var(--dx) * 0.1) -3px; }
+  100% { translate: var(--dx) 46px; rotate: var(--rot); opacity: 0; }
+}
+/* Settling back where it fell from, built up from the snow beneath. */
+.xmas-btn-snow path[data-state="regrow"] {
+  animation: xmasRegrow 1.8s var(--ease-out) both;
+}
+@keyframes xmasRegrow {
+  0% { scale: 0.4 0; opacity: 0; }
+  35% { opacity: 1; }
+  100% { scale: 1 1; opacity: 1; }
+}
+
+/* Snow along the top of a card, clipped to the card's own top corners. */
+.xmas-card-snow {
+  position: absolute;
+  top: 0;
+  inset-inline: 0;
+  z-index: 3;
+  overflow: hidden;
+  border-start-start-radius: inherit;
+  border-start-end-radius: inherit;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 2px rgba(2, 6, 23, 0.4));
+}
+.xmas-card-snow svg { display: block; }
+
+/* Icicles under the nav — only once it has turned solid on scroll; under a
+   transparent bar they would hang from nothing. */
+.xmas-icicles {
+  position: absolute;
+  top: 100%;
+  inset-inline: 0;
+  height: 26px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--dur-slow) var(--ease);
+}
+.landing-wrapper nav.scrolled > .xmas-icicles,
+.st-header.is-scrolled > .xmas-icicles {
+  opacity: 1;
+}
+.xmas-icicle {
+  position: absolute;
+  top: -1px;
+  translate: -50% 0;
+}
+/* The ice is a pseudo-element so its clip-path does not also cut away the drop
+   that has to fall out of it. */
+.xmas-icicle::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  clip-path: polygon(0 0, 100% 0, 58% 100%, 42% 100%);
+  background: linear-gradient(
+    to bottom,
+    rgba(var(--text-rgb), 0.95),
+    color-mix(in srgb, rgba(var(--text-rgb), 0.55) 70%, var(--primary-light)) 60%,
+    rgba(var(--text-rgb), 0.15)
+  );
+}
+/* A drop gathering at the tip and falling. */
+.xmas-icicle-drop {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  width: 3px;
+  height: 4px;
+  translate: -50% 0;
+  border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
+  background: rgba(var(--text-rgb), 0.85);
+  opacity: 0;
+  animation: xmasDrop 9s ease-in infinite;
+}
+@keyframes xmasDrop {
+  0%, 80% { opacity: 0; transform: translateY(-3px) scale(0.4); }
+  88% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(40px) scale(1); }
+}
+
+/* A glint on the snow's surface: mostly nothing, now and then a star. */
+.xmas-glint {
+  fill: rgb(var(--text-rgb));
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 0;
+  animation: xmasGlint 6s ease-in-out infinite;
+}
+@keyframes xmasGlint {
+  0%, 82%, 100% { opacity: 0; scale: 0.2; rotate: 0deg; }
+  88% { opacity: 1; scale: 1; rotate: 45deg; }
+  94% { opacity: 0; scale: 0.3; rotate: 90deg; }
+}
+
+/* Frost feathering in from the corners of a photograph or a card. The box sits
+   exactly over the element with its radius, so the frost stays inside it. */
+.xmas-frost-corners {
+  position: absolute;
+  z-index: 2;
+  overflow: hidden;
+  pointer-events: none;
+}
+.xmas-frost-patch {
+  position: absolute;
+  overflow: visible;
+  fill: none;
+  stroke: rgba(var(--text-rgb), 0.75);
+  stroke-width: 1;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 2px rgba(var(--text-rgb), 0.6));
+  animation: xmasFrost 9s ease-in-out infinite;
+}
+.xmas-frost-patch.is-tl { top: 0; left: 0; }
+.xmas-frost-patch.is-tr { top: 0; right: 0; }
+.xmas-frost-patch.is-bl { bottom: 0; left: 0; }
+.xmas-frost-patch.is-br { bottom: 0; right: 0; }
+/* A haze of rime behind the feathers, densest in the corner. */
+.xmas-frost-patch.is-tl { background: radial-gradient(circle at 0 0, rgba(var(--text-rgb), 0.22), transparent 62%); }
+.xmas-frost-patch.is-tr { background: radial-gradient(circle at 100% 0, rgba(var(--text-rgb), 0.22), transparent 62%); }
+.xmas-frost-patch.is-bl { background: radial-gradient(circle at 0 100%, rgba(var(--text-rgb), 0.22), transparent 62%); }
+.xmas-frost-patch.is-br { background: radial-gradient(circle at 100% 100%, rgba(var(--text-rgb), 0.22), transparent 62%); }
+@keyframes xmasFrost {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 0.95; }
+}
+
+/* Icicles hanging from the bottom edge of a photograph. */
+.xmas-hang {
+  position: absolute;
+  z-index: 2;
+  height: 34px;
+  pointer-events: none;
+}
+
+/* A large crystal in two corners of each section, behind the eye rather than
+   in it: faint, slowly turning, now and then catching the light. */
+.xmas-crystal {
+  position: absolute;
+  z-index: 0;
+  width: clamp(64px, 9vw, 132px);
+  height: auto;
+  aspect-ratio: 1;
+  pointer-events: none;
+  fill: none;
+  stroke: rgba(var(--text-rgb), 0.9);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  opacity: 0.16;
+  filter: drop-shadow(0 0 4px rgba(var(--primary-light-rgb, var(--primary-rgb)), 0.6));
+  animation: xmasCrystalTurn 80s linear infinite, xmasCrystalGleam 7s ease-in-out infinite;
+}
+.xmas-crystal.is-a { top: 9%; inset-inline-start: 4%; }
+.xmas-crystal.is-b { bottom: 8%; inset-inline-end: 5%; width: clamp(48px, 6vw, 92px); animation-direction: reverse, normal; animation-delay: 0s, 3.2s; }
+@keyframes xmasCrystalTurn {
+  to { rotate: 360deg; }
+}
+@keyframes xmasCrystalGleam {
+  0%, 100% { opacity: 0.12; }
+  50% { opacity: 0.3; }
+}
+
+/* A drift resting on the footer's top edge. */
+.landing-wrapper footer:has(> .xmas-footer-snow),
+.st-footer:has(> .xmas-footer-snow),
+.st-catalog:has(> .xmas-section-lights) {
+  position: relative;
+}
+.xmas-footer-snow {
+  position: absolute;
+  bottom: 100%;
+  inset-inline: 0;
+  height: 26px;
+  margin-bottom: -2px;
+  pointer-events: none;
+  filter: drop-shadow(0 -2px 6px rgba(2, 6, 23, 0.35));
+}
+.xmas-footer-snow svg { display: block; }
+
+@media (max-width: 640px) {
+  .xmas-lights { top: calc(60px + env(safe-area-inset-top)); height: 46px; }
+  .xmas-bulb:nth-child(even of .xmas-bulb) { display: none; }
+  /* Above the heading, through the lights: lower, it passes behind the text. */
+  .xmas-sleigh-track { top: calc(56px + env(safe-area-inset-top)); width: 78vw; }
+  .xmas-balls { width: 104px; top: calc(48px + env(safe-area-inset-top)); }
+  .xmas-gifts { width: 84px; bottom: 30%; inset-inline-end: 4%; }
+  .xmas-lights.xmas-section-lights { height: 30px; }
+  .xmas-icicle:nth-child(3n) { display: none; }
+  .xmas-crystal.is-b { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .xmas-sleigh-track { display: none; }
+  .xmas-bulb { animation: none; }
+  .xmas-icicle-drop { display: none; }
+  .xmas-btn-snow path[data-state] { animation: none; }
+  .xmas-btn-snow path[data-state="fall"] { opacity: 0; }
+  .xmas-glint,
+  .xmas-frost-patch,
+  .xmas-crystal { animation: none; }
+}
+
+/* ── The promotional window, wrapped as a gift ─────────────────────────────
+   A satin ribbon across the reading-start corner (the right, clear of the close
+   button), a bow knotted where it crosses, and a short string of lights along
+   the top edge. `.xmas-gift` is laid exactly over the window by GiftWrap, in
+   the scrim, so the bow can stand out past the window's edge. Takes no clicks. */
+.xmas-gift {
+  /* Satin red: deeper than the bulbs' red, which is a light, not a cloth. */
+  --ribbon: #c8102e;
+  --ribbon-light: #ff5c70;
+  --ribbon-dark: #6e0717;
+  --gift-at: 50px; /* the ribbon's centre, in from the corner on both edges */
+  position: absolute;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* The ribbon is clipped to the window's own rounded corner. */
+.xmas-gift-clip {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  overflow: hidden;
+}
+.xmas-gift-sash {
+  position: absolute;
+  top: calc(var(--gift-at) - 13px);
+  inset-inline-start: calc(var(--gift-at) - 130px);
+  width: 260px;
+  height: 26px;
+  rotate: 45deg;
+  /* Satin across its width: dark at the folded edges, a line of light down
+     the middle, and a fine stitched rim on each side. */
+  background:
+    linear-gradient(
+      to bottom,
+      var(--ribbon-dark) 0,
+      var(--ribbon) 18%,
+      var(--ribbon-light) 46%,
+      var(--ribbon) 62%,
+      var(--ribbon-dark) 100%
+    );
+  box-shadow:
+    inset 0 2px 0 -1px rgba(var(--text-rgb), 0.35),
+    inset 0 -2px 0 -1px rgba(var(--text-rgb), 0.2),
+    0 2px 6px rgba(2, 6, 23, 0.5);
+}
+.xmas-gift-sash:dir(ltr) { rotate: -45deg; }
+
+/* Lights hung along the top edge, between the bow and the close button. Two
+   classes and a parent, so it beats every media block's `.xmas-lights`. */
+.xmas-gift > .xmas-lights.xmas-gift-lights {
+  top: -3px;
+  height: 40px;
+  inset-inline-start: calc(var(--gift-at) * 2 + var(--space-4));
+  inset-inline-end: calc(var(--tap-min) + var(--space-6));
+}
+
+.xmas-bow {
+  position: absolute;
+  top: calc(var(--gift-at) - 44px);
+  inset-inline-start: calc(var(--gift-at) - 56px);
+  width: 112px;
+  height: 88px;
+  rotate: 45deg;
+  overflow: visible;
+  filter:
+    drop-shadow(0 3px 3px rgba(2, 6, 23, 0.45))
+    drop-shadow(0 10px 14px rgba(2, 6, 23, 0.35));
+}
+.xmas-bow:dir(ltr) { rotate: -45deg; }
+.xmas-bow-crease {
+  fill: none;
+  stroke: var(--ribbon-dark);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  opacity: 0.55;
+}
+.xmas-bow-shade {
+  fill: var(--ribbon-dark);
+  opacity: 0.55;
+  filter: blur(2px);
+}
+.xmas-bow-edge {
+  fill: none;
+  stroke: rgba(var(--text-rgb), 0.4);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+}
+.xmas-bow-sheen {
+  animation: xmasSheen 6s var(--ease-out) infinite;
+}
+@keyframes xmasSheen {
+  0%, 62% { translate: 0 0; }
+  100% { translate: 240px 0; }
+}
+
+@media (max-width: 480px) {
+  .xmas-gift { --gift-at: 42px; }
+  .xmas-bow {
+    top: calc(var(--gift-at) - 36px);
+    inset-inline-start: calc(var(--gift-at) - 46px);
+    width: 92px;
+    height: 72px;
+  }
+  .xmas-gift-sash { height: 22px; top: calc(var(--gift-at) - 11px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .xmas-bow-sheen { animation: none; opacity: 0; }
+}
+
+/* ── The hero's baubles and gifts (Baubles, GiftPile in ChristmasDecor) ────
+   Their colours are a deliberate exception to the monochromatic-blue rule,
+   like the bulbs: glass and wrapping paper in Christmas colours, with one
+   bauble and one box in the brand's blue. */
+.xmas-balls,
+.xmas-gifts {
+  --bauble-red: #b3122a;
+  --bauble-red-light: #ff7083;
+  --bauble-red-dark: #3d030c;
+  --bauble-gold: #c9971a;
+  --bauble-gold-light: #fff0a6;
+  --bauble-gold-dark: #4f3500;
+  --bauble-silver: #9aa8ba;
+  --bauble-silver-light: #ffffff;
+  --bauble-silver-dark: #273140;
+  --bauble-blue: var(--primary-active);
+  --bauble-blue-light: var(--primary-light);
+  --bauble-blue-dark: #071534;
+  --cap: #c9a54a;
+  --cap-light: #fbeab2;
+  --cap-dark: #6b5218;
+
+  --gift-red: #b3122a;
+  --gift-red-light: #e23a50;
+  --gift-red-dark: #4f0610;
+  --gift-blue: #1d4ed8;
+  --gift-blue-light: var(--primary-hover);
+  --gift-blue-dark: #0a1d55;
+  --gift-gold: #c9971a;
+  --gift-gold-light: #f6d878;
+  --gift-gold-dark: #5e4200;
+  --ribbon-gold: #d4a52a;
+  --ribbon-gold-light: #fff2b0;
+  --ribbon-gold-dark: #7a5600;
+  --ribbon-silver: #c9d3e0;
+  --ribbon-silver-light: #ffffff;
+  --ribbon-silver-dark: #5a6678;
+  --ribbon-red: #c8102e;
+  --ribbon-red-light: #ff5c70;
+  --ribbon-red-dark: #6e0717;
+}
+
+.xmas-bauble {
+  transform-box: view-box;
+  animation: xmasBaubleSway 5s ease-in-out infinite alternate;
+}
+@keyframes xmasBaubleSway {
+  from { rotate: -2.5deg; }
+  to { rotate: 2.5deg; }
+}
+.xmas-bauble-thread {
+  stroke: var(--cap-light);
+  stroke-width: 0.9;
+  opacity: 0.7;
+}
+.xmas-bauble-loop {
+  fill: none;
+  stroke: var(--cap);
+  stroke-width: 1.2;
+}
+.xmas-bauble-spark {
+  fill: rgb(var(--text-rgb));
+}
+.xmas-bauble-ridges {
+  stroke: var(--cap-dark);
+  stroke-width: 0.8;
+  opacity: 0.6;
+}
+
+.xmas-gift-shadow {
+  fill: rgb(2, 6, 23);
+  opacity: 0.35;
+  filter: blur(4px);
+}
+.xmas-gift-print {
+  fill: rgba(var(--text-rgb), 0.16);
+}
+.xmas-gift-lidshade {
+  fill: rgb(2, 6, 23);
+  opacity: 0.3;
+}
+.xmas-gift-top.is-red { fill: var(--gift-red-light); }
+.xmas-gift-top.is-blue { fill: var(--gift-blue-light); }
+.xmas-gift-top.is-gold { fill: var(--gift-gold-light); }
+.xmas-gift-edge {
+  stroke: rgba(var(--text-rgb), 0.35);
+  stroke-width: 0.8;
+}
+.xmas-gift-snow {
+  filter: drop-shadow(0 1px 1px rgba(2, 6, 23, 0.35));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .xmas-bauble { animation: none; }
+}

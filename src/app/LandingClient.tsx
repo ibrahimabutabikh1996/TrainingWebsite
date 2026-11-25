@@ -25,6 +25,11 @@ import { StoreHeroButton } from "@/components/landing/StoreHeroButton";
 import type { ShowcaseProduct } from "@/lib/storePromo";
 import { PreviewBar } from "@/components/ui/PreviewBar";
 import { usePreviewGuard } from "@/hooks/usePreviewGuard";
+import dynamic from "next/dynamic";
+
+/* Fetched only when `christmas_effect_active` is on, so with the switch off
+   the effect costs the visitor nothing. */
+const ChristmasEffect = dynamic(() => import("@/components/landing/ChristmasEffect"), { ssr: false });
 
 /* The services table, the note and the features of one card.
  *
@@ -2126,6 +2131,9 @@ export default function LandingClient({
           ctaLink="#offers"
         />
       )}
+
+      {/* Seasonal, so off unless the coach has switched it on. */}
+      {activeData.christmas_effect_active === "true" && <ChristmasEffect />}
 
       {/* Shared with the sign-in preview — see @/components/ui/PreviewBar. */}
       {isPreview && <PreviewBar />}

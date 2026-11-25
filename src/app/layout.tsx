@@ -14,6 +14,7 @@ import { ServiceWorkerRegister } from "@/components/pwa/ServiceWorkerRegister";
 import { SITE_URL } from "@/lib/siteUrl";
 import GlassPointer from "@/components/GlassPointer";
 import SegmentSlide from "@/components/SegmentSlide";
+import SeasonalLayer from "@/components/seasonal/SeasonalLayer";
 
 const SITE_NAME = "Ibrahim Abutabikh";
 const SITE_DESCRIPTION = "خطط تدريب وأنظمة غذائية مخصصة مع متابعة كاملة";
@@ -130,6 +131,9 @@ export default function RootLayout({
         {/* The selected pill of every segmented control slides to the new
             choice. Renders nothing; see the component. */}
         <SegmentSlide />
+        {/* Snow and snow on the logo across the site while the content
+            manager's Christmas switch is on. Renders nothing otherwise. */}
+        <SeasonalLayer />
         {children}
         {/* Every upload in the system reports into this one window, so it is
             mounted once here rather than per screen. It renders nothing until a

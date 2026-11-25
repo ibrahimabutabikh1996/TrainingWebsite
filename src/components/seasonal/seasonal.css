@@ -1,0 +1,173 @@
+/* The site-wide half of the Christmas effect — the falling snow and the snow on
+ * the logo. Mounted by SeasonalLayer on every page and by ChristmasEffect on
+ * the landing page. Snow is the page's own text colour, so it follows the
+ * palette rather than a literal white. */
+
+/* ── Falling snow ──────────────────────────────────────────────────────────
+   Above page content and the landing page's scroll arrow (90), under the menu
+   scrim (98), the drawer (99), both panels' bars and sidebars (100+), the nav
+   (200) and every window. Takes no clicks. */
+.xmas-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 95;
+  pointer-events: none;
+  contain: strict;
+}
+
+.xmas-snow {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.xmas-frost {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(120% 60% at 0% 0%, rgba(var(--text-rgb), 0.10), transparent 42%),
+    radial-gradient(120% 60% at 100% 0%, rgba(var(--text-rgb), 0.10), transparent 42%),
+    radial-gradient(90% 40% at 0% 100%, rgba(var(--text-rgb), 0.06), transparent 40%),
+    radial-gradient(90% 40% at 100% 100%, rgba(var(--text-rgb), 0.06), transparent 40%);
+}
+
+/* ── Santa hat on the logo ─────────────────────────────────────────────────
+   LogoHat sizes and places the box over the logo's fist; the Lottie player
+   fills it. */
+.xmas-logo-hat {
+  position: absolute;
+  z-index: 1;
+  pointer-events: none;
+  filter: drop-shadow(0 1px 2px rgba(2, 6, 23, 0.45));
+}
+.xmas-logo-hat-anim {
+  width: 100%;
+  height: 100%;
+}
+/* ── Wreath on the loading screens (SeasonalLoader) ────────────────────── */
+.xmas-loader {
+  position: relative;
+  width: 96px;
+  aspect-ratio: 1;
+}
+/* With the logo inside it: large enough for the logo to read in the hole. */
+.xmas-loader.xmas-loader--framed {
+  width: 240px;
+}
+.xmas-loader-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* The logo is wide (about 2 : 1), so it is sized to the hole's width. */
+.xmas-loader-center .loading-vlogo {
+  width: 48%;
+  max-width: none;
+}
+.xmas-loader svg,
+.xmas-logo-hat-anim svg {
+  display: block;
+  width: 100% !important; /* lottie-web writes its own inline size */
+  height: 100% !important;
+}
+
+/* The wreath's colours: a deliberate exception to the monochromatic-blue
+   rule, like the bulbs on the landing page — fir, berries, gold and a red
+   ribbon, scoped to the wreath. */
+.xmas-loader {
+  --wreath-core: #0a2416;
+  --wreath-back: #12452a;
+  --wreath-mid: #1f6b3d;
+  --wreath-front: #3a9157;
+  --wreath-tip: #7cc58a;
+  --wreath-berry: #c0122c;
+  --wreath-berry-light: #ff7a8a;
+  --wreath-berry-dark: #4a0410;
+  --wreath-gold: #c9971a;
+  --wreath-gold-light: #fff0a6;
+  --wreath-gold-dark: #4f3500;
+  --wreath-ribbon: #c8102e;
+  --wreath-ribbon-light: #ff5c70;
+  --wreath-ribbon-dark: #6e0717;
+  --wreath-bulb: #ffd9a0;
+}
+
+.xmas-wreath {
+  overflow: visible;
+  filter: drop-shadow(0 6px 10px rgba(2, 6, 23, 0.55));
+}
+/* Breathing, slowly, about its own centre. */
+.xmas-wreath-body {
+  transform-box: view-box;
+  transform-origin: 50% 50%;
+  animation: xmasWreathBreathe 3.2s ease-in-out infinite alternate;
+}
+@keyframes xmasWreathBreathe {
+  from { scale: 1; }
+  to { scale: 1.035; }
+}
+.xmas-wreath-core {
+  fill: none;
+  stroke: var(--wreath-core);
+  stroke-width: 22;
+}
+.xmas-wreath-sprig {
+  fill: none;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+.xmas-wreath-sprig.is-back { stroke: var(--wreath-back); }
+.xmas-wreath-sprig.is-mid { stroke: var(--wreath-mid); }
+.xmas-wreath-sprig.is-front { stroke: var(--wreath-front); }
+.xmas-wreath-sprig.is-tip { stroke: var(--wreath-tip); }
+/* The back layer sits a little in shadow. */
+.xmas-wreath-layer.is-0 { opacity: 0.85; }
+
+.xmas-wreath-snow {
+  fill: rgb(var(--text-rgb));
+  opacity: 0.9;
+  filter: blur(0.35px) drop-shadow(0 0.6px 0.6px rgba(2, 6, 23, 0.5));
+}
+.xmas-wreath-wire {
+  fill: none;
+  stroke: rgba(var(--text-rgb), 0.3);
+  stroke-width: 0.6;
+}
+.xmas-wreath-spark { fill: rgb(var(--text-rgb)); opacity: 0.9; }
+.xmas-wreath-cap { fill: var(--wreath-gold-light); }
+.xmas-wreath-hollow { fill: var(--wreath-ribbon-dark); opacity: 0.7; }
+
+/* A light running round the string: each bulb flares as it passes and dims
+   behind it. The delays, one step per bulb, are set on each from the TSX. */
+.xmas-wreath-bulb {
+  opacity: 0.45;
+  animation: xmasWreathChase 1.8s linear infinite;
+}
+.xmas-wreath-filament { fill: var(--wreath-bulb); }
+@keyframes xmasWreathChase {
+  0% { opacity: 1; }
+  12% { opacity: 1; }
+  40% { opacity: 0.5; }
+  100% { opacity: 0.45; }
+}
+
+/* Light crossing the bow's satin now and then. */
+.xmas-wreath-sheen {
+  animation: xmasWreathSheen 4s ease-out infinite;
+}
+@keyframes xmasWreathSheen {
+  0%, 55% { translate: 0 0; }
+  100% { translate: 240px 0; }
+}
+
+/* Still under reduced motion: every bulb lit, no breath, no sheen. */
+@media (prefers-reduced-motion: reduce) {
+  .xmas-wreath-body,
+  .xmas-wreath-bulb,
+  .xmas-wreath-sheen { animation: none; }
+  .xmas-wreath-bulb { opacity: 0.9; }
+  .xmas-wreath-sheen { opacity: 0; }
+}

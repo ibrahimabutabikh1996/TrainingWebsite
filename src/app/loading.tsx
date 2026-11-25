@@ -1,10 +1,13 @@
 import React from "react";
 import { optimizedSrc, optimizedSrcSet } from "@/lib/imageOptim";
+import SeasonalLoader from "@/components/seasonal/SeasonalLoader";
 
 export default function Loading() {
   return (
     <div className="global-loading-container">
       <div className="loading-content">
+        {/* At Christmas the logo sits inside a wreath; otherwise it is drawn alone. */}
+        <SeasonalLoader>
         <img
         src={optimizedSrc("/images/logo/vLogo.png", 384)}
         srcSet={optimizedSrcSet("/images/logo/vLogo.png", [256, 384])}
@@ -12,6 +15,7 @@ export default function Loading() {
         alt="Loading..."
         className="loading-vlogo"
       />
+        </SeasonalLoader>
         <h2 className="loading-text">جاري التحميل...</h2>
       </div>
 

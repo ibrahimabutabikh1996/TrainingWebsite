@@ -1626,6 +1626,18 @@ export default function AdminCMSClient({
                     </div>
                   ))}
                 </div>
+                {/* Outside the grid because it reads the other way: seasonal, so
+                    off unless saved as "true", where the switches above are on
+                    unless saved as "false". */}
+                <div className="ui-switch-row">
+                  <Switch
+                    checked={currentContent.christmas_effect_active === "true"}
+                    onChange={(checked) =>
+                      setContentAr((prev: JsonRecord) => ({ ...prev, christmas_effect_active: checked ? "true" : "false" }))
+                    }
+                    label="تأثير الكريسماس (ثلج وزينة على الواجهة الرئيسية)"
+                  />
+                </div>
               </div>
             )}
 
