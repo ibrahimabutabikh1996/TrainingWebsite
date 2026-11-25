@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { optimizedSrc, optimizedSrcSet } from "@/lib/imageOptim";
+import { Icon } from "@/components/Icon";
 import "./PromotionalPopup.css";
 
 interface PromotionalPopupProps {
@@ -108,7 +109,7 @@ export const PromotionalPopup: React.FC<PromotionalPopupProps> = ({
     <div className="promo-popup-overlay" onClick={handleBackdropClick} role="dialog" aria-modal="true" aria-labelledby="promo-title">
       <div className="promo-popup-card">
         <button className="promo-popup-close" onClick={handleClose} aria-label="إغلاق النافذة">
-          &times;
+          <Icon name="close" />
         </button>
         
         {imageUrl && (
@@ -128,7 +129,9 @@ export const PromotionalPopup: React.FC<PromotionalPopupProps> = ({
 
         <div className="promo-popup-content">
           {discount && <div className="promo-popup-badge">{discount}</div>}
-          
+
+          <span className="ui-eyebrow promo-popup-eyebrow">عرض لفترة محدودة</span>
+
           <h3 id="promo-title" className="promo-popup-title">{title}</h3>
           
           <p className="promo-popup-desc">{description}</p>
@@ -162,7 +165,12 @@ export const PromotionalPopup: React.FC<PromotionalPopupProps> = ({
           
           <Link href={ctaLink} className="promo-popup-cta" onClick={handleCTAClick}>
             {ctaText}
+            <Icon name="chevron_left" />
           </Link>
+
+          <button type="button" className="promo-popup-later" onClick={handleClose}>
+            ربما لاحقاً
+          </button>
         </div>
       </div>
     </div>

@@ -182,6 +182,17 @@ export interface StoreSettings {
   /** The product page's guarantees. Empty hides the line. */
   perk_original: string;
   perk_order: string;
+  /** The store's own promotional pop-up, separate from the gym page's
+   *  (`promo_popup_active` in the landing content). Off unless switched on. */
+  promo_active: boolean;
+  promo_title: string;
+  promo_desc: string;
+  /** A short badge such as "خصم 20%". Empty hides it. */
+  promo_discount: string;
+  promo_img_url: string;
+  promo_cta: string;
+  /** "YYYY-MM-DDTHH:mm" from a datetime-local field. Empty hides the countdown. */
+  promo_end_date: string;
 }
 
 /* The same number the registration form sends people to — see COACH_WHATSAPP
@@ -197,6 +208,13 @@ export const DEFAULT_STORE_SETTINGS: StoreSettings = {
   points_per_1000: 1,
   perk_original: "منتج أصلي مضمون",
   perk_order: "تأكيد الطلب عبر واتساب والدفع عند الاستلام",
+  promo_active: false,
+  promo_title: "خصومات لفترة محدودة على المكملات",
+  promo_desc: "أسعار مخفّضة على مجموعة مختارة من المنتجات، لا تفوّت الفرصة قبل انتهاء العرض.",
+  promo_discount: "",
+  promo_img_url: "",
+  promo_cta: "تسوّق العروض الآن",
+  promo_end_date: "",
 };
 
 export function normalizeSettings(raw: unknown): StoreSettings {
@@ -218,6 +236,16 @@ export function normalizeSettings(raw: unknown): StoreSettings {
     hero_subtitle: text("hero_subtitle"),
     perk_original: text("perk_original", 80),
     perk_order: text("perk_order", 120),
+    promo_active: typeof src.promo_active === "boolean" ? src.promo_active : DEFAULT_STORE_SETTINGS.promo_active,
+    promo_title: text("promo_title", 120),
+    promo_desc: text("promo_desc"),
+    promo_discount: text("promo_discount", 40),
+    promo_img_url: text("promo_img_url", 1000),
+    promo_cta: text("promo_cta", 60),
+    promo_end_date: (() => {
+      const v = text("promo_end_date", 20);
+      return v && Number.isFinite(new Date(v).getTime()) ? v : "";
+    })(),
     points_per_1000: (() => {
       const n = Number(src.points_per_1000);
       return Number.isFinite(n) && n >= 0 ? Math.min(100, Math.round(n * 10) / 10) : DEFAULT_STORE_SETTINGS.points_per_1000;

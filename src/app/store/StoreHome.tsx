@@ -16,8 +16,9 @@ import {
 import { useCart } from "./cart";
 import { ProductVisual } from "./ProductVisual";
 import { useReveal } from "./useReveal";
+import { PromotionalPopup } from "@/components/PromotionalPopup";
 
-export default function StoreHome({ products }: { products: StoreProduct[]; settings: StoreSettings }) {
+export default function StoreHome({ products, settings }: { products: StoreProduct[]; settings: StoreSettings }) {
   const [category, setCategory] = useState<string>("all");
   const [query, setQuery] = useState("");
 
@@ -39,6 +40,20 @@ export default function StoreHome({ products }: { products: StoreProduct[]; sett
 
   return (
     <>
+      {/* The store's own pop-up, switched in the store settings — separate
+          from the gym page's window. */}
+      {settings.promo_active && (
+        <PromotionalPopup
+          title={settings.promo_title}
+          description={settings.promo_desc}
+          discount={settings.promo_discount || undefined}
+          imageUrl={settings.promo_img_url}
+          ctaText={settings.promo_cta || "تسوّق العروض الآن"}
+          ctaLink="#catalog"
+          endDate={settings.promo_end_date || undefined}
+        />
+      )}
+
       {/* STAGE — the featured products, one at a time. */}
       <StoreStage products={stageProducts} />
 
