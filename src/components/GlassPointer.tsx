@@ -78,9 +78,28 @@ export default function GlassPointer() {
     let frame = 0;
     let last: PointerEvent | null = null;
 
+    /* Nothing is written until the first load has settled. `hydrated` alone is
+       not enough: React can start hydrating a segment, tag its nodes, then
+       throw that pass away and hydrate again — a pointer moving over the page
+       is one thing that makes it do so — and anything written in between
+       reads as a mismatch on the second pass (seen on /admin/courses).
+       Hydration only happens on the first load, so after `load` and one idle
+       moment there is none left to disturb. */
+    let ready = false;
+    let idle = 0;
+    const hasIdle = typeof window.requestIdleCallback === "function";
+    const settle = () => {
+      const go = () => {
+        ready = true;
+      };
+      idle = hasIdle ? window.requestIdleCallback(go, { timeout: 1000 }) : window.setTimeout(go, 200);
+    };
+    if (document.readyState === "complete") settle();
+    else window.addEventListener("load", settle, { once: true });
+
     const paint = () => {
       frame = 0;
-      if (!last) return;
+      if (!last || !ready) return;
       const target = last.target instanceof Element ? last.target : null;
 
       const button = hydrated(target?.closest<HTMLElement>(LIT) ?? null);
@@ -118,6 +137,7 @@ export default function GlassPointer() {
     /* Restarting the ripple on a second quick press needs the class off for
        one style pass, which reading `offsetWidth` forces. */
     const onDown = (e: PointerEvent) => {
+      if (!ready) return;
       const target = e.target instanceof Element ? e.target : null;
       const button = hydrated(target?.closest<HTMLElement>(RIPPLE) ?? null);
       if (!button || button.matches(":disabled")) return;
@@ -145,6 +165,9 @@ export default function GlassPointer() {
       document.removeEventListener("animationend", onRippleEnd);
       document.removeEventListener("pointermove", onMove);
       document.documentElement.removeEventListener("pointerleave", onLeave);
+      window.removeEventListener("load", settle);
+      if (hasIdle) window.cancelIdleCallback(idle);
+      else window.clearTimeout(idle);
       if (frame) cancelAnimationFrame(frame);
       onLeave();
     };
