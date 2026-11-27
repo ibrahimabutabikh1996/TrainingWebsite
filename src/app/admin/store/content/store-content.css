@@ -1,0 +1,243 @@
+/* ==========================================================================
+   Store content — /admin/store/content
+   The storefront framed beside a panel of its texts. Its own names (`sc-`),
+   nothing shared with the gym page's content manager. Tokens only.
+   ========================================================================== */
+
+/* One screen tall, with the panel and the frame each scrolling on their own —
+   the same arrangement the content manager uses, for the same reason: a frame
+   that scrolled away with the page would leave the panel's fields with nothing
+   beside them. A browser without `:has()` keeps the panel's normal flow. */
+.admin-main-content:has(.sc-shell) {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sa-root:has(> .sc-shell) {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.sc-shell {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.sc-workspace {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: var(--space-4);
+}
+
+/* --- The panel --- */
+.sc-panel {
+  flex: 0 0 clamp(340px, 32%, 460px);
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.sc-panel-head h1 {
+  margin: 0 0 var(--space-1);
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+}
+
+.sc-panel-head p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+}
+
+.sc-panel-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  /* Room for the focus ring of the first and last field. */
+  padding: var(--space-1);
+  margin: calc(var(--space-1) * -1);
+}
+
+.sc-group h2 {
+  margin: 0;
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+}
+
+.sc-note {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  line-height: var(--leading-snug);
+}
+
+/* The field a click on the storefront asked for, marked for a moment. */
+.sc-panel .sa-field.is-located {
+  border-radius: var(--radius-md);
+  animation: scLocated 1.6s var(--ease-out);
+}
+
+@keyframes scLocated {
+  0%, 45% { box-shadow: var(--focus-ring); }
+  100% { box-shadow: 0 0 0 3px transparent; }
+}
+
+/* --- The footer: where the edits are, and what to do with them --- */
+.sc-footer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  background: var(--glass);
+}
+
+.sc-footer.is-pending {
+  border-color: var(--glass-border-strong);
+}
+
+.sc-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.sc-state {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-muted);
+}
+
+.sc-state--dirty,
+.sc-state--draft {
+  color: var(--text);
+}
+
+.sc-state--dirty::before,
+.sc-state--draft::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-circle);
+}
+
+.sc-state--dirty::before { background: var(--warning); }
+.sc-state--draft::before { background: var(--primary); }
+
+.sc-discard {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--text-muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  transition: color var(--dur) var(--ease);
+}
+
+.sc-discard:hover:not(:disabled) { color: var(--error-text); }
+.sc-discard:disabled { opacity: 0.5; cursor: default; }
+
+.sc-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.sc-actions .sa-btn {
+  flex: 1;
+}
+
+/* --- The storefront --- */
+.sc-stage {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.sc-stage-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.sc-page-pick {
+  flex: 1 1 220px;
+  max-width: 360px;
+  min-width: 0;
+}
+
+.sc-stage-box {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  background: var(--bg);
+  box-shadow: var(--elev-1);
+}
+
+/* Laid out at the device's width and scaled from its top corner to fit; the
+   component sets the four numbers. `max-width: none` because the width is
+   meant to exceed the box before scaling. */
+.sc-frame {
+  position: absolute;
+  top: 0;
+  display: block;
+  max-width: none;
+  border: 0;
+  transform-origin: 0 0;
+  background: var(--bg);
+}
+
+.sc-frame.is-device {
+  box-shadow: 0 0 0 1px var(--glass-border-strong);
+}
+
+/* Only below a laptop, where the two cannot sit side by side. */
+.sc-view-switch {
+  display: none;
+}
+
+@media (max-width: 1024px) {
+  .sc-view-switch {
+    display: inline-flex;
+    align-self: flex-start;
+    margin-bottom: var(--space-3);
+  }
+
+  .sc-panel {
+    flex: 1 1 auto;
+  }
+
+  .sc-workspace[data-view="site"] > .sc-panel,
+  .sc-workspace[data-view="fields"] > .sc-stage {
+    display: none;
+  }
+}

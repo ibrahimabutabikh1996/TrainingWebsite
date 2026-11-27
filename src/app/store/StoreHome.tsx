@@ -17,6 +17,8 @@ import { useCart } from "./cart";
 import { ProductVisual } from "./ProductVisual";
 import { useReveal } from "./useReveal";
 import { PromotionalPopup } from "@/components/PromotionalPopup";
+import { productFieldId } from "@/lib/store/content";
+import { Editable } from "./StoreEditable";
 
 export default function StoreHome({ products, settings }: { products: StoreProduct[]; settings: StoreSettings }) {
   const [category, setCategory] = useState<string>("all");
@@ -60,8 +62,8 @@ export default function StoreHome({ products, settings }: { products: StoreProdu
       {/* CATALOGUE */}
       <section id="catalog" className="st-catalog">
         <div className="st-section-head st-reveal">
-          <h1>كل المنتجات</h1>
-          <p>اختر هدفك، ونحن نوفّر الوقود.</p>
+          <Editable as="h1" field="catalog_title">{settings.catalog_title}</Editable>
+          <Editable as="p" field="catalog_subtitle">{settings.catalog_subtitle}</Editable>
         </div>
 
         <div className="st-filters">
@@ -141,8 +143,8 @@ export function ProductCard({ product: p }: { product: StoreProduct }) {
         </div>
         <div className="st-card-body">
           <span className="st-card-cat">{categoryLabel(p.category)}</span>
-          <h3>{p.name}</h3>
-          <p>{p.tagline}</p>
+          <Editable as="h3" field={productFieldId(p.id, "name")}>{p.name}</Editable>
+          <Editable as="p" field={productFieldId(p.id, "tagline")}>{p.tagline}</Editable>
         </div>
       </Link>
       <div className="st-card-foot">

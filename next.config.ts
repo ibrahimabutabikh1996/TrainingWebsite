@@ -308,6 +308,11 @@ const nextConfig: NextConfig = {
         source: '/cms-preview/:path*',
         headers: PREVIEW_FRAME_HEADERS,
       },
+      /* The storefront's preview, framed by the store content screen. */
+      {
+        source: '/store-preview/:path*',
+        headers: PREVIEW_FRAME_HEADERS,
+      },
     ];
   },
 };

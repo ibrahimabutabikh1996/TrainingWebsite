@@ -156,6 +156,7 @@ export default function AdminLayout({
     { name: "الزبائن", short: "الزبائن", path: "/admin/store/customers", icon: "group", group: "store_sales" },
     { name: "المنتجات", short: "المنتجات", path: "/admin/store/products", icon: "inventory_2", group: "store_catalog" },
     { name: "المخزن", short: "المخزن", path: "/admin/store/inventory", icon: "layers", group: "store_catalog" },
+    { name: "محتوى المتجر", short: "المحتوى", path: "/admin/store/content", icon: "app_window", group: "store_catalog" },
     { name: "إعدادات المتجر", short: "الإعدادات", path: "/admin/store/settings", icon: "settings", group: "store_admin" },
   ];
   const gymNavItems: { name: string; short: string; path: string; icon: IconName; group: NavGroup; section?: StaffSection; edit?: true }[] = [

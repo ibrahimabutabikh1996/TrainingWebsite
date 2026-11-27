@@ -1,0 +1,29 @@
+/* What the storefront shows the coach while it is framed for editing.
+ *
+ * Every rule sits under `html.store-inline-editing`, which StorePreviewRoot
+ * sets only inside the store content screen's frame. Outlines only, so the
+ * page keeps the layout it will be published with. */
+
+html.store-inline-editing [data-store-edit] {
+  cursor: text;
+  outline: 1px dashed transparent;
+  outline-offset: 4px;
+  transition: outline-color var(--dur) var(--ease), background-color var(--dur) var(--ease);
+}
+
+html.store-inline-editing [data-store-edit]:hover {
+  outline-color: rgba(var(--primary-rgb), 0.65);
+}
+
+html.store-inline-editing [data-store-edit][contenteditable]:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: 4px;
+  background-color: rgba(var(--primary-rgb), 0.08);
+}
+
+/* A phone has no hover, so the marks are there from the start. */
+@media (hover: none) {
+  html.store-inline-editing [data-store-edit] {
+    outline-color: rgba(var(--primary-rgb), 0.35);
+  }
+}

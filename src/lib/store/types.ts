@@ -193,6 +193,17 @@ export interface StoreSettings {
   promo_cta: string;
   /** "YYYY-MM-DDTHH:mm" from a datetime-local field. Empty hides the countdown. */
   promo_end_date: string;
+  /* Storefront copy that was written into the components, editable now from
+     the store content screen (/admin/store/content). Each defaults to the
+     exact wording it replaced, so the store reads the same until it is edited,
+     and an empty value falls back to that wording rather than leaving a gap. */
+  catalog_title: string;
+  catalog_subtitle: string;
+  related_title: string;
+  trust_delivery: string;
+  trust_original: string;
+  trust_whatsapp: string;
+  footer_text: string;
 }
 
 /* The same number the registration form sends people to — see COACH_WHATSAPP
@@ -215,6 +226,13 @@ export const DEFAULT_STORE_SETTINGS: StoreSettings = {
   promo_img_url: "",
   promo_cta: "تسوّق العروض الآن",
   promo_end_date: "",
+  catalog_title: "كل المنتجات",
+  catalog_subtitle: "اختر هدفك، ونحن نوفّر الوقود.",
+  related_title: "قد يعجبك أيضاً",
+  trust_delivery: "توصيل لكل المحافظات",
+  trust_original: "منتجات أصلية مضمونة",
+  trust_whatsapp: "طلب مباشر عبر واتساب",
+  footer_text: "متجر المكملات الغذائية",
 };
 
 export function normalizeSettings(raw: unknown): StoreSettings {
@@ -225,6 +243,8 @@ export function normalizeSettings(raw: unknown): StoreSettings {
     const n = Number(src[key]);
     return Number.isFinite(n) && n >= 0 ? Math.round(n) : (DEFAULT_STORE_SETTINGS[key] as number);
   };
+  /* The storefront copy: never empty, see the note on the type. */
+  const copy = (key: keyof StoreSettings, max: number) => text(key, max) || (DEFAULT_STORE_SETTINGS[key] as string);
   const whatsapp = typeof src.whatsapp === "string" ? src.whatsapp.replace(/\D/g, "").slice(0, 15) : "";
   return {
     whatsapp: whatsapp.length >= 8 ? whatsapp : DEFAULT_STORE_SETTINGS.whatsapp,
@@ -246,6 +266,13 @@ export function normalizeSettings(raw: unknown): StoreSettings {
       const v = text("promo_end_date", 20);
       return v && Number.isFinite(new Date(v).getTime()) ? v : "";
     })(),
+    catalog_title: copy("catalog_title", 120),
+    catalog_subtitle: copy("catalog_subtitle", 300),
+    related_title: copy("related_title", 120),
+    trust_delivery: copy("trust_delivery", 80),
+    trust_original: copy("trust_original", 80),
+    trust_whatsapp: copy("trust_whatsapp", 80),
+    footer_text: copy("footer_text", 120),
     points_per_1000: (() => {
       const n = Number(src.points_per_1000);
       return Number.isFinite(n) && n >= 0 ? Math.min(100, Math.round(n * 10) / 10) : DEFAULT_STORE_SETTINGS.points_per_1000;

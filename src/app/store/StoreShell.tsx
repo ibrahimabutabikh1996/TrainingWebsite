@@ -23,12 +23,13 @@ import AppToaster from "@/components/ui/AppToaster";
 import { CartProvider, useCart } from "./cart";
 import { ProductVisual } from "./ProductVisual";
 import { StoreHomeLink } from "./StoreHomeLink";
+import { Editable } from "./StoreEditable";
 
 export default function StoreShell({ settings, children }: { settings: StoreSettings; children: React.ReactNode }) {
   return (
     <CartProvider settings={settings}>
       <div className="st-root" dir="rtl">
-        {settings.announcement && <div className="st-announce">{settings.announcement}</div>}
+        {settings.announcement && <Editable as="div" field="announcement" className="st-announce">{settings.announcement}</Editable>}
         <StoreHeader />
         <main className="st-main">{children}</main>
         <StoreFooter settings={settings} />
@@ -90,11 +91,11 @@ function StoreFooter({ settings }: { settings: StoreSettings }) {
   return (
     <footer className="st-footer">
       <div className="st-footer-perks">
-        <div><Truck aria-hidden="true" /><span>توصيل لكل المحافظات</span></div>
-        <div><ShieldCheck aria-hidden="true" /><span>منتجات أصلية مضمونة</span></div>
-        <div><MessageCircle aria-hidden="true" /><span>طلب مباشر عبر واتساب</span></div>
+        <div><Truck aria-hidden="true" /><Editable field="trust_delivery">{settings.trust_delivery}</Editable></div>
+        <div><ShieldCheck aria-hidden="true" /><Editable field="trust_original">{settings.trust_original}</Editable></div>
+        <div><MessageCircle aria-hidden="true" /><Editable field="trust_whatsapp">{settings.trust_whatsapp}</Editable></div>
       </div>
-      <p className="st-footer-copy">© {new Date().getFullYear()} Ibrahim Abutabikh · متجر المكملات الغذائية</p>
+      <p className="st-footer-copy">© {new Date().getFullYear()} Ibrahim Abutabikh · <Editable field="footer_text">{settings.footer_text}</Editable></p>
     </footer>
   );
 }

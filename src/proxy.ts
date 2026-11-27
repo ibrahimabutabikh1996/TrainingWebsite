@@ -23,7 +23,7 @@ import { verifySessionToken } from "@/lib/session";
 import { SESSION_COOKIE } from "@/lib/sessionCookies";
 
 /** Paths only the coach may open. */
-const ADMIN_PREFIXES = ["/admin", "/cms-preview"];
+const ADMIN_PREFIXES = ["/admin", "/cms-preview", "/store-preview"];
 
 export async function proxy(request: NextRequest) {
   const session = await verifySessionToken(request.cookies.get(SESSION_COOKIE)?.value);
@@ -68,6 +68,8 @@ export const config = {
        `requireAdminPage` would still have turned a stranger away, but the proxy
        is the first line and it should not have a gap in it. */
     "/cms-preview/:path*",
+    /* The store content screen's preview of the storefront, gated the same way. */
+    "/store-preview/:path*",
     "/dashboard/:path*",
     "/account/:path*",
     "/export-workout",

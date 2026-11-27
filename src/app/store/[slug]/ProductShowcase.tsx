@@ -18,6 +18,8 @@ import { useCart } from "../cart";
 import { ProductVisual } from "../ProductVisual";
 import { ProductCard } from "../StoreHome";
 import { useReveal } from "../useReveal";
+import { Editable } from "../StoreEditable";
+import { productFieldId } from "@/lib/store/content";
 
 export default function ProductShowcase({ product: p, related }: { product: StoreProduct; related: StoreProduct[] }) {
   const { add, settings } = useCart();
@@ -141,12 +143,12 @@ export default function ProductShowcase({ product: p, related }: { product: Stor
                 <ChevronLeft aria-hidden="true" />
                 <span aria-current="page">{p.name}</span>
               </nav>
-              <h1>{p.name}</h1>
+              <Editable as="h1" field={productFieldId(p.id, "name")}>{p.name}</Editable>
               <div className="st-p-price">
                 <strong>{formatIQD(price)}</strong>
                 {compare && price === basePrice && <s>{formatIQD(compare)}</s>}
               </div>
-              {p.tagline && <p className="st-p-tagline">{p.tagline}</p>}
+              {p.tagline && <Editable as="p" field={productFieldId(p.id, "tagline")} className="st-p-tagline">{p.tagline}</Editable>}
             </div>
 
             {p.sizes.length > 0 && (
@@ -218,7 +220,7 @@ export default function ProductShowcase({ product: p, related }: { product: Stor
                 <details className="st-p-acc" open>
                   <summary>الوصف<ChevronDown aria-hidden="true" /></summary>
                   <div className="st-p-acc-body">
-                    {p.description && <p>{p.description}</p>}
+                    {p.description && <Editable as="p" field={productFieldId(p.id, "description")}>{p.description}</Editable>}
                     {p.features.length > 0 && (
                       <ul>
                         {p.features.map((f, i) => (
@@ -271,8 +273,8 @@ export default function ProductShowcase({ product: p, related }: { product: Stor
 
             <ul className="st-p-perks">
               <li><Truck aria-hidden="true" />{settings.free_delivery_over > 0 ? `توصيل مجاني فوق ${formatIQD(settings.free_delivery_over)}` : "توصيل لكل المحافظات"}</li>
-              {settings.perk_original && <li><ShieldCheck aria-hidden="true" />{settings.perk_original}</li>}
-              {settings.perk_order && <li><MessageCircle aria-hidden="true" />{settings.perk_order}</li>}
+              {settings.perk_original && <li><ShieldCheck aria-hidden="true" /><Editable field="perk_original">{settings.perk_original}</Editable></li>}
+              {settings.perk_order && <li><MessageCircle aria-hidden="true" /><Editable field="perk_order">{settings.perk_order}</Editable></li>}
             </ul>
           </div>
         </div>
@@ -282,7 +284,7 @@ export default function ProductShowcase({ product: p, related }: { product: Stor
       {related.length > 0 && (
         <section className="st-catalog st-related">
           <div className="st-section-head st-reveal">
-            <h2>قد يعجبك أيضاً</h2>
+            <Editable as="h2" field="related_title">{settings.related_title}</Editable>
           </div>
           <div className="st-grid">
             {related.map((r) => (
