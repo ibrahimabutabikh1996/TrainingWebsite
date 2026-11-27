@@ -25,6 +25,7 @@ import { StoreHeroButton } from "@/components/landing/StoreHeroButton";
 import type { ShowcaseProduct } from "@/lib/storePromo";
 import { PreviewBar } from "@/components/ui/PreviewBar";
 import { usePreviewGuard } from "@/hooks/usePreviewGuard";
+import { useInlineEditor } from "@/hooks/useInlineEditor";
 import dynamic from "next/dynamic";
 
 /* Fetched only when `christmas_effect_active` is on, so with the switch off
@@ -303,10 +304,16 @@ export default function LandingClient({
   isPreview = false,
   /** The store's active products, for the store card to pick its three from. */
   storeProducts,
+  /**
+   * The content manager has framed this preview to write on it in place — see
+   * @/hooks/useInlineEditor. Only ever true alongside `isPreview`.
+   */
+  isEditing = false,
 }: {
   initialCmsData?: JsonRecord | null;
   isPreview?: boolean;
   storeProducts?: ShowcaseProduct[];
+  isEditing?: boolean;
 }) {
   const { logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -334,6 +341,7 @@ export default function LandingClient({
      argument keeps the legacy `?preview=true` path armed exactly as it was:
      this page still reads its draft on that flag, and the two have to agree. */
   usePreviewGuard(isPreview, true);
+  useInlineEditor(isPreview && isEditing);
 
   const handleLogout = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -703,10 +711,14 @@ export default function LandingClient({
      *
      * The draft the manager writes is the whole document, not a patch, so
      * standing aside here leaves nothing missing. */
+    /* The editing frame never fetches: it was rendered from the saved draft and
+       the manager pushes every edit after that, so the published copy arriving
+       late would overwrite the draft being written on. */
     const previewingDraft =
-      typeof window !== "undefined" &&
-      (isPreview || window.location.search.includes("preview=true")) &&
-      !!localStorage.getItem("cms_preview_data");
+      (isPreview && isEditing) ||
+      (typeof window !== "undefined" &&
+        (isPreview || window.location.search.includes("preview=true")) &&
+        !!localStorage.getItem("cms_preview_data"));
 
     if (!previewingDraft) {
       getLandingContent().then((res) => {
@@ -724,13 +736,17 @@ export default function LandingClient({
     /* The blocking that used to sit here moved to `usePreviewGuard`, called at
        the top of this component, so the sign-in preview runs the same code
        rather than a second copy of it. Semantics are unchanged. */
-  }, [isPreview]);
+  }, [isPreview, isEditing]);
 
   useEffect(() => {
     const content: JsonRecord = { ...defaultContent, ...(cmsData || {}) };
 
     const applyDOMUpdates = (activeData: JsonRecord) => {
       document.querySelectorAll("[data-i18n]").forEach((el) => {
+        /* The element the coach is typing in already says what it should —
+           rewriting it from the echo of their own keystroke would throw the
+           caret back to the start. See @/hooks/useInlineEditor. */
+        if (el === document.activeElement && (el as HTMLElement).isContentEditable) return;
         const key = el.getAttribute("data-i18n") as string;
         // Use activeData if available, otherwise fall back to the baseline copy
         const val = activeData[key] || content[key];
@@ -777,6 +793,7 @@ export default function LandingClient({
        * truthy" loop cannot do: it would leave the last struck-through price on
        * screen after the discount ended. */
       document.querySelectorAll<HTMLElement>('[data-i18n$="_was"]').forEach((el) => {
+        if (el === document.activeElement && el.isContentEditable) return;
         const key = el.getAttribute("data-i18n") as string;
         const raw = activeData[key] ?? content[key];
         const text = typeof raw === "string" ? raw.trim() : "";
@@ -2136,7 +2153,9 @@ export default function LandingClient({
       {activeData.christmas_effect_active === "true" && <ChristmasEffect />}
 
       {/* Shared with the sign-in preview — see @/components/ui/PreviewBar. */}
-      {isPreview && <PreviewBar />}
+      {/* Not in the editing frame: the manager around it already says what this
+          is, and its close button would try to close the manager's own tab. */}
+      {isPreview && !isEditing && <PreviewBar />}
     </div>
   );
 }

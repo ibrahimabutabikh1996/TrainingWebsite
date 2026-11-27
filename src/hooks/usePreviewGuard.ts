@@ -69,6 +69,10 @@ export function usePreviewGuard(enabled: boolean, alsoOnSearchFlag = false) {
     const blockKeys = (e: KeyboardEvent) => {
       if (e.key !== "Enter" && e.key !== " ") return;
       if (operable(e.target)) return;
+      /* Text being written in place by the content manager's editing frame (see
+         @/hooks/useInlineEditor): a space there is a space, and Enter is
+         handled by the editor. Nothing is followed either way. */
+      if (e.target instanceof HTMLElement && e.target.isContentEditable) return;
       e.preventDefault();
       e.stopPropagation();
     };

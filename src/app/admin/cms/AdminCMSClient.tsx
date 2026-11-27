@@ -3,7 +3,7 @@
 import { hasRealImage, PLACEHOLDER_IMAGE } from "@/lib/placeholderImage";
 import type { JsonRecord, Testimonial } from "@/types";
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { saveLandingContent, listImagesServer, deleteImageServer } from "./actions";
+import { saveLandingContent, saveLandingDraft, discardLandingDraft, listImagesServer, deleteImageServer } from "./actions";
 import { uploadMediaWithProgress } from '@/lib/mediaUpload';
 import { toast } from 'react-hot-toast';
 import AppToaster from '@/components/ui/AppToaster';
@@ -104,7 +104,8 @@ const InputField = ({ label, fieldKey, isTextarea = false, forceDir, hideable = 
   const shown = currentContent[visibilityKey(fieldKey)] !== "false";
 
   return (
-    <div className="cms-form-group">
+    /* `data-cms-field` is how a click on the page in the frame finds this row. */
+    <div className="cms-form-group" data-cms-field={fieldKey}>
       {/* The label and, where the field may be turned off, the eye beside it.
           `hideable` is opt-in rather than the default: this is one shared
           component behind all 39 text fields, and switching them all on at once
@@ -256,7 +257,7 @@ const ImageUploadField = ({ label, fieldKey, recommendedSize }: { label: string,
   const hasImage = hasRealImage(imageUrl);
 
   return (
-    <div className="cms-form-group">
+    <div className="cms-form-group" data-cms-field={fieldKey}>
       <label className="cms-label">{label}</label>
 
       {/* One row: the thumbnail and the three things you can do to it.
@@ -929,12 +930,37 @@ const TestimonialsEditor = () => {
   );
 };
 
+/* Which tab edits which section of the page, both ways: a click in the frame
+   opens the tab, and picking the tab scrolls the frame. The ids are the
+   sections' own (`#home` is the hero). */
+const TAB_OF_SECTION: Record<string, string> = {
+  home: "hero",
+  coach: "coach",
+  testimonials: "testimonials",
+  membership: "membership",
+  offers: "offercards",
+  contact: "contact",
+  "store-promo": "storepromo",
+};
+const SECTION_OF_TAB: Record<string, string> = Object.fromEntries(
+  Object.entries(TAB_OF_SECTION).map(([section, tab]) => [tab, section]),
+);
+
+/* The widths the frame lays the page out at, then scales down to fit. A
+   desktop at its real width rather than the leftover width beside the panel,
+   which would show a tablet layout and call it the site. */
+const FRAME_WIDTHS = { desktop: 1366, mobile: 390 } as const;
+
 export default function AdminCMSClient({
   initialAr,
+  publishedAr,
   canEdit = true,
   storeProducts = [],
 }: {
+  /** Where editing starts: the saved draft if there is one, else what is published. */
   initialAr: JsonRecord;
+  /** What visitors see right now. */
+  publishedAr?: JsonRecord;
   /** False for a staff member with view only: every field is read-only and
    *  there is nothing to save. */
   canEdit?: boolean;
@@ -946,10 +972,17 @@ export default function AdminCMSClient({
      Nothing tracked unsaved state before: switching tab or closing the tab
      discarded every pending edit without a word. */
   const [savedSnapshot, setSavedSnapshot] = useState(() => JSON.stringify(initialAr));
+  /* What visitors are shown. `savedSnapshot` is what is stored — the draft
+     when there is one — and the two differ exactly while a draft is waiting
+     to be published. */
+  const [publishedSnapshot, setPublishedSnapshot] = useState(() => JSON.stringify(publishedAr ?? initialAr));
   /* Compared as a whole rather than with a per-field flag: edits land in
      several nested shapes, and one snapshot cannot drift out of step with them
      the way a scattered set of flags would. */
   const isDirty = JSON.stringify(contentAr) !== savedSnapshot;
+  /* Anything on this screen visitors do not yet have, saved or not. */
+  const isUnpublished = JSON.stringify(contentAr) !== publishedSnapshot;
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [activeTab, setActiveTab] = useState("hero");
 
   /* The tab strip scrolls sideways with its scrollbar hidden, and it overflows
@@ -994,6 +1027,33 @@ export default function AdminCMSClient({
      just stop — an image that exists and is not listed reads as a lost image. */
   const [mediaHasMore, setMediaHasMore] = useState(false);
   const previewWindowRef = React.useRef<Window | null>(null);
+
+  /* The page itself, framed beside the panel — see @/hooks/useInlineEditor for
+     the half of this that runs inside it. */
+  const frameRef = useRef<HTMLIFrameElement>(null);
+  const frameBoxRef = useRef<HTMLDivElement>(null);
+  const [frameDevice, setFrameDevice] = useState<keyof typeof FRAME_WIDTHS>("desktop");
+  /* Which of the two shows below a laptop's width, where they cannot sit side
+     by side. */
+  const [mobileView, setMobileView] = useState<"site" | "fields">("site");
+  const [frameBox, setFrameBox] = useState({ width: 0, height: 0 });
+  /* The latest draft, for the frame's "ready" message, which arrives outside
+     any render. */
+  const contentRef = useRef(initialAr);
+  /* The field a click in the frame asked for. Stamped, so a second click on
+     the same field marks it again. */
+  const [locateField, setLocateField] = useState<{ key: string; at: number } | null>(null);
+
+  useEffect(() => {
+    const box = frameBoxRef.current;
+    if (!box) return;
+    const observer = new ResizeObserver(([entry]) => {
+      const { width, height } = entry.contentRect;
+      setFrameBox({ width, height });
+    });
+    observer.observe(box);
+    return () => observer.disconnect();
+  }, []);
   /* A `tabsRef` and a `scrollTabs` helper sat here to scroll the tab strip by
      250px at a time. Nothing held the ref and nothing called the helper — the
      arrow buttons they belonged to are not in this file — so both are removed.
@@ -1115,10 +1175,81 @@ export default function AdminCMSClient({
           window.location.origin
         );
       }
+
+      /* And the framed page beside the panel, the same way. */
+      frameRef.current?.contentWindow?.postMessage(
+        { type: "CMS_PREVIEW", payload: contentAr },
+        window.location.origin
+      );
     }, 250);
 
     return () => clearTimeout(timer);
   }, [contentAr]);
+
+  useEffect(() => {
+    contentRef.current = contentAr;
+  }, [contentAr]);
+
+  /* What the framed page says. Read only from that frame, on this origin. */
+  useEffect(() => {
+    const onMessage = (e: MessageEvent) => {
+      if (e.origin !== window.location.origin) return;
+      const frameWindow = frameRef.current?.contentWindow;
+      if (!frameWindow || e.source !== frameWindow) return;
+      const data = e.data;
+
+      if (data?.type === "CMS_FRAME_READY") {
+        /* The frame was drawn from what is stored; the edits made since go in
+           now rather than on the next keystroke. */
+        frameWindow.postMessage({ type: "CMS_PREVIEW", payload: contentRef.current }, window.location.origin);
+      } else if (data?.type === "CMS_INLINE_EDIT") {
+        if (!canEdit || typeof data.key !== "string" || !data.key || typeof data.value !== "string") return;
+        setContentAr((prev: JsonRecord) => ({ ...prev, [data.key]: data.value }));
+      } else if (data?.type === "CMS_INLINE_SELECT") {
+        const tab = typeof data.section === "string" ? TAB_OF_SECTION[data.section] : undefined;
+        if (tab) setActiveTab(tab);
+        if (typeof data.key === "string" && data.key) {
+          setLocateField({ key: data.key, at: Date.now() });
+          /* A photo is changed from its field, so on a narrow screen the panel
+             has to come forward; text is written where it was clicked. */
+          if (data.key.endsWith("_img_url")) setMobileView("fields");
+        }
+      }
+    };
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [canEdit]);
+
+  /* Brings the field the coach clicked on into view and marks it for a moment.
+     The tab switch and this request are set in the same event, so they commit
+     together and the row is already drawn when this runs. */
+  useEffect(() => {
+    if (!locateField) return;
+    const row = document.querySelector<HTMLElement>(`.cms-content-pane [data-cms-field="${CSS.escape(locateField.key)}"]`);
+    if (!row) return;
+    row.scrollIntoView({ block: "center", behavior: "smooth" });
+    row.classList.remove("is-located");
+    void row.offsetWidth;
+    row.classList.add("is-located");
+    const timer = setTimeout(() => row.classList.remove("is-located"), 1600);
+    return () => clearTimeout(timer);
+  }, [locateField]);
+
+  /* Picking a tab takes the framed page to its section. Only from the tab
+     strip — a click on the page has already put the coach where they are. */
+  const selectTab = (tab: string) => {
+    setActiveTab(tab);
+    const section = SECTION_OF_TAB[tab];
+    if (section) {
+      frameRef.current?.contentWindow?.postMessage({ type: "CMS_SCROLL_TO", id: section }, window.location.origin);
+    }
+  };
+
+  /* Sent once the frame has loaded too. The home page asks for it itself, but
+     the sign-in preview does not, and it reads its draft the same way. */
+  const handleFrameLoad = () => {
+    frameRef.current?.contentWindow?.postMessage({ type: "CMS_PREVIEW", payload: contentRef.current }, window.location.origin);
+  };
 
   const currentContent = contentAr;
   /* Most fields are text, but `testimonials` is a list of records. The
@@ -1138,9 +1269,57 @@ export default function AdminCMSClient({
       /* Marks exactly what was sent, so edits made while the request was in
          flight stay flagged as unsaved. */
       setSavedSnapshot(attempt);
+      /* Publishing also cleared the stored draft, so what is stored and what
+         is published are now the same thing. */
+      setPublishedSnapshot(attempt);
       toast.success("تم حفظ المحتوى بنجاح!");
     } else {
       toast.error("حدث خطأ أثناء الحفظ.");
+    }
+  };
+
+  /* Keeps the edits on the server without showing them to anyone. */
+  const handleSaveDraft = async () => {
+    setIsSavingDraft(true);
+    const attempt = JSON.stringify(contentAr);
+    const result = await saveLandingDraft(contentAr);
+    setIsSavingDraft(false);
+    if (result.success) {
+      setSavedSnapshot(attempt);
+      toast.success("تم حفظ المسودة — لم تُنشر للزبائن بعد.");
+    } else {
+      toast.error(result.error || "تعذّر حفظ المسودة.");
+    }
+  };
+
+  /* Publishing is the one step visitors see, so it is asked about first. */
+  const handlePublish = async () => {
+    const go = await confirmDialog("سيظهر هذا التحديث لكل زوار الموقع فور النشر.", {
+      title: "نشر التحديث للزبائن",
+      confirmLabel: "نشر الآن",
+      cancelLabel: "ليس الآن",
+    });
+    if (go) await handleSave();
+  };
+
+  /* Back to what visitors see, dropping the draft and any unsaved edits. */
+  const handleDiscardDraft = async () => {
+    const go = await confirmDialog("ستُحذف المسودة وكل التعديلات غير المنشورة، ويعود المحتوى كما يراه الزبائن الآن.", {
+      title: "تجاهل التعديلات",
+      confirmLabel: "تجاهل",
+      cancelLabel: "إلغاء",
+      danger: true,
+    });
+    if (!go) return;
+    setIsSavingDraft(true);
+    const result = await discardLandingDraft();
+    setIsSavingDraft(false);
+    if (result.success) {
+      setContentAr(JSON.parse(publishedSnapshot));
+      setSavedSnapshot(publishedSnapshot);
+      toast.success("تمت العودة إلى المحتوى المنشور.");
+    } else {
+      toast.error(result.error || "تعذّر حذف المسودة.");
     }
   };
 
@@ -1504,6 +1683,18 @@ export default function AdminCMSClient({
         </Overlay>
       )}
 
+      {/* Below a laptop there is no room for both side by side, so one shows at
+          a time and this picks which. Hidden above that width. */}
+      <div className="ui-segment cms-view-switch" role="tablist" aria-label="طريقة العرض">
+        <button type="button" role="tab" className="ui-tab" aria-selected={mobileView === "site"} onClick={() => setMobileView("site")}>
+          الموقع
+        </button>
+        <button type="button" role="tab" className="ui-tab" aria-selected={mobileView === "fields"} onClick={() => setMobileView("fields")}>
+          الحقول والنشر
+        </button>
+      </div>
+
+      <div className="cms-workspace" data-view={mobileView}>
       <div className="cms-layout">
           {/* The page title and the tab strip pin as one block.
               The strip was already `position: sticky`, and it did stick — but it
@@ -1562,7 +1753,7 @@ export default function AdminCMSClient({
               ] satisfies { id: string; label: string }[]).map(tab => (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => selectTab(tab.id)}
                   className={`cms-tab-btn ${activeTab === tab.id ? "active" : ""}`}
                 >
                     <span>{tab.label}</span>
@@ -2158,47 +2349,138 @@ export default function AdminCMSClient({
               Sticky and static occupy the same box in flow, so this toggles
               nothing about the layout; it only decides whether the bar detaches
               when the page scrolls past it. */}
-          <div className={`cms-footer ${isDirty ? "is-pinned" : ""}`}>
-            {isDirty ? (
-              <span className="cms-dirty">تغييرات غير محفوظة</span>
-            ) : (
-              <span className="cms-saved">
-                كل التغييرات محفوظة
-              </span>
-            )}
-
-            {activeTab !== "media" && (
-              <button
-                onClick={handleOpenPreview}
-                disabled={isSaving || isUploading}
-                className="cms-btn-secondary"
-              >
-                معاينة قبل النشر
-              </button>
-            )}
-
+          <div className={`cms-footer ${isDirty || isUnpublished ? "is-pinned" : ""}`}>
+            {/* Three states, because there are three places an edit can be:
+                only on this screen, saved as a draft, or in front of visitors. */}
+            <div className="cms-footer-status">
+              {isDirty ? (
+                <span className="cms-dirty">تغييرات غير محفوظة</span>
+              ) : isUnpublished ? (
+                <span className="cms-draft">مسودة محفوظة — لم تُنشر بعد</span>
+              ) : (
+                <span className="cms-saved">
+                  كل التغييرات منشورة
+                </span>
+              )}
+              {canEdit && isUnpublished && (
+                <button
+                  type="button"
+                  onClick={handleDiscardDraft}
+                  disabled={isSaving || isSavingDraft || isUploading}
+                  className="cms-discard-btn"
+                >
+                  تجاهل التعديلات
+                </button>
+              )}
+            </div>
 
             {canEdit && (
             <button
-              onClick={handleSave}
-              /* Nothing to publish when the content matches what is stored. */
-              disabled={isSaving || isUploading || !isDirty}
-              className="cms-btn-primary"
+              type="button"
+              onClick={handleSaveDraft}
+              /* Nothing new to keep when the screen matches what is stored. */
+              disabled={isSaving || isSavingDraft || isUploading || !isDirty}
+              className="cms-btn-secondary"
             >
-              {isSaving ? (
+              {isSavingDraft ? (
                 <>
                   <div className="cms-spinner ui-spinner--inline" style={{ width: 16, height: 16 }}></div>
                   <span>جاري الحفظ...</span>
                 </>
               ) : (
+                <span>حفظ كمسودة</span>
+              )}
+            </button>
+            )}
+
+            {canEdit && (
+            <button
+              type="button"
+              onClick={handlePublish}
+              /* Nothing to publish when the screen matches what visitors see. */
+              disabled={isSaving || isSavingDraft || isUploading || !isUnpublished}
+              className="cms-btn-primary"
+            >
+              {isSaving ? (
                 <>
-                  <span>حفظ التغييرات ونشرها</span>
+                  <div className="cms-spinner ui-spinner--inline" style={{ width: 16, height: 16 }}></div>
+                  <span>جاري النشر...</span>
+                </>
+              ) : (
+                <>
+                  <span>نشر للزبائن</span>
                 </>
               )}
             </button>
             )}
           </div>
           </div>
+        </div>
+
+        {/* The page itself, as it will be published, with the coach writing on
+            it. Laid out at a real device width and scaled to fit the space,
+            so a desktop is shown as a desktop. */}
+        <div className="cms-stage">
+          <div className="cms-stage-bar">
+            <span className="cms-stage-hint">
+              {canEdit
+                ? "اضغط على أي نص في الموقع واكتب مباشرة. الصور والبطاقات تُفتح في اللوحة."
+                : "هكذا يظهر الموقع بالمحتوى الحالي."}
+            </span>
+            <div className="cms-stage-tools">
+              <div className="ui-segment" role="tablist" aria-label="حجم المعاينة">
+                <button
+                  type="button"
+                  role="tab"
+                  className="ui-tab"
+                  aria-selected={frameDevice === "desktop"}
+                  onClick={() => setFrameDevice("desktop")}
+                >
+                  كمبيوتر
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  className="ui-tab"
+                  aria-selected={frameDevice === "mobile"}
+                  onClick={() => setFrameDevice("mobile")}
+                >
+                  جوال
+                </button>
+              </div>
+              <button
+                type="button"
+                onClick={handleOpenPreview}
+                disabled={isSaving || isUploading}
+                className="cms-btn-secondary cms-stage-open"
+              >
+                فتح في نافذة مستقلة
+              </button>
+            </div>
+          </div>
+          <div className="cms-stage-box" ref={frameBoxRef}>
+            {(() => {
+              const width = FRAME_WIDTHS[frameDevice];
+              const scale = frameBox.width ? Math.min(1, frameBox.width / width) : 1;
+              const src = activeTab === "login" ? "/cms-preview/login" : `/cms-preview${canEdit ? "?edit=1" : ""}`;
+              return (
+                <iframe
+                  ref={frameRef}
+                  src={src}
+                  title="الموقع كما سيظهر للزبائن"
+                  className={`cms-stage-frame${width * scale < frameBox.width - 1 ? " is-device" : ""}`}
+                  onLoad={handleFrameLoad}
+                  style={{
+                    width,
+                    height: frameBox.height / scale,
+                    left: Math.max(0, (frameBox.width - width * scale) / 2),
+                    transform: `scale(${scale})`,
+                  }}
+                />
+              );
+            })()}
+          </div>
+        </div>
         </div>
 
       {showConfirmModal && (

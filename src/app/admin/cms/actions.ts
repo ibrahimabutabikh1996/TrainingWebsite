@@ -30,34 +30,53 @@ import { r2Delete, r2KeyOf, r2List, r2PublicUrl, R2_MEDIA_PREFIX } from "@/lib/r
  */
 const MAX_CONTENT_BYTES = 512 * 1024;
 
+/**
+ * The row the content manager keeps its unpublished draft in.
+ *
+ * Same table, its own id, so it needs no migration and is never read by the
+ * home page — `/` asks for `landing_content` by id and nothing else. Publishing
+ * removes it: once the draft is what visitors see, there is no draft left.
+ */
+const DRAFT_ID = "landing_draft";
+
+/** The shape and size checks both writes share. Null when the content is usable. */
+function contentProblem(contentAr: JsonRecord): string | null {
+  /* A plain object, and only a plain object. An array or a primitive would be
+     stored happily by jsonb and then read back by the landing page as content
+     it cannot walk. */
+  if (typeof contentAr !== "object" || contentAr === null || Array.isArray(contentAr)) {
+    return "صيغة المحتوى غير صحيحة";
+  }
+  if (JSON.stringify(contentAr).length > MAX_CONTENT_BYTES) {
+    return "حجم المحتوى يتجاوز الحد المسموح";
+  }
+  return null;
+}
+
 export async function saveLandingContent(contentAr: JsonRecord) {
   if (!(await requireAdminAction("cms.edit"))) {
     return { success: false, error: "غير مصرح لك بهذا الإجراء" };
   }
 
-  /* A plain object, and only a plain object. An array or a primitive would be
-     stored happily by jsonb and then read back by the landing page as content
-     it cannot walk. */
-  if (typeof contentAr !== "object" || contentAr === null || Array.isArray(contentAr)) {
-    return { success: false, error: "صيغة المحتوى غير صحيحة" };
-  }
-
-  const serialised = JSON.stringify(contentAr);
-  if (serialised.length > MAX_CONTENT_BYTES) {
-    return { success: false, error: "حجم المحتوى يتجاوز الحد المسموح" };
-  }
+  const problem = contentProblem(contentAr);
+  if (problem) return { success: false, error: problem };
 
   try {
-    await prisma.site_settings.upsert({
-      where: { id: "landing_content" },
-      update: {
-        content_ar: contentAr,
-      },
-      create: {
-        id: "landing_content",
-        content_ar: contentAr,
-      },
-    });
+    /* Published and the draft cleared in one step, so a failure leaves both
+       rows as they were rather than a published page with a stale draft. */
+    await prisma.$transaction([
+      prisma.site_settings.upsert({
+        where: { id: "landing_content" },
+        update: {
+          content_ar: contentAr,
+        },
+        create: {
+          id: "landing_content",
+          content_ar: contentAr,
+        },
+      }),
+      prisma.site_settings.deleteMany({ where: { id: DRAFT_ID } }),
+    ]);
 
     // Revalidate the home page so the changes reflect immediately
     revalidatePath("/");
@@ -78,6 +97,62 @@ export async function getLandingContent() {
   } catch (error) {
     console.error("Failed to fetch landing content:", error);
     return null;
+  }
+}
+
+/**
+ * Keeps the coach's edits without showing them to anyone.
+ *
+ * Written to its own row, so the home page — which reads `landing_content`
+ * alone — is untouched, and the draft survives a closed tab or a second device.
+ */
+export async function saveLandingDraft(contentAr: JsonRecord) {
+  if (!(await requireAdminAction("cms.edit"))) {
+    return { success: false, error: "غير مصرح لك بهذا الإجراء" };
+  }
+
+  const problem = contentProblem(contentAr);
+  if (problem) return { success: false, error: problem };
+
+  try {
+    await prisma.site_settings.upsert({
+      where: { id: DRAFT_ID },
+      update: { content_ar: contentAr },
+      create: { id: DRAFT_ID, content_ar: contentAr },
+    });
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to save landing draft:", error);
+    return { success: false, error: "تعذّر حفظ المسودة" };
+  }
+}
+
+/** The saved draft, or null when there is none. Never sent to a visitor. */
+export async function getLandingDraft(): Promise<JsonRecord | null> {
+  if (!(await requireAdminAction("cms.view"))) return null;
+
+  try {
+    const row = await prisma.site_settings.findUnique({ where: { id: DRAFT_ID } });
+    const value = row?.content_ar;
+    return value && typeof value === "object" && !Array.isArray(value) ? (value as JsonRecord) : null;
+  } catch (error) {
+    console.error("Failed to fetch landing draft:", error);
+    return null;
+  }
+}
+
+/** Throws the draft away; the published page is left exactly as it is. */
+export async function discardLandingDraft() {
+  if (!(await requireAdminAction("cms.edit"))) {
+    return { success: false, error: "غير مصرح لك بهذا الإجراء" };
+  }
+
+  try {
+    await prisma.site_settings.deleteMany({ where: { id: DRAFT_ID } });
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to discard landing draft:", error);
+    return { success: false, error: "تعذّر حذف المسودة" };
   }
 }
 
@@ -203,12 +278,15 @@ export async function deleteImageServer(publicUrl: string): Promise<boolean> {
       return false;
     }
 
-    // 1. Clean up from database site_settings
+    // 1. Clean up from database site_settings — the published page and the
+    //    unpublished draft alike, or publishing the draft would bring the
+    //    deleted file's address back onto the page.
+    for (const rowId of ["landing_content", DRAFT_ID]) {
     try {
       const settings = await prisma.site_settings.findUnique({
-        where: { id: "landing_content" },
+        where: { id: rowId },
       });
-      
+
       if (settings) {
         const contentAr = settings.content_ar as JsonRecord || {};
 
@@ -231,17 +309,18 @@ export async function deleteImageServer(publicUrl: string): Promise<boolean> {
 
         if (removeUrl(contentAr)) {
           await prisma.site_settings.update({
-            where: { id: "landing_content" },
+            where: { id: rowId },
             data: {
               content_ar: contentAr,
             },
           });
-          revalidatePath("/");
+          if (rowId === "landing_content") revalidatePath("/");
           console.log(`Cleaned up deleted image URL from site_settings (replaced with placeholder): ${publicUrl}`);
         }
       }
     } catch (dbError) {
       console.error('Error cleaning up image from site_settings:', dbError);
+    }
     }
 
     // 2. Clean up from courses cover_image if any course uses it

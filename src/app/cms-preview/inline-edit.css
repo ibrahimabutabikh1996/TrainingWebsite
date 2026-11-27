@@ -1,0 +1,47 @@
+/* What the home page shows the coach while it is framed for editing.
+ *
+ * Every rule sits under `html.cms-inline-editing`, which `useInlineEditor` sets
+ * only inside the content manager's frame — a visitor's page, and the plain
+ * preview tab, never carry the class, so nothing here reaches them.
+ *
+ * Outlines only: they take no room, so the page keeps exactly the layout it
+ * will be published with. No radius is set — several of these elements are
+ * buttons with their own shape, and an outline already follows it. */
+
+html.cms-inline-editing [data-i18n] {
+  cursor: text;
+  outline: 1px dashed transparent;
+  outline-offset: 4px;
+  transition: outline-color var(--dur) var(--ease), background-color var(--dur) var(--ease);
+}
+
+html.cms-inline-editing [data-i18n]:hover {
+  outline-color: rgba(var(--primary-rgb), 0.65);
+}
+
+/* The one being written in. */
+html.cms-inline-editing [data-i18n][contenteditable]:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: 4px;
+  background-color: rgba(var(--primary-rgb), 0.08);
+}
+
+/* Photos open their field in the panel beside the frame. */
+html.cms-inline-editing img[id$="-img-el"] {
+  cursor: pointer;
+  outline: 2px dashed transparent;
+  outline-offset: -2px;
+  transition: outline-color var(--dur) var(--ease);
+}
+
+html.cms-inline-editing img[id$="-img-el"]:hover {
+  outline-color: rgba(var(--primary-rgb), 0.65);
+}
+
+/* A phone has no hover, so the marks are there from the start. */
+@media (hover: none) {
+  html.cms-inline-editing [data-i18n],
+  html.cms-inline-editing img[id$="-img-el"] {
+    outline-color: rgba(var(--primary-rgb), 0.35);
+  }
+}

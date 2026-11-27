@@ -1,6 +1,9 @@
 import type { JsonRecord } from "@/types";
-import { requireAdminPage } from "@/lib/authGuard";
-import { getLandingContent } from "../admin/cms/actions";
+import { requireAdminPage, sessionCan } from "@/lib/authGuard";
+import { getLandingContent, getLandingDraft } from "../admin/cms/actions";
+/* Every rule in it sits under `html.cms-inline-editing`, which only the editing
+   frame sets — loaded here, it changes nothing anywhere else. */
+import "./inline-edit.css";
 import LandingClient from "../LandingClient";
 import { getActiveProducts } from "@/lib/store/catalog";
 import { toShowcaseProduct } from "@/lib/storePromo";
@@ -29,11 +32,25 @@ import { toShowcaseProduct } from "@/lib/storePromo";
  */
 export const dynamic = "force-dynamic";
 
-export default async function CmsPreviewPage() {
-  await requireAdminPage("cms.view");
+export default async function CmsPreviewPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const session = await requireAdminPage("cms.view");
 
-  const [settings, products] = await Promise.all([getLandingContent(), getActiveProducts()]);
-  const initialCmsData = settings ? (settings.content_ar as JsonRecord) : null;
+  /* `?edit=1` is the content manager framing this page so the coach can write
+     on it directly. Only for someone who may edit — a viewer gets the plain
+     preview — and it starts from the saved draft, if any, rather than from
+     what is published; the manager then pushes its unsaved edits on top. */
+  const editing = (await searchParams).edit === "1" && sessionCan(session, "cms.edit");
 
-  return <LandingClient initialCmsData={initialCmsData} storeProducts={products.map(toShowcaseProduct)} isPreview />;
+  const [settings, draft, products] = await Promise.all([
+    getLandingContent(),
+    editing ? getLandingDraft() : Promise.resolve(null),
+    getActiveProducts(),
+  ]);
+  const initialCmsData = draft ?? (settings ? (settings.content_ar as JsonRecord) : null);
+
+  return <LandingClient initialCmsData={initialCmsData} storeProducts={products.map(toShowcaseProduct)} isPreview isEditing={editing} />;
 }

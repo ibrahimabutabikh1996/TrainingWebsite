@@ -1755,3 +1755,176 @@
     display: none;
   }
 }
+
+/* ─── The page beside the panel ──────────────────────────────────────────
+   The content manager is the home page itself, framed, with the fields in a
+   panel beside it. The panel is the column every rule above was written for —
+   head, scrolling pane, footer — at a fixed share of the width; the frame takes
+   the rest. See `.cms-stage-frame` for how the page is drawn at a real width. */
+.cms-workspace {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: var(--space-4);
+}
+
+.cms-workspace > .cms-layout {
+  flex: 0 0 clamp(360px, 34%, 480px);
+  min-width: 0;
+}
+
+.cms-stage {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.cms-stage-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.cms-stage-hint {
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+  color: var(--text-secondary);
+}
+
+.cms-stage-tools {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.cms-stage-tools .cms-stage-open {
+  padding: 8px 14px;
+  font-size: var(--text-sm);
+}
+
+/* The window onto the page. Its own ground, so the page shows on the colour it
+   is published on rather than over the panel's glow. */
+.cms-stage-box {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  background: var(--bg);
+  box-shadow: var(--elev-1);
+}
+
+/* Laid out at the device's width and height-in-proportion, then scaled from its
+   top corner to fit the box; the component sets the four numbers. */
+.cms-stage-frame {
+  position: absolute;
+  top: 0;
+  display: block;
+  border: 0;
+  /* The width is the device's on purpose and wider than the box; a global
+     `max-width: 100%` would squeeze it back and then be scaled down again. */
+  max-width: none;
+  transform-origin: 0 0;
+  background: var(--bg);
+}
+
+/* Narrower than the box (the phone): an edge, so the screen reads as a screen
+   rather than blending into the box's own ground. */
+.cms-stage-frame.is-device {
+  box-shadow: 0 0 0 1px var(--glass-border-strong);
+}
+
+/* The field a click on the page asked for, marked for a moment. */
+.cms-form-group.is-located {
+  border-radius: var(--radius-md);
+  animation: cmsLocated 1.6s var(--ease-out);
+}
+
+@keyframes cmsLocated {
+  0%, 45% { box-shadow: var(--focus-ring); }
+  100% { box-shadow: 0 0 0 3px transparent; }
+}
+
+/* The footer's left-hand line: where the edits are, and the way back. */
+.cms-footer-status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin-inline-end: auto;
+}
+
+.cms-footer-status .cms-dirty,
+.cms-footer-status .cms-saved {
+  margin-inline-end: 0;
+}
+
+/* Saved, but not yet in front of visitors. */
+.cms-draft {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--primary-on-tint);
+}
+
+.cms-draft::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-circle);
+  background: var(--primary);
+}
+
+.cms-discard-btn {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  transition: color var(--dur) var(--ease);
+}
+
+.cms-discard-btn:hover:not(:disabled) {
+  color: var(--error-text);
+}
+
+.cms-discard-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* Only below a laptop, where the two cannot sit side by side. */
+.cms-view-switch {
+  display: none;
+}
+
+@media (max-width: 1024px) {
+  .cms-view-switch {
+    display: inline-flex;
+    align-self: flex-start;
+    margin-bottom: var(--space-3);
+  }
+
+  .cms-workspace > .cms-layout {
+    flex: 1 1 auto;
+  }
+
+  .cms-workspace[data-view="site"] > .cms-layout,
+  .cms-workspace[data-view="fields"] > .cms-stage {
+    display: none;
+  }
+}

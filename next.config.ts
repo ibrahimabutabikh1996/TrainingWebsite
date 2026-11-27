@@ -117,7 +117,10 @@ const CSP = [
   "img-src 'self' data: blob: https:",
   "media-src 'self' blob: https:",
   "font-src 'self'",
-  "frame-src https:",
+  /* 'self' for the content manager, which frames its own preview of the home
+     page. `https:` covers it once deployed, but not over plain http locally,
+     and saying so outright does not lean on the scheme. */
+  "frame-src 'self' https:",
   ...(supabaseOrigin
     ? [`connect-src 'self' ${supabaseOrigin}${r2Origin ? ` ${r2Origin}` : ""}`]
     : /* No Supabase URL at build time: same-origin only, which is what the app
@@ -128,6 +131,17 @@ const CSP = [
   "form-action 'self'",
   "frame-ancestors 'none'",
 ].join("; ");
+
+/* The content manager's previews, and only those, may be framed — by this site
+   alone. The manager shows the home page inside itself so the coach edits the
+   page they are looking at; with `DENY` that frame would stay blank. Same
+   origin only, and these routes are admin-guarded pages with nothing on them
+   that acts on a click, so clickjacking has nothing to take. */
+const PREVIEW_CSP = CSP.replace("frame-ancestors 'none'", "frame-ancestors 'self'");
+const PREVIEW_FRAME_HEADERS = [
+  { key: "X-Frame-Options", value: "SAMEORIGIN" },
+  { key: "Content-Security-Policy", value: PREVIEW_CSP },
+];
 
 const SECURITY_HEADERS = [
   {
@@ -287,6 +301,12 @@ const nextConfig: NextConfig = {
           { key: 'Content-Type', value: 'application/javascript; charset=utf-8' },
           { key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' },
         ],
+      },
+      /* Last, so it replaces the two framing headers the first entry set —
+         Next lets the later match win for the same key. */
+      {
+        source: '/cms-preview/:path*',
+        headers: PREVIEW_FRAME_HEADERS,
       },
     ];
   },

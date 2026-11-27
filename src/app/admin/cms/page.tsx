@@ -18,6 +18,14 @@ export default async function AdminCMSPage() {
 
   const contentAr = settings?.content_ar as JsonRecord || defaultTranslations;
 
+  /* The unpublished draft, when there is one, is where the editor picks up —
+     the published content stays beside it so the screen can say what is still
+     waiting to go out. */
+  const draftRow = await prisma.site_settings.findUnique({
+    where: { id: "landing_draft" },
+  });
+  const draftAr = draftRow?.content_ar as JsonRecord | undefined;
+
   /* For the "قسم المتجر" tab's three product pickers: the products a visitor
      can see, which are the only ones the landing card will draw. */
   const storeProducts = (await getActiveProducts()).map((p) => ({ slug: p.slug, name: p.name }));
@@ -28,7 +36,7 @@ export default async function AdminCMSPage() {
        main element — see `.cms-page-shell` in cms.css for why. `padding: 0` was
        a no-op on a bare div and is gone with it. */
     <div className="cms-page-shell">
-      <AdminCMSClient initialAr={contentAr} canEdit={sessionCan(session, "cms.edit")} storeProducts={storeProducts} />
+      <AdminCMSClient initialAr={draftAr ?? contentAr} publishedAr={contentAr} canEdit={sessionCan(session, "cms.edit")} storeProducts={storeProducts} />
     </div>
   );
 }
