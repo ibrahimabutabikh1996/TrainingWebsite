@@ -531,8 +531,10 @@ export default function AdminCRMClient({
                 )}
               </button>
               <div className="crm-hero-stat">
-                <span className="stat-val">{totalSubscribers}</span>
-                <span className="stat-lbl">إجمالي المتدربين</span>
+                <span className="stat-val">{filteredProfiles.length}</span>
+                <span className="stat-lbl">
+                  {filteredProfiles.length === totalSubscribers ? "إجمالي المتدربين" : `من أصل ${totalSubscribers} متدرب`}
+                </span>
               </div>
             </div>
           </div>
