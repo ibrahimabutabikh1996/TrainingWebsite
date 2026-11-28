@@ -1,7 +1,7 @@
 import Link from "next/link";
 import {
-  AlertTriangle, BookOpen, CalendarClock, ChevronLeft, Dumbbell, Globe, Hourglass, RefreshCw,
-  Salad, ShoppingBag, Store, TrendingUp, UserPlus, Users, UtensilsCrossed,
+  AlertTriangle, BookOpen, CalendarClock, ChevronLeft, Dumbbell, Globe, Hourglass, Package, RefreshCw,
+  Salad, ShoppingBag, Store, TrendingUp, UserCheck, UserPlus, Users, UserX, UtensilsCrossed,
 } from "lucide-react";
 import { prisma } from "@/lib/db";
 import { requireAdminPage } from "@/lib/authGuard";
@@ -10,6 +10,8 @@ import { formatIQD } from "@/lib/store/types";
 import { SUBSCRIPTION_DAYS, daysRemaining, isSubscriptionExpired } from "@/lib/subscription";
 import { DAY_MS, formatShortDate, toISODate } from "@/lib/trainingDates";
 import type { JsonRecord } from "@/types";
+import { getLandingContent } from "../cms/actions";
+import { planNameFrom, planOptions, resolvePlanDisplayNames } from "@/lib/planNames";
 import "./overview.css";
 
 export const dynamic = "force-dynamic";
@@ -89,6 +91,11 @@ export default async function AdminOverviewPage() {
   const expiring: Person[] = [];
   const unprepared: Person[] = [];
   const idle: Person[] = [];
+  const withAccount: Person[] = [];
+  const withoutAccount: Person[] = [];
+  /* Subscribers per package, keyed by the stored plan value, with how many of
+     them are active by the same rule as the headline figure. */
+  const plans = new Map<string, { total: number; active: number }>();
   const week = Array.from({ length: 7 }, (_, i) => {
     const iso = toISODate(daysAgo(6 - i));
     return { iso, label: formatShortDate(iso), count: 0 };
@@ -97,6 +104,10 @@ export default async function AdminOverviewPage() {
   let weekTrainees = 0;
 
   const store = await storeSnapshot(monthStart);
+  /* The packages as the coach named them — the same names the subscriber list shows. */
+  const planNames = resolvePlanDisplayNames(
+    (await getLandingContent())?.content_ar as JsonRecord | undefined
+  );
 
   try {
     const [profiles, lastWorkouts, dietTrainees, sessions] = await Promise.all([
@@ -110,6 +121,7 @@ export default async function AdminOverviewPage() {
           is_suspended: boolean;
           subscription_ends_at: Date | null;
           current_course_id: string | null;
+          has_account: boolean;
           data: unknown;
         }>
       >`
@@ -120,9 +132,11 @@ export default async function AdminOverviewPage() {
           p.is_suspended,
           p.subscription_ends_at,
           p.current_course_id,
+          p.user_id IS NOT NULL AS has_account,
           CASE
             WHEN jsonb_typeof(p.data) = 'object' THEN jsonb_build_object(
               'fullname', p.data -> 'fullname',
+              'plan', p.data -> 'plan',
               'plan_type', p.data -> 'plan_type',
               'renewal_pending', p.data -> 'renewal_pending',
               'activation_date', p.data -> 'activation_date'
@@ -154,6 +168,12 @@ export default async function AdminOverviewPage() {
       const blob = readBlob(p.data);
       const name = (typeof blob.fullname === "string" && blob.fullname.trim()) || p.username;
       if (p.created_at >= monthStart) counts.joinedThisMonth += 1;
+      if (p.has_account) withAccount.push({ id: p.id, name, note: `اسم المستخدم: ${p.username}` });
+      else withoutAccount.push({ id: p.id, name, note: "بدون حساب" });
+      const planKey = typeof blob.plan === "string" || typeof blob.plan === "number" ? String(blob.plan) : "";
+      const plan = plans.get(planKey) ?? { total: 0, active: 0 };
+      plan.total += 1;
+      plans.set(planKey, plan);
       if (blob.renewal_pending === true) {
         counts.renewalPending += 1;
         renewals.push({ id: p.id, name, note: "طلب تجديد بانتظار الموافقة" });
@@ -169,6 +189,7 @@ export default async function AdminOverviewPage() {
       if (p.is_suspended || Number.isNaN(endsAt.getTime()) || isSubscriptionExpired(endsAt, now)) continue;
 
       counts.active += 1;
+      plan.active += 1;
       const left = daysRemaining(endsAt, now);
       if (left !== null && left <= 7) {
         counts.expiringSoon += 1;
@@ -192,6 +213,8 @@ export default async function AdminOverviewPage() {
 
     expiring.sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0));
     idle.sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0));
+    withAccount.sort((a, b) => a.name.localeCompare(b.name, "ar"));
+    withoutAccount.sort((a, b) => a.name.localeCompare(b.name, "ar"));
     const byDay = new Map(week.map((d, i) => [d.iso, i]));
     const trainees = new Set<string>();
     for (const s of sessions) {
@@ -209,6 +232,12 @@ export default async function AdminOverviewPage() {
   }
 
   const peak = Math.max(1, ...week.map((d) => d.count));
+  /* `planOptions` marks an offer that shares its plan's name, as the subscriber filter does. */
+  const planLabels = new Map(planOptions(planNames).map((o) => [o.value, o.label]));
+  const planRows = [...plans.entries()]
+    .map(([key, n]) => ({ key, name: planLabels.get(key) ?? planNameFrom(planNames, key, "غير محدد"), ...n }))
+    .sort((a, b) => b.total - a.total);
+  const planPeak = Math.max(1, ...planRows.map((r) => r.total));
   const hour = Number(new Intl.DateTimeFormat("en-US", { hour: "numeric", hour12: false, timeZone: "Asia/Baghdad" }).format(now));
   const greeting = hour < 12 ? "صباح الخير" : "مساء الخير";
   const dateLine = new Intl.DateTimeFormat("ar-IQ-u-nu-latn", { weekday: "long", day: "numeric", month: "long", timeZone: "Asia/Baghdad" }).format(now);
@@ -225,6 +254,11 @@ export default async function AdminOverviewPage() {
     { title: "اشتراكات تنتهي قريباً", icon: CalendarClock, tone: "warning", people: expiring, empty: "لا شيء ينتهي هذا الأسبوع" },
     { title: "بانتظار التجهيز", icon: AlertTriangle, tone: "primary", people: unprepared, empty: "كل المشتركين لديهم برامجهم" },
     { title: `متوقفون عن التمرين (${IDLE_DAYS}+ يوم)`, icon: Dumbbell, tone: "muted", people: idle, empty: "الجميع يتمرّن 💪" },
+  ];
+
+  const accountLists = [
+    { title: "مشتركون لديهم حساب", icon: UserCheck, tone: "success", people: withAccount, empty: "لا يوجد مشترك لديه حساب" },
+    { title: "مشتركون بدون حساب", icon: UserX, tone: "warning", people: withoutAccount, empty: "كل المشتركين لديهم حسابات" },
   ];
 
   const actions = [
@@ -295,6 +329,30 @@ export default async function AdminOverviewPage() {
         <aside className="ov-side">
           <section className="admin-card ov-panel">
             <header className="ov-panel-head">
+              <h2><Package aria-hidden="true" /> الباقات</h2>
+              <Link href="/admin" className="ov-link">المشتركين <ChevronLeft aria-hidden="true" /></Link>
+            </header>
+            {planRows.length === 0 ? (
+              <p className="ov-empty">لا يوجد مشتركون بعد</p>
+            ) : (
+              <ul className="ov-plans" aria-label="عدد المشتركين في كل باقة">
+                {planRows.map((r) => (
+                  <li key={r.key || "none"}>
+                    <div className="ov-plan-line">
+                      <strong className="ov-plan-name">{r.name}</strong>
+                      <span className="ov-plan-count"><strong>{r.total}</strong> مشترك · {r.active} فعّال</span>
+                    </div>
+                    <div className="ui-progress" role="presentation">
+                      <span className="ui-progress-fill" style={{ width: `${(r.total / planPeak) * 100}%` }} />
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          <section className="admin-card ov-panel">
+            <header className="ov-panel-head">
               <h2>التمارين هذا الأسبوع</h2>
               <Link href="/admin/analytics" className="ov-link">التحليلات <ChevronLeft aria-hidden="true" /></Link>
             </header>
@@ -342,6 +400,39 @@ export default async function AdminOverviewPage() {
           </section>
         </aside>
       </div>
+
+      <section aria-label="الحسابات">
+        <h2 className="ov-title">الحسابات</h2>
+        <div className="ov-lists">
+          {accountLists.map((group) => (
+            <article key={group.title} className={`admin-card ov-list ov-tone--${group.tone}`}>
+              <header>
+                <span className={`ov-list-icon ui-icon-tile ui-icon-tile--sm ${TILE_TONE[group.tone]}`}><group.icon aria-hidden="true" /></span>
+                <h3>{group.title}</h3>
+                <span className="ov-count">{group.people.length}</span>
+              </header>
+              {group.people.length === 0 ? (
+                <p className="ov-empty">{group.empty}</p>
+              ) : (
+                <ul>
+                  {group.people.map((p) => (
+                    <li key={p.id}>
+                      <Link href={`/admin/profile/${p.id}`}>
+                        <span className="ov-avatar" aria-hidden="true">{p.name.trim().charAt(0)}</span>
+                        <span className="ov-person">
+                          <strong>{p.name}</strong>
+                          <small><bdi>{p.note}</bdi></small>
+                        </span>
+                        <ChevronLeft aria-hidden="true" className="ov-chev" />
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </article>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }
