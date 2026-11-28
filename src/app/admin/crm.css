@@ -234,7 +234,6 @@
   padding: 12px 16px;
   border-radius: var(--admin-radius);
   flex-grow: 1;
-  max-width: 400px;
   transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), opacity var(--dur) var(--ease), transform var(--dur) var(--ease);
 }
 
