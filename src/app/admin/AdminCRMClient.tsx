@@ -11,6 +11,7 @@ import { planNameFrom, planOptions, type PlanNames } from "@/lib/planNames";
 import { planTagStyle } from "@/lib/planCards";
 import { Icon } from "@/components/Icon";
 import { CustomSelect } from "@/components/CustomSelect";
+import { DatePicker } from "@/components/DatePicker";
 import { formatTimestamp } from "@/lib/trainingDates";
 import "./crm.css";
 import { normalizeArabic, arabicIncludes } from "@/lib/arabicSearch";
@@ -29,6 +30,50 @@ function getProfileData(p: Profile): JsonRecord {
   }
   return p.data || {};
 }
+
+/* The date the "تاريخ البدء" column shows, as a number to sort and filter by:
+   the first activation, or the registration for an account never activated.
+   The list used to sort by `created_at` alone while showing this, so the column
+   could read out of order. */
+function startTimeOf(p: Profile, data: JsonRecord): number {
+  const raw = typeof data.activation_date === "string" && data.activation_date
+    ? data.activation_date
+    : p.created_at;
+  const t = new Date(raw).getTime();
+  return Number.isNaN(t) ? 0 : t;
+}
+
+/* When the latest month opened: the last approved renewal, or the start date
+   for a trainee who never renewed. */
+function lastRenewalTimeOf(p: Profile, data: JsonRecord): number {
+  const renewals = Array.isArray(data.renewals) ? data.renewals : [];
+  for (let i = renewals.length - 1; i >= 0; i--) {
+    const t = new Date(renewals[i]?.date).getTime();
+    if (!Number.isNaN(t)) return t;
+  }
+  return startTimeOf(p, data);
+}
+
+/* Month 1 is the activation; each approved renewal adds one — the same count
+   the CSV export writes. */
+function monthCountOf(data: JsonRecord): number {
+  return (Array.isArray(data.renewals) ? data.renewals.length : 0) + 1;
+}
+
+/* Whether the trainee's subscription includes that plan at all — the same
+   test the table's status cells make. A diet-only trainee has no training plan
+   to be missing. */
+function includesPlan(data: JsonRecord, kind: "training" | "diet"): boolean {
+  return data.plan_type !== (kind === "diet" ? "training" : "diet");
+}
+
+/* A "YYYY-MM-DD" from the date picker, as local midnight. */
+function localDayStart(iso: string): number {
+  const [y, m, d] = iso.slice(0, 10).split("-").map(Number);
+  return new Date(y, m - 1, d).getTime();
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 /* One entry in the bell, flattened out of the trainee's `notifications`. */
 type Notice = {
@@ -79,14 +124,30 @@ export default function AdminCRMClient({
   initialProfiles,
   planNames,
   challengeNotices = [],
+  staffMembers = [],
 }: {
   initialProfiles: Profile[];
   planNames: PlanNames;
   challengeNotices?: ChallengeNotice[];
+  /** The coach only — empty for a staff member, who gets no staff filter. */
+  staffMembers?: { id: string; name: string; traineeIds: string[] }[];
 }) {
   const [search, setSearch] = useState("");
   const [filterPlan, setFilterPlan] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
+  /* The extra filters, under "فلترات إضافية". "all" is "not filtering". */
+  const [filterPlanType, setFilterPlanType] = useState("all");
+  const [filterTraining, setFilterTraining] = useState("all");
+  const [filterDiet, setFilterDiet] = useState("all");
+  const [filterRenewal, setFilterRenewal] = useState("all");
+  const [filterAccount, setFilterAccount] = useState("all");
+  const [filterGender, setFilterGender] = useState("all");
+  const [filterStaff, setFilterStaff] = useState("all");
+  const [filterDate, setFilterDate] = useState("all");
+  const [dateFrom, setDateFrom] = useState<string | null>(null);
+  const [dateTo, setDateTo] = useState<string | null>(null);
+  const [awaitingWork, setAwaitingWork] = useState(false);
+  const [showMoreFilters, setShowMoreFilters] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [noticeFilter, setNoticeFilter] = useState<"unread" | "read" | "all">("unread");
   const [pageSize, setPageSize] = useState("20");
@@ -95,7 +156,11 @@ export default function AdminCRMClient({
   /* Back to the first page whenever what the table shows changes — page 3 of
      a search that now has one page of results is an empty table. Taken over
      during render, the same pattern as `seenInitial` below. */
-  const listKey = `${search}\u0000${filterPlan}\u0000${sortBy}\u0000${pageSize}`;
+  const listKey = [
+    search, filterPlan, sortBy, pageSize,
+    filterPlanType, filterTraining, filterDiet, filterRenewal, filterAccount,
+    filterGender, filterStaff, filterDate, dateFrom, dateTo, awaitingWork,
+  ].join("\u0000");
   const [seenListKey, setSeenListKey] = useState(listKey);
   if (listKey !== seenListKey) {
     setSeenListKey(listKey);
@@ -196,8 +261,11 @@ export default function AdminCRMClient({
     return `"${defused.replace(/"/g, '""')}"`;
   };
 
+  /* Exports what the table shows — the search, the filters and the order —
+     not the whole roll. Read at click time, after `filteredProfiles` below is
+     computed for this render. */
   const handleExportToExcel = () => {
-    if (profiles.length === 0) {
+    if (filteredProfiles.length === 0) {
       toast.error("لا يوجد مشتركون للتصدير");
       return;
     }
@@ -205,7 +273,7 @@ export default function AdminCRMClient({
     // Build CSV content
     const headers = ["اسم المستخدم", "الاسم الكامل", "رقم الهاتف", "تاريخ الانضمام", "نوع الخطة", "عدد اشهر الاشتراك"];
 
-    const rows = profiles.map(p => {
+    const rows = filteredProfiles.map(p => {
       const data = getProfileData(p);
       const fullname = data.fullname || "";
       const phone = data.phone || "";
@@ -236,7 +304,50 @@ export default function AdminCRMClient({
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-    toast.success(`تم تصدير بيانات ${profiles.length} مشترك`);
+    toast.success(`تم تصدير بيانات ${filteredProfiles.length} مشترك`);
+  };
+
+  /* Who each staff member was given, and everyone given to anyone — for the
+     staff filter's names and its "بدون موظف". */
+  const staffTrainees = new Map(staffMembers.map((s) => [s.id, new Set(s.traineeIds)]));
+  const assignedToStaff = new Set(staffMembers.flatMap((s) => s.traineeIds));
+
+  /* The start-date window, as [floor, ceiling). The custom range includes
+     the whole of its last day. */
+  let dateFloor = -Infinity;
+  let dateCeiling = Infinity;
+  if (filterDate === "7d" || filterDate === "30d") {
+    const today = new Date();
+    dateFloor = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime()
+      - (filterDate === "7d" ? 6 : 29) * DAY_MS;
+  } else if (filterDate === "month") {
+    const today = new Date();
+    dateFloor = new Date(today.getFullYear(), today.getMonth(), 1).getTime();
+  } else if (filterDate === "custom") {
+    if (dateFrom) dateFloor = localDayStart(dateFrom);
+    if (dateTo) dateCeiling = localDayStart(dateTo) + DAY_MS;
+  }
+
+  /* How many of the extra filters are on, for the count on their button. */
+  const moreFiltersCount = [
+    filterPlanType, filterTraining, filterDiet, filterRenewal,
+    filterAccount, filterGender, filterStaff, filterDate,
+  ].filter((v) => v !== "all").length;
+  const anyFilterActive = moreFiltersCount > 0 || awaitingWork || filterPlan !== "all";
+
+  const clearFilters = () => {
+    setFilterPlan("all");
+    setFilterPlanType("all");
+    setFilterTraining("all");
+    setFilterDiet("all");
+    setFilterRenewal("all");
+    setFilterAccount("all");
+    setFilterGender("all");
+    setFilterStaff("all");
+    setFilterDate("all");
+    setDateFrom(null);
+    setDateTo(null);
+    setAwaitingWork(false);
   };
 
   const filteredProfiles = profiles
@@ -264,14 +375,75 @@ export default function AdminCRMClient({
            by the three lines that stood here — a second naming scheme that
            existed only so this comparison could undo it, and that had nowhere
            to put the offers. */
-        return String(data.plan || "") === filterPlan;
+        if (String(data.plan || "") !== filterPlan) return false;
       }
+
+      const needsTraining = includesPlan(data, "training");
+      const needsDiet = includesPlan(data, "diet");
+      const trainingDone = !!p.course_assigned_at;
+      const dietDone = !!p.diet_updated_at;
+
+      /* "ينتظر عملي": a plan the subscription includes and nobody has written,
+         or a renewal waiting on a decision. A suspended account is not waiting
+         on anything. */
+      if (awaitingWork) {
+        const waiting =
+          (needsTraining && !trainingDone) ||
+          (needsDiet && !dietDone) ||
+          data.renewal_pending === true;
+        if (!waiting || p.is_suspended) return false;
+      }
+
+      if (filterPlanType !== "all" && data.plan_type !== filterPlanType) return false;
+
+      /* Only trainees whose subscription has that plan: a diet-only trainee is
+         neither done nor pending on training. */
+      if (filterTraining !== "all") {
+        if (!needsTraining || trainingDone !== (filterTraining === "done")) return false;
+      }
+      if (filterDiet !== "all") {
+        if (!needsDiet || dietDone !== (filterDiet === "done")) return false;
+      }
+
+      if (filterRenewal === "pending" && data.renewal_pending !== true) return false;
+
+      if (filterAccount !== "all" && !!p.is_suspended !== (filterAccount === "suspended")) return false;
+
+      if (filterGender !== "all" && data.gender !== filterGender) return false;
+
+      if (filterStaff !== "all") {
+        const assigned = filterStaff === "none"
+          ? !assignedToStaff.has(p.id)
+          : staffTrainees.get(filterStaff)?.has(p.id) === true;
+        if (!assigned) return false;
+      }
+
+      if (filterDate !== "all") {
+        const start = startTimeOf(p, data);
+        if (start < dateFloor) return false;
+        if (start >= dateCeiling) return false;
+      }
+
       return true;
     })
     .sort((a, b) => {
-      const dateA = new Date(a.created_at).getTime();
-      const dateB = new Date(b.created_at).getTime();
-      return sortBy === "newest" ? dateB - dateA : dateA - dateB;
+      const dataA = getProfileData(a);
+      const dataB = getProfileData(b);
+      switch (sortBy) {
+        case "oldest":
+          return startTimeOf(a, dataA) - startTimeOf(b, dataB);
+        case "name":
+          return String(dataA.fullname || a.username || "").localeCompare(
+            String(dataB.fullname || b.username || ""),
+            "ar"
+          );
+        case "months":
+          return monthCountOf(dataB) - monthCountOf(dataA) || startTimeOf(b, dataB) - startTimeOf(a, dataA);
+        case "renewal":
+          return lastRenewalTimeOf(b, dataB) - lastRenewalTimeOf(a, dataA);
+        default:
+          return startTimeOf(b, dataB) - startTimeOf(a, dataA);
+      }
     });
   /* Clamped as well as reset: a subscriber deleted from the last page leaves
      `page` pointing one past the end. */
@@ -519,19 +691,191 @@ export default function AdminCRMClient({
                 onChange={setSortBy} 
                 options={[
                   { value: "newest", label: "الأحدث أولاً" },
-                  { value: "oldest", label: "الأقدم أولاً" }
-                ]} 
+                  { value: "oldest", label: "الأقدم أولاً" },
+                  { value: "name", label: "الاسم أبجدياً" },
+                  { value: "months", label: "الأكثر أشهراً" },
+                  { value: "renewal", label: "آخر تجديد" }
+                ]}
               />
-              <button 
+              <button
                 className="crm-export-btn"
                 onClick={handleExportToExcel}
-                title="تصدير جميع بيانات المشتركين إلى ملف اكسل"
+                title="تصدير المشتركين الظاهرين في الجدول إلى ملف اكسل"
               >
                 <Icon name="excel" />
                 تصدير اكسل
               </button>
             </div>
           </div>
+
+          {/* The everyday filter in view, the rest one press away. */}
+          <div className="crm-filter-bar">
+            <button
+              type="button"
+              className={`ui-chip ${awaitingWork ? "is-active" : ""}`}
+              aria-pressed={awaitingWork}
+              onClick={() => setAwaitingWork((v) => !v)}
+              title="من ينقصه نظام تدريبي أو غذائي، أو عنده طلب تجديد بانتظار موافقتك"
+            >
+              <Icon name="hourglass" />
+              ينتظر عملي
+            </button>
+            <button
+              type="button"
+              className={`ui-chip ${showMoreFilters ? "is-active" : ""}`}
+              aria-expanded={showMoreFilters}
+              aria-controls="crm-more-filters"
+              onClick={() => setShowMoreFilters((v) => !v)}
+            >
+              فلترات إضافية
+              {moreFiltersCount > 0 && <span className="ui-count">{moreFiltersCount}</span>}
+              <Icon name={showMoreFilters ? "expand_less" : "expand_more"} />
+            </button>
+            {anyFilterActive && (
+              <>
+                <span className="crm-filter-result">{filteredProfiles.length} نتيجة</span>
+                <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm" onClick={clearFilters}>
+                  <Icon name="close" />
+                  مسح الفلترات
+                </button>
+              </>
+            )}
+          </div>
+
+          {showMoreFilters && (
+            <div id="crm-more-filters" className="crm-more-filters">
+              <div className="crm-filter-field">
+                <span className="crm-filter-label">نوع الاشتراك</span>
+                <CustomSelect
+                  value={filterPlanType}
+                  onChange={setFilterPlanType}
+                  options={[
+                    { value: "all", label: "الكل" },
+                    { value: "both", label: "تدريبي + غذائي" },
+                    { value: "diet", label: "غذائي فقط" },
+                    { value: "training", label: "تدريبي فقط" },
+                  ]}
+                />
+              </div>
+              <div className="crm-filter-field">
+                <span className="crm-filter-label">النظام التدريبي</span>
+                <CustomSelect
+                  value={filterTraining}
+                  onChange={setFilterTraining}
+                  options={[
+                    { value: "all", label: "الكل" },
+                    { value: "done", label: "تم" },
+                    { value: "pending", label: "لم يُنجز" },
+                  ]}
+                />
+              </div>
+              <div className="crm-filter-field">
+                <span className="crm-filter-label">النظام الغذائي</span>
+                <CustomSelect
+                  value={filterDiet}
+                  onChange={setFilterDiet}
+                  options={[
+                    { value: "all", label: "الكل" },
+                    { value: "done", label: "تم" },
+                    { value: "pending", label: "لم يُنجز" },
+                  ]}
+                />
+              </div>
+              <div className="crm-filter-field">
+                <span className="crm-filter-label">طلب التجديد</span>
+                <CustomSelect
+                  value={filterRenewal}
+                  onChange={setFilterRenewal}
+                  options={[
+                    { value: "all", label: "الكل" },
+                    { value: "pending", label: "بانتظار المراجعة" },
+                  ]}
+                />
+              </div>
+              <div className="crm-filter-field">
+                <span className="crm-filter-label">حالة الحساب</span>
+                <CustomSelect
+                  value={filterAccount}
+                  onChange={setFilterAccount}
+                  options={[
+                    { value: "all", label: "الكل" },
+                    { value: "active", label: "نشط" },
+                    { value: "suspended", label: "موقوف" },
+                  ]}
+                />
+              </div>
+              <div className="crm-filter-field">
+                <span className="crm-filter-label">الجنس</span>
+                <CustomSelect
+                  value={filterGender}
+                  onChange={setFilterGender}
+                  options={[
+                    { value: "all", label: "الكل" },
+                    { value: "male", label: "ذكر" },
+                    { value: "female", label: "أنثى" },
+                  ]}
+                />
+              </div>
+              {staffMembers.length > 0 && (
+                <div className="crm-filter-field">
+                  <span className="crm-filter-label">الموظف</span>
+                  <CustomSelect
+                    value={filterStaff}
+                    onChange={setFilterStaff}
+                    options={[
+                      { value: "all", label: "كل الموظفين" },
+                      ...staffMembers.map((s) => ({ value: s.id, label: s.name })),
+                      { value: "none", label: "بدون موظف" },
+                    ]}
+                  />
+                </div>
+              )}
+              <div className="crm-filter-field">
+                <span className="crm-filter-label">تاريخ البدء</span>
+                <CustomSelect
+                  value={filterDate}
+                  onChange={setFilterDate}
+                  options={[
+                    { value: "all", label: "كل التواريخ" },
+                    { value: "7d", label: "آخر 7 أيام" },
+                    { value: "30d", label: "آخر 30 يوماً" },
+                    { value: "month", label: "هذا الشهر" },
+                    { value: "custom", label: "نطاق مخصص" },
+                  ]}
+                />
+              </div>
+              {filterDate === "custom" && (
+                <>
+                  <div className="crm-filter-field">
+                    <span className="crm-filter-label">من</span>
+                    <DatePicker
+                      value={dateFrom}
+                      onChange={setDateFrom}
+                      label="بداية النطاق"
+                      maxDate={dateTo}
+                      rangeStart={dateFrom}
+                      rangeEnd={dateTo}
+                      clearable
+                      fullWidth
+                    />
+                  </div>
+                  <div className="crm-filter-field">
+                    <span className="crm-filter-label">إلى</span>
+                    <DatePicker
+                      value={dateTo}
+                      onChange={setDateTo}
+                      label="نهاية النطاق"
+                      minDate={dateFrom}
+                      rangeStart={dateFrom}
+                      rangeEnd={dateTo}
+                      clearable
+                      fullWidth
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+          )}
 
           {filteredProfiles.length === 0 ? (
             <div className="crm-empty-state">

@@ -39,6 +39,8 @@ const LIST_FIELDS = [
   "notifications",
   "activation_date",
   "renewals",
+  /* For the list's gender filter. "male" / "female", from the intake form. */
+  "gender",
 ] as const;
 
 /** The blob as it is stored, or an empty record — the column is free-form. */
@@ -185,13 +187,37 @@ export default async function AdminDashboardPage() {
       }))
     : [];
 
+  /* The staff members and the trainees each was given, for the list's "staff
+     member" filter. The coach only: a staff member sees their own trainees
+     already, and has no business reading who else works here. */
+  let staffMembers: { id: string; name: string; traineeIds: string[] }[] = [];
+  if (session.isAdmin) {
+    try {
+      const rows = await prisma.staff_accounts.findMany({
+        orderBy: { created_at: "asc" },
+        select: {
+          account_id: true,
+          accounts: { select: { username: true } },
+          staff_trainees: { select: { profile_id: true } },
+        },
+      });
+      staffMembers = rows.map((row) => ({
+        id: row.account_id,
+        name: row.accounts.username,
+        traineeIds: row.staff_trainees.map((t) => t.profile_id),
+      }));
+    } catch (error) {
+      console.error("Failed to fetch staff for admin CRM:", error);
+    }
+  }
+
   /* A fragment because this page returns the client component bare — there is
      no wrapper here to hang it inside, and adding one would change the layout
      for the sake of a component that renders nothing. */
   return (
     <>
       <LiveRefresh scope="panel" />
-      <AdminCRMClient initialProfiles={serializedProfiles} planNames={planNames} challengeNotices={challengeNotices} />
+      <AdminCRMClient initialProfiles={serializedProfiles} planNames={planNames} challengeNotices={challengeNotices} staffMembers={staffMembers} />
     </>
   );
 }
